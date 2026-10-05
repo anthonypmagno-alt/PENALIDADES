@@ -166,7 +166,7 @@
       </div>
       <div class="source-footer">
         <div id="sourceDiag" class="source-diag">Carga penalidades para crear liquidaciones. Brechas, exportación y zonificación se pueden actualizar después.</div>
-        <span id="storageState" class="save-state">Conectando con Supabase…</span>
+        <span id="storageState" class="save-state">Conectando con Supabase…</span><button id="retrySyncBtn" type="button" class="btn" hidden style="padding:6px 9px;font-size:11px">Reintentar sincronización</button>
       </div>
     </section>
 
@@ -308,9 +308,9 @@
       $('storageState').textContent='No hay conexión con el almacenamiento Supabase';if(showMessage)notify('No se pudo guardar en Supabase.',true);return false;
     }
     function flushCloudSave(){
-      if(!cloudMode||!cloudPending||cloudInFlight)return;cloudPending=false;cloudInFlight=true;const snapshot=JSON.parse(JSON.stringify(state));
-      google.script.run.withSuccessHandler(result=>{state.serverRevision=Number(result?.revision)||state.serverRevision;$('storageState').textContent='Guardado en Supabase';if(cloudNotify)notify('Cambios guardados en Supabase.');if(!dirty){$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';}cloudNotify=false;cloudInFlight=false;if(cloudPending)setTimeout(flushCloudSave,0);})
-        .withFailureHandler(error=>{$('storageState').textContent='Error al guardar en Supabase';notify(`No se pudo sincronizar con Supabase: ${error?.message||error}`,true);cloudNotify=false;cloudInFlight=false;cloudPending=false;})
+      if(!cloudMode||!cloudPending||cloudInFlight)return;cloudPending=false;cloudInFlight=true;const snapshot=JSON.parse(JSON.stringify(state));$('retrySyncBtn').disabled=true;
+      google.script.run.withSuccessHandler(result=>{state.serverRevision=Number(result?.revision)||state.serverRevision;$('storageState').textContent='Guardado en Supabase';$('retrySyncBtn').hidden=true;$('retrySyncBtn').disabled=false;if(cloudNotify)notify('Cambios guardados en Supabase.');if(!dirty){$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';}cloudNotify=false;cloudInFlight=false;if(cloudPending)setTimeout(flushCloudSave,0);})
+        .withFailureHandler(error=>{$('storageState').textContent='Guardado pendiente';$('retrySyncBtn').hidden=false;$('retrySyncBtn').disabled=false;notify(`No se pudo sincronizar con Supabase: ${error?.message||error}. Tus cambios siguen en esta pestaña; reintenta después de corregir el problema.`,true);cloudNotify=false;cloudInFlight=false;cloudPending=true;})
         .saveAppState(snapshot);
     }
     function notify(message,error=false){const el=$('toast');el.textContent=message;el.style.background=error?'#8b211a':'#203040';el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3500);}
@@ -825,6 +825,7 @@
     $('detailScrollLeft').addEventListener('click',()=>{const wrap=$('detailTableWrap');wrap.scrollBy({left:-Math.max(320,wrap.clientWidth*.75),behavior:'smooth'});});
     $('detailScrollRight').addEventListener('click',()=>{const wrap=$('detailTableWrap');wrap.scrollBy({left:Math.max(320,wrap.clientWidth*.75),behavior:'smooth'});});
     $('openCreateBtn').addEventListener('click',openCreate);$('saveBtn').addEventListener('click',saveCurrent);$('syncBtn').addEventListener('click',syncCurrent);
+    $('retrySyncBtn').addEventListener('click',()=>{cloudPending=true;cloudNotify=true;$('storageState').textContent='Reintentando sincronización…';flushCloudSave();});
     $('exportStateBtn').addEventListener('click',exportStateBackup);
     $('recordsBody').addEventListener('click',e=>{const deleteButton=e.target.closest('[data-delete-record]');if(deleteButton){e.stopPropagation();deleteSavedRecord(deleteButton.dataset.deleteRecord);return;}if(e.target.closest('.record-select')){e.stopPropagation();return;}const row=e.target.closest('tr[data-record]');if(row)showRecord(row.dataset.record);});
     $('recordsBody').addEventListener('change',e=>{if(!e.target.matches('.record-select'))return;const id=e.target.dataset.recordId;if(e.target.checked)selectedRecordIds.add(id);else selectedRecordIds.delete(id);updateRecordGroupSelectionControls(filteredRecords());});
@@ -864,11 +865,11 @@
         }catch(error){notify(`No se pudo importar el respaldo: ${error?.message||error}`,true);}finally{event.target.value='';}
       });
     }
-    function downloadStateJson(value){
+    function downloadStateJson(value,message='Respaldo JSON descargado. Puedes importarlo en la versión Supabase.'){
       const filename=`EXONERACIONES_RESPALDO_${new Date().toISOString().slice(0,10)}.json`;
       const blob=new Blob([JSON.stringify(value,null,2)],{type:'application/json;charset=utf-8'});
       const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
-      notify('Respaldo JSON descargado. Puedes importarlo en la versión Supabase.');
+      notify(message);
     }
     function exportStateBackup(){
       const button=$('exportStateBtn');button.disabled=true;
@@ -880,8 +881,8 @@
           if(!remote||remote.version!==1||!Array.isArray(remote.records)){button.disabled=false;notify('El estado central no tiene el formato esperado.',true);return;}
           const merged=mergeLocalDeletionTombstones(remote,snapshot).state;merged.serverRevision=Number(remote.serverRevision)||state.serverRevision;
           downloadStateJson(merged);button.disabled=false;
-        }).withFailureHandler(error=>{button.disabled=false;notify(`No se pudo descargar el respaldo central: ${error?.message||error}`,true);}).getAppState();
-      }).withFailureHandler(error=>{button.disabled=false;notify(`No se pudo guardar el estado antes del respaldo: ${error?.message||error}`,true);}).saveAppState(snapshot);
+        }).withFailureHandler(error=>{button.disabled=false;downloadStateJson(snapshot,`No se pudo leer el respaldo central: ${error?.message||error}. Descargué una copia del estado actual de esta pestaña; consérvala.`);}).getAppState();
+      }).withFailureHandler(error=>{button.disabled=false;downloadStateJson(snapshot,`No se pudo sincronizar: ${error?.message||error}. Descargué una copia del estado actual de esta pestaña; consérvala.`);}).saveAppState(snapshot);
     }
     function setAvailable(available){appReady=available;if($('importStateBtn'))$('importStateBtn').disabled=!available;if($('exportStateBtn'))$('exportStateBtn').disabled=!available;$('openCreateBtn').disabled=!available;$('saveBtn').disabled=!available;$('createGroupBtn').disabled=!available;$('groupNameInput').disabled=!available;$('bulkGroupSelect').disabled=!available;$('clearRecordSelectionBtn').disabled=!available||selectedRecordIds.size===0;for(const id of Object.values(inputBySlot))$(id).disabled=!available;updateRecordGroupSelectionControls(filteredRecords());}
     function stateHasData(value){return !!(value?.records?.length||value?.groups?.length||Object.keys(value?.deletedRecords||{}).length||Object.values(value?.sources||{}).some(source=>source?.rows?.length));}

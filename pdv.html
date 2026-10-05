@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<script src="./config.js"></script>
+<script src="./bridge.js?v=gestion-v2-2"></script>
+  <base target="_top">
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Portal PDV · V16</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f3f6fa;color:#1f2937}button,input,select,textarea{font:inherit}.hidden{display:none!important}
+    .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#eef5ff,#f8fafc)}.login-card{width:100%;max-width:410px;background:#fff;border-radius:18px;padding:34px;box-shadow:0 18px 50px rgba(15,23,42,.12)}.icon{text-align:center;font-size:42px}.login h1{text-align:center;margin:10px 0 6px}.login p{text-align:center;color:#64748b;font-size:13px;margin:0 0 24px}.field{margin-bottom:14px}.field label{display:block;font-size:12px;font-weight:800;color:#475569;margin-bottom:6px}.field input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px}.primary,.secondary,.danger,.small{border:0;border-radius:8px;color:#fff;font-weight:800;cursor:pointer}.primary{width:100%;padding:12px;background:#1769e0}.secondary{padding:10px 14px;background:#475569}.danger{padding:10px 14px;background:#c2413b}.small{padding:8px 10px;background:#1769e0;font-size:12px}.primary:disabled,.small:disabled{opacity:.55;cursor:wait}.error{display:none;margin-top:14px;padding:10px;border-radius:8px;background:#fee2e2;color:#991b1b;font-size:12px}
+    header{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 22px}.header-inner{max-width:1900px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px}.title{font-size:21px;font-weight:800}.subtitle{font-size:12px;color:#64748b;margin-top:4px}.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.badge{padding:8px 11px;background:#e8f1ff;color:#1452a8;border-radius:999px;font-size:12px;font-weight:800}
+    main{max-width:1900px;margin:auto;padding:20px}.cards{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:12px;margin-bottom:18px}.card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 10px rgba(15,23,42,.06);border-left:4px solid #1769e0}.card b{font-size:26px}.card span{display:block;color:#64748b;font-size:12px;margin-top:5px}.panel{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(15,23,42,.06);margin-bottom:18px;overflow:hidden}.panel-title{padding:16px 18px;border-bottom:1px solid #e5e7eb;font-size:15px;font-weight:800}.panel-body{padding:16px 18px}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:1250px}th,td{border:1px solid #dbe2ea;padding:9px 8px;text-align:center;font-size:12px;vertical-align:middle}th{background:#edf3fa;font-weight:800;white-space:nowrap}.number{font-weight:800;font-variant-numeric:tabular-nums}
+    .summary-table{table-layout:fixed;width:1070px;min-width:1070px;margin:0 auto}.summary-table .col-pdv{width:74px}.summary-table .col-case{width:98px}.summary-table .col-total{width:64px}.summary-table .col-critical{width:74px}.summary-table .col-unique{width:74px}.summary-table th,.summary-table td{padding:5px 6px;font-size:10px;height:28px;border-color:#1f2937}.summary-table tbody td{padding:3px 5px;height:23px}.summary-table th{white-space:normal;overflow-wrap:anywhere;line-height:1.15}.summary-table td.zero-value{color:transparent!important}.summary-clickable{cursor:pointer;transition:background .15s,color .15s}.summary-clickable:hover{background:#dbeafe!important;color:#1452a8!important}.summary-row-active td:not(.summary-critical){background:#eff6ff}.summary-selected{background:#bfdbfe!important;color:#0f3d7a!important;box-shadow:inset 0 0 0 2px #1769e0}.summary-table .summary-critical{background:#fffb00!important;color:#090909;font-weight:800}.summary-table td.summary-critical.summary-selected{background:#bfdbfe!important;color:#0f3d7a!important}.summary-filter-chip{display:inline-flex;align-items:center;gap:7px;margin-left:10px;padding:5px 8px;border-radius:999px;background:#dbeafe;color:#1452a8;font-size:11px;font-weight:700;vertical-align:middle}.summary-filter-chip button{border:0;background:transparent;color:#1452a8;font-size:16px;font-weight:900;line-height:1;cursor:pointer;padding:0}.summary-table .summary-main{background:#ef1717;color:#090909;font-size:11px}.summary-table .summary-sub{background:#fffb00;color:#090909}.summary-table .summary-pdv{background:#f8fafc}.readonly-note{margin-left:8px;padding:4px 8px;border-radius:999px;background:#e8f1ff;color:#1452a8;font-size:10px}
+    .filters{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px}.filters>input,.multi-trigger{width:100%;height:40px;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}.multi-filter{position:relative;min-width:0}.multi-trigger{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#334155;cursor:pointer;text-align:left}.multi-trigger span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.multi-trigger.active{border-color:#1769e0;box-shadow:0 0 0 2px rgba(23,105,224,.12)}.multi-menu{display:none;position:absolute;top:calc(100% + 5px);left:0;z-index:120;width:max-content;min-width:100%;max-width:300px;max-height:285px;overflow:auto;background:#fff;border:1px solid #cbd5e1;border-radius:9px;padding:6px;box-shadow:0 12px 28px rgba(15,23,42,.18)}.multi-menu.open{display:block}.multi-option{display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;color:#334155;font-size:12px;font-weight:500;cursor:pointer;white-space:normal}.multi-option:hover{background:#eff6ff}.multi-option input{width:auto!important;margin:0;accent-color:#1769e0}.multi-clear{width:100%;border:0;border-bottom:1px solid #e2e8f0;background:#fff;color:#1769e0;font-size:11px;font-weight:800;text-align:left;padding:7px 8px;cursor:pointer}.filter-actions{margin-top:10px}.guide{font-weight:800;white-space:nowrap}.qr,.copy-guide{border:0;border-radius:6px;padding:5px 7px;cursor:pointer;margin-left:5px;font-size:11px;font-weight:800}.qr{background:#e8f1ff;color:#1452a8}.copy-guide{background:#ecfdf3;color:#167044}.copy-guide:hover{background:#d1fae5}.state{display:inline-block;border-radius:999px;padding:5px 8px;font-weight:800;font-size:10px}.pendiente{background:#fff4cc;color:#8a5b00}.proceso{background:#dbeafe;color:#1d4ed8}.finalizado{background:#dcfce7;color:#166534}.type-cell{min-width:165px;line-height:1.35}.type-block{padding:3px 0}.type-block+.type-block{border-top:1px solid #dbe2ea;margin-top:6px;padding-top:7px}.type-title{font-weight:800;color:#111827}.type-value{display:block;color:#ef1717;font-size:15px;margin-top:3px}.type-detail{display:block;color:#475569;font-size:11px;margin-top:3px}.obs{min-width:260px}.obs textarea{width:100%;min-height:70px;border:1px solid #cbd5e1;border-radius:7px;padding:8px;resize:vertical}.date{font-size:10px;color:#64748b;margin-top:5px}
+    .manager-note{min-width:230px;max-width:360px;white-space:pre-wrap;text-align:left;background:#f8fbff}.manager-note.empty{color:#94a3b8;font-style:italic}.update-cell{min-width:190px;text-align:left;line-height:1.35}.update-date{font-weight:800;color:#1e3a5f}.update-scan{display:block;margin-top:6px;padding-top:6px;border-top:1px solid #dbe2ea;color:#475569;font-size:11px;white-space:pre-wrap}.update-empty{color:#94a3b8;font-style:italic;text-align:center}.check-cell{width:44px;padding:6px!important}.row-check,.check-all{width:18px;height:18px;margin:0;cursor:pointer;accent-color:#1769e0}.row-selected td{background:#eff6ff}.row-selected textarea{background:#fff}.bulk-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:11px 18px;background:#eef5ff;border-top:1px solid #bfdbfe;border-bottom:1px solid #bfdbfe}.bulk-info{font-size:12px;color:#334155}.bulk-info b{font-size:14px;color:#1452a8}.bulk-actions{display:flex;gap:8px;flex-wrap:wrap}.bulk-actions button{padding:8px 11px}.bulk-actions button:disabled{opacity:.5;cursor:not-allowed}.modal-bulk{width:min(540px,calc(100vw - 30px));text-align:left}.modal-bulk textarea{width:100%;min-height:130px;border:1px solid #cbd5e1;border-radius:8px;padding:10px;resize:vertical}.bulk-note{margin:0 0 13px;padding:9px 10px;border-radius:8px;background:#eff6ff;color:#334155;font-size:12px;line-height:1.4}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.loading{display:none;position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:1000;align-items:center;justify-content:center}.loading div{background:#fff;border-radius:12px;padding:20px 26px;font-weight:800}.toast{display:none;position:fixed;right:20px;bottom:20px;z-index:1100;max-width:420px;padding:13px 16px;border-radius:9px;color:#fff;box-shadow:0 8px 30px rgba(0,0,0,.2)}.toast.ok{background:#16854a}.toast.bad{background:#b42318}.modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:900;align-items:center;justify-content:center}.modal-card{background:#fff;padding:25px;border-radius:15px;text-align:center;min-width:300px}
+    .view-tabs{display:flex;gap:8px;margin-bottom:16px;padding:5px;background:#e2e8f0;border-radius:11px;width:max-content;max-width:100%}.view-tab{border:0;border-radius:8px;background:transparent;color:#475569;padding:10px 15px;font-size:12px;font-weight:800;cursor:pointer}.view-tab.active{background:#fff;color:#1452a8;box-shadow:0 2px 7px rgba(15,23,42,.12)}.excel-upload{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px;border:2px dashed #93c5fd;border-radius:12px;background:#f8fbff}.excel-file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.excel-file-label{display:inline-flex;align-items:center;gap:8px;border-radius:8px;background:#1769e0;color:#fff;padding:11px 15px;font-size:12px;font-weight:800;cursor:pointer}.excel-file-help{color:#64748b;font-size:12px;line-height:1.4}.excel-file-name{font-size:12px;font-weight:800;color:#334155}.excel-message{margin-top:12px;padding:10px 12px;border-radius:8px;font-size:12px}.excel-message.ok{background:#dcfce7;color:#166534}.excel-message.bad{background:#fee2e2;color:#991b1b}.excel-cards{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;margin:16px 0}.excel-card{padding:13px 14px;border:1px solid #dbe2ea;border-radius:10px;background:#fff}.excel-card b{display:block;font-size:22px}.excel-card span{color:#64748b;font-size:11px}.excel-card.danger-card{border-left:4px solid #dc2626}.excel-card.warning-card{border-left:4px solid #f59e0b}.excel-card.success-card{border-left:4px solid #16a34a}.excel-controls{display:grid;grid-template-columns:minmax(260px,2fr) minmax(180px,1fr) auto;gap:10px;align-items:center;margin-bottom:12px}.excel-controls input,.excel-controls select{width:100%;height:40px;border:1px solid #cbd5e1;border-radius:8px;padding:9px 10px;background:#fff}.excel-table{min-width:1500px;table-layout:fixed}.excel-table .excel-guide-col{width:190px}.excel-table .excel-point-col{width:190px}.excel-table .excel-operation-col{width:200px}.excel-table .excel-problem-col{width:190px}.excel-table .excel-date-col{width:220px}.excel-table .excel-wait-col{width:240px}.excel-table .excel-deadline-col{width:240px}.excel-guide-cell{text-align:left}.excel-guide-actions{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}.excel-table th{height:58px;padding:11px 8px;white-space:normal;line-height:1.25;overflow-wrap:anywhere;word-break:normal}.excel-table td{text-align:left}.deadline-badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900}.deadline-badge.vencido{background:#fee2e2;color:#991b1b}.deadline-badge.proximo{background:#fef3c7;color:#92400e}.deadline-badge.vigente{background:#dcfce7;color:#166534}.deadline-badge.sinfecha{background:#e2e8f0;color:#475569}.deadline-date{font-weight:800;margin-top:6px}.deadline-remaining{font-size:10px;color:#64748b;margin-top:3px}.excel-pagination{display:flex;align-items:center;justify-content:center;gap:12px;padding:14px}.excel-pagination button{padding:8px 12px}.excel-pagination button:disabled{opacity:.45;cursor:not-allowed}.excel-page-info{min-width:180px;text-align:center;color:#475569;font-size:12px;font-weight:800}
+    .pdv-detail-table{table-layout:fixed;width:100%;min-width:1460px}.pdv-detail-table .pdv-col-select{width:44px}.pdv-detail-table .pdv-col-guide{width:210px}.pdv-detail-table .pdv-col-pdv{width:95px}.pdv-detail-table .pdv-col-state{width:115px}.pdv-detail-table .pdv-col-type{width:185px}.pdv-detail-table .pdv-col-update{width:220px}.pdv-detail-table .pdv-col-manager{width:245px}.pdv-detail-table .pdv-col-observation{width:255px}.pdv-detail-table .pdv-col-action{width:90px}.pdv-detail-table th{height:50px;padding:8px 6px;white-space:normal;line-height:1.2;overflow-wrap:anywhere;word-break:normal;vertical-align:middle}.update-scan{margin-top:5px;padding-top:0;border-top:0}.update-driver{display:block;margin-top:5px;color:#334155;font-size:11px;white-space:pre-wrap}.update-driver b{color:#1e3a5f}
+    .excel-upload+.excel-upload{margin-top:12px}.excel-table{min-width:1740px}.excel-table .excel-destination-col{width:220px}.excel-subline{margin-top:6px;font-size:11px;color:#64748b;line-height:1.35}.excel-subline b,.excel-destination b{color:#334155}.excel-destination{display:grid;gap:5px;font-size:11px;line-height:1.35}.excel-destination div{overflow-wrap:anywhere}
+    @media(max-width:800px){.cards,.excel-cards{grid-template-columns:repeat(2,1fr)}.filters{grid-template-columns:1fr}.header-inner{align-items:flex-start}.excel-controls{grid-template-columns:1fr 1fr}.excel-controls .secondary{grid-column:1/-1}}@media(max-width:520px){main{padding:12px}header{padding:12px}.cards,.excel-cards,.excel-controls{grid-template-columns:1fr}.title{font-size:17px}.actions .secondary{display:none}.view-tabs{width:100%}.view-tab{flex:1;padding:9px}.excel-controls .secondary{display:block;grid-column:auto}}
+  .qr-selected-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));column-gap:24px;row-gap:48px}.qr-selected-card{padding:12px;text-align:center;background:white}.qr-selected-card canvas,.qr-selected-card img{margin:auto}.qr-selected-card p{overflow-wrap:anywhere}
+
+.qr-selected-grid{grid-template-columns:repeat(6,minmax(0,1fr));column-gap:24px;row-gap:48px}
+.qr-selected-card{min-width:0}.qr-selected-card canvas,.qr-selected-card img{max-width:100%;height:auto!important}
+.qr-employee-heading{background:#dbeafe;color:#153e67;border-left:6px solid #2563eb;padding:14px 18px;margin:28px 0 20px;text-align:left;border-radius:6px}
+@media(max-width:1500px){.qr-selected-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:1150px){.qr-selected-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:850px){.qr-selected-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){.qr-selected-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:400px){.qr-selected-grid{grid-template-columns:1fr}}
+
+.qr-guide-label{font-weight:800;margin:8px 0 4px}.qr-rider-label{font-size:12px;margin:4px 0;color:#334155}
+@media print{
+ @page{size:A4 landscape;margin:10mm}
+ body.imprimiendo-qr{margin:0!important;background:white!important;overflow:visible!important}
+ body.imprimiendo-qr> :not(#excelQrModal){display:none!important}
+ body.imprimiendo-qr #excelQrModal{display:block!important;position:static!important;width:auto!important;height:auto!important;overflow:visible!important;padding:0!important;background:white!important}
+ body.imprimiendo-qr #excelQrModal>.modal-card{display:block!important;position:static!important;transform:none!important;width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important;box-shadow:none!important;border:0!important}
+ body.imprimiendo-qr #excelQrModal button{display:none!important}
+ body.imprimiendo-qr .qr-selected-grid{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;column-gap:4mm!important;row-gap:12.7mm!important}
+ body.imprimiendo-qr .qr-selected-card{break-inside:avoid;page-break-inside:avoid;padding:2mm!important}
+ body.imprimiendo-qr .qr-selected-card canvas,body.imprimiendo-qr .qr-selected-card img{width:34mm!important;height:34mm!important;max-width:100%!important}
+ body.imprimiendo-qr .qr-guide-label{font-size:9pt!important;color:black!important;overflow-wrap:anywhere}
+ body.imprimiendo-qr .qr-rider-label{font-size:8pt!important;color:black!important;overflow-wrap:anywhere}
+ body.imprimiendo-qr .qr-employee-heading{break-after:avoid;page-break-after:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact;background:#dbeafe!important;color:#153e67!important;margin:6mm 0 4mm!important;padding:3mm!important}
+}
+ .summary-table{width:1320px;min-width:1320px}.region-toggle{border:0;background:transparent;color:inherit;font-weight:800;cursor:pointer;text-align:left;width:100%}.region-heading td{background:#1e3a5f!important;color:white!important;padding:10px!important}.region-subtotal td{background:#dbeafe!important;font-weight:800}
+.summary-table thead th{background:#ef1717;color:#090909}.summary-table thead tr:last-child th{background:#fffb00}.summary-table thead th.summary-critical{background:#fffb00!important}
+.summary-table thead tr:last-child th:nth-child(5),.summary-table thead tr:last-child th:nth-child(7),.summary-table thead tr:last-child th:nth-child(9){background:#dc2626!important;color:#ffffff!important}
+.area-heading-nested td{background:#e2e8f0!important;color:#1e293b!important;padding:7px 12px 7px 24px!important}.area-subtotal-nested td{background:#f1f5f9;font-weight:700}.area-subtotal-nested td:first-child{padding-left:24px!important}.region-subtotal td.summary-critical,.area-subtotal-nested td.summary-critical{background:#fffb00!important;color:#090909!important}
+/* Bandas de brecha por rango de horas; conservar selección y subtotales. */
+.summary-table tbody tr.brecha-data-row:not(.summary-row-active) td:nth-child(n+8):nth-child(-n+13){background:#ffffff}
+.summary-table tbody tr.brecha-data-row:not(.summary-row-active) td:nth-child(n+10):nth-child(-n+11){background:#f1f3f5}
+.export-scan{margin-top:8px;padding-top:6px;color:#15803d;font-size:11px;line-height:1.45;white-space:normal}.export-scan b{color:#15803d}
+/* Separador vertical entre Cola Larga y Brecha. */
+.summary-table thead tr:nth-child(1) th:nth-child(4),
+.summary-table thead tr:nth-child(2) th:nth-child(4),
+.summary-table thead tr:nth-child(3) th:nth-child(5),
+.summary-table tbody tr td:nth-child(8){border-left:4px solid #334155!important}
+.qr-status-label{margin:6px 0 0;font-size:12px;font-weight:700;color:#15803d;line-height:1.3}
+@media print{body.imprimiendo-qr .qr-status-label{font-size:8pt!important;color:#111!important}}
+.excel-pdv-summary-toolbar{margin:14px 0 8px}.excel-pdv-summary{margin-bottom:14px;max-height:340px;overflow:auto}.excel-pdv-summary table{min-width:520px;width:100%}.excel-pdv-summary caption{text-align:left;padding:10px;font-weight:700;color:#334155}.excel-pdv-summary thead th{background:#e2e8f0;color:#1e293b}.excel-pdv-summary td:first-child{text-align:left}.excel-pdv-summary .excel-pdv-total td{background:#dbeafe;font-weight:800}
+.excel-summary-cell{width:100%;padding:7px;border:1px solid transparent;border-radius:5px;background:transparent;color:inherit;cursor:pointer;font:inherit}.excel-summary-cell:hover{background:#dbeafe}.excel-summary-cell.selected{background:#bfdbfe;border-color:#2563eb;font-weight:800}.excel-pdv-summary-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+/* Subtotales compactos, al mismo alto que las áreas. */
+.summary-table .col-pdv{width:100px}
+.summary-table .area-heading-nested td,
+.summary-table .area-subtotal-nested td,
+.summary-table .region-subtotal td{box-sizing:border-box;height:32px;line-height:18px;padding-top:6px!important;padding-bottom:6px!important}
+.summary-table .area-heading-nested .region-toggle{padding-top:0;padding-bottom:0;line-height:18px}
+.summary-table .area-subtotal-nested td:not(.summary-critical){background:#e6f4ea!important}
+.summary-table .region-subtotal td:not(.summary-critical){background:#e6f4ea!important}
+.summary-table .area-subtotal-nested td:first-child,
+.summary-table .region-subtotal td:first-child{padding-left:4px!important;padding-right:4px!important;white-space:nowrap;font-size:9px;text-align:center}
+.summary-table .col-despachos{width:80px}.summary-table{width:1500px;min-width:1500px}
+.qr-district-label{margin:5px 0;font-size:12px;color:#334155;line-height:1.3;overflow-wrap:anywhere}
+.pdv-detail-table .pdv-col-destination{width:190px}.pdv-detail-table{min-width:1720px}.gestion-destination{text-align:left;line-height:1.5}.gestion-destination div{margin:3px 0}.gestion-destination b{display:block;font-size:10px;color:#475569}
+.summary-table th.summary-despachos{white-space:normal;word-break:normal;overflow-wrap:normal;vertical-align:middle;border-right:2px solid #334155}.summary-table tbody tr.brecha-data-row td:nth-child(2),.summary-table tbody tr.area-subtotal-nested td:nth-child(2),.summary-table tbody tr.region-subtotal td:nth-child(2){border-right:2px solid #334155}
+
+/* Cola Larga: Por devolver en lavanda, distinto de No devuelto. */
+.summary-table thead tr:last-child th:nth-child(2),.summary-table thead tr:last-child th:nth-child(4){background:#ddd6fe!important;color:#4c1d95!important}
+.summary-table tbody tr.brecha-data-row:not(.summary-row-active) td:nth-child(5):not(.summary-selected),.summary-table tbody tr.brecha-data-row:not(.summary-row-active) td:nth-child(7):not(.summary-selected){background:#f3e8ff}
+</style>
+<style>.lista-guias-panel{margin:12px 0;padding:12px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc}.lista-guias-panel>summary{cursor:pointer;font-weight:700;color:#1e3a5f}.lista-guias-panel label{display:block;margin:10px 0 6px}.lista-guias-panel textarea{display:block;width:100%;max-width:680px;box-sizing:border-box;padding:8px;border:1px solid #cbd5e1;border-radius:6px;resize:vertical;margin:8px 0;font-family:monospace}.lista-guias-panel small,.lista-guias-panel p{display:block;font-size:12px;margin:8px 0;color:#475569}</style><style>/* Tabla centrada y compacta: conserva todas las columnas y permite ajustar encabezados. */
+#tablaResumen,#tablaResumenV2{width:100%!important;max-width:1100px!important;min-width:0!important;table-layout:fixed!important;margin:0 auto!important}
+#tablaResumen col{width:auto!important}
+#tablaResumen col:first-child{width:9%!important}
+#tablaResumen th,#tablaResumen td,#tablaResumenV2 th,#tablaResumenV2 td{min-width:0!important;padding-left:3px!important;padding-right:3px!important;white-space:normal!important;overflow-wrap:anywhere;font-size:10px}
+#tablaResumen th,#tablaResumenV2 th{line-height:1.15}
+#tablaResumen .btn-comment,#tablaResumenV2 .btn-comment{max-width:100%;padding:4px 3px}
+.resumen-imagen-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px auto;max-width:1100px}
+.resumen-imagen-toolbar small,.resumen-imagen-toolbar [role=status]{font-size:12px;color:#475569}
+</style><style>.date-filter-row{grid-column:1/-1;width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:12px;margin-top:8px}
+.date-filter-row fieldset{min-width:0;margin:0;border:1px solid #dbe4ee!important;border-radius:10px!important;background:#f8fafc;padding:12px 14px!important;display:flex!important;align-items:center;align-content:start;gap:10px!important;flex-wrap:wrap}
+.date-filter-row legend{font-size:12px;font-weight:700;color:#334155;padding:0 6px}
+.date-filter-row label{font-size:12px;color:#475569;display:inline-flex;align-items:center;gap:6px}
+.date-filter-row input[type=date],.date-filter-row input[type=datetime-local]{font:inherit;font-size:13px;min-width:0;width:auto;max-width:100%;padding:7px 9px;background:white;border:1px solid #cbd5e1;border-radius:6px;color:#0f172a}
+.date-filter-row [id$=Rapidos]{display:flex;gap:6px;flex-wrap:wrap;width:100%;order:2}
+.date-filter-row [id$=Rapidos] label{margin:0!important;padding:5px 9px;border-radius:16px;background:#fff;border:1px solid #dbe4ee}
+.date-filter-row [id$=Rapidos] label:has(input:checked){background:#dbeafe;border-color:#60a5fa;color:#1d4ed8}
+.date-filter-row input[type=checkbox]{accent-color:#2563eb;width:auto}
+.date-filter-row small{flex-basis:100%;font-size:11px;line-height:1.4;color:#64748b;order:3}
+.date-filter-row button.secondary{font-size:12px;padding:7px 10px;background:#e2e8f0;color:#334155;grid-column:auto!important}
+.date-filter-row [role=status]{flex-basis:100%;order:4;font-size:12px}
+.deadline-cutoff{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:12px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;color:#1e40af}
+.deadline-cutoff label{display:flex;gap:8px;align-items:center;font-weight:600;font-size:13px}.deadline-cutoff input{width:auto;accent-color:#2563eb}.deadline-cutoff small{font-size:12px;color:#475569}
+@media(max-width:850px){.date-filter-row{grid-template-columns:1fr}.date-filter-row input[type=datetime-local]{max-width:190px}}
+.entry-date{margin-top:9px;padding-top:8px;border-top:1px solid #e2e8f0;min-width:130px;line-height:1.5;color:#334155;font-size:12px}.entry-date b,.entry-date small,.entry-date span{display:block}.entry-date b{font-size:11px;color:#475569}.entry-date small{font-size:10px;color:#64748b}.entry-date span{font-variant-numeric:tabular-nums}
+</style></head>
+<body>
+  <section id="login" class="login"><div class="login-card">
+    <div class="icon">🏪</div><h1>Portal PDV</h1><p>Consulta y respuesta de casos asignados a su punto de venta</p>
+    <div class="field"><label>USUARIO / PDV</label><input id="usuario" autocomplete="username" onkeydown="loginEnter(event)"></div>
+    <div class="field"><label>CONTRASEÑA</label><input id="contrasena" type="password" autocomplete="current-password" onkeydown="loginEnter(event)"></div>
+    <button id="btnLogin" class="primary" onclick="iniciarLogin()">INGRESAR</button><div id="loginError" class="error"></div>
+  </div></section>
+
+  <div id="app" class="hidden">
+    <header><div class="header-inner"><div><div class="title">📋 Revisión de Guías PDV · V16</div><div class="subtitle">Resumen de casos y registro de observaciones</div></div><div class="actions"><span id="userBadge" class="badge"></span><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div></div></header>
+    <main>
+      <div class="view-tabs"><button id="tabGestion" class="view-tab active" onclick="mostrarVista('gestion')">📋 Gestión de guías</button><button id="tabExcel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><a data-modulo-v2="true" href="./pdv-v2.html" class="view-tab">Gestión de guías V2</a></div>
+      <div id="viewGestion" class="app-view">
+      <div class="cards"><div class="card"><b id="total">0</b><span>Total</span></div><div class="card"><b id="pendientes">0</b><span>Pendientes</span></div><div class="card"><b id="proceso">0</b><span>En proceso</span></div><div class="card"><b id="finalizados">0</b><span>Finalizados</span></div></div>
+
+      <section class="panel"><div class="panel-title">Resumen de Brecha y Cola Larga <span class="readonly-note">SOLO LECTURA</span></div><div class="resumen-imagen-toolbar"><button type="button" class="secondary" id="btnImagenResumen" onclick="descargarImagenResumen()">Descargar imagen del resumen</button><small>PNG · Filtros y grupos desplegados actuales</small><span id="estadoImagenResumen" role="status"></span><a id="enlaceImagenResumen" hidden="">Descargar PNG</a></div><div class="table-wrap"><table class="summary-table">
+        <colgroup><col class="col-pdv"><col class="col-despachos"><col class="col-case" span="11"><col class="col-total"><col class="col-critical"><col class="col-unique"></colgroup>
+        <thead><tr><th rowspan="3">PDV</th><th rowspan="3" class="summary-despachos">DESPACHOS<br>AYER</th><th colspan="5">COLA LARGA</th><th colspan="6">BRECHA DE TRAZABILIDAD</th><th rowspan="3">TOTAL</th><th rowspan="3" class="summary-critical" title="720H + mayor144 En PDV + No llegados desde 168h">TOTAL CRÍTICO</th><th rowspan="3">GUÍAS ÚNICAS</th></tr><tr><th rowspan="2">120 O 168H</th><th colspan="2">360H</th><th colspan="2">720H</th><th colspan="2">超48 &lt; 120小时</th><th colspan="2">超120 &lt; 144小时</th><th colspan="2">超144小时</th></tr><tr><th>No Devuelto</th><th>Por Devolver</th><th>No Devuelto</th><th>Por Devolver</th><th>En el PDV</th><th>No llegados al PDV</th><th>En el PDV</th><th>No llegados al PDV</th><th>En el PDV</th><th>No llegados al PDV</th></tr></thead>
+        <tbody id="resumenBody"></tbody>
+      </table></div></section>
+
+      <section id="detalleGuiasPanel" class="panel"><div class="panel-title">Guías asignadas <span id="filtroResumenChip" class="summary-filter-chip hidden"></span></div><div class="panel-body"><div class="filters"><div class="multi-filter" id="fActualizacion"><button type="button" id="fActualizacionButton" class="multi-trigger" aria-label="Estado de actualización" onclick="toggleMulti('fActualizacion',event)"><span id="fActualizacionLabel">Todos: actualizado / pendiente</span><span>▾</span></button><div id="fActualizacionMenu" class="multi-menu" data-placeholder="Todos: actualizado / pendiente" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fEscaneoExportacion"><button type="button" id="fEscaneoExportacionButton" class="multi-trigger" aria-label="Tipo de escaneo más reciente de Exportación" onclick="toggleMulti('fEscaneoExportacion',event)"><span id="fEscaneoExportacionLabel">Todos los escaneos (Exportación)</span><span>▾</span></button><div id="fEscaneoExportacionMenu" class="multi-menu" data-placeholder="Todos los escaneos (Exportación)" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fEscaneo"><button type="button" id="fEscaneoButton" class="multi-trigger" onclick="toggleMulti('fEscaneo',event)"><span id="fEscaneoLabel">Todos los escaneos recientes</span><span>▾</span></button><div id="fEscaneoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fRegion"><button type="button" id="fRegionButton" class="multi-trigger" onclick="toggleMulti('fRegion',event)" aria-label="Filtrar por región"><span id="fRegionLabel">Todas las regiones</span><span>▾</span></button><div id="fRegionMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div><input id="buscar" placeholder="Buscar número de guía..." oninput="filtrar()"><div class="multi-filter" id="fEstado"><button type="button" id="fEstadoButton" class="multi-trigger" onclick="toggleMulti('fEstado',event)"><span id="fEstadoLabel">Todos los estados</span><span>▾</span></button><div id="fEstadoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fComentario"><button type="button" id="fComentarioButton" class="multi-trigger" onclick="toggleMulti('fComentario',event)"><span id="fComentarioLabel">Observación PDV</span><span>▾</span></button><div id="fComentarioMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fTipo"><button type="button" id="fTipoButton" class="multi-trigger" onclick="toggleMulti('fTipo',event)"><span id="fTipoLabel">Todos los tipos</span><span>▾</span></button><div id="fTipoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div><div class="date-filter-row"><fieldset style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1px solid #cbd5e1;border-radius:6px;padding:8px"><legend>Fecha de actualización · Exportación de guías</legend><label>Desde <input type="date" id="fFechaExportacionDesde" onchange="cambiarFechaExportacion('fFechaExportacion')"></label><label>Hasta <input type="date" id="fFechaExportacionHasta" onchange="cambiarFechaExportacion('fFechaExportacion')"></label><button type="button" class="secondary" onclick="limpiarFechaExportacion('fFechaExportacion')">Limpiar fechas</button><small>Días completos · Tiempo del escaneo más reciente</small><span id="fFechaExportacionError" role="status" style="color:#b91c1c"></span></fieldset><fieldset style="border:1px solid #cbd5e1;border-radius:6px;padding:8px"><legend>Tiempo de entrada · Exportación de guías</legend><label>Desde <input type="datetime-local" step="1" id="fEntradaDesde" onchange="cambiarEntradaExportacion('fEntrada')"></label> <label>Hasta <input type="datetime-local" step="1" id="fEntradaHasta" onchange="cambiarEntradaExportacion('fEntrada')"></label><div id="fEntradaRapidos"><label style="margin-right:12px" title="Ingresos de hace 25 días o antes"><input type="checkbox" value="25" onchange="cambiarEntradaExportacion('fEntrada')"> ≥ 25 días</label><label style="margin-right:12px" title="Ingresos de hace 15 días o antes"><input type="checkbox" value="15" onchange="cambiarEntradaExportacion('fEntrada')"> ≥ 15 días</label><label style="margin-right:12px" title="Ingresos de hace 7 días o antes"><input type="checkbox" value="7" onchange="cambiarEntradaExportacion('fEntrada')"> ≥ 7 días</label></div><small>Corte respecto de ahora · Varias opciones unen resultados · El rango manual se aplica además</small> <button type="button" class="secondary" onclick="limpiarEntradaExportacion('fEntrada')">Limpiar entrada</button><span id="fEntradaError" role="status" style="color:#b91c1c"></span></fieldset></div></div><details class="lista-guias-panel"><summary>Filtrar varias guías</summary><label for="listaGuias_gestion">Pega la columna de Excel, una guía por línea</label><textarea id="listaGuias_gestion" rows="5" placeholder="JPE000016332754
+JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuias('gestion')">Aplicar lista</button> <button type="button" class="secondary" onclick="limpiarListaGuias('gestion')">Limpiar lista</button></div><small>También acepta espacios, comas y punto y coma. Coincidencia exacta; conserva los demás filtros.</small><p role="status" aria-live="polite" id="listaGuiasEstado_gestion">Sin filtro por lista de guías.</p><div id="listaGuiasFaltantes_gestion"></div></details><div class="filter-actions"><button class="secondary" onclick="limpiarFiltros()">Limpiar filtros</button></div></div>
+        <div class="bulk-toolbar"><div class="bulk-info"><b id="bulkCount">0 guías seleccionadas</b><br><span>Puede registrar una misma observación en varias guías.</span></div><div class="bulk-actions"><button class="secondary" onclick="seleccionarVisibles()">Seleccionar visibles</button><button class="secondary" onclick="copiarGuiasSeleccionadas('gestion')">Copiar guías seleccionadas</button><button class="secondary" onclick="limpiarSeleccion()">Limpiar selección</button><button id="btnPrintDetalleGestion" class="secondary" disabled="" onclick="verDetalleSeleccionadoGestion()">Imprimir detalle seleccionado</button><button id="btnPrintGestion" class="secondary" disabled="" onclick="verGuiasSeleccionadasGestion()">Imprimir guías seleccionadas</button><button id="btnBulkManage" class="small" disabled="" onclick="abrirGestionMasiva()">Comentar seleccionadas</button></div></div>
+        <div class="table-wrap"><table class="pdv-detail-table"><colgroup><col class="pdv-col-select"><col class="pdv-col-guide"><col class="pdv-col-pdv"><col class="pdv-col-destination"><col class="pdv-col-state"><col class="pdv-col-type"><col class="pdv-col-update"><col class="pdv-col-manager"><col class="pdv-col-observation"><col class="pdv-col-action"></colgroup><thead><tr><th class="check-cell"><input id="checkAllVisible" class="check-all" type="checkbox" title="Seleccionar todas las guías visibles" onclick="toggleSeleccionVisibles(this.checked)"></th><th>GUÍA</th><th>PDV</th><th>DESTINO<br><small>Departamento · Provincia · Distrito</small></th><th>ESTADO</th><th>TIPO</th><th>ÚLTIMA ACTUALIZACIÓN Y ESCANEO MÁS RECIENTE</th><th>COMENTARIO DEL ENCARGADO</th><th>OBSERVACIÓN PDV</th><th>ACCIÓN</th></tr></thead><tbody id="guiasBody"></tbody></table></div>
+      </section>
+      </div>
+
+      <div id="viewExcel" class="app-view hidden">
+        <section class="panel">
+          <div class="panel-title">Consulta de actualización mediante archivo Excel</div>
+          <div class="panel-body">
+            <div id="consultaEstado" class="source-note" role="status"></div><button class="secondary" onclick="cargarConsultaCompartida()">Volver a información compartida</button><div class="excel-upload"><input id="excelFile" class="excel-file-input" type="file" accept=".xlsx,.xls" onchange="cargarArchivoExcel(event)"><label class="excel-file-label" for="excelFile">Cargar Track break más informes</label><div><div id="excelFileName" class="excel-file-name">Ningún archivo seleccionado</div><div class="excel-file-help">Puede actualizar este archivo de forma independiente. El plazo se calcula desde el último escaneo + 48 horas.</div></div></div>
+            <div id="excelRegionImport" class="hidden" style="padding:16px;border:1px solid #cbd5e1;border-radius:8px;margin:12px 0"><b>Regiones a importar</b><p>Se importarán únicamente las regiones seleccionadas, según el último punto de operación y PDV_LISTA.</p><div id="excelRegionOptions"></div><button class="secondary" type="button" onclick="seleccionarTodasRegionesExcel(true)">Seleccionar todas</button> <button class="secondary" type="button" onclick="seleccionarTodasRegionesExcel(false)">Quitar selección</button> <button type="button" onclick="importarRegionesExcel()">Importar regiones seleccionadas</button></div>
+<div id="excelEnvioUpload" class="excel-upload"><input id="excelEnvioFile" class="excel-file-input" type="file" accept=".xlsx,.xls" onchange="cargarArchivoGuiasEnvio(event)"><label class="excel-file-label" for="excelEnvioFile">Cargar Exportación de guías</label><div><div id="excelEnvioFileName" class="excel-file-name">Ningún archivo seleccionado</div><div class="excel-file-help">Actualiza empleado, destino y último escaneo sobre la consulta disponible. Puede cargarlo sin volver a subir Track Break.</div></div></div>
+            <div id="excelMessage" class="excel-message hidden"></div>
+            <div id="excelResults" class="hidden">
+              <div class="excel-cards"><div class="excel-card"><b id="excelTotal">0</b><span>Guías cargadas</span></div><div class="excel-card danger-card"><b id="excelVencidas">0</b><span>Plazo vencido</span></div><div class="excel-card warning-card"><b id="excelProximas">0</b><span>Vencen en 12 horas</span></div><div class="excel-card success-card"><b id="excelVigentes">0</b><span>Plazo vigente</span></div></div>
+              <div class="excel-pdv-summary-toolbar"><button type="button" class="secondary" id="excelPdvSummaryToggle" aria-expanded="true" aria-controls="excelPdvSummary" onclick="toggleResumenPdvExcel()">Ocultar resumen por PDV</button><span id="excelPdvFilterLabel"></span><button type="button" id="excelPdvFilterClear" class="secondary hidden" onclick="quitarFiltroResumenExcel()">Quitar filtro del resumen</button></div>
+<div id="excelPdvSummary" class="table-wrap excel-pdv-summary"><table><caption>Resumen por PDV · vencimientos según filtros aplicados. Total de guías incluye también plazos mayores a 36 h y sin fecha.</caption><thead><tr><th>PDV</th><th>Total de guías</th><th>Vencidos</th><th>Próximos a vencer · 12 h<br><small>0 a 12 h</small></th><th>Próximos a vencer · 24 h<br><small>Más de 12 a 24 h</small></th><th>Próximos a vencer · 36 h<br><small>Más de 24 a 36 h</small></th></tr></thead><tbody id="excelPdvSummaryBody"></tbody></table></div><div class="bulk-actions" style="margin:12px 0"><button class="secondary" onclick="seleccionarExcelFiltradas()">Seleccionar filtradas</button><button class="secondary" onclick="copiarGuiasSeleccionadas('excel')">Copiar guías seleccionadas</button><button class="secondary" onclick="limpiarSeleccionExcel()">Limpiar selección</button><button class="secondary" onclick="verGuiasSeleccionadasExcel()">Ver guías seleccionadas</button><span id="excelSelectedCount">0 seleccionadas</span></div><div class="bulk-actions" style="margin: 12px 0px; align-items: center; flex-wrap: wrap;"><button type="button" class="success" id="exportarPdfPdv" onclick="exportarPdfPdvFiltrados()">Descargar PDF por PDV (ZIP)</button><small>Solo guías filtradas · Todas las páginas</small><button type="button" class="secondary" id="cancelarPdfPdv" hidden="" onclick="cancelarExportacionPdfPdv()">Cancelar</button><span id="estadoPdfPdv" role="status" aria-live="polite"></span><a id="descargarPdfPdv" hidden="">Descargar ZIP generado</a></div><div class="excel-controls"><div class="multi-filter" id="excelUltimoEstado"><button type="button" id="excelUltimoEstadoButton" class="multi-trigger" aria-label="Último estado de Exportación de guía de embarque" onclick="toggleMulti('excelUltimoEstado',event)"><span id="excelUltimoEstadoLabel">Todos los últimos estados (Exportación)</span><span>▾</span></button><div id="excelUltimoEstadoMenu" class="multi-menu" data-placeholder="Todos los últimos estados (Exportación)" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="excelSiguienteParada"><button type="button" id="excelSiguienteParadaButton" class="multi-trigger" aria-label="Nombre de la siguiente parada" onclick="toggleMulti('excelSiguienteParada',event)"><span id="excelSiguienteParadaLabel">Todas las siguientes paradas</span><span>▾</span></button><div id="excelSiguienteParadaMenu" class="multi-menu" data-placeholder="Todas las siguientes paradas" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="excelActualizacion"><button type="button" id="excelActualizacionButton" class="multi-trigger" aria-label="Estado de actualización" onclick="toggleMulti('excelActualizacion',event)"><span id="excelActualizacionLabel">Todos: actualizado / pendiente</span><span>▾</span></button><div id="excelActualizacionMenu" class="multi-menu" data-placeholder="Todos: actualizado / pendiente" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="excelOperacion"><button type="button" id="excelOperacionButton" class="multi-trigger" aria-label="Todos los tipos de operación más reciente" onclick="toggleMulti('excelOperacion',event)"><span id="excelOperacionLabel">Todos los tipos de operación más reciente</span><span>▾</span></button><div id="excelOperacionMenu" class="multi-menu" data-placeholder="Todos los tipos de operación más reciente" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="excelUltimoPunto"><button type="button" id="excelUltimoPuntoButton" class="multi-trigger" aria-label="Todos los últimos puntos de operación" onclick="toggleMulti('excelUltimoPunto',event)"><span id="excelUltimoPuntoLabel">Todos los últimos puntos de operación</span><span>▾</span></button><div id="excelUltimoPuntoMenu" class="multi-menu" data-placeholder="Todos los últimos puntos de operación" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="excelArea"><button type="button" id="excelAreaButton" class="multi-trigger" aria-label="Todas las áreas" onclick="toggleMulti('excelArea',event)"><span id="excelAreaLabel">Todas las áreas</span><span>▾</span></button><div id="excelAreaMenu" class="multi-menu" data-placeholder="Todas las áreas" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="excelEncargado"><button type="button" id="excelEncargadoButton" class="multi-trigger" aria-label="Todos los encargados" onclick="toggleMulti('excelEncargado',event)"><span id="excelEncargadoLabel">Todos los encargados</span><span>▾</span></button><div id="excelEncargadoMenu" class="multi-menu" data-placeholder="Todos los encargados" onclick="event.stopPropagation()"></div></div><input id="excelSearch" placeholder="Buscar guía, PDV, punto, empleado o destino..." oninput="filtrarExcel()"><div class="multi-filter" id="excelDeadlineFilter"><button type="button" id="excelDeadlineFilterButton" class="multi-trigger" aria-label="Todos los plazos" onclick="toggleMulti('excelDeadlineFilter',event)"><span id="excelDeadlineFilterLabel">Todos los plazos</span><span>▾</span></button><div id="excelDeadlineFilterMenu" class="multi-menu" data-placeholder="Todos los plazos" onclick="event.stopPropagation()"></div></div><button class="secondary" onclick="limpiarArchivoExcel()">Quitar archivos</button><div class="date-filter-row"><fieldset style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1px solid #cbd5e1;border-radius:6px;padding:8px"><legend>Fecha de actualización · Exportación de guías</legend><label>Desde <input type="date" id="excelFechaExportacionDesde" onchange="cambiarFechaExportacion('excelFechaExportacion')"></label><label>Hasta <input type="date" id="excelFechaExportacionHasta" onchange="cambiarFechaExportacion('excelFechaExportacion')"></label><button type="button" class="secondary" onclick="limpiarFechaExportacion('excelFechaExportacion')">Limpiar fechas</button><small>Días completos · Tiempo del escaneo más reciente</small><span id="excelFechaExportacionError" role="status" style="color:#b91c1c"></span></fieldset><fieldset style="border:1px solid #cbd5e1;border-radius:6px;padding:8px"><legend>Tiempo de entrada · Exportación de guías</legend><label>Desde <input type="datetime-local" step="1" id="excelEntradaDesde" onchange="cambiarEntradaExportacion('excelEntrada')"></label> <label>Hasta <input type="datetime-local" step="1" id="excelEntradaHasta" onchange="cambiarEntradaExportacion('excelEntrada')"></label><div id="excelEntradaRapidos"><label style="margin-right:12px" title="Ingresos de hace 25 días o antes"><input type="checkbox" value="25" onchange="cambiarEntradaExportacion('excelEntrada')"> ≥ 25 días</label><label style="margin-right:12px" title="Ingresos de hace 15 días o antes"><input type="checkbox" value="15" onchange="cambiarEntradaExportacion('excelEntrada')"> ≥ 15 días</label><label style="margin-right:12px" title="Ingresos de hace 7 días o antes"><input type="checkbox" value="7" onchange="cambiarEntradaExportacion('excelEntrada')"> ≥ 7 días</label></div><small>Corte respecto de ahora · Varias opciones unen resultados · El rango manual se aplica además</small> <button type="button" class="secondary" onclick="limpiarEntradaExportacion('excelEntrada')">Limpiar entrada</button><span id="excelEntradaError" role="status" style="color:#b91c1c"></span></fieldset></div><div class="deadline-cutoff"><label><input type="checkbox" id="excelCorteManana" onchange="filtrarExcel()">Actualizar antes de mañana a las 10:00</label><small>Incluye vencidos y próximos a vencer · <span id="excelCorteMananaFecha"></span></small></div></div><details class="lista-guias-panel"><summary>Filtrar varias guías</summary><label for="listaGuias_excel">Pega la columna de Excel, una guía por línea</label><textarea id="listaGuias_excel" rows="5" placeholder="JPE000016332754
+JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuias('excel')">Aplicar lista</button> <button type="button" class="secondary" onclick="limpiarListaGuias('excel')">Limpiar lista</button></div><small>También acepta espacios, comas y punto y coma. Coincidencia exacta; conserva los demás filtros.</small><p role="status" aria-live="polite" id="listaGuiasEstado_excel">Sin filtro por lista de guías.</p><div id="listaGuiasFaltantes_excel"></div></details>
+              <div class="table-wrap"><table class="excel-table"><colgroup><col class="excel-guide-col"><col class="excel-point-col"><col class="excel-operation-col"><col class="excel-destination-col"><col class="excel-problem-col"><col class="excel-date-col"><col class="excel-wait-col"><col class="excel-deadline-col"></colgroup><thead><tr><th>GUÍA</th><th>ÚLTIMO PUNTO DE OPERACIÓN</th><th>TIPO DE OPERACIÓN MÁS RECIENTE</th><th>DESTINO</th><th>ÚLTIMO TIPO DE PROBLEMA</th><th>FECHA Y HORA DE ÚLTIMA ACTUALIZACIÓN</th><th>ÚLTIMO TIEMPO SIN ACTUALIZACIÓN</th><th>PLAZO PARA ACTUALIZAR (+48 H)</th></tr></thead><tbody id="excelBody"></tbody></table></div>
+              <div class="excel-pagination"><button id="excelPrev" class="secondary" onclick="cambiarPaginaExcel(-1)">Anterior</button><span id="excelPageInfo" class="excel-page-info"></span><button id="excelNext" class="secondary" onclick="cambiarPaginaExcel(1)">Siguiente</button></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="loading" class="loading"><div id="loadingText">Procesando...</div></div><div id="toast" class="toast"></div>
+  <div id="qrModal" class="modal" onclick="if(event.target===this)cerrarQR()"><div class="modal-card"><h3>CÓDIGO QR</h3><div id="qr"></div><div id="qrNumero" class="guide" style="margin-top:12px"></div><p id="qrDistrito" class="qr-district-label" hidden=""></p><button class="secondary" style="margin-top:15px" onclick="cerrarQR()">Cerrar</button></div></div>
+  <div id="bulkModal" class="modal" onclick="if(event.target===this)cerrarGestionMasiva()"><div class="modal-card modal-bulk"><h3>COMENTARIO MASIVO</h3><div id="bulkModalCount" class="bulk-note"></div><textarea id="bulkObservation" maxlength="2000" placeholder="Ingrese el comentario u observación para todas las guías seleccionadas..."></textarea><div class="modal-actions"><button class="secondary" onclick="cerrarGestionMasiva()">Cancelar</button><button id="btnSaveBulk" class="small" onclick="guardarGestionMasiva()">Guardar en seleccionadas</button></div></div></div>
+
+<script>
+  const APP_URL = new URL('./index.html',location.href).href;
+  let token=sessionStorage.getItem("tokenGuiasSupabaseReplica")||"",sesion=null,guias=[],filtradas=[],resumen={filas:[],total:{}},filtroResumenActivo=null;
+  let excelRegistros=[],excelFiltrados=[],excelPagina=1,excelTrackNombre="",excelEnvioNombre="";
+  const EXCEL_PAGE_SIZE=100,EXCEL_MAX_BYTES=30*1024*1024;
+  const seleccionadas=new Set();
+  const ETIQUETAS_RESUMEN={h120o168:"Cola Larga · 120 o 168H",h360NoDevuelto:"Cola Larga · 360H · No Devuelto",h360PorDevolver:"Cola Larga · 360H · Por Devolver",h720NoDevuelto:"Cola Larga · 720H · No Devuelto",h720PorDevolver:"Cola Larga · 720H · Por Devolver",brecha48NoLlegado:"Brecha · 48 a 120H · No llegados al PDV",brecha120NoLlegado:"Brecha · 120 a 144H · No llegados al PDV",brecha48a120:"Brecha · 48 a 120H",brecha120a144:"Brecha · 120 a 144H",mayor144EnPDV:"Brecha · >144H · En el PDV",mayor144NoLlegado:"Brecha · >144H · No llegado al PDV",totalCasos:"Total de casos",totalCritico:"Total crítico",guiasUnicas:"Guías únicas"};
+  document.addEventListener("DOMContentLoaded",restaurarSesion);
+  document.addEventListener("click",cerrarMultis);
+const excelSeleccion = new Set();
+function actualizarSeleccionExcel(){const el=document.getElementById('excelSelectedCount');if(el)el.textContent=excelSeleccion.size+' seleccionadas';}
+function seleccionarGuiaExcel(input,guia){const k=claveGuiaExcel(guia);if(input.checked)excelSeleccion.add(k);else excelSeleccion.delete(k);actualizarSeleccionExcel();}
+function seleccionarExcelFiltradas(){excelFiltrados.forEach(x=>excelSeleccion.add(claveGuiaExcel(x.guia)));renderExcel();actualizarSeleccionExcel();}
+function limpiarSeleccionExcel(){excelSeleccion.clear();actualizarSeleccionExcel();if(document.getElementById('excelBody'))document.querySelectorAll('#excelBody input[type=checkbox]').forEach(x=>x.checked=false);const m=document.getElementById('excelQrModal');if(m)m.style.display='none';}
+function estadoSinEmpleadoEntrega(estado){return ['LLEGADA A PDV DESTINO','LLEGADA AL PDV DESTINO','ESCANEO DE DEVOLUCION','REGISTRO DE DEVOLUCION'].includes(normalizarExcel(estado));}
+function empleadoEntregaVisible(x,campo){return estadoSinEmpleadoEntrega(x.tipoEscaneoExportacion)?'':String(x[campo||'empleadoEntrega']||'').trim();}
+function verGuiasSeleccionadasExcel(){
+ mostrarGuiasSeleccionadasQr(excelRegistros.filter(x=>excelSeleccion.has(claveGuiaExcel(x.guia))),'empleadoEntrega','Consulta desde Excel');
+}
+function verGuiasSeleccionadasGestion(){
+ mostrarGuiasSeleccionadasQr(guias.filter(x=>seleccionadas.has(Number(x.fila))),'repartidor','Gestión de guías');
+}
+function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
+ const grupos=new Map(),vistos=new Set();
+ registros.forEach(x=>{const k=claveGuiaExcel(x.guia);if(!k||vistos.has(k))return;vistos.add(k);const empleado=empleadoEntregaVisible(x,campoEmpleado);if(!grupos.has(empleado))grupos.set(empleado,[]);grupos.get(empleado).push(x);});
+ if(!vistos.size){toast('Seleccione al menos una guía.',false);return;}
+ if(typeof QRCode==='undefined'){toast('No se pudo cargar el generador QR.',false);return;}
+ const cont=document.getElementById('excelQrGroups');cont.replaceChildren();
+ grupos.forEach((filas,empleado)=>{const titulo=document.createElement('h4');titulo.className="qr-employee-heading";titulo.textContent=empleado+' ('+filas.length+')';cont.appendChild(titulo);const grid=document.createElement('div');grid.className='qr-selected-grid';cont.appendChild(grid);filas.forEach(x=>{const card=document.createElement('div');card.className='qr-selected-card';const qr=document.createElement('div'),label=document.createElement('p');label.textContent=x.guia;label.className="qr-guide-label";const rider=document.createElement("p");rider.className="qr-rider-label";rider.textContent="Repartidor: "+empleado;const estado=document.createElement("p");estado.className="qr-status-label";estado.textContent="Último estado: "+String(x.tipoEscaneoExportacion||"").trim();const distrito=document.createElement("p");distrito.className="qr-district-label";distrito.textContent="Distrito: "+String(x.dsto||"").trim();card.append(qr,label,rider,estado,distrito);grid.appendChild(card);new QRCode(qr,{text:String(x.guia),width:220,height:220,correctLevel:QRCode.CorrectLevel.H});});});
+ document.querySelector('#excelQrModal h3').textContent=origen+' · '+vistos.size+' guías seleccionadas';
+ actualizarControlesPortada();
+ document.getElementById('excelQrModal').style.display='flex';
+}
+
+  function loginEnter(e){if(e.key==="Enter")iniciarLogin()}
+
+  function restaurarSesion(){
+    if(!token){mostrarLogin();return}mostrarLoading(true,"Validando sesión...");
+    google.script.run.withSuccessHandler(r=>{mostrarLoading(false);if(!r||!r.ok){limpiarSesion();mostrarLogin();return}if(r.rol!=="PDV"){window.top.location.href=APP_URL;return}sesion=r;abrirApp()}).withFailureHandler(()=>{mostrarLoading(false);limpiarSesion();mostrarLogin()}).obtenerSesion(token);
+  }
+
+  function iniciarLogin(){
+    const u=document.getElementById("usuario").value.trim(),c=document.getElementById("contrasena").value,b=document.getElementById("btnLogin");document.getElementById("loginError").style.display="none";
+    if(!u||!c){mostrarErrorLogin("Ingrese usuario y contraseña.");return}b.disabled=true;b.textContent="VALIDANDO...";
+    google.script.run.withSuccessHandler(r=>{b.disabled=false;b.textContent="INGRESAR";if(!r||!r.ok){mostrarErrorLogin(r&&r.mensaje?r.mensaje:"No se pudo iniciar sesión.");return}token=r.token;sessionStorage.setItem("tokenGuiasSupabaseReplica",token);if(r.rol!=="PDV"){window.top.location.href=APP_URL;return}sesion=r;abrirApp()}).withFailureHandler(e=>{b.disabled=false;b.textContent="INGRESAR";mostrarErrorLogin(errorTexto(e))}).iniciarSesion(u,c);
+  }
+
+  function abrirApp(){document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("userBadge").textContent="PDV: "+sesion.usuario;mostrarVista("gestion");cargarDatos();cargarConsultaCompartida()}
+  function mostrarLogin(){document.getElementById("login").classList.remove("hidden");document.getElementById("app").classList.add("hidden")}
+  function mostrarErrorLogin(t){const e=document.getElementById("loginError");e.textContent=t;e.style.display="block"}
+
+  function mostrarVista(vista){const esExcel=vista==="excel";document.getElementById("viewGestion").classList.toggle("hidden",esExcel);document.getElementById("viewExcel").classList.toggle("hidden",!esExcel);document.getElementById("tabGestion").classList.toggle("active",!esExcel);document.getElementById("tabExcel").classList.toggle("active",esExcel)}
+
+  async function cargarArchivoExcel(evento){
+    const archivo=evento&&evento.target&&evento.target.files?evento.target.files[0]:null;
+    if(!archivo)return;conservarExportacionConsulta();iniciarCargaLocalConsulta();reiniciarRegionesExcel();
+    excelRegistros=[];excelFiltrados=[];excelPagina=1;excelTrackNombre="";document.getElementById("excelResults").classList.add("hidden");
+    document.getElementById("excelEnvioUpload").classList.remove("hidden");document.getElementById("excelEnvioFile").value="";document.getElementById("excelEnvioFileName").textContent=excelEnvioNombre|| (exportacionConsultaMapa?"Exportación de la consulta disponible":"Ningún archivo seleccionado");
+    document.getElementById("excelFileName").textContent=archivo.name;mostrarMensajeExcel("",false,true);
+    if(!/\.(xlsx|xls)$/i.test(archivo.name)){mostrarMensajeExcel("Seleccione un archivo XLSX o XLS válido.",false);return}
+    if(archivo.size>EXCEL_MAX_BYTES){mostrarMensajeExcel("El archivo supera el límite de 30 MB.",false);return}
+    if(typeof XLSX==="undefined"){mostrarMensajeExcel("No se pudo cargar el lector de Excel. Verifique la conexión e intente nuevamente.",false);return}
+    mostrarLoading(true,"Leyendo "+archivo.name+"...");
+    try{
+      await new Promise(resolver=>setTimeout(resolver,30));
+      const filas=await leerFilasArchivoExcel(archivo);
+      procesarFilasExcel(filas,archivo.name);
+      elegirRegionesTrackExcel();
+    }catch(error){excelRegistros=[];excelFiltrados=[];document.getElementById("excelResults").classList.add("hidden");mostrarMensajeExcel("No se pudo leer el archivo: "+errorTexto(error),false)}finally{mostrarLoading(false)}
+  }
+
+  async function cargarArchivoGuiasEnvio(evento){
+ const archivo=evento?.target?.files?.[0];if(!archivo)return;
+ if(!/\.(xlsx|xls)$/i.test(archivo.name)||archivo.size>EXCEL_MAX_BYTES){mostrarMensajeExcel('Seleccione un Excel válido de hasta 30 MB.',false);return;}
+ if(typeof XLSX==='undefined'){mostrarMensajeExcel('No se pudo cargar el lector de Excel.',false);return;}
+ const version=consultaVersion,actualToken=token;
+ mostrarLoading(true,'Leyendo Exportación de guías...');
+ try{
+  const filas=await leerFilasArchivoExcel(archivo);
+  if(version!==consultaVersion||actualToken!==token)return;
+  const mapa=procesarFilasGuiasEnvio(filas);
+  exportacionConsultaMapa=mapa;excelEnvioNombre=archivo.name;
+  document.getElementById('excelEnvioFileName').textContent=archivo.name;
+  if(!excelRegistros.length){estadoConsulta('Exportación preparada en esta sesión. Cargue Track Break para mostrar y cruzar las guías.');mostrarMensajeExcel('Exportación leída correctamente. Se aplicará al cargar Track Break.',true);return;}
+  iniciarCargaLocalConsulta();
+  aplicarDatosGuiasEnvio(mapa,archivo.name);publicarConsultaPreparada();
+ }catch(error){mostrarMensajeExcel('No se pudo leer Exportación: '+errorTexto(error),false);}
+ finally{mostrarLoading(false);if(evento?.target)evento.target.value='';}
+ }
+
+async function leerFilasArchivoExcel(archivo,usarFormatoVisible,tipo){
+ const libro=XLSX.read(await archivo.arrayBuffer(),{type:"array",cellDates:false,dense:true});
+ const candidatas=[];
+ for(const nombre of libro.SheetNames){const hoja=libro.Sheets[nombre];corregirRangoHojaExcel(hoja);const filas=XLSX.utils.sheet_to_json(hoja,{header:1,defval:"",raw:!usarFormatoVisible,blankrows:false});
+ if(filas.length<2)continue;
+ const headers=filas[0].map(normalizarExcel);
+ const requeridas=tipo==="PDV LISTA"?["NOMBRE SIMPLE","NOMBRE.SIMPLE2"]:tipo==="DESPACHOS AYER"?["NOMBRE SIMPLE","DESPACHOS AYER"]:tipo==="COLA LARGA"?["NUMERO DE GUIA 运单号","TIPO DE COLA LARGA 长尾类型"]:["NUMERO DE GUIA"];
+ if(requeridas.every(h=>headers.includes(h)))candidatas.push(filas);}
+ if(candidatas.length!==1)throw new Error(candidatas.length?"Hay varias hojas de detalle compatibles; deje una sola hoja de detalle en el archivo.":"No se encontró una hoja de detalle con las columnas requeridas.");
+ return candidatas[0];
+}
+
+  function corregirRangoHojaExcel(hoja){
+    if(!hoja||typeof XLSX==="undefined")return;let minFila=Infinity,minCol=Infinity,maxFila=-1,maxCol=-1;
+    const datos=Array.isArray(hoja["!data"])?hoja["!data"]:(Array.isArray(hoja)?hoja:null);
+    if(datos){datos.forEach((fila,r)=>{if(!Array.isArray(fila))return;fila.forEach((celda,c)=>{if(celda==null)return;minFila=Math.min(minFila,r);maxFila=Math.max(maxFila,r);minCol=Math.min(minCol,c);maxCol=Math.max(maxCol,c)})})}
+    else{Object.keys(hoja).forEach(referencia=>{if(referencia.charAt(0)==="!")return;try{const celda=XLSX.utils.decode_cell(referencia);minFila=Math.min(minFila,celda.r);maxFila=Math.max(maxFila,celda.r);minCol=Math.min(minCol,celda.c);maxCol=Math.max(maxCol,celda.c)}catch(_){}})}
+    if(maxFila>=0&&maxCol>=0)hoja["!ref"]=XLSX.utils.encode_range({s:{r:minFila,c:minCol},e:{r:maxFila,c:maxCol}})
+  }
+
+  function procesarFilasExcel(filas,nombreArchivo){limpiarSeleccionExcel();
+    if(!Array.isArray(filas)||filas.length<2)throw new Error("El archivo no contiene registros para consultar.");
+    const encabezados=filas[0],indices={
+      guia:buscarColumnaExcel(encabezados,["Número de Guía","Numero de Guia","Guía","Guia"]),
+      punto:buscarColumnaExcel(encabezados,["Último punto de operación","Ultimo punto de operacion"]),
+      operacion:buscarColumnaExcel(encabezados,["Tipo de operación más reciente","Tipo de operacion mas reciente"]),
+      escaner:buscarColumnaExcel(encabezados,["Escaner","Escáner","Scanner"]),
+      problema:buscarColumnaExcel(encabezados,["Último tipo de problema","Ultimo tipo de problema"]),
+      fecha:buscarColumnaExcel(encabezados,["Último tiempo de funcionamiento","Ultimo tiempo de funcionamiento","Fecha y hora de última actualización","Fecha y hora de ultima actualizacion","Último tiempo de actualización","Ultimo tiempo de actualizacion"]),
+      tipoEspera:buscarColumnaExcel(encabezados,["Tipo de tiempo de espera"]),
+      duracion:buscarColumnaExcel(encabezados,["Duración del tiempo de espera","Duracion del tiempo de espera"]),
+      pdv:buscarColumnaExcel(encabezados,["Último punto de operación","Ultimo punto de operacion"]),siguienteParada:buscarColumnaExcel(encabezados,["Nombre de la siguiente parada"])
+    },faltantes=[];
+    if(indices.guia<0)faltantes.push("Número de Guía");if(indices.punto<0)faltantes.push("Último punto de operación");if(indices.fecha<0)faltantes.push("Último tiempo de funcionamiento");if(indices.problema<0)faltantes.push("Último tipo de problema");
+    if(faltantes.length)throw new Error("Faltan columnas requeridas: "+faltantes.join(", ")+".");
+    const pdvSesion=limpiarPdvExcel(sesion.usuario);if(indices.pdv<0)throw new Error("El archivo debe incluir la columna Último punto de operación para limitar la consulta al PDV conectado.");
+    let omitidasPDV=0;excelRegistros=[];
+    filas.slice(1).forEach((fila,posicion)=>{
+      const guia=textoExcel(valorExcel(fila,indices.guia));if(!guia)return;
+      const pdv=textoExcel(valorExcel(fila,indices.pdv));if(limpiarPdvExcel(pdv)!==pdvSesion){omitidasPDV++;return}
+      const fecha=parsearFechaExcel(valorExcel(fila,indices.fecha));
+      excelRegistros.push({fila:posicion+2,guia:guia,pdv:pdv,siguienteParada:textoExcel(valorExcel(fila,indices.siguienteParada)),ultimoPunto:textoExcel(valorExcel(fila,indices.punto)),tipoOperacion:textoExcel(valorExcel(fila,indices.operacion)),escaner:textoExcel(valorExcel(fila,indices.escaner)),ultimoProblema:textoExcel(valorExcel(fila,indices.problema)),fechaUltimaActualizacion:fecha,tipoEspera:textoExcel(valorExcel(fila,indices.tipoEspera)),duracionEspera:valorExcel(fila,indices.duracion),plazo:fecha?new Date(fecha.getTime()+48*60*60*1000):null});
+    });
+    if(!excelRegistros.length)throw new Error("El archivo no contiene guías disponibles para esta consulta.");
+    excelRegistros.sort((a,b)=>a.plazo&&b.plazo?a.plazo-b.plazo:a.plazo?-1:b.plazo?1:a.fila-b.fila);excelTrackNombre=nombreArchivo;document.getElementById("excelEnvioUpload").classList.remove("hidden");
+    const detalle=" Se muestran únicamente las "+num(excelRegistros.length)+" filas asignadas a "+sesion.usuario+(omitidasPDV?"; se omitieron "+num(omitidasPDV)+" de otros PDV.":".");
+    mostrarMensajeExcel("Track Break leído: "+nombreArchivo+" · "+num(excelRegistros.length)+" guías."+detalle+" Puede actualizar Exportación de forma independiente.",true);
+  }
+
+  function procesarFilasGuiasEnvio(filas){
+ if(!Array.isArray(filas)||filas.length<2)throw new Error('El archivo no contiene registros para cruzar.');
+ const nombres={guia:['Número de Guía','Numero de Guia','Guía','Guia'],empleadoEntrega:['Empleado de entrega'],dpto:['Provincia de destino'],prov:['Ciudad de Destino'],dsto:['Colonia de destino'],tiempoEntradaExportacion:['Tiempo de entrada'],fechaEscaneoExportacion:['Tiempo del escaneo más reciente'],tipoEscaneoExportacion:['Tipo de escaneo más reciente']},indices={};
+ Object.keys(nombres).forEach(k=>indices[k]=buscarColumnaExcel(filas[0],nombres[k]));
+ const opcionales=['tiempoEntradaExportacion','fechaEscaneoExportacion','tipoEscaneoExportacion'];
+ const faltantes=Object.keys(indices).filter(k=>indices[k]<0&&!opcionales.includes(k));if(faltantes.length)throw new Error('Faltan columnas requeridas: '+faltantes.map(k=>nombres[k][0]).join(', '));
+ const mapa=new Map();filas.slice(1).forEach(fila=>{
+ const clave=claveGuiaExcel(valorExcel(fila,indices.guia));if(!clave)return;
+ const r={};Object.keys(indices).forEach(k=>r[k]=textoExcel(valorExcel(fila,indices[k])));
+ const entrada=parsearFechaExcel(valorExcel(fila,indices.tiempoEntradaExportacion));r.tiempoEntradaExportacion=entrada?entrada.toISOString():'';const fecha=parsearFechaExcel(valorExcel(fila,indices.fechaEscaneoExportacion));r.fechaEscaneoExportacion=fecha?fecha.toISOString():'';
+ const anterior=mapa.get(clave);if(!anterior||(fecha?fecha.getTime():0)>=(fechaEscaneoValida(anterior.fechaEscaneoExportacion)?.getTime()||0))mapa.set(clave,r);
+ });if(!mapa.size)throw new Error('No se encontraron números de guía válidos.');return mapa;
+}
+
+
+  function aplicarDatosGuiasEnvio(mapa,nombreArchivo){
+    let coincidencias=0;excelRegistros.forEach(registro=>{const adicional=mapa.get(claveGuiaExcel(registro.guia));registro.tiempoEntradaExportacion=adicional?adicional.tiempoEntradaExportacion:'';registro.fechaEscaneoExportacion=adicional?adicional.fechaEscaneoExportacion:'';registro.tipoEscaneoExportacion=adicional?adicional.tipoEscaneoExportacion:'';registro.empleadoEntrega=adicional?adicional.empleadoEntrega:"";registro.dpto=adicional?adicional.dpto:"";registro.prov=adicional?adicional.prov:"";registro.dsto=adicional?adicional.dsto:"";if(adicional)coincidencias++});
+    excelEnvioNombre=nombreArchivo;document.getElementById("excelResults").classList.remove("hidden");document.getElementById("excelSearch").value="";limpiarFiltroExcelMultiple("excelDeadlineFilter");excelPagina=1;filtrarExcel();mostrarMensajeExcel("Cruce completado: "+num(coincidencias)+" guías encontradas en Guías de envío y "+num(excelRegistros.length-coincidencias)+" sin coincidencia.",true);
+  }
+
+  function buscarColumnaExcel(encabezados,alternativas){const mapa=encabezados.map(normalizarExcel);for(const alternativa of alternativas){const indice=mapa.indexOf(normalizarExcel(alternativa));if(indice>=0)return indice}return-1}
+  function normalizarExcel(valor){return String(valor==null?"":valor).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim().toUpperCase()}
+  function claveGuiaExcel(valor){return normalizarExcel(valor).replace(/\s+/g,"")}
+  function limpiarPdvExcel(valor){return normalizarExcel(String(valor==null?"":valor).split("|")[0]).replace(/\.PDV$/i,"").replace(/\s+/g,"")}
+  function valorExcel(fila,indice){return indice>=0&&Array.isArray(fila)?fila[indice]:""}
+  function textoExcel(valor){if(valor==null)return"";if(typeof valor==="number")return String(valor);return String(valor).trim()}
+  function parsearFechaExcel(valor){
+    if(typeof valor==="string"&&/^\d{4,6}(?:[.,]\d+)?$/.test(valor.trim()))valor=Number(valor.trim().replace(",","."));
+    if(valor instanceof Date&&!isNaN(valor.getTime()))return new Date(valor.getFullYear(),valor.getMonth(),valor.getDate(),valor.getHours(),valor.getMinutes(),valor.getSeconds());
+    if(typeof valor==="number"&&isFinite(valor)){const utc=new Date(Date.UTC(1899,11,30)+Math.round(valor*86400)*1000);return new Date(utc.getUTCFullYear(),utc.getUTCMonth(),utc.getUTCDate(),utc.getUTCHours(),utc.getUTCMinutes(),utc.getUTCSeconds())}
+    const texto=String(valor||"").trim();if(!texto)return null;let m=texto.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);if(m)return fechaExcelValida(Number(m[3]),Number(m[2]),Number(m[1]),Number(m[4]||0),Number(m[5]||0),Number(m[6]||0));m=texto.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);if(m)return fechaExcelValida(Number(m[1]),Number(m[2]),Number(m[3]),Number(m[4]||0),Number(m[5]||0),Number(m[6]||0));const tentativa=new Date(texto);return isNaN(tentativa.getTime())?null:tentativa
+  }
+  function fechaExcelValida(anio,mes,dia,hora,minuto,segundo){const fecha=new Date(anio,mes-1,dia,hora,minuto,segundo);return fecha.getFullYear()===anio&&fecha.getMonth()===mes-1&&fecha.getDate()===dia?fecha:null}
+  function formatearFechaExcel(fecha){if(!fecha)return"Sin fecha";const p=n=>String(n).padStart(2,"0");return p(fecha.getDate())+"/"+p(fecha.getMonth()+1)+"/"+fecha.getFullYear()+" "+p(fecha.getHours())+":"+p(fecha.getMinutes())+":"+p(fecha.getSeconds())}
+  function formatearEsperaExcel(registro){const tipo=registro.tipoEspera||"",valor=registro.duracionEspera;let duracion="";if(valor!==""&&valor!=null){const numero=Number(valor);duracion=isFinite(numero)?numero.toLocaleString("es-PE",{maximumFractionDigits:2})+" h":textoExcel(valor)}return[tipo,duracion].filter(Boolean).join(" · ")||"Sin información"}
+  function estadoPlazoExcel(registro){if(!registro.plazo)return"SIN FECHA";const restante=registro.plazo.getTime()-Date.now();if(restante<0)return"VENCIDO";if(restante<=12*60*60*1000)return"POR VENCER";return"VIGENTE"}
+  function clasePlazoExcel(estadoPlazo){return estadoPlazo==="VENCIDO"?"vencido":estadoPlazo==="POR VENCER"?"proximo":estadoPlazo==="VIGENTE"?"vigente":"sinfecha"}
+  function tiempoRestanteExcel(plazo){if(!plazo)return"No se pudo calcular el plazo";const diferencia=plazo.getTime()-Date.now(),vencido=diferencia<0,totalMinutos=Math.floor(Math.abs(diferencia)/60000),dias=Math.floor(totalMinutos/1440),horas=Math.floor(totalMinutos%1440/60),minutos=totalMinutos%60,partes=[];if(dias)partes.push(dias+" d");if(horas||dias)partes.push(horas+" h");partes.push(minutos+" min");return vencido?"Vencido hace "+partes.join(" "):"Faltan "+partes.join(" ")}
+  function filtrarExcel(){
+ const consulta=document.getElementById('excelSearch').value.trim().toLowerCase();
+ const filtros=[['excelUltimoEstado','tipoEscaneoExportacion'],['excelSiguienteParada','siguienteParada'],['excelOperacion','tipoOperacion'],['excelUltimoPunto','ultimoPunto'],['excelArea','area'],['excelEncargado','encargado']].map(([id,campo])=>({campo,valores:valoresMulti(id)})),plazos=valoresMulti('excelDeadlineFilter');
+ excelFiltrados=excelRegistros.filter(x=>{
+  const texto=[x.guia,x.pdv,x.ultimoPunto,x.siguienteParada,x.tipoOperacion,x.escaner,empleadoEntregaVisible(x),x.dpto,x.prov,x.dsto,x.ultimoProblema,x.tipoEspera].join(' ').toLowerCase();
+  return coincideListaGuias(x,'excel')&&coincideCorteManana(x)&&coincideEntradaExportacion(x,'excelEntrada')&&coincideFechaExportacion(x,'excelFechaExportacion')&&(!valoresMulti('excelActualizacion').length||valoresMulti('excelActualizacion').includes(estadoActualizacionGuia(x)))&&filtros.every(f=>!f.valores.length||f.valores.includes(String(x[f.campo]??'')))&&(!consulta||texto.includes(consulta))&&coincidePlazoExcel(x,plazos);
+ });excelBaseResumen=excelFiltrados;excelFiltrados=excelBaseResumen.filter(coincideCeldaResumenExcel);actualizarFiltroResumenExcel();excelPagina=1;renderExcel();actualizarResumenExcel();
+}
+
+  function formatearDestinoExcel(x){return `<div class="excel-destination"><div><b>DPTO:</b> ${esc(x.dpto||"")}</div><div><b>PROV:</b> ${esc(x.prov||"")}</div><div><b>DSTO:</b> ${esc(x.dsto||"")}</div></div>`}
+  function actualizarResumenExcel(){renderResumenPdvExcel();const estados=excelFiltrados.map(estadoPlazoExcel);document.getElementById("excelTotal").textContent=num(excelFiltrados.length);document.getElementById("excelVencidas").textContent=num(estados.filter(x=>x==="VENCIDO").length);document.getElementById("excelProximas").textContent=num(estados.filter(x=>x==="POR VENCER").length);document.getElementById("excelVigentes").textContent=num(estados.filter(x=>x==="VIGENTE").length)}
+  function renderExcel(){actualizarEstadoListaGuias('excel');
+    const body=document.getElementById("excelBody"),totalPaginas=Math.max(1,Math.ceil(excelFiltrados.length/EXCEL_PAGE_SIZE));if(excelPagina>totalPaginas)excelPagina=totalPaginas;const inicio=(excelPagina-1)*EXCEL_PAGE_SIZE,visibles=excelFiltrados.slice(inicio,inicio+EXCEL_PAGE_SIZE);body.innerHTML="";
+    if(!visibles.length)body.innerHTML='<tr><td colspan="8" style="padding:34px;text-align:center;color:#64748b">No hay guías que coincidan con la búsqueda o el filtro.</td></tr>';
+    visibles.forEach(x=>{const tr=document.createElement("tr"),estadoActual=estadoPlazoExcel(x);tr.innerHTML=`<td class="excel-guide-cell"><input type="checkbox" aria-label="Seleccionar guía" ${excelSeleccion.has(claveGuiaExcel(x.guia))?"checked":""} onchange="seleccionarGuiaExcel(this,'${escJs(x.guia)}')"><span class="guide">${esc(x.guia)}</span><div class="excel-guide-actions"><button type="button" class="qr" onclick="mostrarQRExcel('${escJs(x.guia)}')">QR</button><button type="button" class="copy-guide" onclick="copiarGuia('${escJs(x.guia)}')">📋 Copiar</button></div></td><td>${esc(x.ultimoPunto||"Sin información")}<div class="excel-subline"><b>Siguiente parada:</b> ${esc(x.siguienteParada||"Sin información")}</div></td><td>${esc(x.tipoOperacion||"Sin información")}<div class="excel-subline"><b>Escáner:</b> ${esc(x.escaner||"Sin información")}</div><div class="excel-subline"><b>Empleado de entrega:</b> ${esc(empleadoEntregaVisible(x))}</div></td><td>${formatearDestinoExcel(x)}</td><td>${esc(x.ultimoProblema||"Sin problema registrado")}</td><td>${esc(formatearFechaExcel(x.fechaUltimaActualizacion))}${bloqueEscaneoExportacion(x)}</td><td>${esc(formatearEsperaExcel(x))}</td><td><span class="deadline-badge ${clasePlazoExcel(estadoActual)}">${esc(estadoActual)}</span><div class="deadline-date">${esc(formatearFechaExcel(x.plazo))}</div><div class="deadline-remaining">${esc(tiempoRestanteExcel(x.plazo))}</div></td>`;body.appendChild(tr)});
+    document.getElementById("excelPageInfo").textContent="Página "+excelPagina+" de "+totalPaginas+" · "+num(excelFiltrados.length)+" guías";document.getElementById("excelPrev").disabled=excelPagina<=1;document.getElementById("excelNext").disabled=excelPagina>=totalPaginas
+  }
+  function cambiarPaginaExcel(delta){const paginas=Math.max(1,Math.ceil(excelFiltrados.length/EXCEL_PAGE_SIZE)),nueva=Math.min(paginas,Math.max(1,excelPagina+delta));if(nueva===excelPagina)return;excelPagina=nueva;renderExcel();document.querySelector(".excel-table").scrollIntoView({behavior:"smooth",block:"start"})}
+  function mostrarMensajeExcel(texto,correcto,ocultar){const mensaje=document.getElementById("excelMessage");if(ocultar||!texto){mensaje.className="excel-message hidden";mensaje.textContent="";return}mensaje.className="excel-message "+(correcto?"ok":"bad");mensaje.textContent=texto}
+  function limpiarArchivoExcel(silencioso){exportacionConsultaMapa=null;reiniciarRegionesExcel();filtroPdvPlazoExcel=null;excelBaseResumen=[];["excelUltimoEstado","excelSiguienteParada","excelActualizacion","excelOperacion","excelUltimoPunto","excelArea","excelEncargado","excelDeadlineFilter"].forEach(limpiarFiltroExcelMultiple);consultaVersion++;estadoConsulta("Archivos retirados de esta sesión. La consulta compartida sigue guardada.");limpiarSeleccionExcel();excelRegistros=[];excelFiltrados=[];excelPagina=1;excelTrackNombre="";excelEnvioNombre="";const archivo=document.getElementById("excelFile");if(archivo)archivo.value="";const envio=document.getElementById("excelEnvioFile");if(envio)envio.value="";const nombre=document.getElementById("excelFileName");if(nombre)nombre.textContent="Ningún archivo seleccionado";const nombreEnvio=document.getElementById("excelEnvioFileName");if(nombreEnvio)nombreEnvio.textContent="Ningún archivo seleccionado";const bloqueEnvio=document.getElementById("excelEnvioUpload");if(bloqueEnvio)bloqueEnvio.classList.remove("hidden");const buscar=document.getElementById("excelSearch");if(buscar)buscar.value="";const resultados=document.getElementById("excelResults");if(resultados)resultados.classList.add("hidden");if(document.getElementById("excelMessage"))mostrarMensajeExcel("",false,true);if(!silencioso)toast("Archivos retirados de la consulta.",true)}
+
+  function cargarDatos(regionesImportadas,forzar){mostrarLoading(true,"Cargando información...");google.script.run.withSuccessHandler(r=>{mostrarLoading(false);sesion=r.sesion;guias=Array.isArray(r.guias)?r.guias:[];resumen=r.resumen||{filas:[],total:{}};seleccionadas.clear();cargarFiltrosPDV();renderResumen();filtrar()}).withFailureHandler(manejarError).obtenerDatosPortal(token,forzar===true)}
+
+  function renderResumenAnterior(){const body=document.getElementById("resumenBody");body.innerHTML="";(resumen.filas||[]).forEach(x=>{const tr=document.createElement("tr"),pdv=String(x.pdv||""),pdvActivo=celdaResumenSeleccionada(pdv,'');if(filaResumenSeleccionada(pdv))tr.classList.add("summary-row-active");tr.innerHTML=`<td class="summary-clickable${pdvActivo?' summary-selected':''}" title="Filtrar todas las guías de ${esc(pdv)}" onclick="aplicarFiltroResumen('${escJs(pdv)}','')"><b>${esc(pdv)}</b></td><td>${num(x.despachosAyer||0)}</td>${celdaNumeroResumen(x.h120o168,pdv,"h120o168")}${celdaNumeroResumen(x.h360NoDevuelto,pdv,"h360NoDevuelto")}${celdaNumeroResumen(x.h360PorDevolver,pdv,"h360PorDevolver")}${celdaNumeroResumen(x.h720NoDevuelto,pdv,"h720NoDevuelto")}${celdaNumeroResumen(x.h720PorDevolver,pdv,"h720PorDevolver")}${celdaNumeroResumen(x.brecha48a120,pdv,"brecha48a120")}${celdaNumeroResumen(x.brecha48NoLlegado,pdv,"brecha48NoLlegado")}${celdaNumeroResumen(x.brecha120a144,pdv,"brecha120a144")}${celdaNumeroResumen(x.brecha120NoLlegado,pdv,"brecha120NoLlegado")}${celdaNumeroResumen(x.mayor144EnPDV,pdv,"mayor144EnPDV")}${celdaNumeroResumen(Number(x.mayor144NoLlegado||0)+Number(x.brecha144a168NoLlegado||0),pdv,"mayor144NoLlegado")}${celdaNumeroResumen(x.total,pdv,"totalCasos")}${celdaNumeroResumen(x.totalCritico,pdv,"totalCritico","summary-critical")}${celdaNumeroResumen(x.guiasUnicas,pdv,"guiasUnicas")}`;body.appendChild(tr)})}
+  function celdaNumeroResumen(valor,pdv,categoria,claseExtra){const n=Number(valor||0),extra=claseExtra?" "+claseExtra:"";if(n===0)return `<td class="number zero-value${extra}">0</td>`;const activo=celdaResumenSeleccionada(pdv,categoria);return `<td class="number summary-clickable${extra}${activo?' summary-selected':''}" title="Filtrar: ${esc(etiquetaFiltroResumen(pdv,categoria))}" onclick="aplicarFiltroResumen('${escJs(pdv)}','${escJs(categoria)}')">${num(n)}</td>`}
+  function etiquetaFiltroResumen(pdv,categoria){const tipo=ETIQUETAS_RESUMEN[categoria]||"Todos los casos";return pdv+" · "+tipo}
+  
+  
+  
+  function seleccionesResumen(){return Array.isArray(filtroResumenActivo)?filtroResumenActivo:[];}
+function celdaResumenSeleccionada(pdv,categoria){return seleccionesResumen().some(s=>s.pdv===pdv&&s.categoria===categoria);}
+function filaResumenSeleccionada(pdv){return seleccionesResumen().some(s=>s.pdv===pdv);}
+function aplicarFiltroResumen(pdv,categoria){
+ pdv=String(pdv||'');categoria=String(categoria||'');
+ const actuales=seleccionesResumen();
+ const nuevas=celdaResumenSeleccionada(pdv,categoria)?actuales.filter(s=>s.pdv!==pdv||s.categoria!==categoria):[...actuales,{pdv,categoria}];
+ filtroResumenActivo=nuevas.length?nuevas:null;
+ actualizarChipResumen();renderResumen();filtrar();
+}
+function limpiarFiltroResumen(desplazar){
+ filtroResumenActivo=null;actualizarChipResumen();renderResumen();filtrar();
+ if(desplazar)document.getElementById('detalleGuiasPanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function actualizarChipResumen(){
+ const chip=document.getElementById('filtroResumenChip'),seleccion=seleccionesResumen();
+ chip.classList.toggle('hidden',!seleccion.length);chip.replaceChildren();
+ if(!seleccion.length)return;
+ const texto=document.createElement('span');texto.textContent=seleccion.length+' celdas seleccionadas · '+seleccion.map(s=>etiquetaFiltroResumen(s.pdv,s.categoria)).join(' | ');chip.append(texto);
+ const limpiar=document.createElement('button');limpiar.type='button';limpiar.textContent='Limpiar selección del resumen';limpiar.onclick=()=>limpiarFiltroResumen(false);chip.append(limpiar);
+ const ver=document.createElement('button');ver.type='button';ver.textContent='Ver detalle';ver.onclick=()=>document.getElementById('detalleGuiasPanel').scrollIntoView({behavior:'smooth',block:'start'});chip.append(ver);
+}
+function coincideFiltroResumen(x){return !seleccionesResumen().length||seleccionesResumen().some(s=>coincideFiltroResumenIndividual(x,s));}
+
+function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;if(String(x.fr||"").trim().toUpperCase().replace(/\s+/g,"")==="TRUE-TRUE")return false;const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],pdv=seleccion.pdv,categoria=seleccion.categoria,criticas=["h720NoDevuelto","h720PorDevolver","mayor144EnPDV","mayor144NoLlegado"];return casos.some(c=>{if(String(c.pdv||"")!==pdv)return false;const tipo=String(c.categoria||"");if(!categoria||categoria==="totalCasos"||categoria==="guiasUnicas")return true;if(categoria==="totalCritico")return criticas.includes(tipo);return tipo===categoria||(categoria==="mayor144NoLlegado"&&tipo==="brecha144a168NoLlegado")})}
+
+
+  function cargarFiltrosPDV(){llenarMulti("fEscaneoExportacion",guias.map(x=>x.tipoEscaneoExportacion),"Todos los escaneos (Exportación)");llenarMulti("fEscaneo",guias.map(x=>x.tipoEscaneoReciente),"Todos los escaneos recientes");llenarMulti("fRegion",guias.map(x=>x.region),"Todas las regiones");const tipos=[];guias.forEach(x=>String(x.tipo||"").split(/\n+/).map(v=>v.trim()).filter(Boolean).forEach(v=>tipos.push(v)));llenarMulti("fEstado",["PENDIENTE","EN PROCESO","FINALIZADO"],"Todos los estados");llenarMulti("fComentario",["CON COMENTARIO","SIN COMENTARIO"],"Observación PDV");llenarMulti("fTipo",tipos,"Todos los tipos")}
+  function llenarMulti(id,valores,primero){const anteriores=new Set(valoresMulti(id)),menu=document.getElementById(id+"Menu");menu.dataset.placeholder=primero;menu.innerHTML="";const limpiar=document.createElement("button");limpiar.type="button";limpiar.className="multi-clear";limpiar.textContent="Limpiar selección";limpiar.onclick=()=>limpiarMulti(id);menu.appendChild(limpiar);const unicos=[...new Set(valores.map(v=>String(v||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));unicos.forEach(v=>{const etiqueta=document.createElement("label"),casilla=document.createElement("input"),texto=document.createElement("span");etiqueta.className="multi-option";casilla.type="checkbox";casilla.value=v;casilla.checked=anteriores.has(v);casilla.addEventListener("change",()=>{actualizarEtiquetaMulti(id);filtrar()});texto.textContent=v;etiqueta.appendChild(casilla);etiqueta.appendChild(texto);menu.appendChild(etiqueta)});actualizarEtiquetaMulti(id)}
+  function valoresMulti(id){return [...document.querySelectorAll("#"+id+"Menu input[type=checkbox]:checked")].map(x=>x.value)}
+  function actualizarEtiquetaMulti(id){const seleccion=valoresMulti(id),menu=document.getElementById(id+"Menu"),etiqueta=document.getElementById(id+"Label"),boton=document.getElementById(id+"Button"),primero=menu.dataset.placeholder||"Todos";etiqueta.textContent=!seleccion.length?primero:seleccion.length===1?seleccion[0]:seleccion.length+" seleccionados";boton.title=seleccion.length?seleccion.join(", "):primero}
+  function toggleMulti(id,event){event.stopPropagation();const menu=document.getElementById(id+"Menu"),abrir=!menu.classList.contains("open");cerrarMultis();if(abrir){menu.classList.add("open");document.getElementById(id+"Button").classList.add("active")}}
+  function cerrarMultis(){document.querySelectorAll(".multi-menu.open").forEach(x=>x.classList.remove("open"));document.querySelectorAll(".multi-trigger.active").forEach(x=>x.classList.remove("active"))}
+  function limpiarMulti(id){document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti(id);filtrar()}
+  function limpiarFiltros(){limpiarListaGuias('gestion',false);limpiarEntradaExportacion('fEntrada',false);limpiarFechaExportacion('fFechaExportacion',false);limpiarFiltroExcelMultiple('fEscaneoExportacion');limpiarFiltroExcelMultiple('fActualizacion');document.querySelectorAll("#fEscaneoMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fEscaneo");document.querySelectorAll("#fRegionMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fRegion");document.getElementById("buscar").value="";["fEstado","fComentario","fTipo"].forEach(id=>{document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti(id)});filtroResumenActivo=null;actualizarChipResumen();renderResumen();cerrarMultis();filtrar()}
+  function filtrar(){const escaneosExportacion=valoresMulti('fEscaneoExportacion');const actualizaciones=valoresMulti('fActualizacion');const escaneosRecientes=valoresMulti("fEscaneo");const regionesGestion=valoresMulti("fRegion");const q=document.getElementById("buscar").value.trim().toLowerCase(),estados=valoresMulti("fEstado"),comentarios=valoresMulti("fComentario"),tipos=valoresMulti("fTipo");filtradas=guias.filter(x=>{const textoTipo=String(x.tipo||"").toUpperCase(),estadoComentario=String(x.observacionPDV||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";return coincideListaGuias(x,'gestion')&&coincideEntradaExportacion(x,'fEntrada')&&coincideFechaExportacion(x,'fFechaExportacion')&&(!escaneosExportacion.length||escaneosExportacion.includes(String(x.tipoEscaneoExportacion||"")))&&(!actualizaciones.length||actualizaciones.includes(estadoActualizacionGuia(x)))&&(!escaneosRecientes.length||escaneosRecientes.includes(String(x.tipoEscaneoReciente||"")))&&(!regionesGestion.length||regionesGestion.includes(String(x.region||"")))&&coincideFiltroResumen(x)&&(!q||String(x.guia).toLowerCase().includes(q))&&(!estados.length||estados.includes(estado(x)))&&(!comentarios.length||comentarios.includes(estadoComentario))&&(!tipos.length||tipos.some(t=>textoTipo.includes(t.toUpperCase())))});renderGuias();actualizarTarjetas()}
+
+  function formatearTipo(tipo){return String(tipo||"").split(/\n\s*\n/).map(bloque=>{const lineas=bloque.split(/\n+/).map(v=>v.trim()).filter(Boolean);if(!lineas.length)return "";return `<div class="type-block"><div class="type-title">${esc(lineas[0])}</div>${lineas[1]?`<span class="type-value">${esc(lineas[1])}</span>`:""}${lineas.slice(2).map(v=>`<span class="type-detail">${esc(v)}</span>`).join("")}</div>`}).join("")}
+  function formatearUltimaActualizacion(x){const fechaLeida=fechaEscaneoValida(x.ultimaOperacion),fecha=fechaLeida?formatearFechaExcel(fechaLeida):String(x.ultimaOperacion||"").trim(),escaneo=String(x.tipoEscaneoReciente||"").trim(),repartidor=empleadoEntregaVisible(x,"repartidor");return `${fecha?`<div class="update-date">${esc(fecha)}</div>`:'<div class="update-empty">Sin fecha de actualización</div>'}${escaneo?`<span class="update-scan">${esc(escaneo)}</span>`:'<span class="update-scan update-empty">Sin tipo de escaneo</span>'}<span class="update-driver"><b>Repartidor:</b> ${esc(estadoSinEmpleadoEntrega(x.tipoEscaneoExportacion)?"":(repartidor||"Sin dato"))}</span>${bloqueEscaneoExportacion(x)}`}
+
+  function formatearDestinoGestion(x){return `<div><b>Departamento:</b> ${esc(x.dpto||"")}</div><div><b>Provincia:</b> ${esc(x.prov||"")}</div><div><b>Distrito:</b> ${esc(x.dsto||"")}</div>`;}
+  function renderGuias(){actualizarEstadoListaGuias('gestion');
+    const body=document.getElementById("guiasBody");body.innerHTML="";
+    if(!filtradas.length){body.innerHTML='<tr><td colspan="11" style="padding:35px;color:#64748b">No se encontraron guías para este PDV.</td></tr>';actualizarBarraSeleccion();return;}
+    filtradas.forEach(x=>{const fila=Number(x.fila),marcada=seleccionadas.has(fila),tr=document.createElement("tr"),comentario=String(x.comentarioEncargadoPDV||"").trim();tr.id="row-"+fila;if(marcada)tr.classList.add("row-selected");tr.innerHTML=`<td class="check-cell"><input class="row-check" type="checkbox" ${marcada?"checked":""} aria-label="Seleccionar guía ${esc(x.guia)}" onchange="toggleSeleccionFila(${fila},this.checked)"></td><td><span class="guide">${esc(x.guia)}</span><button type="button" class="qr" onclick="mostrarQR('${escJs(x.guia)}')">QR</button><button type="button" class="copy-guide" title="Copiar número de guía" onclick="copiarGuia('${escJs(x.guia)}')">📋 Copiar</button></td><td>${esc(x.pdv)}</td><td class="gestion-destination">${formatearDestinoGestion(x)}</td><td><span class="state ${claseEstado(x.estado)}">${esc(x.estado)}</span>${bloqueTiempoEntrada(x)}</td><td class="type-cell">${formatearTipo(x.tipo)}</td><td class="update-cell">${formatearUltimaActualizacion(x)}</td><td class="manager-note${comentario?'':' empty'}">${comentario?esc(comentario):"Sin comentario compartido"}${comentario&&x.fecha?`<div class="date">${esc(x.fecha)}</div>`:""}</td><td class="obs"><textarea id="obs-${x.fila}" maxlength="2000" placeholder="Ingrese la observación del PDV...">${esc(x.observacionPDV||"")}</textarea><div id="fecha-${x.fila}" class="date">${esc(x.fechaPDV||"")}</div></td><td><button id="guardar-${x.fila}" class="small" onclick="guardarObservacion(${Number(x.fila)})">Guardar</button></td>`;body.appendChild(tr);});
+    actualizarBarraSeleccion();
+  }
+
+  function toggleSeleccionFila(fila,marcada){fila=Number(fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);const tr=document.getElementById("row-"+fila);if(tr)tr.classList.toggle("row-selected",marcada);actualizarBarraSeleccion();}
+  function toggleSeleccionVisibles(marcadas){filtradas.forEach(x=>{const fila=Number(x.fila);if(marcadas)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();actualizarBarraSeleccion();}
+  function seleccionarVisibles(){filtradas.forEach(x=>seleccionadas.add(Number(x.fila)));sincronizarCasillasSeleccion();actualizarBarraSeleccion();}
+  function limpiarSeleccion(){seleccionadas.clear();sincronizarCasillasSeleccion();actualizarBarraSeleccion();}
+  function sincronizarCasillasSeleccion(){document.querySelectorAll("#guiasBody .row-check").forEach((casilla,i)=>{const x=filtradas[i],marcada=Boolean(x&&seleccionadas.has(Number(x.fila)));casilla.checked=marcada;const tr=x?document.getElementById("row-"+Number(x.fila)):null;if(tr)tr.classList.toggle("row-selected",marcada);});}
+  function seleccionActual(){return guias.filter(x=>seleccionadas.has(Number(x.fila))).map(x=>({fila:Number(x.fila),guia:String(x.guia||"")}));}
+  function actualizarBarraSeleccion(){const seleccion=seleccionActual(),visibles=filtradas.filter(x=>seleccionadas.has(Number(x.fila))).length,totalVisibles=filtradas.length;document.getElementById("bulkCount").textContent=seleccion.length+" guía"+(seleccion.length===1?" seleccionada":"s seleccionadas")+(seleccion.length!==visibles?" · "+visibles+" visibles":"");document.getElementById("btnBulkManage").disabled=!seleccion.length;document.getElementById("btnPrintGestion").disabled=!seleccion.length;document.getElementById("btnPrintDetalleGestion").disabled=!seleccion.length;const check=document.getElementById("checkAllVisible");if(check){check.checked=Boolean(totalVisibles&&visibles===totalVisibles);check.indeterminate=Boolean(visibles&&visibles<totalVisibles);check.disabled=!totalVisibles;}}
+  function abrirGestionMasiva(){const cantidad=seleccionActual().length;if(!cantidad){toast("Seleccione al menos una guía.",false);return;}document.getElementById("bulkModalCount").textContent="El comentario se registrará en "+cantidad+" guía"+(cantidad===1?" seleccionada.":"s seleccionadas.");document.getElementById("bulkObservation").value="";document.getElementById("bulkModal").style.display="flex";setTimeout(()=>document.getElementById("bulkObservation").focus(),50);}
+  function cerrarGestionMasiva(){document.getElementById("bulkModal").style.display="none";}
+  function guardarGestionMasiva(){const seleccion=seleccionActual(),observacion=document.getElementById("bulkObservation").value.trim();if(!seleccion.length){cerrarGestionMasiva();toast("La selección ya no contiene guías válidas.",false);return;}if(!observacion){toast("Ingrese un comentario u observación.",false);return;}if(!confirm("¿Guardar este comentario en "+seleccion.length+" guía"+(seleccion.length===1?"?":"s?")))return;cerrarGestionMasiva();mostrarLoading(true,"Actualizando "+seleccion.length+" guías...");google.script.run.withSuccessHandler(r=>{mostrarLoading(false);const filasActualizadas=new Set((r.actualizados||seleccion).map(x=>Number(x.fila)));guias.forEach(x=>{if(filasActualizadas.has(Number(x.fila))){x.observacionPDV=r.observacion;x.fechaPDV=r.fechaPDV;}});seleccionadas.clear();toast(r.cantidad+" guía"+(r.cantidad===1?" actualizada correctamente.":"s actualizadas correctamente."),true);filtrar();}).withFailureHandler(manejarError).actualizarRevisionesPDVMasivas(token,{seleccion:seleccion,observacion:observacion});}
+
+  function guardarObservacion(fila){const el=document.getElementById("obs-"+fila),obs=el.value.trim(),b=document.getElementById("guardar-"+fila);if(!obs){toast("Ingrese una observación.",false);return}b.disabled=true;google.script.run.withSuccessHandler(r=>{b.disabled=false;const x=guias.find(g=>Number(g.fila)===Number(fila));if(x){x.observacionPDV=r.observacion;x.fechaPDV=r.fechaPDV}toast("Observación guardada correctamente.",true);filtrar()}).withFailureHandler(e=>{b.disabled=false;toast(errorTexto(e),false)}).actualizarRevisionPDV(token,{fila,guia:guias.find(x=>Number(x.fila)===Number(fila))?.guia,observacion:obs})}
+
+  function actualizarTarjetas(){document.getElementById("total").textContent=filtradas.length;document.getElementById("pendientes").textContent=filtradas.filter(x=>estado(x)==="PENDIENTE").length;document.getElementById("proceso").textContent=filtradas.filter(x=>estado(x)==="EN PROCESO").length;document.getElementById("finalizados").textContent=filtradas.filter(x=>estado(x)==="FINALIZADO").length}
+  function estado(x){return String(x.estado||"PENDIENTE").trim().toUpperCase()}function claseEstado(v){v=String(v||"").toUpperCase();return v==="FINALIZADO"?"finalizado":v==="EN PROCESO"?"proceso":"pendiente"}
+  function mostrarQRExcel(guia){mostrarQR(guia);const x=excelRegistros.find(r=>claveGuiaExcel(r.guia)===claveGuiaExcel(guia));const d=document.getElementById("qrDistrito");d.textContent="Distrito: "+String(x?.dsto||"").trim();d.hidden=false;}
+  function mostrarQR(guia){document.getElementById("qrDistrito").hidden=true;document.getElementById("qrDistrito").textContent="";const c=document.getElementById("qr");c.innerHTML="";document.getElementById("qrNumero").textContent=guia;if(typeof QRCode!=="undefined")new QRCode(c,{text:String(guia),width:220,height:220,correctLevel:QRCode.CorrectLevel.H});document.getElementById("qrModal").style.display="flex"}function cerrarQR(){document.getElementById("qrModal").style.display="none"}
+  function copiarGuia(guia){const texto=String(guia||"").trim();if(!texto){toast("No existe una guía para copiar.",false);return}if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(texto).then(()=>toast("Guía "+texto+" copiada.",true)).catch(()=>copiarGuiaAlternativo(texto));return}copiarGuiaAlternativo(texto)}
+  function copiarGuiaAlternativo(texto){const campo=document.createElement("textarea");campo.value=texto;campo.setAttribute("readonly","");campo.style.position="fixed";campo.style.opacity="0";document.body.appendChild(campo);campo.select();campo.setSelectionRange(0,texto.length);let copiado=false;try{copiado=document.execCommand("copy")}catch(e){copiado=false}document.body.removeChild(campo);toast(copiado?"Guía "+texto+" copiada.":"No se pudo copiar la guía.",copiado)}
+  function salir(){const t=token;limpiarSesion();google.script.run.cerrarSesion(t);mostrarLogin()}function limpiarSesion(){token="";sesion=null;sessionStorage.removeItem("tokenGuiasSupabaseReplica");limpiarArchivoExcel(true)}
+  function mostrarLoading(si,t){document.getElementById("loadingText").textContent=t||"Procesando...";document.getElementById("loading").style.display=si?"flex":"none"}function manejarError(e){mostrarLoading(false);const t=errorTexto(e);toast(t,false);if(/sesión|sesion/i.test(t)){limpiarSesion();mostrarLogin()}}
+  function toast(t,ok){const e=document.getElementById("toast");e.textContent=t;e.className="toast "+(ok?"ok":"bad");e.style.display="block";clearTimeout(e._timer);e._timer=setTimeout(()=>e.style.display="none",4200)}function errorTexto(e){return e&&e.message?e.message:"Ocurrió un error."}function num(v){return Number(v||0).toLocaleString("es-PE")}
+  function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}function escJs(v){return String(v||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/[\r\n]/g," ")}
+let consultaVersion=0;
+let exportacionConsultaMapa=null;
+function conservarExportacionConsulta(){if(!exportacionConsultaMapa&&excelRegistros.length)exportacionConsultaMapa=new Map(excelRegistros.map(x=>[claveGuiaExcel(x.guia),{...x}]));}
+
+function estadoConsulta(t){const el=document.getElementById('consultaEstado');if(el)el.textContent=t;}
+function iniciarCargaLocalConsulta(){consultaVersion++;limpiarSeleccionExcel();estadoConsulta('Actualizando el archivo seleccionado...');}
+function recibirConsulta(r,compartida){filtroPdvPlazoExcel=null;
+ document.getElementById('excelEnvioUpload').classList.remove('hidden');
+ excelRegistros=(r.registros||[]).map(x=>({...x,fechaUltimaActualizacion:x.fechaUltimaActualizacion?new Date(x.fechaUltimaActualizacion):null,plazo:x.plazo?new Date(x.plazo):null}));
+ limpiarSeleccionExcel();excelPagina=1;
+ for(const [id,campo,titulo] of [['excelUltimoEstado','tipoEscaneoExportacion','Todos los últimos estados (Exportación)'],['excelSiguienteParada','siguienteParada','Todas las siguientes paradas'],['excelOperacion','tipoOperacion','Todos los tipos de operación más reciente'],['excelUltimoPunto','ultimoPunto','Todos los últimos puntos de operación'],['excelArea','area','Todas las áreas'],['excelEncargado','encargado','Todos los encargados']]){
+  llenarFiltroExcelMultiple(id,excelRegistros.map(x=>x[campo]),titulo);
+ }
+ limpiarFiltroExcelMultiple('excelActualizacion');iniciarPlazosExcel();document.getElementById('excelResults').classList.toggle('hidden',!excelRegistros.length);filtrarExcel();
+ const cargas=new Map();excelRegistros.forEach(x=>cargas.set(x.cargadoPor+'|'+x.cargadoEn,x));
+ const ultimas=[...cargas.values()].sort((a,b)=>String(b.cargadoEn).localeCompare(String(a.cargadoEn)));
+ const meta=ultimas.slice(0,5).map(x=>x.cargadoPor+' · '+new Date(x.cargadoEn).toLocaleString('es-PE')+' · '+x.archivo).join(' / ');
+ estadoConsulta((regionesImportadasExcel?'Regiones: '+regionesImportadasExcel.join(', ')+' · ':'')+(compartida?'Consulta compartida guardada':'Consulta temporal del PDV — no guardada')+' · '+excelRegistros.length+' guías'+(meta?' · '+meta:'')+(r.omitidas?' · '+r.omitidas+' filas sin coincidencia o fuera de su alcance, omitidas.':''));
+}
+function cargarConsultaCompartida(){
+ exportacionConsultaMapa=null;
+ trackPendienteExcel=[];document.getElementById('excelRegionImport').classList.add('hidden');
+ const version=++consultaVersion,actualToken=token;estadoConsulta('Buscando la consulta compartida...');
+ google.script.run.withSuccessHandler(r=>{if(version!==consultaVersion||token!==actualToken)return;
+  recibirConsulta(r,true);if(!(r.registros||[]).length)estadoConsulta('No hay una consulta compartida disponible para su usuario. Puede cargar sus archivos.');
+ }).withFailureHandler(e=>{if(version===consultaVersion)estadoConsulta('No se pudo recuperar la consulta: '+errorTexto(e));}).obtenerConsultaExcel(token,regionesImportadasExcel);
+}
+let regionesImportadasExcel=null,trackPendienteExcel=[];
+function reiniciarRegionesExcel(){
+ regionesImportadasExcel=null;trackPendienteExcel=[];
+ document.getElementById('excelRegionImport').classList.add('hidden');
+ document.getElementById('excelRegionOptions').replaceChildren();
+}
+function seleccionarTodasRegionesExcel(valor){document.querySelectorAll('#excelRegionOptions input').forEach(x=>x.checked=valor);}
+function elegirRegionesTrackExcel(){
+ const version=++consultaVersion,actualToken=token;
+ const pendientes=excelRegistros;excelRegistros=[];excelFiltrados=[];
+ document.getElementById('excelResults').classList.add('hidden');document.getElementById('excelEnvioUpload').classList.remove('hidden');
+ estadoConsulta('Identificando regiones con PDV_LISTA...');
+ google.script.run.withSuccessHandler(datos=>{
+  if(version!==consultaVersion||actualToken!==token)return;
+  const puntos=new Map(datos.map(x=>[x.punto,x.region]));
+  trackPendienteExcel=pendientes.filter(x=>puntos.has(x.ultimoPunto)).map(x=>({...x,region:puntos.get(x.ultimoPunto)}));
+  const grupos=new Map();trackPendienteExcel.forEach(x=>{if(!grupos.has(x.region))grupos.set(x.region,new Set());grupos.get(x.region).add(claveGuiaExcel(x.guia));});
+  const opciones=document.getElementById('excelRegionOptions');opciones.replaceChildren();
+  const orden=['R1','R2','R3','R4','SORTING CENTER'];
+  [...grupos.keys()].sort((a,b)=>(orden.includes(a)?orden.indexOf(a):99)-(orden.includes(b)?orden.indexOf(b):99)||a.localeCompare(b)).forEach(region=>{
+   const label=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.value=region;input.checked=true;label.style.cssText='display:inline-flex;gap:8px;align-items:center;margin:8px 16px 8px 0';label.append(input,document.createTextNode((region==='SORTING CENTER'?'Sorting Center':region)+' · '+grupos.get(region).size+' guías'));opciones.appendChild(label);
+  });
+  document.getElementById('excelRegionImport').classList.toggle('hidden',!grupos.size);
+  const omitidas=pendientes.length-trackPendienteExcel.length;
+  estadoConsulta(grupos.size?'Seleccione las regiones que importará.':'No hay guías con un PDV reconocido y autorizado.');
+  mostrarMensajeExcel(grupos.size?'Archivo leído. Seleccione las regiones y pulse «Importar regiones seleccionadas».'+(omitidas?' Se omitieron '+omitidas+' filas sin PDV reconocido o fuera de su acceso.':''):'No hay guías disponibles para importar.',!!grupos.size);
+ }).withFailureHandler(e=>{if(version===consultaVersion&&actualToken===token)mostrarMensajeExcel(errorTexto(e),false);}).catalogoRegionesConsultaExcel(token,[...new Set(pendientes.map(x=>x.ultimoPunto))]);
+}
+function importarRegionesExcel(){
+ const seleccion=[...document.querySelectorAll('#excelRegionOptions input:checked')].map(x=>x.value);
+ if(!seleccion.length){mostrarMensajeExcel('Seleccione al menos una región.',false);return;}
+ regionesImportadasExcel=seleccion;excelRegistros=trackPendienteExcel.filter(x=>seleccion.includes(x.region));
+ trackPendienteExcel=[];document.getElementById('excelRegionImport').classList.add('hidden');
+ previsualizarTrackExcel();
+}
+
+function previsualizarTrackExcel(){
+ const version=++consultaVersion,actualToken=token,nombre=excelTrackNombre;
+ document.getElementById('excelResults').classList.add('hidden');
+ document.getElementById('excelEnvioUpload').classList.remove('hidden');
+ estadoConsulta('Validando acceso a los datos de Track Break...');
+ const registros=excelRegistros.map(x=>({...x,fechaUltimaActualizacion:x.fechaUltimaActualizacion?x.fechaUltimaActualizacion.toISOString():null,plazo:null}));
+ google.script.run.withSuccessHandler(r=>{
+  if(version!==consultaVersion||actualToken!==token)return;
+  recibirConsulta(r,false);
+  excelTrackNombre=nombre;
+  if(exportacionConsultaMapa)aplicarDatosGuiasEnvio(exportacionConsultaMapa,excelEnvioNombre||'Exportación disponible');
+  publicarConsultaPreparada();
+  document.getElementById('excelEnvioUpload').classList.remove('hidden');
+  
+  mostrarMensajeExcel('Track Break actualizado. Puede consultar guías, QR, filtros y vencimientos, y actualizar Exportación por separado.',true);
+ }).withFailureHandler(e=>{
+  if(version!==consultaVersion||actualToken!==token)return;
+  excelRegistros=[];excelFiltrados=[];
+  estadoConsulta('No se pudo validar Track Break: '+errorTexto(e));
+  mostrarMensajeExcel(errorTexto(e),false);
+ }).prepararConsultaExcel(token,{guardar:false,archivo:nombre,registros,regiones:regionesImportadasExcel});
+}
+
+function publicarConsultaPreparada(){
+ const version=++consultaVersion,actualToken=token,guardar=sesion.rol!=='PDV';
+ estadoConsulta(guardar?'Guardando la consulta compartida...':'Validando consulta temporal...');
+ // Ocultar el resultado hasta que el servidor aplique el alcance de acceso.
+ document.getElementById('excelResults').classList.add('hidden');
+ const registros=excelRegistros.map(x=>({...x,fechaUltimaActualizacion:x.fechaUltimaActualizacion?x.fechaUltimaActualizacion.toISOString():null,plazo:null}));
+ google.script.run.withSuccessHandler(r=>{if(version===consultaVersion&&actualToken===token)recibirConsulta(r,guardar);}).withFailureHandler(e=>{if(version===consultaVersion){estadoConsulta('No se guardó ni publicó esta carga: '+errorTexto(e));toast(errorTexto(e),false);}}).prepararConsultaExcel(token,{guardar,archivo:(excelTrackNombre||'Track Break de consulta disponible')+(excelEnvioNombre?' + '+excelEnvioNombre:''),registros,regiones:regionesImportadasExcel});
+}
+
+let impresionQrOcupada=false;
+const imagenQrImpresionCache=new WeakMap();
+function obtenerImagenQrImpresion(card){
+ const canvas=card.querySelector('canvas');
+ if(canvas){if(!imagenQrImpresionCache.has(canvas))imagenQrImpresionCache.set(canvas,canvas.toDataURL('image/png'));return imagenQrImpresionCache.get(canvas);}
+ const img=card.querySelector('img');
+ if(img&&img.src)return img.src;
+ throw new Error('Hay un QR que aún no está listo. Vuelva a abrir las guías seleccionadas.');
+}
+function crearContenidoImpresionQr(grupos){
+ const partes=[];
+ for(const el of grupos.children){
+  if(el.classList.contains('qr-employee-heading')){partes.push('<h2>'+esc(el.textContent)+'</h2>');continue;}
+  if(!el.classList.contains('qr-selected-grid'))continue;
+  const cards=[...el.querySelectorAll('.qr-selected-card')];partes.push('<table><tbody>');
+  cards.forEach((card,i)=>{
+   if(i%6===0)partes.push('<tr>');
+   const imagen=obtenerImagenQrImpresion(card);
+   partes.push('<td><img width="220" height="220" src="'+esc(imagen)+'" alt="QR"><p class="guide">'+esc(card.querySelector('.qr-guide-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-rider-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-status-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-district-label')?.textContent||'')+'</p></td>');
+   if(i%6===5||i===cards.length-1){for(let n=(i%6)+1;n<6;n++)partes.push('<td></td>');partes.push('</tr>');}
+  });partes.push('</tbody></table>');
+ }
+ return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Guías seleccionadas · QR</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#111;font-family:Arial,sans-serif}h2{font-size:12pt;background:#dbeafe;color:#153e67;padding:3mm;margin:4mm 0;break-after:avoid;page-break-after:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}table{width:100%;table-layout:fixed;border-collapse:collapse}tr{break-inside:avoid;page-break-inside:avoid}td{width:16.666%;text-align:center;vertical-align:top;padding:2mm 2mm 12.7mm}img{display:block;width:34mm;height:34mm;margin:0 auto}p{font-size:8pt;margin:1mm 0;overflow-wrap:anywhere}.guide{font-size:9pt;font-weight:bold}</style></head><body>'+partes.join('')+'</body></html>';
+}
+
+let preparandoDetalleGestion=false;
+async function verDetalleSeleccionadoGestion(){
+ if(preparandoDetalleGestion)return;
+ const vistos=new Set(),registros=guias.filter(x=>{const k=claveGuiaExcel(x.guia);if(!seleccionadas.has(Number(x.fila))||!k||vistos.has(k))return false;vistos.add(k);return true;}).map(x=>({...x}));
+ if(!registros.length){toast('Seleccione al menos una guía.',false);return;}
+ if(typeof QRCode==='undefined'){toast('No se pudo cargar el generador QR.',false);return;}
+ preparandoDetalleGestion=true;mostrarLoading(true,'Preparando detalle y códigos QR...');
+ try{
+  const grupos=new Map();
+  registros.forEach(x=>{const pdv=String(x.pdv||'').trim()||'SIN PDV';if(!grupos.has(pdv))grupos.set(pdv,{cantidad:0,filas:[]});grupos.get(pdv).cantidad++;});
+  for(let i=0;i<registros.length;i++){
+   const x=registros[i],qr=document.createElement('div');
+   new QRCode(qr,{text:String(x.guia),width:220,height:220,correctLevel:QRCode.CorrectLevel.H});
+   const imagen=obtenerImagenQrImpresion(qr);
+   const comentario=sesion?.rol==='PDV'?x.comentarioEncargadoPDV:x.comentario;
+   grupos.get(String(x.pdv||'').trim()||'SIN PDV').filas.push('<tr><td class="qr"><img src="'+esc(imagen)+'" alt="QR '+esc(x.guia)+'"></td><td><b>'+esc(x.guia)+'</b></td><td>'+esc(x.encargado||'')+'</td><td>'+formatearDestinoGestion(x)+'</td><td class="multiline">'+esc(x.tipo||'')+'</td><td>'+formatearUltimaActualizacion(x)+'</td><td class="multiline">'+esc(comentario||'')+'</td></tr>');
+   if(i%30===29)await new Promise(r=>setTimeout(r,0));
+  }
+  const tablas=[...grupos.entries()].sort((a,b)=>a[0].localeCompare(b[0],'es',{numeric:true})).map(([pdv,grupo])=>'<table><colgroup><col style="width:12%"><col style="width:11%"><col style="width:11%"><col style="width:15%"><col style="width:12%"><col style="width:21%"><col style="width:18%"></colgroup><thead><tr class="pdv-heading"><th colspan="7">PDV: '+esc(pdv)+' · '+grupo.cantidad+' guías seleccionadas</th></tr><tr><th>QR</th><th>GUÍA</th><th>ENCARGADO</th><th>DESTINO<br>Departamento · Provincia · Distrito</th><th>TIPO</th><th>ÚLTIMA ACTUALIZACIÓN Y ESCANEO MÁS RECIENTE</th><th>COMENTARIO ENCARGADO</th></tr></thead><tbody>'+grupo.filas.join('')+'</tbody></table>').join('');
+  const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Detalle de guías seleccionadas</title><style>@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font:9px Arial,sans-serif;color:#172033;margin:0}h1{font-size:16px}p{margin:5px 0 12px}table{width:100%;table-layout:fixed;border-collapse:collapse}table{margin-bottom:12px}thead{display:table-header-group}.pdv-heading th{background:#dbeafe;color:#153e67;font-size:12px;padding:8px}.pdv-heading{break-after:avoid;page-break-after:avoid}th{background:#e2e8f0;text-align:left;font-size:9px}th,td{border:1px solid #94a3b8;padding:5px;vertical-align:top;overflow-wrap:anywhere}tr{break-inside:avoid;page-break-inside:avoid}td.qr{text-align:center}img{width:28mm;height:28mm;max-width:100%;object-fit:contain}.multiline{white-space:pre-wrap}.update-scan,.update-driver{display:block;margin-top:4px}.export-scan{color:#15803d;border-top:1px solid #bbf7d0;margin-top:6px;padding-top:4px}th,.export-scan{print-color-adjust:exact;-webkit-print-color-adjust:exact}</style></head><body><h1>Gestión de guías · detalle seleccionado</h1><p>'+registros.length+' guías · Comentarios guardados del encargado</p>'+tablas+'</body></html>';
+  document.getElementById('detalleGestionPreview').srcdoc=aplicarPortadaPdf(html);
+  actualizarControlesPortada();
+  document.getElementById('detalleGestionModal').style.display='flex';
+ }catch(e){toast('No se pudo preparar el detalle: '+errorTexto(e),false);}
+ finally{preparandoDetalleGestion=false;mostrarLoading(false);}
+}
+function imprimirDetalleSeleccionadoGestion(){
+ const html=document.getElementById('detalleGestionPreview').srcdoc;
+ if(html)imprimirDocumentoGuias(html);
+}
+
+async function imprimirGuiasSeleccionadasExcel(){
+ const grupos=document.getElementById('excelQrGroups');
+ if(!grupos||!grupos.querySelector('.qr-selected-card')){toast('Primero seleccione las guías y abra Ver guías seleccionadas.',false);return;}
+ try{await imprimirDocumentoGuias(crearContenidoImpresionQr(grupos));}catch(e){toast('No se pudo preparar la impresión: '+errorTexto(e),false);}
+}
+function clavePortadaPdf(){return 'revisionGuias:portada:v1:'+String(sesion?.usuario||'').trim().toUpperCase();}
+function leerPortadaPdf(){try{const p=JSON.parse(localStorage.getItem(clavePortadaPdf())||'null');return p&&/^data:image\/(jpeg|png|webp);base64,/.test(p.imagen)?p:null;}catch(e){return null;}}
+function actualizarControlesPortada(){
+ const p=leerPortadaPdf();
+ document.querySelectorAll('.portada-pdf-controles').forEach(el=>{const img=el.querySelector('img');img.hidden=!p;if(p)img.src=p.imagen;else img.removeAttribute('src');el.querySelector('.portada-pdf-estado').textContent=p?'Portada guardada: '+p.nombre+' · Se añade a todas tus impresiones.':'Sin portada. Se guarda para tu usuario en este navegador.';el.querySelector('button').disabled=!p;});
+ const frame=document.getElementById('detalleGestionPreview');if(frame?.srcdoc)frame.srcdoc=aplicarPortadaPdf(frame.srcdoc);
+}
+async function cargarPortadaPdf(evento){
+ const archivo=evento.target.files?.[0];if(!archivo)return;
+ const clave=clavePortadaPdf();
+ try{
+  if(!/^image\/(jpeg|png|webp)$/.test(archivo.type)||archivo.size>12*1024*1024)throw Error('Seleccione una imagen PNG, JPG o WebP de hasta 12 MB.');
+  const url=URL.createObjectURL(archivo);let img;
+  try{img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(Error('No se pudo leer la imagen.'));i.src=url;});}finally{URL.revokeObjectURL(url);}
+  const escala=Math.min(1,2200/Math.max(img.naturalWidth,img.naturalHeight)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*escala));canvas.height=Math.max(1,Math.round(img.naturalHeight*escala));const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
+  const imagen=canvas.toDataURL('image/jpeg',0.9);if(imagen.length>2500000)throw Error('La imagen es demasiado grande. Use una imagen de menor tamaño.');
+  if(clave!==clavePortadaPdf())return;
+  try{localStorage.setItem(clave,JSON.stringify({nombre:archivo.name,imagen}));}catch(e){throw Error('El navegador no pudo guardar la portada. Libere espacio o habilite el almacenamiento del sitio.');}
+  actualizarControlesPortada();toast('Portada guardada para tus próximas impresiones.',true);
+ }catch(e){toast(errorTexto(e),false);}finally{evento.target.value='';}
+}
+function quitarPortadaPdf(){try{localStorage.removeItem(clavePortadaPdf());actualizarControlesPortada();toast('Portada retirada de las próximas impresiones.',true);}catch(e){toast('No se pudo quitar la portada guardada.',false);}}
+function aplicarPortadaPdf(html){
+ const doc=new DOMParser().parseFromString(html,'text/html');doc.querySelectorAll('[data-portada-pdf]').forEach(el=>el.remove());const p=leerPortadaPdf();
+ if(p){const style=doc.createElement('style');style.setAttribute('data-portada-pdf','');style.textContent='.portada-pdf-pagina{display:flex!important;align-items:center;justify-content:center;width:100%;height:180mm;margin:0!important;padding:0!important;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid}.portada-pdf-pagina img{display:block!important;width:auto!important;height:auto!important;max-width:100%!important;max-height:178mm!important;object-fit:contain;margin:0!important}';doc.head.append(style);const pagina=doc.createElement('section');pagina.className='portada-pdf-pagina';pagina.setAttribute('data-portada-pdf','');const img=doc.createElement('img');img.src=p.imagen;img.alt='Portada';pagina.append(img);doc.body.prepend(pagina);}
+ return '<!doctype html>'+doc.documentElement.outerHTML;
+}
+
+async function imprimirDocumentoGuias(html){
+ html=aplicarPortadaPdf(html);
+ if(impresionQrOcupada)return;impresionQrOcupada=true;
+ let frame;
+ try{
+  document.getElementById('excelQrPrintFrame')?.remove();
+  frame=document.createElement('iframe');frame.id='excelQrPrintFrame';frame.title='Impresión de guías seleccionadas';frame.setAttribute('aria-hidden','true');frame.style.cssText='position:fixed;left:-12000px;top:0;width:1122px;height:794px;border:0';
+  const cargado=new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('La vista de impresión no terminó de cargar. Intente nuevamente.')),30000);frame.onload=()=>{clearTimeout(timer);resolve();};});
+  frame.srcdoc=html;document.body.appendChild(frame);await cargado;
+  const doc=frame.contentDocument;
+  if([...doc.images].some(img=>!img.complete||!img.naturalWidth))throw new Error('No se pudieron preparar todos los QR para imprimir.');
+  frame.contentWindow.focus();frame.contentWindow.print();
+ }catch(e){frame?.remove();toast('No se pudo abrir la impresión: '+errorTexto(e),false);}
+ finally{impresionQrOcupada=false;}
+}
+window.addEventListener('afterprint',()=>document.body.classList.remove('imprimiendo-qr'));
+const regionesCerradas=new Set(),areasCerradasResumen=new Set();
+function regionResumen(x){
+ const t=String(x.region||'').toUpperCase(),area=String(x.area||'').toUpperCase();
+ if(/SORTING|SORTING CENTER/.test(t+' '+area))return {key:'Sorting Center',orden:5};
+ const m=t.match(/R\s*0?([1-4])(?:\D|$)/);if(m)return {key:'R'+m[1],orden:Number(m[1])};
+ return {key:x.region||'Sin región',orden:6};
+}
+function alternarRegionResumen(key){if(regionesCerradas.has(key))regionesCerradas.delete(key);else regionesCerradas.add(key);renderResumen();}
+function renderResumen(){
+ const body=document.getElementById('resumenBody'),filas=(resumen.filas||[]).slice().sort((a,b)=>{const ra=regionResumen(a),rb=regionResumen(b);return ra.orden-rb.orden||ra.key.localeCompare(rb.key)||String(a.area||'').localeCompare(String(b.area||''))||a.pdv.localeCompare(b.pdv);});
+ const admin=typeof filaResumen==='function',cols=admin?17:16,grupos=new Map();
+ let pdvRows=[];
+ if(!admin){const anterior=resumen.filas;resumen.filas=filas;renderResumenAnterior();pdvRows=[...body.children];resumen.filas=anterior;}
+ body.replaceChildren();filas.forEach((x,i)=>{const k=regionResumen(x).key;if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push({x,i});});
+ grupos.forEach((items,key)=>{
+  const header=document.createElement('tr');header.className='region-heading';const td=document.createElement('td');td.colSpan=cols;const button=document.createElement('button');button.className='region-toggle';button.textContent=(regionesCerradas.has(key)?'▸ ':'▾ ')+key+' · '+items.length+' PDV';button.setAttribute('aria-expanded',String(!regionesCerradas.has(key)));button.onclick=()=>alternarRegionResumen(key);td.appendChild(button);header.appendChild(td);body.appendChild(header);
+  if(!regionesCerradas.has(key)){
+   const areas=new Map();items.forEach(item=>{const nombre=String(item.x.area||'').trim()||'SIN ÁREA';if(!areas.has(nombre))areas.set(nombre,[]);areas.get(nombre).push(item);});
+   areas.forEach((miembros,nombre)=>{
+    const id=JSON.stringify([key,nombre]),cerrada=areasCerradasResumen.has(id);
+    const trArea=document.createElement('tr');trArea.className='area-heading-nested';const celda=document.createElement('td');celda.colSpan=cols;
+    const boton=document.createElement('button');boton.className='region-toggle';boton.textContent=(cerrada?'▸ ':'▾ ')+'ÁREA · '+nombre+' · '+miembros.length+' PDV';boton.setAttribute('aria-expanded',String(!cerrada));
+    boton.onclick=()=>{if(areasCerradasResumen.has(id))areasCerradasResumen.delete(id);else areasCerradasResumen.add(id);renderResumen();};celda.appendChild(boton);trArea.appendChild(celda);body.appendChild(trArea);
+    if(!cerrada)miembros.forEach(({x,i})=>{const fila=admin?filaResumen(x,false):pdvRows[i];fila.classList.add('brecha-data-row');body.appendChild(fila);});
+    body.appendChild(subtotalGrupoResumen(miembros,'SUBTOTAL ÁREA · '+nombre,admin,'area-subtotal-nested'));
+   });
+  }
+  body.appendChild(subtotalGrupoResumen(items,'SUBTOTAL REGIÓN · '+key,admin,'region-subtotal'));
+ });
+ if(admin&&resumen.total)body.appendChild(filaResumen(resumen.total,true));
+ if(!filas.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=cols;td.textContent='No existen PDV para los filtros seleccionados.';tr.appendChild(td);body.appendChild(tr);}
+}
+
+function subtotalGrupoResumen(items,nombre,admin,clase){
+ const keys=['despachosAyer','h120o168','h360NoDevuelto','h360PorDevolver','h720NoDevuelto','h720PorDevolver','brecha48a120','brecha48NoLlegado','brecha120a144','brecha120NoLlegado','mayor144EnPDV','mayor144NoLlegado','total','totalCritico','guiasUnicas'];
+ const tr=document.createElement('tr');tr.className=clase;const label=document.createElement('td');label.textContent=clase==='area-subtotal-nested'?'SUBTOTAL ÁREA':'SUBTOTAL REGIÓN';label.title=nombre;label.setAttribute('aria-label',nombre);tr.appendChild(label);
+ keys.forEach(k=>{let total=items.reduce((n,{x})=>n+Number(x[k]||0)+(k==='mayor144NoLlegado'?Number(x.brecha144a168NoLlegado||0):0),0);if(k==='guiasUnicas'&&items.every(({x})=>Array.isArray(x.guiasIds)))total=new Set(items.flatMap(({x})=>x.guiasIds)).size;const c=document.createElement('td');c.textContent=num(total);if(k==='totalCritico')c.className='summary-critical';tr.appendChild(c);});if(admin)tr.appendChild(document.createElement('td'));return tr;
+}
+
+function limpiarFiltroExcelMultiple(id){document.querySelectorAll('#'+id+'Menu input[type=checkbox]').forEach(x=>x.checked=false);actualizarEtiquetaMulti(id);}
+function llenarFiltroExcelMultiple(id,valores,placeholder,alCambiar){
+ const menu=document.getElementById(id+'Menu');menu.replaceChildren();menu.dataset.placeholder=placeholder;
+ const limpiar=document.createElement('button');limpiar.type='button';limpiar.className='multi-clear';limpiar.textContent='Limpiar selección';limpiar.onclick=()=>{limpiarFiltroExcelMultiple(id);(alCambiar||filtrarExcel)();};menu.appendChild(limpiar);
+ [...new Set(valores.filter(v=>v!==null&&v!==undefined&&String(v).trim()).map(String))].sort((a,b)=>a.localeCompare(b,'es')).forEach(v=>{
+  const label=document.createElement('label'),input=document.createElement('input'),span=document.createElement('span');label.className='multi-option';input.type='checkbox';input.value=v;span.textContent=v==='POR VENCER'?'Por vencer en 12 h':v;input.addEventListener('change',()=>{actualizarEtiquetaMulti(id);(alCambiar||filtrarExcel)();});label.appendChild(input);label.appendChild(span);menu.appendChild(label);
+ });actualizarEtiquetaMulti(id);
+}
+function iniciarPlazosExcel(){llenarFiltroExcelMultiple('excelDeadlineFilter',['VENCIDO','0–12 HORAS','12–24 HORAS','24–36 HORAS','MÁS DE 36 HORAS','VIGENTE','SIN FECHA'],'Todos los plazos');}
+document.addEventListener('DOMContentLoaded',iniciarPlazosExcel);
+
+// Se inserta en ambos portales. Usa la misma fecha y zona que muestra la tabla.
+function coincideFechaExportacion(x,prefijo){
+ const desde=document.getElementById(prefijo+'Desde').value;
+ const hasta=document.getElementById(prefijo+'Hasta').value;
+ if(!desde&&!hasta)return true;
+ const fecha=fechaEscaneoValida(x.fechaEscaneoExportacion);
+ if(!fecha)return false;
+ const dia=fecha.getFullYear()+'-'+String(fecha.getMonth()+1).padStart(2,'0')+'-'+String(fecha.getDate()).padStart(2,'0');
+ return (!desde||dia>=desde)&&(!hasta||dia<=hasta);
+}
+function cambiarFechaExportacion(prefijo){
+ const desde=document.getElementById(prefijo+'Desde'),hasta=document.getElementById(prefijo+'Hasta');
+ const invalido=desde.value&&hasta.value&&desde.value>hasta.value;
+ hasta.setCustomValidity(invalido?'La fecha hasta debe ser igual o posterior a desde.':'');
+ document.getElementById(prefijo+'Error').textContent=invalido?'Rango inválido: Hasta es anterior a Desde.':'';
+ if(prefijo==='fFechaExportacion')filtrar();else filtrarExcel();
+}
+function limpiarFechaExportacion(prefijo,actualizar=true){
+ document.getElementById(prefijo+'Desde').value='';
+ document.getElementById(prefijo+'Hasta').value='';
+ document.getElementById(prefijo+'Hasta').setCustomValidity('');
+ document.getElementById(prefijo+'Error').textContent='';
+ if(actualizar)cambiarFechaExportacion(prefijo);
+}
+
+function coincideEntradaExportacion(x,prefijo,ahora=Date.now()){
+ const desde=document.getElementById(prefijo+'Desde').value,hasta=document.getElementById(prefijo+'Hasta').value;
+ const dias=[...document.querySelectorAll('#'+prefijo+'Rapidos input:checked')].map(el=>Number(el.value));
+ if(!desde&&!hasta&&!dias.length)return true;
+ const fecha=fechaEscaneoValida(x.tiempoEntradaExportacion);if(!fecha)return false;
+ const t=fecha.getTime(),inicio=desde?new Date(desde).getTime():-Infinity,fin=hasta?new Date(hasta).getTime():Infinity;
+ return t>=inicio&&t<=fin&&(!dias.length||dias.some(d=>t<=ahora-d*86400000));
+}
+function cambiarEntradaExportacion(prefijo){
+ const desde=document.getElementById(prefijo+'Desde'),hasta=document.getElementById(prefijo+'Hasta');
+ const invalido=desde.value&&hasta.value&&desde.value>hasta.value;
+ hasta.setCustomValidity(invalido?'Hasta debe ser igual o posterior a Desde.':'');
+ document.getElementById(prefijo+'Error').textContent=invalido?'Rango inválido: Hasta es anterior a Desde.':'';
+ if(prefijo==='fEntrada')filtrar();else filtrarExcel();
+}
+function limpiarEntradaExportacion(prefijo,actualizar=true){
+ for(const sufijo of ['Desde','Hasta']){const el=document.getElementById(prefijo+sufijo);el.value='';el.setCustomValidity('');}
+ document.querySelectorAll('#'+prefijo+'Rapidos input').forEach(el=>el.checked=false);
+ document.getElementById(prefijo+'Error').textContent='';
+ if(actualizar)cambiarEntradaExportacion(prefijo);
+}
+// Recalcular cortes relativos mientras la página permanece abierta.
+setInterval(()=>{
+ for(const prefijo of ['fEntrada','excelEntrada'])if(document.querySelector('#'+prefijo+'Rapidos input:checked'))cambiarEntradaExportacion(prefijo);
+},60000);
+
+function bloqueTiempoEntrada(x){
+ const fecha=fechaEscaneoValida(x.tiempoEntradaExportacion);
+ return '<div class="entry-date"><b>Tiempo de entrada</b><small>Exportación de guías</small><span>'+esc(fecha?formatearFechaExcel(fecha):'')+'</span></div>';
+}
+function corteMananaDiez(ahora=new Date()){
+ const partes=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Lima',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(ahora);
+ const valor=tipo=>Number(partes.find(p=>p.type===tipo).value);
+ return new Date(Date.UTC(valor('year'),valor('month')-1,valor('day')+1,15,0,0));
+}
+function coincideCorteManana(x,ahora=new Date()){
+ if(!document.getElementById('excelCorteManana').checked)return true;
+ const plazo=x.plazo?new Date(x.plazo):null;
+ return !!plazo&&!isNaN(plazo.getTime())&&plazo.getTime()<=corteMananaDiez(ahora).getTime();
+}
+function actualizarEtiquetaCorteManana(){
+ const el=document.getElementById('excelCorteMananaFecha');
+ if(el)el.textContent='Hasta el '+corteMananaDiez().toLocaleDateString('es-PE',{timeZone:'America/Lima'})+' a las 10:00 a. m. · Hora de Perú';
+}
+document.addEventListener('DOMContentLoaded',actualizarEtiquetaCorteManana);
+setInterval(()=>{actualizarEtiquetaCorteManana();if(document.getElementById('excelCorteManana')?.checked)filtrarExcel();},60000);
+
+const listasGuias={gestion:new Set(),excel:new Set()};
+function normalizarGuiaLista(valor){return String(valor??'').trim().toUpperCase();}
+function separarGuiasLista(texto){return new Set(String(texto||'').split(/[\s,;|]+/).map(x=>normalizarGuiaLista(x.replace(/^["']+|["']+$/g,''))).filter(Boolean));}
+function coincideListaGuias(x,modulo){const lista=listasGuias[modulo];return !lista.size||lista.has(normalizarGuiaLista(x.guia));}
+function aplicarListaGuias(modulo){
+ listasGuias[modulo]=separarGuiasLista(document.getElementById('listaGuias_'+modulo).value);
+ if(modulo==='excel')filtrarExcel();else filtrar();
+}
+function limpiarListaGuias(modulo,refiltrar=true){
+ listasGuias[modulo]=new Set();const input=document.getElementById('listaGuias_'+modulo);if(input)input.value='';
+ if(refiltrar){if(modulo==='excel')filtrarExcel();else filtrar();}else actualizarEstadoListaGuias(modulo);
+}
+function actualizarEstadoListaGuias(modulo){
+ const estado=document.getElementById('listaGuiasEstado_'+modulo),faltan=document.getElementById('listaGuiasFaltantes_'+modulo);if(!estado)return;
+ const lista=listasGuias[modulo];faltan.replaceChildren();if(!lista.size){estado.textContent='Sin filtro por lista de guías.';return;}
+ const registros=modulo==='excel'?excelRegistros:guias,visibles=modulo==='excel'?excelFiltrados:filtradas;
+ const disponibles=new Set(registros.map(x=>normalizarGuiaLista(x.guia))),mostradas=new Set(visibles.map(x=>normalizarGuiaLista(x.guia)));
+ const ausentes=[...lista].filter(x=>!disponibles.has(x)),encontradas=lista.size-ausentes.length,actuales=[...lista].filter(x=>mostradas.has(x)).length;
+ estado.textContent=lista.size+' guías únicas · '+encontradas+' encontradas en los datos disponibles · '+actuales+' visibles con todos los filtros · '+ausentes.length+' no encontradas.';
+ if(ausentes.length){const details=document.createElement('details'),summary=document.createElement('summary'),area=document.createElement('textarea');summary.textContent='Ver guías no encontradas ('+ausentes.length+')';area.readOnly=true;area.rows=5;area.setAttribute('aria-label','Guías no encontradas');area.value=ausentes.join('\n');details.append(summary,area);faltan.append(details);}
+}
+
+function fechaEscaneoValida(valor){
+ if(!valor)return null;
+ if(typeof valor==='string'&&/T.*(?:Z|[+-]\d{2}:?\d{2})$/.test(valor)){const d=new Date(valor);return isNaN(d.getTime())?null:d;}
+ return parsearFechaExcel(valor);
+}
+function estadoActualizacionGuia(x){
+ const original=fechaEscaneoValida(x.fechaUltimaActualizacion||x.ultimaOperacion),reciente=fechaEscaneoValida(x.fechaEscaneoExportacion);
+ return original&&reciente&&reciente.getTime()>original.getTime()?'ACTUALIZADO':'PENDIENTE DE ACTUALIZAR';
+}
+function bloqueEscaneoExportacion(x){
+ const fecha=fechaEscaneoValida(x.fechaEscaneoExportacion);
+ return '<div class="export-scan"><b>Exportación de guías</b><div>'+esc(fecha?formatearFechaExcel(fecha):'')+'</div><div>'+esc(x.tipoEscaneoExportacion||'')+'</div><b>'+esc(estadoActualizacionGuia(x))+'</b></div>';
+}
+function inicializarFiltrosActualizacion(){
+ ['fActualizacion','excelActualizacion'].forEach(id=>{
+ llenarFiltroExcelMultiple(id,['ACTUALIZADO','PENDIENTE DE ACTUALIZAR'],'Todos: actualizado / pendiente',id==='fActualizacion'?filtrar:filtrarExcel);
+ });
+}
+document.addEventListener('DOMContentLoaded',inicializarFiltrosActualizacion);
+async function copiarGuiasSeleccionadas(modulo){
+ const registros=modulo==='excel'?excelRegistros.filter(x=>excelSeleccion.has(claveGuiaExcel(x.guia))):seleccionActual();
+ const guiasCopiar=[...new Set(registros.map(x=>String(x.guia||'').trim()).filter(Boolean))];
+ if(!guiasCopiar.length){toast('Seleccione al menos una guía.',false);return;}
+ const texto=guiasCopiar.join('\n');let copiado=false;
+ try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(texto);copiado=true;}}catch(e){}
+ if(!copiado){const campo=document.createElement('textarea');campo.value=texto;campo.style.position='fixed';campo.style.opacity='0';document.body.appendChild(campo);campo.select();try{copiado=document.execCommand('copy');}catch(e){}campo.remove();}
+ toast(copiado?guiasCopiar.length+' guías copiadas, una por fila.':'No se pudieron copiar las guías.',copiado);
+}
+
+function agruparResumenPdvExcel(registros,ahora=Date.now()){
+ const grupos=new Map();registros.forEach(x=>{
+ const pdv=String(x.pdv||'').trim()||'Sin PDV';if(!grupos.has(pdv))grupos.set(pdv,{pdv,total:0,vencidos:0,h12:0,h24:0,h36:0});
+ const g=grupos.get(pdv);g.total++;const plazo=fechaEscaneoValida(x.plazo);if(!plazo)return;
+ const horas=(plazo.getTime()-ahora)/3600000;
+ if(horas<0)g.vencidos++;else if(horas<=12)g.h12++;else if(horas<=24)g.h24++;else if(horas<=36)g.h36++;
+ });return [...grupos.values()].sort((a,b)=>a.pdv.localeCompare(b.pdv,'es',{numeric:true}));
+}
+function renderResumenPdvExcel(){
+ const body=document.getElementById('excelPdvSummaryBody');if(!body)return;
+ const filas=agruparResumenPdvExcel(excelBaseResumen),keys=['total','vencidos','h12','h24','h36'],rangos={total:'',vencidos:'VENCIDO',h12:'0–12 HORAS',h24:'12–24 HORAS',h36:'24–36 HORAS'},total={pdv:'TOTAL',total:0,vencidos:0,h12:0,h24:0,h36:0};
+ filas.forEach(x=>keys.forEach(k=>total[k]+=x[k]));body.replaceChildren();
+ if(!filas.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=6;td.textContent='No hay guías para los filtros aplicados.';tr.appendChild(td);body.appendChild(tr);return;}
+ [...filas,total].forEach((x,i)=>{
+ const tr=document.createElement('tr'),pdv=i===filas.length?null:x.pdv;if(pdv===null)tr.className='excel-pdv-total';const label=document.createElement('td');label.textContent=x.pdv;tr.appendChild(label);
+ keys.forEach(k=>{const td=document.createElement('td'),b=document.createElement('button'),plazo=rangos[k];b.type='button';b.className='excel-summary-cell';b.textContent=num(x[k]);b.title='Filtrar '+(pdv===null?'todos los PDV':pdv)+' · '+(plazo||'todos los plazos');const activo=!!filtroPdvPlazoExcel&&filtroPdvPlazoExcel.pdv===pdv&&filtroPdvPlazoExcel.plazo===plazo;b.classList.toggle('selected',activo);b.setAttribute('aria-pressed',String(activo));b.onclick=()=>seleccionarCeldaResumenExcel(pdv,plazo);td.appendChild(b);tr.appendChild(td);});body.appendChild(tr);
+ });
+}
+function toggleResumenPdvExcel(){
+ const panel=document.getElementById('excelPdvSummary'),boton=document.getElementById('excelPdvSummaryToggle');
+ const oculto=panel.classList.toggle('hidden');boton.textContent=oculto?'Mostrar resumen por PDV':'Ocultar resumen por PDV';boton.setAttribute('aria-expanded',String(!oculto));
+}
+
+let filtroPdvPlazoExcel=null,excelBaseResumen=[];
+function rangoPlazoExcel(x,ahora=Date.now()){
+ const fecha=fechaEscaneoValida(x.plazo);if(!fecha)return 'SIN FECHA';const h=(fecha.getTime()-ahora)/3600000;
+ return h<0?'VENCIDO':h<=12?'0–12 HORAS':h<=24?'12–24 HORAS':h<=36?'24–36 HORAS':'MÁS DE 36 HORAS';
+}
+function coincidePlazoExcel(x,plazos){return !plazos.length||plazos.includes(rangoPlazoExcel(x))||plazos.includes(estadoPlazoExcel(x));}
+function coincideCeldaResumenExcel(x){
+ if(!filtroPdvPlazoExcel)return true;
+ const f=filtroPdvPlazoExcel;return(f.pdv===null||(String(x.pdv||'').trim()||'Sin PDV')===f.pdv)&&(!f.plazo||rangoPlazoExcel(x)===f.plazo);
+}
+function seleccionarCeldaResumenExcel(pdv,plazo){
+ const anterior=filtroPdvPlazoExcel;filtroPdvPlazoExcel=anterior&&anterior.pdv===pdv&&anterior.plazo===plazo?null:{pdv,plazo};filtrarExcel();
+}
+function quitarFiltroResumenExcel(){filtroPdvPlazoExcel=null;filtrarExcel();}
+function actualizarFiltroResumenExcel(){
+ const el=document.getElementById('excelPdvFilterLabel');if(!el)return;
+ el.textContent=filtroPdvPlazoExcel?((filtroPdvPlazoExcel.pdv===null?'Todos los PDV':filtroPdvPlazoExcel.pdv)+' · '+(filtroPdvPlazoExcel.plazo||'Todos los plazos')):'';
+ document.getElementById('excelPdvFilterClear').classList.toggle('hidden',!filtroPdvPlazoExcel);
+}
+</script>
+<div id="excelQrModal" class="modal" onclick="if(event.target===this)this.style.display='none'"><div class="modal-card" style="width:min(1700px,98vw);max-height:90vh;overflow:auto"><button class="secondary" onclick="document.getElementById('excelQrModal').style.display='none'">Cerrar</button><button type="button" class="secondary" onclick="imprimirGuiasSeleccionadasExcel()">Imprimir QR seleccionados</button><div class="portada-pdf-controles" style="padding:10px;margin:10px 0;background:#f1f5f9;border-radius:6px"><label style="display:inline-block">Cargar / cambiar portada <input type="file" accept="image/png,image/jpeg,image/webp" onchange="cargarPortadaPdf(event)"></label> <button type="button" class="secondary" onclick="quitarPortadaPdf()">Quitar portada</button><p class="portada-pdf-estado"></p><img hidden="" alt="Vista previa de portada" style="max-width:180px;max-height:100px;object-fit:contain"></div><h3>Guías seleccionadas</h3><div id="excelQrGroups"></div></div></div><div id="detalleGestionModal" class="modal" onclick="if(event.target===this)this.style.display='none'"><div class="modal-card" style="width:98vw;max-width:1500px"><button class="secondary" onclick="document.getElementById('detalleGestionModal').style.display='none'">Cerrar</button> <button class="success" onclick="imprimirDetalleSeleccionadoGestion()">Imprimir / Guardar PDF</button><div class="portada-pdf-controles" style="padding:10px;margin:10px 0;background:#f1f5f9;border-radius:6px"><label style="display:inline-block">Cargar / cambiar portada <input type="file" accept="image/png,image/jpeg,image/webp" onchange="cargarPortadaPdf(event)"></label> <button type="button" class="secondary" onclick="quitarPortadaPdf()">Quitar portada</button><p class="portada-pdf-estado"></p><img hidden="" alt="Vista previa de portada" style="max-width:180px;max-height:100px;object-fit:contain"></div><p>Detalle de la selección activa. Se muestran los comentarios guardados.</p><iframe id="detalleGestionPreview" title="Vista previa del detalle seleccionado" style="width:100%;height:72vh;border:1px solid #cbd5e1;background:white"></iframe></div></div>
+
+<script>let exportacionPdvControl=null,exportacionPdvUrl=null;
+async function exportarPdfPdvFiltrados(){
+ if(exportacionPdvControl)return;
+ const filas=excelFiltrados.map(x=>({...x,empleadoPdf:empleadoEntregaVisible(x)}));
+ if(!filas.length){toast('No hay guías con los filtros actuales.',false);return;}
+ const btn=document.getElementById('exportarPdfPdv'),cancel=document.getElementById('cancelarPdfPdv'),status=document.getElementById('estadoPdfPdv'),link=document.getElementById('descargarPdfPdv');
+ exportacionPdvControl=new AbortController();btn.disabled=true;cancel.hidden=false;link.hidden=true;status.textContent='Preparando PDF de las guías filtradas…';
+ try{
+  const portada=leerPortadaPdf()?.imagen||null;
+  const {generarZipPdf}=await import('./pdf-pdv.js?v=1');
+  const resultado=await generarZipPdf(filas,{portada,signal:exportacionPdvControl.signal,onProgress:p=>{status.textContent=p.pdv+' · '+p.done+'/'+p.total+' guías · '+p.pdfs+'/'+p.count+' PDF';}});
+  if(exportacionPdvUrl)URL.revokeObjectURL(exportacionPdvUrl);
+  exportacionPdvUrl=URL.createObjectURL(new Blob([resultado.bytes],{type:'application/zip'}));link.href=exportacionPdvUrl;
+  link.download='PDF_PDV_'+new Date().toISOString().replace(/[:.]/g,'-')+'.zip';link.hidden=false;link.click();
+  status.textContent=resultado.pdfs+' PDF · '+resultado.total+' guías filtradas. Descarga lista.';
+ }catch(e){status.textContent=e.message||String(e);toast(status.textContent,false);}
+ finally{exportacionPdvControl=null;btn.disabled=false;cancel.hidden=true;}
+}
+function cancelarExportacionPdfPdv(){exportacionPdvControl?.abort();}
+</script><script>function ocultarCerosResumen(){
+ document.querySelectorAll('#resumenBody td').forEach(td=>{
+  if(!td.children.length&&/^0(?:[.,]0+)?$/.test(td.textContent.trim()))td.textContent='';
+ });
+}
+function iniciarResumenImagen(){
+ const body=document.getElementById('resumenBody');if(!body)return;
+ ocultarCerosResumen();new MutationObserver(ocultarCerosResumen).observe(body,{childList:true,subtree:true,characterData:true});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciarResumenImagen);else iniciarResumenImagen();
+async function descargarImagenResumen(){
+ const button=document.getElementById('btnImagenResumen'),status=document.getElementById('estadoImagenResumen');
+ if(button.disabled)return;button.disabled=true;status.textContent='Preparando imagen…';
+ try{
+  await document.fonts.ready;ocultarCerosResumen();
+  const table=document.getElementById('resumenBody').closest('table');
+  if(!table.tBodies[0]?.rows.length)throw Error('No hay datos en la tabla resumen.');
+  const rect=table.getBoundingClientRect(),width=Math.ceil(rect.width),height=Math.ceil(rect.height);
+  if(!width||!height)throw Error('Abre la tabla resumen antes de descargarla.');
+  const clone=table.cloneNode(true),originals=[table,...table.querySelectorAll('*')],copies=[clone,...clone.querySelectorAll('*')];
+  originals.forEach((el,i)=>{
+   const computed=getComputedStyle(el),copy=copies[i];copy.removeAttribute('id');copy.removeAttribute('onclick');
+   for(const prop of computed)copy.style.setProperty(prop,computed.getPropertyValue(prop),'important');
+   copy.style.setProperty('animation','none','important');copy.style.setProperty('transition','none','important');
+   copy.style.setProperty('position','static','important');
+  });
+  clone.style.setProperty('margin','0','important');clone.style.setProperty('width',width+'px','important');clone.style.setProperty('min-width',width+'px','important');clone.style.setProperty('max-width',width+'px','important');
+  const wrapper=document.createElement('div');wrapper.setAttribute('xmlns','http://www.w3.org/1999/xhtml');wrapper.style='background:white;width:'+width+'px;height:'+height+'px;overflow:hidden';wrapper.append(clone);
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'"><foreignObject width="100%" height="100%">'+new XMLSerializer().serializeToString(wrapper)+'</foreignObject></svg>';
+  const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('No se pudo convertir la tabla en imagen.'));img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);});
+  // Ajusta resolución para tablas largas sin superar los límites habituales del lienzo.
+  const scale=Math.min(2,16000/width,16000/height,Math.sqrt(50000000/(width*height)));
+  const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.ceil(width*scale));canvas.height=Math.max(1,Math.ceil(height*scale));
+  const ctx=canvas.getContext('2d');if(!ctx)throw Error('El navegador no pudo preparar la imagen.');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
+  const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));if(!blob)throw Error('No se pudo generar el PNG. Reduce las filas con los filtros e inténtalo nuevamente.');
+  const link=document.getElementById('enlaceImagenResumen');if(link.dataset.url)URL.revokeObjectURL(link.dataset.url);
+  link.href=URL.createObjectURL(blob);link.dataset.url=link.href;link.download='Resumen_Guias_'+new Date().toISOString().replace(/[:.]/g,'-')+'.png';link.hidden=false;link.click();
+  status.textContent='Imagen lista · filtros y grupos desplegados actuales.';
+ }catch(e){status.textContent=e.message||String(e);toast(status.textContent,false);}finally{button.disabled=false;}
+}
+</script></body></html>

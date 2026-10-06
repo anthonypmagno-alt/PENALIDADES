@@ -1,0 +1,9 @@
+PORTAL REVISION DE GUIAS + MODULO PENALIDADES
+
+Este paquete conserva el portal principal. index.html es la página de inicio con el login, Gestión de guías y Consulta desde Excel. No reemplaces index.html por el index.html del módulo Penalidades V2, porque ese archivo era una app independiente.
+
+Para desplegar en GitHub Pages, sube el contenido completo de esta carpeta manteniendo los nombres y rutas. El enlace Penalidades del portal abre penalidades.html. Los archivos config.js, bridge.js, gestion-v2.html, pdv.html, pdv-v2.html, process-worker.js y pdf-pdv.js son parte del sitio y deben permanecer junto a index.html.
+
+Antes de subir, verifica que config.js conserve la URL y la clave pública publishable del proyecto Supabase. Nunca incluyas una service_role key.
+
+El SQL supabase_penalidades_v2.sql se ejecuta manualmente en el SQL Editor del proyecto Supabase; no se publica como parte de GitHub Pages.

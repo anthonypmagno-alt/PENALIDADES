@@ -215,7 +215,7 @@
       <div class="metrics" id="metrics"></div>
       <div class="breakdown">
         <h3>Resumen por penalización y tipo de zona</h3><p class="note">Usa + o − para expandir los subtipos: Brecha muestra la columna Brecha y Excede el SLA / cola larga muestra la columna SLA. Haz clic en una fila o subtipo para filtrar el detalle.</p>
-        <div class="table-wrap"><table class="data-table"><thead><tr><th>Penalización / subtipo</th><th>Tipo de zona</th><th class="num">Exoneradas (N.º)</th><th class="num">No exoneradas (N.º)</th><th class="num">Guías únicas</th><th class="num">Penalidad total (S/)</th><th class="num">Monto exonerado (S/)</th><th class="num">Saldo (S/)</th></tr></thead><tbody id="breakdownBody"></tbody></table></div>
+        <div class="table-wrap"><table class="data-table"><thead><tr><th>Penalización / subtipo</th><th>Tipo de zona</th><th class="num">Exoneradas (N.º)</th><th class="num">No exoneradas (N.º)</th><th class="num">Filas</th><th class="num">Guías únicas</th><th class="num">Penalidad total (S/)</th><th class="num">Monto exonerado (S/)</th><th class="num">Saldo (S/)</th></tr></thead><tbody id="breakdownBody"></tbody></table></div>
       </div>
       <div class="breakdown">
         <h3>Brecha de actualización de penalidad</h3><p class="note">Las guías y subtipos salen de “LISTA DETALLADA DE PENALIDAD”; las columnas de operación reciente vienen del match con “Brecha máxima por guía y PDV”. Si no hay match, verás “Sin dato”. Expande para ver los subtipos y haz clic en una celda para filtrar el detalle.</p>
@@ -717,16 +717,16 @@
       const r=currentRecord();if(!r)return;const t=recordTotals(r);
       $('metrics').innerHTML=`<div class="metric"><span>Penalidades</span><strong>${fmtCount(t.count)}</strong></div><div class="metric"><span>Con exoneración</span><strong>${fmtCount(t.yes)}</strong></div><div class="metric"><span>Monto exonerado</span><strong>S/ ${fmtMoney(t.exempt)}</strong></div><div class="metric"><span>Saldo de penalidad</span><strong>S/ ${fmtMoney(t.balance)}</strong></div>`;
       const groups=new Map();for(const item of r.items){const penalty=item.penalty||'Sin tipo',zone=item.zoneType||'NO ASIGNADA',key=[norm(penalty),norm(zone)].join('|');if(!groups.has(key))groups.set(key,{key:[currentRecordId,norm(penalty),norm(zone)].join('::'),penalty,zone,items:[]});groups.get(key).items.push(item);}
-      const measureItems=items=>{const result={yes:0,no:0,tracks:new Set(),total:0,exempt:0};for(const item of items){if(exemptionPercent(item)>0)result.yes++;else result.no++;result.tracks.add(item.tracking);result.total+=Number(item.cost)||0;result.exempt+=exemptionAmount(item);}return result;};
+      const measureItems=items=>{const result={rows:items.length,yes:0,no:0,tracks:new Set(),total:0,exempt:0};for(const item of items){if(exemptionPercent(item)>0)result.yes++;else result.no++;result.tracks.add(item.tracking);result.total+=Number(item.cost)||0;result.exempt+=exemptionAmount(item);}return result;};
       const rows=[...groups.values()].sort((a,b)=>a.penalty.localeCompare(b.penalty,'es')||a.zone.localeCompare(b.zone,'es'));
-      const renderMeasures=items=>{const m=measureItems(items);return `<td class="num"><span class="badge yes">${fmtCount(m.yes)}</span></td><td class="num"><span class="badge no">${fmtCount(m.no)}</span></td><td class="num">${fmtCount(m.tracks.size)}</td><td class="num">S/ ${fmtMoney(m.total)}</td><td class="num">S/ ${fmtMoney(m.exempt)}</td><td class="num">S/ ${fmtMoney(m.total-m.exempt)}</td>`;};
-      const breakdownGrandTotal=rows.length?`<tr class="click-row summary-grand-total breakdown-grand-total" data-grand-total="true" title="Haz clic para mostrar todas las guías del detalle"><td colspan="2">TOTAL GENERAL</td>${renderMeasures(r.items)}</tr>`:'';
+      const renderMeasures=items=>{const m=measureItems(items);return `<td class="num"><span class="badge yes">${fmtCount(m.yes)}</span></td><td class="num"><span class="badge no">${fmtCount(m.no)}</span></td><td class="num">${fmtCount(m.rows)}</td><td class="num">${fmtCount(m.tracks.size)}</td><td class="num">S/ ${fmtMoney(m.total)}</td><td class="num">S/ ${fmtMoney(m.exempt)}</td><td class="num">S/ ${fmtMoney(m.total-m.exempt)}</td>`;};
+      const breakdownGrandTotal=rows.length?`<tr class="click-row summary-grand-total breakdown-grand-total" data-grand-total="true" title="Haz clic en una cifra para filtrar las guías correspondientes"><td colspan="2">TOTAL GENERAL</td>${renderMeasures(r.items)}</tr>`:'';
       $('breakdownBody').innerHTML=rows.length?rows.map(g=>{
         const expanded=expandedBreakdownGroups.has(g.key),toggle=expanded?'−':'+',children=new Map();
         for(const item of g.items){const subtype=penaltySubtype(item),childKey=[subtype.field,norm(subtype.value)].join('|');if(!children.has(childKey))children.set(childKey,{field:subtype.field,column:subtype.column,value:subtype.value,items:[]});children.get(childKey).items.push(item);}
         const childRows=expanded?[...children.values()].sort((a,b)=>a.value.localeCompare(b.value,'es')).map(child=>`<tr class="click-row breakdown-subrow" data-row-kind="subtype" data-penalty="${escapeHtml(g.penalty)}" data-zone="${escapeHtml(g.zone)}" data-subtype-field="${escapeHtml(child.field)}" data-subtype="${escapeHtml(child.value)}" title="Haz clic para filtrar este subtipo en el detalle"><td><span class="breakdown-subtype-prefix">${child.column?escapeHtml(child.column)+':':'↳'}</span> ${escapeHtml(child.value)}</td><td>${zoneBadge(g.zone)}</td>${renderMeasures(child.items)}</tr>`).join(''):'';
         return `<tr class="click-row breakdown-parent" data-row-kind="parent" data-penalty="${escapeHtml(g.penalty)}" data-zone="${escapeHtml(g.zone)}" data-group-key="${escapeHtml(g.key)}" title="Haz clic en una celda para filtrar el detalle"><td><button type="button" class="breakdown-expand-btn" data-expand-group="${escapeHtml(g.key)}" aria-expanded="${expanded}" aria-label="${expanded?'Contraer':'Expandir'} subtipos de ${escapeHtml(g.penalty)}" title="${expanded?'Contraer':'Expandir'} subtipos">${toggle}</button>${escapeHtml(g.penalty)}</td><td>${zoneBadge(g.zone)}</td>${renderMeasures(g.items)}</tr>${childRows}`;
-      }).join('')+breakdownGrandTotal:`<tr><td colspan="8" class="empty">No hay penalidades.</td></tr>`;
+      }).join('')+breakdownGrandTotal:`<tr><td colspan="9" class="empty">No hay penalidades.</td></tr>`;
       renderBreachMatrix(r);renderSlaMatrix(r);renderReasonSummary(r);
     }
     function breachMatrixRows(record){
@@ -836,16 +836,16 @@
     }
     function filterFromSummaryCell(event){
       const expandButton=event.target.closest('[data-expand-group]');if(expandButton){event.stopPropagation();const key=expandButton.dataset.expandGroup;if(expandedBreakdownGroups.has(key))expandedBreakdownGroups.delete(key);else expandedBreakdownGroups.add(key);renderMetricsAndBreakdown();return;}
-      const grandTotal=event.target.closest('tr[data-grand-total="true"]');if(grandTotal){matrixGuideSelection=null;$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});return;}
+      const grandTotal=event.target.closest('tr[data-grand-total="true"]');if(grandTotal){matrixGuideSelection=null;$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}const cell=event.target.closest('td'),column=cell?[...grandTotal.children].indexOf(cell):-1;if(column===1||column===6)setPickerSelection('filterExemption',['yes']);else if(column===2)setPickerSelection('filterExemption',['no']);renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});return;}
       const cell=event.target.closest('td'),row=event.target.closest('tr[data-penalty]');if(!cell||!row)return;
       matrixGuideSelection=null;const column=[...row.children].indexOf(cell);$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}
       if(row.dataset.rowKind==='subtype'){
         const record=currentRecord(),field=row.dataset.subtypeField,value=norm(row.dataset.subtype),items=(record?.items||[]).filter(item=>norm(item.penalty)===norm(row.dataset.penalty)&&norm(item.zoneType||'NO ASIGNADA')===norm(row.dataset.zone)&&(()=>{const subtype=penaltySubtype(item);return subtype.field===field&&norm(subtype.value)===value;})());
         setPickerSelection('filterPenalty',[row.dataset.penalty]);setPickerSelection('filterZone',[row.dataset.zone]);setPickerSelection('filterBreachSla',[...new Set(items.map(breachSlaLabel))]);
-        if(column===2||column===6)setPickerSelection('filterExemption',['yes']);else if(column===3||column===7)setPickerSelection('filterExemption',['no']);
+        if(column===2||column===7)setPickerSelection('filterExemption',['yes']);else if(column===3)setPickerSelection('filterExemption',['no']);
       }else if(column===0)setPickerSelection('filterPenalty',[row.dataset.penalty]);
       else if(column===1)setPickerSelection('filterZone',[row.dataset.zone]);
-      else{setPickerSelection('filterPenalty',[row.dataset.penalty]);setPickerSelection('filterZone',[row.dataset.zone]);if(column===2||column===6)setPickerSelection('filterExemption',['yes']);else if(column===3||column===7)setPickerSelection('filterExemption',['no']);}
+      else{setPickerSelection('filterPenalty',[row.dataset.penalty]);setPickerSelection('filterZone',[row.dataset.zone]);if(column===2||column===7)setPickerSelection('filterExemption',['yes']);else if(column===3)setPickerSelection('filterExemption',['no']);}
       renderDetailRows();
     }
     function filterMatrixCell(event){

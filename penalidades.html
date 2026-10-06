@@ -405,8 +405,8 @@
         const importedAt=new Date().toISOString();for(const entry of batch)addImportedSourceRows(slot,entry.file,entry.rows,importedAt);if(state.sources.penalties)state.sources.penalties.storedSnapshot=false;matrixGuideSelection=null;
         if(slot==='zones'&&batch.length)state.sources.zones={...state.sources.zones,filename:batch[0].file.name,importedAt,rows:batch[0].rows,files:[{filename:batch[0].file.name,importedAt,rowCount:batch[0].rows.length}]};
         let recordSummary={created:0,refreshed:0,groups:0};
-        if(slot==='penalties'){setDefaultPeriodAndPdvs();recordSummary=createRecordsFromPenaltySources();}
-        else refreshRecordsFromSources();
+        if(slot==='penalties'){setDefaultPeriodAndPdvs();recordSummary=await createRecordsFromPenaltySources();}
+        else{if(cloudMode&&!state.records.every(record=>Array.isArray(record.items)))await ensureAllStoredRecordItemsLoaded();refreshRecordsFromSources();}
         hydratePenaltySourceFromRecords();const slaBackfilled=backfillMissingSla();persist();updateSourceDiag();renderSummary();if(currentRecord())renderDetail();
         const importedCount=batch.reduce((sum,item)=>sum+item.rows.length,0),zoneSlaCount=slot==='zones'?batch[0].rows.filter(row=>txt(row.slaDays)!=='').length:null;
         const importedMessage=slot==='zones'?`${slotLabels[slot]} importada: ${fmtCount(importedCount)} filas; ${fmtCount(zoneSlaCount)} con “SLA ASIGNADO (DIAS)”.`:slot==='penalties'?`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas; ${fmtCount(recordSummary.created)} liquidaciones creadas y ${fmtCount(recordSummary.refreshed)} actualizadas.`:`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas.`;
@@ -543,10 +543,12 @@
       return updated;
     }
     function hydratePenaltySourceFromRecords(){
-      if(state.sources.penalties?.rows?.length)return;
-      const rows=[];
-      for(const record of state.records)for(const item of record.items||[])rows.push({sourceRow:rows.length+2,sourceId:'stored',sourceFile:item.sourceFile||'Registros guardados',sourceImportedAt:record.updatedAt||'',period:record.period,pdv:record.pdv,tracking:item.tracking,penalty:item.penalty,breach:item.liquidationBreach||item.breach||'',sla:item.liquidationSla||item.sla||'',dateRaw:item.dateRaw||'',dateISO:item.dateISO||parseDate(item.dateRaw),motive:item.motive||'',costRaw:item.costRaw||'',cost:Number(item.cost)||0,observations:item.observations||'',sourceZone:item.sourceZone||''});
-      if(rows.length)state.sources.penalties={filename:'Registros guardados',importedAt:new Date().toISOString(),rows,storedSnapshot:true,files:[{sourceId:'stored',filename:'Registros guardados',importedAt:new Date().toISOString(),rowCount:rows.length}]};
+      const source=state.sources.penalties,rows=[...(source?.rows||[])],covered=new Set(rows.map(row=>recordKey(row.period,row.pdv))),stored=[];
+      for(const record of state.records){if(covered.has(record.id)||!Array.isArray(record.items))continue;for(const item of record.items)stored.push({sourceRow:rows.length+stored.length+2,sourceId:'stored',sourceFile:item.sourceFile||'Registros guardados',sourceImportedAt:record.updatedAt||'',period:record.period,pdv:record.pdv,tracking:item.tracking,penalty:item.penalty,breach:item.liquidationBreach||item.breach||'',sla:item.liquidationSla||item.sla||'',dateRaw:item.dateRaw||'',dateISO:item.dateISO||parseDate(item.dateRaw),motive:item.motive||'',costRaw:item.costRaw||'',cost:Number(item.cost)||0,observations:item.observations||'',sourceZone:item.sourceZone||''});}
+      if(!stored.length)return;
+      const importedFiles=(source?.files||[]).filter(file=>file.sourceId!=='stored'),now=new Date().toISOString(),storedCount=rows.filter(row=>row.sourceId==='stored').length+stored.length;
+      const files=[...importedFiles,{sourceId:'stored',filename:'Registros guardados',importedAt:now,rowCount:storedCount}],allRows=[...rows,...stored];
+      state.sources.penalties={filename:files.map(file=>file.filename).join(', '),importedAt:source?.importedAt||now,rows:allRows,storedSnapshot:importedFiles.length===0,files};
     }
     function sourceFilesSnapshot(){return Object.fromEntries(['penalties','breaches','guides','zones'].map(slot=>[slot,sourceFileList(slot)]).filter(([,name])=>name));}
     function preserveDecisions(fresh,previousItems){
@@ -554,12 +556,17 @@
       for(const item of fresh){const old=previous.get(item.id);if(!old)continue;item.exemptionPercent=exemptionPercent(old);item.exonerated=item.exemptionPercent>0;item.reason=old.reason||'';item.manualZone=old.manualZone?{...old.manualZone}:null;if(item.manualZone)applyManualZone(item);item.modifiedAt=old.modifiedAt||'';if(!state.sources.guides?.rows?.length)for(const key of ['district','province','department','scanType','signature','scanTime'])if(old[key]!=null)item[key]=old[key];const hasRelevantBreach=!!state.sources.breaches?.rows?.some(row=>row.period===item.period);if(!hasRelevantBreach){for(const key of ['latestOperation','breachOperation','breachWaitHours','breachLastUpdate','breachMatched'])if(old[key]!=null)item[key]=old[key];if(old.breachMatched){item.breach=old.breach||item.breach;item.sla=old.sla||item.sla;}}if(!state.sources.zones?.rows?.length)for(const key of ['zoneName','zoneType','slaDays','zoneMatched','sourceZone'])if(old[key]!=null)item[key]=old[key];}
       return fresh;
     }
+    async function ensureAllStoredRecordItemsLoaded(){
+      const pending=state.records.filter(record=>!Array.isArray(record.items));
+      for(let i=0;i<pending.length;i+=3)await Promise.all(pending.slice(i,i+3).map(async record=>{record.items=await fetchStoredRecordItems(record.id);}));
+      hydratePenaltySourceFromRecords();
+    }
     function refreshRecordsFromSources(){
       if(!(state.sources.penalties?.rows||[]).length)return 0;const now=new Date().toISOString(),indexes={guides:buildGuideIndex(),breaches:buildBreachIndex(),zones:buildZoneIndex()};let refreshed=0;
       for(const record of state.records){const fresh=getRecordItems(record.period,record.pdv,indexes);if(!fresh.length)continue;record.items=preserveDecisions(fresh,record.items);record.sourceFiles=sourceFilesSnapshot();record.updatedAt=now;record.sourceSyncAt=now;refreshed++;}
       return refreshed;
     }
-    function createRecordsFromPenaltySources(){
+    async function createRecordsFromPenaltySources(){
       const rows=state.sources.penalties?.rows||[],fallbackPeriod=$('periodInput').value,groups=new Map();
       for(const row of rows){const period=row.period||periodFromDate(row.dateISO)||fallbackPeriod,pdv=pdvName(row.pdv);if(!period||!pdv)continue;const key=recordKey(period,pdv);if(!groups.has(key))groups.set(key,{period,pdv,rows:[]});groups.get(key).rows.push(row);}
       const now=new Date().toISOString(),indexes={guides:buildGuideIndex(),breaches:buildBreachIndex(),zones:buildZoneIndex()};let created=0,refreshed=0;
@@ -567,7 +574,7 @@
         const id=recordKey(group.period,group.pdv),deletedAt=timestampValue(state.deletedRecords?.[id]);
         if(deletedAt&& !group.rows.some(row=>timestampValue(row.sourceImportedAt)>deletedAt))continue;
         const fresh=getRecordItems(group.period,group.pdv,indexes),existing=state.records.find(record=>record.id===id);
-        if(existing){existing.items=preserveDecisions(fresh,existing.items);existing.sourceFiles=sourceFilesSnapshot();existing.updatedAt=now;existing.sourceSyncAt=now;refreshed++;}
+        if(existing){if(!Array.isArray(existing.items))existing.items=await fetchStoredRecordItems(existing.id);existing.items=preserveDecisions(fresh,existing.items);existing.sourceFiles=sourceFilesSnapshot();existing.updatedAt=now;existing.sourceSyncAt=now;refreshed++;}
         else if(fresh.length){state.records.push({id,period:group.period,pdv:group.pdv,createdAt:now,updatedAt:now,sourceSyncAt:now,sourceFiles:sourceFilesSnapshot(),items:fresh});created++;}
       }
       return {created,refreshed,groups:groups.size};
@@ -582,7 +589,23 @@
       const items=getRecordItems(period,pdv);if(!items.length){notify(`No hay penalidades para ${pdv} en ${period}. Verifica la fecha del archivo.`,true);return;}
       record={id,period,pdv,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),sourceFiles:sourceFilesSnapshot(),items};state.records.push(record);persist();renderSummary();showRecord(record.id);notify(`${fmtCount(items.length)} penalidades agregadas al registro.`);
     }
-    function showRecord(id){currentRecordId=id;selectedIds.clear();matrixGuideSelection=null;dirty=false;$('detailPanel').hidden=false;renderDetail();renderSummary();$('detailPanel').scrollIntoView({behavior:'smooth',block:'start'});}
+    function fetchStoredRecordItems(recordKey){
+      if(!cloudMode)return Promise.resolve([]);
+      return new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getRecordItems(recordKey));
+    }
+    async function showRecord(id){
+      const record=state.records.find(item=>item.id===id);if(!record)return;
+      currentRecordId=id;selectedIds.clear();matrixGuideSelection=null;dirty=false;$('detailPanel').hidden=false;
+      $('detailHeading').innerHTML=`Detalle de penalidades <span class="badge">${escapeHtml(periodLabel(record.period))}</span> <span class="badge">${escapeHtml(record.pdv)}</span>`;
+      renderSummary();$('detailPanel').scrollIntoView({behavior:'smooth',block:'start'});
+      if(!Array.isArray(record.items)){
+        $('detailSubtitle').textContent='Cargando penalidades desde Supabase…';$('detailBody').innerHTML='<tr><td colspan="16" class="empty">Cargando detalle por lotes…</td></tr>';$('breakdownBody').innerHTML='';$('breachMatrixBody').innerHTML='';$('slaMatrixBody').innerHTML='';$('reasonSummaryBody').innerHTML='';$('saveBtn').disabled=true;$('syncBtn').disabled=true;
+        try{record.items=await fetchStoredRecordItems(id);}
+        catch(error){$('detailSubtitle').textContent='No se pudo cargar el detalle. Haz clic nuevamente en la liquidación para reintentar.';$('detailBody').innerHTML='<tr><td colspan="16" class="empty">No se pudo cargar este detalle.</td></tr>';notify(`No se pudo cargar el detalle desde Supabase: ${error?.message||error||''}`,true);return;}
+        if(currentRecordId!==id)return;
+      }
+      $('saveBtn').disabled=!appReady;$('syncBtn').disabled=!appReady;renderDetail();renderSummary();
+    }
     function deleteSavedRecord(id){
       const record=state.records.find(item=>item.id===id);if(!record)return;
       const label=`${periodLabel(record.period)} · ${record.pdv}`;
@@ -610,16 +633,20 @@
     function setDirty(){dirty=true;$('saveState').textContent='Cambios sin guardar';$('saveBtn').textContent='Guardar cambios';}
     function saveCurrent(){
       const record=currentRecord();if(!record)return;
+      if(!Array.isArray(record.items)){notify('Espera a que termine de cargar el detalle antes de guardar.',true);return;}
       const missing=record.items.find(i=>exemptionPercent(i)>0&&!txt(i.reason));if(missing){notify(`Completa el motivo de exoneración para la guía ${missing.tracking}.`,true);const input=[...$('detailBody').querySelectorAll('.reason-input')].find(el=>el.dataset.id===missing.id);input?.focus();input?.scrollIntoView({behavior:'smooth',block:'center'});return;}
       record.updatedAt=new Date().toISOString();dirty=false;if(!persist(true))return;$('saveState').textContent=cloudMode?'Sincronizando…':'Registro guardado';$('saveBtn').textContent='Guardar cambios';renderSummary();renderMetricsAndBreakdown();
     }
     function syncCurrent(){
-      const old=currentRecord();if(!old)return;if(!(state.sources.penalties?.rows||[]).length){notify('Carga al menos un Excel de penalidades antes de actualizar.',true);return;}
+      const old=currentRecord();if(!old)return;if(!Array.isArray(old.items)){notify('Espera a que termine de cargar el detalle antes de actualizar.',true);return;}if(!(state.sources.penalties?.rows||[]).length){notify('Carga al menos un Excel de penalidades antes de actualizar.',true);return;}
       if(!confirm('Se reemplazará la lista de penalidades del periodo y PDV con los archivos cargados. Las decisiones y motivos se conservarán cuando coincida la guía y la penalidad. ¿Continuar?'))return;
       const fresh=getRecordItems(old.period,old.pdv);if(!fresh.length){notify('Los archivos actuales no tienen penalidades para este periodo y PDV.',true);return;}
       const syncTime=new Date().toISOString();old.items=preserveDecisions(fresh,old.items);old.sourceFiles=sourceFilesSnapshot();old.updatedAt=syncTime;old.sourceSyncAt=syncTime;dirty=false;selectedIds.clear();persist();renderDetail();renderSummary();notify('Registro actualizado desde los archivos.');
     }
-    function recordTotals(record){const items=record.items||[];const total=items.reduce((a,x)=>a+(Number(x.cost)||0),0);const exempt=items.reduce((a,x)=>a+exemptionAmount(x),0);const yes=items.filter(x=>exemptionPercent(x)>0).length;return {count:items.length,yes,no:items.length-yes,total,exempt,balance:total-exempt};}
+    function recordTotals(record){
+      if(!Array.isArray(record.items)&&record.summary){const s=record.summary;const count=Number(s.count)||0,yes=Number(s.yes)||0,total=Number(s.total)||0,exempt=Number(s.exempt)||0;return {count,yes,no:Number.isFinite(Number(s.no))?Number(s.no):count-yes,total,exempt,balance:Number.isFinite(Number(s.balance))?Number(s.balance):total-exempt};}
+      const items=record.items||[];const total=items.reduce((a,x)=>a+(Number(x.cost)||0),0);const exempt=items.reduce((a,x)=>a+exemptionAmount(x),0);const yes=items.filter(x=>exemptionPercent(x)>0).length;return {count:items.length,yes,no:items.length-yes,total,exempt,balance:total-exempt};
+    }
     function periodLabel(period){const [y,m]=String(period||'').split('-');return m&&y?`${m}-${y}`:period||'';}
     function dateLabel(value){const d=new Date(value);return isNaN(d)?'':new Intl.DateTimeFormat('es-PE',{dateStyle:'short',timeStyle:'short'}).format(d);}
     function breachSlaLabel(item){return [txt(item.breach),txt(item.sla)].filter(Boolean).join(' · ')||'—';}
@@ -911,17 +938,18 @@
       notify('Respaldo JSON descargado. Puedes importarlo en la versión Supabase.');
     }
     function exportStateBackup(){
-      const button=$('exportStateBtn');button.disabled=true;
-      if(!cloudMode){downloadStateJson(state);button.disabled=false;return;}
+      const button=$('exportStateBtn'),label=button.textContent;button.disabled=true;button.textContent='Preparando respaldo…';
+      const finish=()=>{button.disabled=!appReady;button.textContent=label;};
+      if(!cloudMode){downloadStateJson(state);finish();return;}
       const snapshot=JSON.parse(JSON.stringify(state));
       google.script.run.withSuccessHandler(result=>{
         state.serverRevision=Number(result?.revision)||state.serverRevision;
         google.script.run.withSuccessHandler(remote=>{
-          if(!remote||remote.version!==1||!Array.isArray(remote.records)){button.disabled=false;notify('El estado central no tiene el formato esperado.',true);return;}
+          if(!remote||remote.version!==1||!Array.isArray(remote.records)){finish();notify('El estado central no tiene el formato esperado.',true);return;}
           const merged=mergeLocalDeletionTombstones(remote,snapshot).state;merged.serverRevision=Number(remote.serverRevision)||state.serverRevision;
-          downloadStateJson(merged);button.disabled=false;
-        }).withFailureHandler(error=>{button.disabled=false;notify(`No se pudo descargar el respaldo central: ${error?.message||error}`,true);}).getAppState();
-      }).withFailureHandler(error=>{button.disabled=false;notify(`No se pudo guardar el estado antes del respaldo: ${error?.message||error}`,true);}).saveAppState(snapshot);
+          downloadStateJson(merged);finish();
+        }).withFailureHandler(error=>{finish();notify(`No se pudo descargar el respaldo central: ${error?.message||error}`,true);}).getFullAppState();
+      }).withFailureHandler(error=>{finish();notify(`No se pudo guardar el estado antes del respaldo: ${error?.message||error}`,true);}).saveAppState(snapshot);
     }
     function setAvailable(available){appReady=available;if($('importStateBtn'))$('importStateBtn').disabled=!available;if($('exportStateBtn'))$('exportStateBtn').disabled=!available;$('openCreateBtn').disabled=!available;$('saveBtn').disabled=!available;$('createGroupBtn').disabled=!available;$('groupNameInput').disabled=!available;$('bulkGroupSelect').disabled=!available;$('clearRecordSelectionBtn').disabled=!available||selectedRecordIds.size===0;for(const id of Object.values(inputBySlot))$(id).disabled=!available;updateRecordGroupSelectionControls(filteredRecords());}
     function stateHasData(value){return !!(value?.records?.length||value?.groups?.length||Object.keys(value?.deletedRecords||{}).length||Object.values(value?.sources||{}).some(source=>source?.rows?.length));}
@@ -963,19 +991,45 @@
     const syncBatchSize = 500;
 
     function makeGoogleScriptBridge(){
+      const fetchItems=async recordKey=>{
+        const items=[],pageSize=500;let offset=0;
+        while(true){
+          const {data,error}=await exoSupabaseClient.rpc('penalidades_obtener_items',{p_record_key:recordKey,p_offset:offset,p_limit:pageSize});
+          if(error)throw error;
+          const page=Array.isArray(data)?data:[];items.push(...page);
+          if(page.length<pageSize)break;
+          offset+=pageSize;
+        }
+        return items;
+      };
+      const fetchFullState=async()=>{
+        const {data,error}=await exoSupabaseClient.rpc('penalidades_obtener_resumen');if(error)throw error;
+        const full=cloneState(data);
+        for(const record of full.records||[])record.items=await fetchItems(record.id);
+        return full;
+      };
       const createRunner = () => {
         let successHandler=()=>{}, failureHandler=()=>{};
         const runner={
           withSuccessHandler(fn){successHandler=typeof fn==='function'?fn:()=>{};return runner;},
           withFailureHandler(fn){failureHandler=typeof fn==='function'?fn:()=>{};return runner;},
           getAppState(){
-            exoSupabaseClient.rpc('penalidades_obtener_estado').then(({data,error})=>{
+            exoSupabaseClient.rpc('penalidades_obtener_resumen').then(({data,error})=>{
               if(error){failureHandler(error);return;}
               exoV2Baseline=cloneState(data);
               successHandler(data);
             }).catch(failureHandler);
             return runner;
           },
+          getRecordItems(recordKey){
+            fetchItems(recordKey).then(items=>{
+              const baselineRecord=(exoV2Baseline?.records||[]).find(record=>record.id===recordKey);
+              if(baselineRecord)baselineRecord.items=cloneState(items);
+              successHandler(items);
+            }).catch(failureHandler);
+            return runner;
+          },
+          getFullAppState(){fetchFullState().then(successHandler).catch(failureHandler);return runner;},
           saveAppState(snapshot){
             const keyNorm=value=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9\u3400-\u9FFF]+/g,' ').trim().replace(/\s+/g,' ').replace(/ /g,'');
             const dbItemId=(record,item)=>{const prefix=`${record.id}::`;return String(item.id??'').startsWith(prefix)?String(item.id):prefix+String(item.id??'');};

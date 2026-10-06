@@ -1,9 +1,16 @@
-PORTAL REVISION DE GUIAS + MODULO PENALIDADES
+PORTAL REVISION DE GUIAS + PENALIDADES V2
 
-Este paquete conserva el portal principal. index.html es la página de inicio con el login, Gestión de guías y Consulta desde Excel. No reemplaces index.html por el index.html del módulo Penalidades V2, porque ese archivo era una app independiente.
+IMPORTANTE: index.html es el inicio original del portal, con el login, Gestión de guías, Consulta desde Excel y los enlaces a Gestión V2 y Penalidades. No lo reemplaces con un index independiente. Penalidades se abre desde penalidades.html y reutiliza la sesión del portal.
 
-Para desplegar en GitHub Pages, sube el contenido completo de esta carpeta manteniendo los nombres y rutas. El enlace Penalidades del portal abre penalidades.html. Los archivos config.js, bridge.js, gestion-v2.html, pdv.html, pdv-v2.html, process-worker.js y pdf-pdv.js son parte del sitio y deben permanecer junto a index.html.
+MODELO DE DATOS
+Cada penalidad importada se guarda como una fila. Las liquidaciones agrupan esas filas por periodo y PDV. Las decisiones de porcentaje y motivo se almacenan por penalidad. Los Excel se procesan en el navegador; no se guardan copias de los archivos.
 
-Antes de subir, verifica que config.js conserve la URL y la clave pública publishable del proyecto Supabase. Nunca incluyas una service_role key.
+IMPLEMENTACION MANUAL
+1. En GitHub Pages, carga el contenido completo de esta carpeta en la raíz del repositorio, conservando rutas y nombres.
+2. Cierra pestañas antiguas de Penalidades y espera que termine la publicación de Pages.
+3. En Supabase SQL Editor, ejecuta completo supabase_penalidades_v2.sql. Actualiza de forma idempotente las funciones de guardado y eliminación.
+4. Cuando la instalación termine correctamente, ejecuta una sola vez supabase_penalidades_reiniciar.sql. Elimina cargas, liquidaciones, penalidades, decisiones y grupos existentes; vacía el estado JSON anterior y bloquea su función de escritura para que una página obsoleta no vuelva a guardar datos. Conserva Supabase Auth, la lista de autorización y los demás módulos.
+5. Cierra las pestañas abiertas del portal, vuelve a cargar GitHub Pages, inicia sesión y abre Penalidades. La tabla debe aparecer vacía.
 
-El SQL supabase_penalidades_v2.sql se ejecuta manualmente en el SQL Editor del proyecto Supabase; no se publica como parte de GitHub Pages.
+GUARDADO Y ELIMINACION
+El módulo guarda solo filas modificadas, en lotes secuenciales de hasta 500 penalidades. Al eliminar una liquidación, una función SQL borra el registro en una sola transacción; las claves foráneas eliminan sus penalidades, decisiones y asignación a grupo. Si falla el guardado, los cambios permanecen en esa pestaña y aparece el botón Reintentar sincronización.

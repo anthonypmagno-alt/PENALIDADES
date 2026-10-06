@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Módulo Penalidades del portal Revisión de Guías V16">
+  <meta name="description" content="Gestión de exoneraciones de penalidades por periodo y PDV">
   <title>Penalidades · Revisión de Guías V16</title>
   <script src="./config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -135,7 +135,7 @@
   <main class="shell">
     <header class="topbar">
       <div class="brand">
-        <div class="mark">PD</div>
+        <div class="mark">EX</div>
         <div><div class="eyebrow">Portal V16 · Módulo de gestión</div><h1>Penalidades y exoneraciones</h1></div>
       </div>
       <div class="top-actions"><span id="moduleIdentity" class="note"></span><button type="button" class="btn" id="importStateBtn" disabled>Importar respaldo JSON</button><input id="stateBackupInput" type="file" accept=".json,application/json" hidden><button type="button" class="btn" id="exportStateBtn" disabled>Descargar respaldo</button><a class="btn" href="./index.html">← Revisión de Guías</a></div>
@@ -308,9 +308,9 @@
       $('storageState').textContent='No hay conexión con el almacenamiento Supabase';if(showMessage)notify('No se pudo guardar en Supabase.',true);return false;
     }
     function flushCloudSave(){
-      if(!cloudMode||!cloudPending||cloudInFlight)return;cloudPending=false;cloudInFlight=true;const snapshot=JSON.parse(JSON.stringify(state));$('retrySyncBtn').disabled=true;
+      if(!cloudMode||!cloudPending||cloudInFlight)return;cloudPending=false;cloudInFlight=true;const snapshot=JSON.parse(JSON.stringify(state));
       google.script.run.withSuccessHandler(result=>{state.serverRevision=Number(result?.revision)||state.serverRevision;$('storageState').textContent='Guardado en Supabase';$('retrySyncBtn').hidden=true;$('retrySyncBtn').disabled=false;if(cloudNotify)notify('Cambios guardados en Supabase.');if(!dirty){$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';}cloudNotify=false;cloudInFlight=false;if(cloudPending)setTimeout(flushCloudSave,0);})
-        .withFailureHandler(error=>{$('storageState').textContent='Guardado pendiente';$('retrySyncBtn').hidden=false;$('retrySyncBtn').disabled=false;notify(`No se pudo sincronizar con Supabase: ${error?.message||error}. Tus cambios siguen en esta pestaña; reintenta después de corregir el problema.`,true);cloudNotify=false;cloudInFlight=false;cloudPending=true;})
+        .withFailureHandler(error=>{$('storageState').textContent='Error al guardar en Supabase';$('retrySyncBtn').hidden=false;$('retrySyncBtn').disabled=false;notify(`No se pudo sincronizar con Supabase: ${error?.message||error}. Tus cambios siguen en esta pestaña; corrige el problema y pulsa Reintentar sincronización.`,true);cloudNotify=false;cloudInFlight=false;cloudPending=true;})
         .saveAppState(snapshot);
     }
     function notify(message,error=false){const el=$('toast');el.textContent=message;el.style.background=error?'#8b211a':'#203040';el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3500);}
@@ -365,18 +365,18 @@
         return {sourceRow:i+2,dateRaw:asString(dateValue),dateISO:parseDate(dateValue),period:periodFromDate(periodValue),sourcePeriodRaw:asString(periodValue),pdv:pdvName(lastOperationPoint),lastOperationPoint,tracking:txt(getValue(r,['Número de Guía','Numero de Guia','Tracking Number','Número de guía','Guía'])),breach:txt(getValue(r,['Brecha máxima por guía y PDV','Brecha mayor','Brecha máxima','Clasificación de brecha','Penalidad de brecha mayor','Brecha','Tipo de tiempo de espera'])),sla:txt(getValue(r,['SLA máximo','SLA','Cola larga'])),operation:txt(getValue(r,['Tipo de operación más reciente','Tipo de operación mas reciente','Último tipo de operación','Ultimo tipo de operacion','Operación más reciente','Última operación','Tipo de operación reciente','Tipo de escaneo más reciente'])),waitHours:asString(getValue(r,['Duración del tiempo de espera','Horas sin actualización','Horas de brecha','Duración (horas)'])),lastUpdate:asString(getValue(r,['Último tiempo de funcionamiento','Última actualización','Fecha de última actualización','Último escaneo']))};
       }).filter(x=>x.tracking&&x.pdv);
       if(slot==='guides')return rawRows.map((r,i)=>{
-        const district=txt(getValue(r,['Distrito','Distrito de destino','Colonia de destino','District']));
-        const province=txt(getValue(r,['Provincia','Provincia de destino','Provincia destino','Provincia (geográfica)','Provincia real','Ciudad de Destino','Province']));
-        const department=txt(getValue(r,['Departamento','Departamento de destino','Department']));
+        const district=txt(getValue(r,['Colonia de destino','Distrito','Distrito de destino','District']));
+        const province=txt(getValue(r,['Ciudad de destino','Ciudad de Destino','Provincia','Provincia destino','Provincia (geográfica)','Provincia real','Province']));
+        const department=txt(getValue(r,['Provincia de destino','Departamento','Departamento de destino','Department']));
         const updatedAt=asString(getValue(r,['Última actualización','Ultima actualizacion','Fecha de exportación','Fecha de reporte']));
-        return {sourceRow:i+2,tracking:txt(getValue(r,['Número de Guía','Numero de Guia','Tracking Number','Guía'])),pdv:pdvName(getValue(r,['PDV','PDV asignado a cliente','PDV de recolección','Punto de entrega'])),operation:txt(getValue(r,['Tipo de operación más reciente','Tipo de operación mas reciente','Último tipo de operación','Ultimo tipo de operacion','Tipo de operación reciente','Tipo de operación','Última operación'])),scanType:txt(getValue(r,['Tipo de escaneo más reciente','Tipo de escaneo mas reciente','Último tipo de escaneo'])),signature:txt(getValue(r,['Estatus de firma','Estado de firma'])),scanTime:asString(getValue(r,['Tiempo del escaneo más reciente','Tiempo del escaneo mas reciente','Último escaneo'])),updatedAt,district,province,department};
+        return {sourceRow:i+2,tracking:txt(getValue(r,['Número de Guía','Numero de Guia','Tracking Number','Guía'])),pdv:pdvName(getValue(r,['PDV','PDV asignado a cliente','PDV de recolección','Punto de entrega'])),scanType:txt(getValue(r,['Tipo de escaneo más reciente','Tipo de escaneo mas reciente','Último tipo de escaneo'])),signature:txt(getValue(r,['Estatus de firma','Estado de firma'])),scanTime:asString(getValue(r,['Tiempo del escaneo más reciente','Tiempo del escaneo mas reciente','Último escaneo'])),updatedAt,district,province,department};
       }).filter(x=>x.tracking);
       return rawRows.map((r,i)=>({sourceRow:i+2,zone:txt(getValue(r,['Zona','Nombre de zona'])),ubigeo:txt(getValue(r,['UBIGEO','Ubigeo'])),district:txt(getValue(r,['Distrito','District'])),province:txt(getValue(r,['Provincia','Province'])),department:txt(getValue(r,['Departamento','Department'])),slaDays:readAssignedSlaDays(r),type:txt(getValue(r,['Tipo de zona','Tipo zona','Tipo'])).toUpperCase()})).filter(x=>x.district||x.province||x.department);
     }
     function sourcePeriodForImportedRow(slot,row,selectedPeriod){
       const selected=selectedPeriod||'';
       // Todas las filas de Brecha pertenecen al periodo elegido al cargar el archivo; Fecha y Periodo originales son informativos.
-      return slot==='breaches'?selected:(row.period||periodFromDate(row.dateISO)||selected);
+      return (slot==='breaches'||slot==='penalties')?selected:(row.period||periodFromDate(row.dateISO)||selected);
     }
     const slotLabels={penalties:'Liquidaciones de penalidades',breaches:'Brecha máxima',guides:'Exportación de guía',zones:'Zonificación'};
     const inputBySlot={penalties:'filePenalties',breaches:'fileBreaches',guides:'fileGuides',zones:'fileZones'};
@@ -396,13 +396,14 @@
     for(const slot of Object.keys(inputBySlot))$(inputBySlot[slot]).addEventListener('change',async e=>{
       const files=[...(e.target.files||[])];if(!files.length)return;$(stateBySlot[slot]).textContent=`Leyendo ${fmtCount(files.length)} archivo(s)…`;
       try{
-        const batch=[];for(const file of files){if(slot==='breaches'&&!$('periodInput').value)throw new Error('Selecciona el periodo de liquidación antes de cargar Brecha. La Fecha y el Periodo del archivo se conservan como referencia y no determinan el periodo de cruce.');const rows=transformRows(slot,await readRows(file,slot==='penalties'?'LISTA DETALLADA DE PENALIDAD':''));if(!rows.length)throw new Error(`${file.name}: no se encontraron filas utilizables en la hoja seleccionada.`);batch.push({file,rows});}
-        const importedAt=new Date().toISOString();for(const entry of batch)addImportedSourceRows(slot,entry.file,entry.rows,importedAt);matrixGuideSelection=null;
+        const batch=[];for(const file of files){if((slot==='breaches'||slot==='penalties')&&!$('periodInput').value)throw new Error(`Selecciona el periodo de liquidación antes de cargar ${slot==='penalties'?'las liquidaciones':'Brecha'}. El periodo ingresado determina a qué registro pertenecen las filas.`);const rows=transformRows(slot,await readRows(file,slot==='penalties'?'LISTA DETALLADA DE PENALIDAD':''));if(!rows.length)throw new Error(`${file.name}: no se encontraron filas utilizables en la hoja seleccionada.`);batch.push({file,rows});}
+        if(slot==='penalties'){const period=$('periodInput').value,newPdvs=new Set(batch.flatMap(entry=>entry.rows.map(row=>idPart(row.pdv))));if(state.sources.penalties?.rows)state.sources.penalties.rows=state.sources.penalties.rows.filter(row=>!(row.sourceId==='stored'&&row.period===period&&newPdvs.has(idPart(row.pdv))));}
+        const importedAt=new Date().toISOString();for(const entry of batch)addImportedSourceRows(slot,entry.file,entry.rows,importedAt);if(state.sources.penalties)state.sources.penalties.storedSnapshot=false;matrixGuideSelection=null;
         if(slot==='zones'&&batch.length)state.sources.zones={...state.sources.zones,filename:batch[0].file.name,importedAt,rows:batch[0].rows,files:[{filename:batch[0].file.name,importedAt,rowCount:batch[0].rows.length}]};
         let recordSummary={created:0,refreshed:0,groups:0};
         if(slot==='penalties'){setDefaultPeriodAndPdvs();recordSummary=createRecordsFromPenaltySources();}
         else refreshRecordsFromSources();
-        const slaBackfilled=backfillMissingSla();persist();updateSourceDiag();renderSummary();if(currentRecord())renderDetail();
+        hydratePenaltySourceFromRecords();const slaBackfilled=backfillMissingSla();persist();updateSourceDiag();renderSummary();if(currentRecord())renderDetail();
         const importedCount=batch.reduce((sum,item)=>sum+item.rows.length,0),zoneSlaCount=slot==='zones'?batch[0].rows.filter(row=>txt(row.slaDays)!=='').length:null;
         const importedMessage=slot==='zones'?`${slotLabels[slot]} importada: ${fmtCount(importedCount)} filas; ${fmtCount(zoneSlaCount)} con “SLA ASIGNADO (DIAS)”.`:slot==='penalties'?`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas; ${fmtCount(recordSummary.created)} liquidaciones creadas y ${fmtCount(recordSummary.refreshed)} actualizadas.`:`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas.`;
         notify(slaBackfilled?`${importedMessage} Se completó el SLA de ${fmtCount(slaBackfilled)} penalidades.`:importedMessage);
@@ -436,7 +437,7 @@
     function applyAutomaticZone(item,guides=buildGuideIndex(),zones=buildZoneIndex()){
       item.manualZone=null;item.manualZoneApplied=false;
       const guide=findGuide(guides,item.pdv,item.tracking);
-      if(guide){item.district=guide.district||item.district;item.province=guide.province||item.province;item.department=guide.department||item.department;item.latestOperation=guide.operation||'Sin dato';item.scanType=guide.scanType||'Sin dato';item.signature=guide.signature||'Sin dato';item.scanTime=guide.scanTime||'';}
+      if(guide){item.district=guide.district||item.district;item.province=guide.province||item.province;item.department=guide.department||item.department;item.scanType=guide.scanType||'Sin dato';item.signature=guide.signature||'Sin dato';item.scanTime=guide.scanTime||'';}
       const zone=findZone(item.district,item.province,item.department,zones);
       item.zoneName=zone?.zone||'Zona no encontrada';item.zoneType=zone?.type||'NO ASIGNADA';item.slaDays=zone?.slaDays??'';item.zoneMatched=!!zone;
     }
@@ -494,7 +495,8 @@
     function updateSourceDiag(){
       for(const slot of Object.keys(inputBySlot)){const source=state.sources[slot];if(source&&Array.isArray(source.rows)){const files=Array.isArray(source.files)?source.files.length:1;$(stateBySlot[slot]).textContent=`${sourceFileList(slot)} · ${fmtCount(source.rows.length)} filas${files>1?` · ${fmtCount(files)} archivos`:''}`;$(cardBySlot[slot]).classList.add('ready');}}
       const penalties=state.sources.penalties?.rows||[],guides=state.sources.guides?.rows||[],breaches=state.sources.breaches?.rows||[],zones=state.sources.zones?.rows||[];
-      if(!penalties.length){$('sourceDiag').textContent='Carga los Excel de penalidades para crear las liquidaciones. Los demás archivos se pueden cargar después.';return;}
+      if(state.sources.penalties?.storedSnapshot){$('sourceDiag').innerHTML=`Los registros guardados contienen <strong>${fmtCount(penalties.length)}</strong> penalidades y sus datos de cruce ya calculados. Para crear liquidaciones nuevas o actualizar los cruces, carga los Excel fuente correspondientes; los archivos originales no se guardan.`;return;}
+      if(!penalties.length){$('sourceDiag').textContent='Carga los Excel de penalidades para crear liquidaciones. Los demás archivos se pueden cargar después.';return;}
       const guideIndex=buildGuideIndex(),breachIndex=buildBreachIndex(),zoneIndex=buildZoneIndex();
       const guideMatches=penalties.filter(p=>findGuide(guideIndex,p.pdv,p.tracking)).length;
       const breachMatches=penalties.filter(p=>findMaxBreach(breachIndex,p.period||periodFromDate(p.dateISO)||'',p.pdv,p.tracking)).length;
@@ -509,17 +511,19 @@
         const g=findGuide(guides,p.pdv,p.tracking),b=findMaxBreach(breaches,period,p.pdv,p.tracking),z=g?findZone(g.district,g.province,g.department,zones):null;
         const penaltyName=norm(p.penalty),isBreachPenalty=penaltyName.includes('BRECHA')||(!txt(p.sla)&&!!txt(p.breach)),isSlaPenalty=penaltyName.includes('SLA')||penaltyName.includes('COLA')||!!txt(p.sla);
         const breach=isBreachPenalty?(txt(b?.breach)||p.breach):p.breach,sla=isSlaPenalty?(txt(b?.sla)||p.sla):p.sla;
-        return {id:penaltyId(p,occurrence),sourceRow:p.sourceRow,sourceFile:p.sourceFile||'',dateRaw:p.dateRaw,dateISO:p.dateISO,period,pdv:pdvName(p.pdv),tracking:p.tracking,penalty:p.penalty||'Sin tipo de penalización',breach,liquidationBreach:p.breach||'',sla,breachOperation:isBreachPenalty?(b?.operation||''):'',breachWaitHours:isBreachPenalty?(b?.waitHours||''):'',breachLastUpdate:isBreachPenalty?(b?.lastUpdate||''):'',breachMatched:!!(b&&isBreachPenalty),latestOperation:g?.operation||'Sin dato',motive:p.motive,costRaw:p.costRaw,cost:Number(p.cost)||0,observations:p.observations,sourceZone:p.sourceZone,scanType:g?.scanType||'Sin dato',signature:g?.signature||'Sin dato',scanTime:g?.scanTime||'',district:g?.district||'Sin dato',province:g?.province||'Sin dato',department:g?.department||'Sin dato',zoneType:z?.type||'NO ASIGNADA',slaDays:z?.slaDays??'',zoneName:z?.zone||'Zona no encontrada',zoneMatched:!!z,guideMatched:!!g,manualZone:null,exemptionPercent:0,exonerated:false,reason:''};
+        return {id:`${recordKey(period,pdv)}::${penaltyId(p,occurrence)}`,sourceRow:p.sourceRow,sourceFile:p.sourceFile||'',dateRaw:p.dateRaw,dateISO:p.dateISO,period,pdv:pdvName(p.pdv),tracking:p.tracking,penalty:p.penalty||'Sin tipo de penalización',breach,liquidationBreach:p.breach||'',sla,liquidationSla:p.sla||'',breachOperation:isBreachPenalty?(b?.operation||''):'',breachWaitHours:isBreachPenalty?(b?.waitHours||''):'',breachLastUpdate:isBreachPenalty?(b?.lastUpdate||''):'',breachMatched:!!(b&&isBreachPenalty),latestOperation:b?.operation||'Sin dato',motive:p.motive,costRaw:p.costRaw,cost:Number(p.cost)||0,observations:p.observations,sourceZone:p.sourceZone,scanType:g?.scanType||'Sin dato',signature:g?.signature||'Sin dato',scanTime:g?.scanTime||'',district:g?.district||'Sin dato',province:g?.province||'Sin dato',department:g?.department||'Sin dato',zoneType:z?.type||'NO ASIGNADA',slaDays:z?.slaDays??'',zoneName:z?.zone||'Zona no encontrada',zoneMatched:!!z,guideMatched:!!g,manualZone:null,exemptionPercent:0,exonerated:false,reason:''};
       });
     }
     function backfillMissingSla(){
-      const guides=buildGuideIndex(),zones=buildZoneIndex(),hasZones=Array.isArray(state.sources.zones?.rows);let updated=0;
+      const guides=buildGuideIndex(),breaches=buildBreachIndex(),zones=buildZoneIndex(),hasBreaches=!!state.sources.breaches?.rows?.length,hasZones=Array.isArray(state.sources.zones?.rows);let updated=0;
       for(const record of state.records){
         for(const item of record.items||[]){
           const guide=findGuide(guides,item.pdv,item.tracking);
+          const breach=findMaxBreach(breaches,record.period,item.pdv,item.tracking);
+          if(hasBreaches){const operation=breach?.operation||'Sin dato';if(item.latestOperation!==operation){item.latestOperation=operation;updated++;}if(item.breachOperation!==operation){item.breachOperation=operation;updated++;}if(item.breachMatched!==!!breach){item.breachMatched=!!breach;updated++;}if(breach){item.breachWaitHours=breach.waitHours||'';item.breachLastUpdate=breach.lastUpdate||'';}}
           let changed=false;
           if(guide){
-            const guideValues={district:guide.district||'Sin dato',province:guide.province||'Sin dato',department:guide.department||'Sin dato',latestOperation:guide.operation||'Sin dato',scanType:guide.scanType||'Sin dato',signature:guide.signature||'Sin dato',scanTime:guide.scanTime||''};
+            const guideValues={district:guide.district||'Sin dato',province:guide.province||'Sin dato',department:guide.department||'Sin dato',scanType:guide.scanType||'Sin dato',signature:guide.signature||'Sin dato',scanTime:guide.scanTime||''};
             for(const [key,value] of Object.entries(guideValues))if(item[key]!==value){item[key]=value;changed=true;}
           }
           if(item.manualZone){
@@ -534,10 +538,16 @@
       }
       return updated;
     }
+    function hydratePenaltySourceFromRecords(){
+      if(state.sources.penalties?.rows?.length)return;
+      const rows=[];
+      for(const record of state.records)for(const item of record.items||[])rows.push({sourceRow:rows.length+2,sourceId:'stored',sourceFile:item.sourceFile||'Registros guardados',sourceImportedAt:record.updatedAt||'',period:record.period,pdv:record.pdv,tracking:item.tracking,penalty:item.penalty,breach:item.liquidationBreach||item.breach||'',sla:item.liquidationSla||item.sla||'',dateRaw:item.dateRaw||'',dateISO:item.dateISO||parseDate(item.dateRaw),motive:item.motive||'',costRaw:item.costRaw||'',cost:Number(item.cost)||0,observations:item.observations||'',sourceZone:item.sourceZone||''});
+      if(rows.length)state.sources.penalties={filename:'Registros guardados',importedAt:new Date().toISOString(),rows,storedSnapshot:true,files:[{sourceId:'stored',filename:'Registros guardados',importedAt:new Date().toISOString(),rowCount:rows.length}]};
+    }
     function sourceFilesSnapshot(){return Object.fromEntries(['penalties','breaches','guides','zones'].map(slot=>[slot,sourceFileList(slot)]).filter(([,name])=>name));}
     function preserveDecisions(fresh,previousItems){
       const previous=new Map((previousItems||[]).map(item=>[item.id,item]));
-      for(const item of fresh){const old=previous.get(item.id);if(!old)continue;item.exemptionPercent=exemptionPercent(old);item.exonerated=item.exemptionPercent>0;item.reason=old.reason||'';item.manualZone=old.manualZone?{...old.manualZone}:null;if(item.manualZone)applyManualZone(item);item.modifiedAt=old.modifiedAt||'';}
+      for(const item of fresh){const old=previous.get(item.id);if(!old)continue;item.exemptionPercent=exemptionPercent(old);item.exonerated=item.exemptionPercent>0;item.reason=old.reason||'';item.manualZone=old.manualZone?{...old.manualZone}:null;if(item.manualZone)applyManualZone(item);item.modifiedAt=old.modifiedAt||'';if(!state.sources.guides?.rows?.length)for(const key of ['district','province','department','scanType','signature','scanTime'])if(old[key]!=null)item[key]=old[key];const hasRelevantBreach=!!state.sources.breaches?.rows?.some(row=>row.period===item.period);if(!hasRelevantBreach){for(const key of ['latestOperation','breachOperation','breachWaitHours','breachLastUpdate','breachMatched'])if(old[key]!=null)item[key]=old[key];if(old.breachMatched){item.breach=old.breach||item.breach;item.sla=old.sla||item.sla;}}if(!state.sources.zones?.rows?.length)for(const key of ['zoneName','zoneType','slaDays','zoneMatched','sourceZone'])if(old[key]!=null)item[key]=old[key];}
       return fresh;
     }
     function refreshRecordsFromSources(){
@@ -824,8 +834,7 @@
     document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMultiPickers();});
     $('detailScrollLeft').addEventListener('click',()=>{const wrap=$('detailTableWrap');wrap.scrollBy({left:-Math.max(320,wrap.clientWidth*.75),behavior:'smooth'});});
     $('detailScrollRight').addEventListener('click',()=>{const wrap=$('detailTableWrap');wrap.scrollBy({left:Math.max(320,wrap.clientWidth*.75),behavior:'smooth'});});
-    $('openCreateBtn').addEventListener('click',openCreate);$('saveBtn').addEventListener('click',saveCurrent);$('syncBtn').addEventListener('click',syncCurrent);
-    $('retrySyncBtn').addEventListener('click',()=>{cloudPending=true;cloudNotify=true;$('storageState').textContent='Reintentando sincronización…';flushCloudSave();});
+    $('openCreateBtn').addEventListener('click',openCreate);$('saveBtn').addEventListener('click',saveCurrent);$('syncBtn').addEventListener('click',syncCurrent);$('retrySyncBtn').addEventListener('click',()=>{if(cloudInFlight)return;cloudPending=true;cloudNotify=true;$('storageState').textContent='Reintentando sincronización…';$('retrySyncBtn').disabled=true;flushCloudSave();});
     $('exportStateBtn').addEventListener('click',exportStateBackup);
     $('recordsBody').addEventListener('click',e=>{const deleteButton=e.target.closest('[data-delete-record]');if(deleteButton){e.stopPropagation();deleteSavedRecord(deleteButton.dataset.deleteRecord);return;}if(e.target.closest('.record-select')){e.stopPropagation();return;}const row=e.target.closest('tr[data-record]');if(row)showRecord(row.dataset.record);});
     $('recordsBody').addEventListener('change',e=>{if(!e.target.matches('.record-select'))return;const id=e.target.dataset.recordId;if(e.target.checked)selectedRecordIds.add(id);else selectedRecordIds.delete(id);updateRecordGroupSelectionControls(filteredRecords());});
@@ -865,11 +874,11 @@
         }catch(error){notify(`No se pudo importar el respaldo: ${error?.message||error}`,true);}finally{event.target.value='';}
       });
     }
-    function downloadStateJson(value,message='Respaldo JSON descargado. Puedes importarlo en la versión Supabase.'){
+    function downloadStateJson(value){
       const filename=`EXONERACIONES_RESPALDO_${new Date().toISOString().slice(0,10)}.json`;
       const blob=new Blob([JSON.stringify(value,null,2)],{type:'application/json;charset=utf-8'});
       const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
-      notify(message);
+      notify('Respaldo JSON descargado. Puedes importarlo en la versión Supabase.');
     }
     function exportStateBackup(){
       const button=$('exportStateBtn');button.disabled=true;
@@ -881,8 +890,8 @@
           if(!remote||remote.version!==1||!Array.isArray(remote.records)){button.disabled=false;notify('El estado central no tiene el formato esperado.',true);return;}
           const merged=mergeLocalDeletionTombstones(remote,snapshot).state;merged.serverRevision=Number(remote.serverRevision)||state.serverRevision;
           downloadStateJson(merged);button.disabled=false;
-        }).withFailureHandler(error=>{button.disabled=false;downloadStateJson(snapshot,`No se pudo leer el respaldo central: ${error?.message||error}. Descargué una copia del estado actual de esta pestaña; consérvala.`);}).getAppState();
-      }).withFailureHandler(error=>{button.disabled=false;downloadStateJson(snapshot,`No se pudo sincronizar: ${error?.message||error}. Descargué una copia del estado actual de esta pestaña; consérvala.`);}).saveAppState(snapshot);
+        }).withFailureHandler(error=>{button.disabled=false;notify(`No se pudo descargar el respaldo central: ${error?.message||error}`,true);}).getAppState();
+      }).withFailureHandler(error=>{button.disabled=false;notify(`No se pudo guardar el estado antes del respaldo: ${error?.message||error}`,true);}).saveAppState(snapshot);
     }
     function setAvailable(available){appReady=available;if($('importStateBtn'))$('importStateBtn').disabled=!available;if($('exportStateBtn'))$('exportStateBtn').disabled=!available;$('openCreateBtn').disabled=!available;$('saveBtn').disabled=!available;$('createGroupBtn').disabled=!available;$('groupNameInput').disabled=!available;$('bulkGroupSelect').disabled=!available;$('clearRecordSelectionBtn').disabled=!available||selectedRecordIds.size===0;for(const id of Object.values(inputBySlot))$(id).disabled=!available;updateRecordGroupSelectionControls(filteredRecords());}
     function stateHasData(value){return !!(value?.records?.length||value?.groups?.length||Object.keys(value?.deletedRecords||{}).length||Object.values(value?.sources||{}).some(source=>source?.rows?.length));}
@@ -893,7 +902,7 @@
       if(merged.records.length!==beforeCount)changed=true;return {state:merged,changed};
     }
     function initializeView(){
-      const slaBackfilled=backfillMissingSla();if(slaBackfilled){persist();notify(`Se actualizaron datos de Exportación y Zonificación en ${fmtCount(slaBackfilled)} penalidades guardadas.`);}updateSourceDiag();if(state.sources.penalties)setDefaultPeriodAndPdvs();renderSummary();
+      hydratePenaltySourceFromRecords();const slaBackfilled=backfillMissingSla();if(slaBackfilled){persist();notify(`Se actualizaron datos de Exportación y Zonificación en ${fmtCount(slaBackfilled)} penalidades guardadas.`);}updateSourceDiag();if(state.sources.penalties)setDefaultPeriodAndPdvs();renderSummary();
       if(state.records.length){const periods=state.records.map(r=>r.period).sort();if(!$('periodInput').value)$('periodInput').value=periods[periods.length-1];}
       if(!window.XLSX)notify('El lector Excel requiere conexión a internet al abrir el HTML.',true);
     }
@@ -910,28 +919,77 @@
   })();
   </script>
   <script>
-    // Reutiliza la configuración y la sesión de Supabase Auth del portal V16.
+    // Reutiliza la sesión del portal V16 y guarda cada penalidad en filas relacionales.
     const V16_CONFIG = window.V16_CONFIG;
     let exoSupabaseClient = null;
     let exoAppStarted = false;
+    let exoV2Baseline = null;
     const gateMessage = document.getElementById('moduleGateMessage');
     const showModuleGate = (message, isError=false) => {
       gateMessage.textContent = message || '';
       gateMessage.classList.toggle('error', Boolean(isError));
     };
+    const cloneState = value => JSON.parse(JSON.stringify(value || {}));
+    const syncBatchSize = 500;
 
     function makeGoogleScriptBridge(){
       const createRunner = () => {
-        let successHandler = () => {}, failureHandler = () => {};
-        const runner = {
+        let successHandler=()=>{}, failureHandler=()=>{};
+        const runner={
           withSuccessHandler(fn){successHandler=typeof fn==='function'?fn:()=>{};return runner;},
           withFailureHandler(fn){failureHandler=typeof fn==='function'?fn:()=>{};return runner;},
           getAppState(){
-            exoSupabaseClient.rpc('get_exoneraciones_app_state').then(({data,error})=>{if(error)failureHandler(error);else successHandler(data);}).catch(failureHandler);
+            exoSupabaseClient.rpc('penalidades_obtener_estado').then(({data,error})=>{
+              if(error){failureHandler(error);return;}
+              exoV2Baseline=cloneState(data);
+              successHandler(data);
+            }).catch(failureHandler);
             return runner;
           },
           saveAppState(snapshot){
-            exoSupabaseClient.rpc('save_exoneraciones_app_state',{incoming_state:snapshot}).then(({data,error})=>{if(error)failureHandler(error);else successHandler(data);}).catch(failureHandler);
+            const keyNorm=value=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9\u3400-\u9FFF]+/g,' ').trim().replace(/\s+/g,' ').replace(/ /g,'');
+            const dbItemId=(record,item)=>{const prefix=`${record.id}::`;return String(item.id??'').startsWith(prefix)?String(item.id):prefix+String(item.id??'');};
+            const baseline=exoV2Baseline||{records:[],groups:[]};
+            const baseRecords=new Map((baseline.records||[]).map(record=>[record.id,record]));
+            const nextRecords=new Map((snapshot.records||[]).map(record=>[record.id,record]));
+            const deletedRecordKeys=[...baseRecords.keys()].filter(id=>!nextRecords.has(id));
+            const deletedRecordSet=new Set(deletedRecordKeys);
+            const baseItems=new Map();
+            for(const record of (baseline.records||[]))for(const item of(record.items||[])){const id=dbItemId(record,item);baseItems.set(id,JSON.stringify({...item,id}));}
+            const nextItems=new Map(), changedByRecord=[];
+            for(const record of(snapshot.records||[])){
+              const changed=[];
+              for(const item of(record.items||[])){
+                const id=dbItemId(record,item),packed=JSON.stringify({...item,id});nextItems.set(id,packed);
+                if(baseItems.get(id)===packed)continue;
+                changed.push({id,tracking:item.tracking||'',tracking_key:keyNorm(item.tracking),pdv_key:keyNorm(item.pdv||record.pdv),penalizacion:item.penalty||'',brecha:item.breach||'',sla:item.sla||'',brecha_liquidacion:item.liquidationBreach||'',sla_liquidacion:item.liquidationSla||'',costo:Number(item.cost)||0,fecha:item.dateRaw||'',motivo_origen:item.motive||'',observaciones:item.observations||'',distrito:item.district||'',provincia:item.province||'',departamento:item.department||'',tipo_operacion_reciente:item.latestOperation||'',operacion_brecha:item.breachOperation||'',brecha_horas:item.breachWaitHours||'',brecha_ultima_actualizacion:item.breachLastUpdate||'',tipo_escaneo_reciente:item.scanType||'',estatus_firma:item.signature||'',tipo_zona:item.zoneType||'',zona:item.zoneName||'',sla_asignado_dias:String(item.slaDays??''),coincidencia_zona:!!item.zoneMatched,origen_archivo:item.sourceFile||'',porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||'',zona_manual:item.manualZone||null});
+              }
+              if(changed.length)changedByRecord.push({record,changed});
+            }
+            const deleted=[...baseItems.keys()].filter(id=>!nextItems.has(id)&&!deletedRecordSet.has(id.split('::',1)[0]));
+            (async()=>{
+              // Serializa todos los lotes para que dos guardados no compitan entre sí.
+              for(const batch of changedByRecord)for(let i=0;i<batch.changed.length;i+=syncBatchSize){
+                const {error}=await exoSupabaseClient.rpc('penalidades_upsert_lote',{p_liquidacion:{id:batch.record.id,periodo:batch.record.period,pdv:batch.record.pdv},p_guias:batch.changed.slice(i,i+syncBatchSize)});
+                if(error)throw error;
+              }
+              for(let i=0;i<deletedRecordKeys.length;i+=syncBatchSize){
+                const {error}=await exoSupabaseClient.rpc('penalidades_borrar_liquidaciones',{p_record_keys:deletedRecordKeys.slice(i,i+syncBatchSize)});
+                if(error)throw error;
+              }
+              for(let i=0;i<deleted.length;i+=syncBatchSize){
+                const {error}=await exoSupabaseClient.rpc('penalidades_borrar_guias',{p_ids:deleted.slice(i,i+syncBatchSize)});
+                if(error)throw error;
+              }
+              if(deleted.length){const {error}=await exoSupabaseClient.rpc('penalidades_borrar_liquidaciones_vacias');if(error)throw error;}
+              const assignments=(snapshot.records||[]).filter(record=>record.groupId).map(record=>({recordKey:record.id,groupId:record.groupId}));
+              const {error:groupError}=await exoSupabaseClient.rpc('penalidades_guardar_grupos',{p_grupos:snapshot.groups||[],p_asignaciones:assignments});
+              if(groupError)throw groupError;
+              const {error:activateError}=await exoSupabaseClient.rpc('penalidades_activar_v2');
+              if(activateError)throw activateError;
+              exoV2Baseline=cloneState(snapshot);
+              successHandler({ok:true,revision:Date.now()});
+            })().catch(failureHandler);
             return runner;
           }
         };
@@ -947,7 +1005,7 @@
       makeGoogleScriptBridge();
       document.getElementById('moduleIdentity').textContent=String(profile.usuario||'')+' · '+String(profile.rol||'');
       document.body.classList.add('exo-ready');
-      document.getElementById('storageState').textContent='Conectando con el almacenamiento compartido…';
+      document.getElementById('storageState').textContent='Conectando con Supabase…';
       const appScript=document.createElement('script');
       appScript.textContent=document.getElementById('appLogic').textContent;
       document.body.appendChild(appScript);
@@ -955,31 +1013,20 @@
 
     async function initializePenalidadesModule(){
       if(!V16_CONFIG?.url||!V16_CONFIG?.key)throw new Error('No se encontró la configuración del portal. Verifica config.js.');
-      if(!window.supabase?.createClient)throw new Error('No se pudo cargar el cliente Supabase. Verifica la conexión a internet.');
+      if(!window.supabase?.createClient)throw new Error('No se pudo cargar el cliente Supabase. Verifica tu conexión a internet.');
       exoSupabaseClient=window.supabase.createClient(V16_CONFIG.url,V16_CONFIG.key,{auth:{storageKey:'v16-replica-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
       const {data:sessionData,error:sessionError}=await exoSupabaseClient.auth.getSession();
       if(sessionError)throw new Error('No se pudo validar la sesión del portal: '+sessionError.message);
-      if(!sessionData.session){
-        showModuleGate('Primero inicia sesión en Revisión de Guías y luego abre Penalidades desde el menú.');
-        return;
-      }
+      if(!sessionData.session){showModuleGate('Primero inicia sesión en Revisión de Guías y luego abre Penalidades desde el menú.');return;}
       const {data:accessData,error:accessError}=await exoSupabaseClient.rpc('v16_call',{method:'inicio',payload:{}});
       if(accessError)throw new Error(accessError.message||'No se pudo validar tu perfil en el portal.');
       const profile=accessData?.perfil;
-      if(!profile||!['ADMINISTRADOR','ENCARGADO'].includes(profile.rol)){
-        showModuleGate('Tu perfil no tiene acceso a Penalidades. Solicita acceso a un administrador.',true);
-        return;
-      }
+      if(!profile||!['ADMINISTRADOR','ENCARGADO'].includes(profile.rol)){showModuleGate('Tu perfil no tiene acceso a Penalidades. Solicita acceso a un administrador.',true);return;}
       showModuleGate('');
       startPenalidadesModule(profile);
-      exoSupabaseClient.auth.onAuthStateChange(event=>{
-        if(event==='SIGNED_OUT')window.location.replace('./index.html');
-      });
+      exoSupabaseClient.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT')window.location.replace('./index.html');});
     }
-
-    initializePenalidadesModule().catch(error=>{
-      showModuleGate('No se pudo abrir Penalidades: '+(error?.message||error),true);
-    });
+    initializePenalidadesModule().catch(error=>showModuleGate('No se pudo abrir Penalidades: '+(error?.message||error),true));
   </script>
 </body>
 </html>

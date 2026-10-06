@@ -306,6 +306,26 @@ begin
 end $$;
 
 
+create or replace function public.penalidades_borrar_liquidaciones(p_record_keys text[])
+returns integer language plpgsql security definer
+set search_path = pg_catalog, public
+as $$
+declare v_count integer;
+begin
+  if not public.penalidades_usuario_autorizado() then
+    raise exception 'Cuenta no autorizada.' using errcode='42501';
+  end if;
+  if p_record_keys is null or cardinality(p_record_keys)>1000 then
+    raise exception 'La lista debe contener hasta 1000 registros.' using errcode='22023';
+  end if;
+  -- Una sola operación transaccional; las guías, decisiones y asignaciones
+  -- se eliminan por las claves foráneas ON DELETE CASCADE.
+  delete from public.penalidades_liquidaciones
+  where record_key=any(p_record_keys);
+  get diagnostics v_count=row_count;
+  return v_count;
+end $$;
+
 create or replace function public.penalidades_guardar_grupos(p_grupos jsonb, p_asignaciones jsonb default '[]'::jsonb)
 returns boolean language plpgsql security definer
 set search_path = pg_catalog, public
@@ -313,15 +333,35 @@ as $$
 begin
   if not public.penalidades_usuario_autorizado() then raise exception 'Cuenta no autorizada.' using errcode='42501'; end if;
   if jsonb_typeof(p_grupos) is distinct from 'array' or jsonb_array_length(p_grupos)>500 then raise exception 'Lista de grupos inválida.' using errcode='22023'; end if;
-  delete from public.penalidades_grupos;
+  if jsonb_typeof(coalesce(p_asignaciones,'[]'::jsonb)) is distinct from 'array' or jsonb_array_length(coalesce(p_asignaciones,'[]'::jsonb))>10000 then raise exception 'Lista de asignaciones inválida.' using errcode='22023'; end if;
+
+  -- Sincroniza por diferencia: no borra y recrea todas las filas en cada guardado.
+  delete from public.penalidades_liquidacion_grupos m
+  using public.penalidades_liquidaciones l
+  where l.id=m.liquidacion_id
+    and not exists (
+      select 1 from jsonb_array_elements(coalesce(p_asignaciones,'[]'::jsonb)) a
+      where a->>'recordKey'=l.record_key
+    );
+
+  delete from public.penalidades_grupos g
+  where not exists (
+    select 1 from jsonb_array_elements(p_grupos) item
+    where item->>'id'=g.id
+  );
+
   insert into public.penalidades_grupos(id,nombre,creado_en)
-    select g->>'id',g->>'name',coalesce(nullif(g->>'createdAt','')::timestamptz,now())
-    from jsonb_array_elements(p_grupos) g where coalesce(g->>'name','')<>'';
-  delete from public.penalidades_liquidacion_grupos;
+    select item->>'id',item->>'name',coalesce(nullif(item->>'createdAt','')::timestamptz,now())
+    from jsonb_array_elements(p_grupos) item
+    where coalesce(item->>'id','')<>'' and coalesce(item->>'name','')<>''
+    on conflict(id) do update set nombre=excluded.nombre;
+
   insert into public.penalidades_liquidacion_grupos(liquidacion_id,grupo_id)
-    select l.id,a->>'groupId' from jsonb_array_elements(coalesce(p_asignaciones,'[]'::jsonb)) a
+    select l.id,a->>'groupId'
+    from jsonb_array_elements(coalesce(p_asignaciones,'[]'::jsonb)) a
     join public.penalidades_liquidaciones l on l.record_key=a->>'recordKey'
-    join public.penalidades_grupos g on g.id=a->>'groupId';
+    join public.penalidades_grupos g on g.id=a->>'groupId'
+    on conflict(liquidacion_id) do update set grupo_id=excluded.grupo_id;
   return true;
 end $$;
 
@@ -357,6 +397,7 @@ revoke all on function public.penalidades_obtener_detalle(uuid) from public,anon
 revoke all on function public.penalidades_obtener_estado() from public,anon,authenticated;
 revoke all on function public.penalidades_activar_v2() from public,anon,authenticated;
 revoke all on function public.penalidades_borrar_guias(text[]) from public,anon,authenticated;
+revoke all on function public.penalidades_borrar_liquidaciones(text[]) from public,anon,authenticated;
 revoke all on function public.penalidades_guardar_grupos(jsonb,jsonb) from public,anon,authenticated;
 revoke all on function public.penalidades_borrar_liquidaciones_vacias() from public,anon,authenticated;
 grant execute on function public.penalidades_upsert_lote(jsonb,jsonb) to authenticated;
@@ -366,6 +407,7 @@ grant execute on function public.penalidades_obtener_detalle(uuid) to authentica
 grant execute on function public.penalidades_obtener_estado() to authenticated;
 grant execute on function public.penalidades_activar_v2() to authenticated;
 grant execute on function public.penalidades_borrar_guias(text[]) to authenticated;
+grant execute on function public.penalidades_borrar_liquidaciones(text[]) to authenticated;
 grant execute on function public.penalidades_guardar_grupos(jsonb,jsonb) to authenticated;
 grant execute on function public.penalidades_borrar_liquidaciones_vacias() to authenticated;
 

@@ -48,6 +48,10 @@
     .records-group th{position:static;z-index:auto;padding:9px 11px;background:#edf2f6;border-top:2px solid #d6e0e8;border-bottom:1px solid #d6e0e8;color:#34485a;text-transform:none;letter-spacing:normal;font-size:11px}
     .records-group-heading{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .records-group-count{background:#e8f1ff;color:#1c5da8}
+    .records-total-row td,.summary-grand-total td{font-weight:800;background:#eef4f8;border-top:2px solid #9aaebf;color:#263a4b}
+    .records-grand-total td,.breakdown-grand-total td{background:#dce8f1;border-top:3px double #647b8d;font-weight:850}
+    .records-total-label small{display:block;color:#647789;font-size:10px;font-weight:650}
+    .records-total-row,.summary-grand-total{cursor:pointer}.records-total-row:hover td,.summary-grand-total:hover td{background:#fff1e6;color:#8a3f12}
     .record-select-cell{text-align:center;width:36px}
     .upload-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
     .bulk-percent,.percent-input{width:78px;min-height:35px;padding:6px 8px;border:1px solid #cfd9e2;border-radius:7px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums}
@@ -651,14 +655,30 @@
       const count=selectedRecordIds.size;$('recordSelectionCount').textContent=`${fmtCount(count)} ${count===1?'liquidación seleccionada':'liquidaciones seleccionadas'}`;$('assignGroupBtn').disabled=!appReady||count===0;$('clearRecordSelectionBtn').disabled=!appReady||count===0;
       const allSelected=visibleRecords.length>0&&visibleRecords.every(record=>selectedRecordIds.has(record.id));$('selectAllVisibleRecords').checked=allSelected;$('selectAllVisibleRecords').indeterminate=!allSelected&&visibleRecords.some(record=>selectedRecordIds.has(record.id));
     }
+    function aggregateRecordTotals(records){
+      return records.reduce((sum,record)=>{const t=recordTotals(record);sum.count+=t.count;sum.yes+=t.yes;sum.no+=t.no;sum.total+=t.total;sum.exempt+=t.exempt;sum.balance+=t.balance;return sum;},{count:0,yes:0,no:0,total:0,exempt:0,balance:0});
+    }
+    function renderRecordsTotalRow(label,records,grand=false){
+      const t=aggregateRecordTotals(records),rowClass=grand?'records-total-row records-grand-total':'records-total-row';
+      const liquidations=`${fmtCount(records.length)} ${records.length===1?'liquidación':'liquidaciones'}`;
+      return `<tr class="${rowClass}" aria-label="${escapeHtml(label)}"><td></td><td colspan="2" class="records-total-label">${escapeHtml(label)}<small>${liquidations} · ${fmtCount(t.count)} penalidades</small></td><td class="num">${fmtCount(t.count)}</td><td class="num">${fmtCount(t.yes)}</td><td class="num">${fmtCount(t.no)}</td><td class="num">S/ ${fmtMoney(t.total)}</td><td class="num">S/ ${fmtMoney(t.exempt)}</td><td class="num">S/ ${fmtMoney(t.balance)}</td><td>—</td><td>—</td></tr>`;
+    }
     function renderSummary(){
       renderMultiPicker('summaryPeriod',state.records.map(r=>({value:r.period,label:periodLabel(r.period)})),'Todos');renderMultiPicker('summaryPdv',state.records.map(r=>r.pdv),'Todos');renderMultiPicker('summaryGroup',[{value:UNASSIGNED_GROUP,label:'Sin grupo'},...(state.groups||[]).map(group=>({value:group.id,label:group.name}))],'Todos');
       const bulkSelect=$('bulkGroupSelect'),previousGroup=bulkSelect.value;bulkSelect.innerHTML=`<option value="">Selecciona un grupo</option><option value="${UNASSIGNED_GROUP}">Sin grupo</option>${(state.groups||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'es')).map(group=>`<option value="${escapeHtml(group.id)}">${escapeHtml(group.name)}</option>`).join('')}`;if(previousGroup===UNASSIGNED_GROUP||(state.groups||[]).some(group=>group.id===previousGroup))bulkSelect.value=previousGroup;
       const filtered=filteredRecords(),groups=new Map();for(const record of filtered){const id=recordGroupId(record),groupName=id===UNASSIGNED_GROUP?'Sin grupo':(state.groups||[]).find(group=>group.id===id)?.name||'Sin grupo';if(!groups.has(id))groups.set(id,{id,name:groupName,records:[]});groups.get(id).records.push(record);}
       const orderedGroups=[...groups.values()].sort((a,b)=>a.id===UNASSIGNED_GROUP?-1:b.id===UNASSIGNED_GROUP?1:a.name.localeCompare(b.name,'es'));
-      $('recordsBody').innerHTML=filtered.length?orderedGroups.map(group=>{group.records.sort((a,b)=>b.period.localeCompare(a.period)||a.pdv.localeCompare(b.pdv,'es'));const n=group.records.length,liquidationLabel=`${fmtCount(n)} ${n===1?'liquidación':'liquidaciones'}`;const rows=group.records.map(r=>{const t=recordTotals(r);return `<tr class="click-row ${r.id===currentRecordId?'active':''}" data-record="${escapeHtml(r.id)}"><td class="record-select-cell"><input type="checkbox" class="record-select" data-record-id="${escapeHtml(r.id)}" ${selectedRecordIds.has(r.id)?'checked':''} aria-label="Seleccionar liquidación ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}"></td><td>${escapeHtml(periodLabel(r.period))}</td><td><strong>${escapeHtml(r.pdv)}</strong></td><td class="num">${fmtCount(t.count)}</td><td class="num"><span class="badge yes">${fmtCount(t.yes)}</span></td><td class="num">${fmtCount(t.no)}</td><td class="num">S/ ${fmtMoney(t.total)}</td><td class="num">S/ ${fmtMoney(t.exempt)}</td><td class="num">S/ ${fmtMoney(t.balance)}</td><td>${escapeHtml(dateLabel(r.updatedAt))}</td><td><button type="button" class="btn danger delete-record-btn" data-delete-record="${escapeHtml(r.id)}" aria-label="Eliminar registro ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}">Eliminar</button></td></tr>`;}).join('');return `<tr class="records-group"><th colspan="11" scope="rowgroup"><div class="records-group-heading"><span>Grupo: <strong>${escapeHtml(group.name)}</strong></span><span class="badge records-group-count">${liquidationLabel}</span></div></th></tr>${rows}`;}).join(''):`<tr><td colspan="11" class="empty">No hay registros con estos filtros. Importa los Excel y crea un registro por periodo y PDV.</td></tr>`;
+      const groupBlocks=orderedGroups.map(group=>{
+        group.records.sort((a,b)=>b.period.localeCompare(a.period)||a.pdv.localeCompare(b.pdv,'es'));
+        const n=group.records.length,liquidationLabel=`${fmtCount(n)} ${n===1?'liquidación':'liquidaciones'}`;
+        const rows=group.records.map(r=>{const t=recordTotals(r);return `<tr class="click-row ${r.id===currentRecordId?'active':''}" data-record="${escapeHtml(r.id)}"><td class="record-select-cell"><input type="checkbox" class="record-select" data-record-id="${escapeHtml(r.id)}" ${selectedRecordIds.has(r.id)?'checked':''} aria-label="Seleccionar liquidación ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}"></td><td>${escapeHtml(periodLabel(r.period))}</td><td><strong>${escapeHtml(r.pdv)}</strong></td><td class="num">${fmtCount(t.count)}</td><td class="num"><span class="badge yes">${fmtCount(t.yes)}</span></td><td class="num">${fmtCount(t.no)}</td><td class="num">S/ ${fmtMoney(t.total)}</td><td class="num">S/ ${fmtMoney(t.exempt)}</td><td class="num">S/ ${fmtMoney(t.balance)}</td><td>${escapeHtml(dateLabel(r.updatedAt))}</td><td><button type="button" class="btn danger delete-record-btn" data-delete-record="${escapeHtml(r.id)}" aria-label="Eliminar registro ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}">Eliminar</button></td></tr>`;}).join('');
+        return `<tr class="records-group"><th colspan="11" scope="rowgroup"><div class="records-group-heading"><span>Grupo: <strong>${escapeHtml(group.name)}</strong></span><span class="badge records-group-count">${liquidationLabel}</span></div></th></tr>${rows}${renderRecordsTotalRow(`Total grupo: ${group.name}`,group.records)}`;
+      }).join('');
+      const overall=filtered.length?renderRecordsTotalRow('TOTAL GENERAL',filtered,true):'';
+      $('recordsBody').innerHTML=filtered.length?groupBlocks+overall:`<tr><td colspan="11" class="empty">No hay registros con estos filtros. Importa los Excel y crea un registro por periodo y PDV.</td></tr>`;
       updateRecordGroupSelectionControls(filtered);
     }
+
     function renderDetail(){
       const r=currentRecord();if(!r)return;$('detailHeading').innerHTML=`Detalle de penalidades <span class="badge">${escapeHtml(periodLabel(r.period))}</span> <span class="badge">${escapeHtml(r.pdv)}</span>`;$('detailSubtitle').textContent=`${fmtCount(r.items.length)} penalidades · Fuentes: ${r.sourceFiles?.penalties||'sin referencia'}`;
       dirty=false;$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';
@@ -673,12 +693,13 @@
       const measureItems=items=>{const result={yes:0,no:0,tracks:new Set(),total:0,exempt:0};for(const item of items){if(exemptionPercent(item)>0)result.yes++;else result.no++;result.tracks.add(item.tracking);result.total+=Number(item.cost)||0;result.exempt+=exemptionAmount(item);}return result;};
       const rows=[...groups.values()].sort((a,b)=>a.penalty.localeCompare(b.penalty,'es')||a.zone.localeCompare(b.zone,'es'));
       const renderMeasures=items=>{const m=measureItems(items);return `<td class="num"><span class="badge yes">${fmtCount(m.yes)}</span></td><td class="num"><span class="badge no">${fmtCount(m.no)}</span></td><td class="num">${fmtCount(m.tracks.size)}</td><td class="num">S/ ${fmtMoney(m.total)}</td><td class="num">S/ ${fmtMoney(m.exempt)}</td><td class="num">S/ ${fmtMoney(m.total-m.exempt)}</td>`;};
+      const breakdownGrandTotal=rows.length?`<tr class="click-row summary-grand-total breakdown-grand-total" data-grand-total="true" title="Haz clic para mostrar todas las guías del detalle"><td colspan="2">TOTAL GENERAL</td>${renderMeasures(r.items)}</tr>`:'';
       $('breakdownBody').innerHTML=rows.length?rows.map(g=>{
         const expanded=expandedBreakdownGroups.has(g.key),toggle=expanded?'−':'+',children=new Map();
         for(const item of g.items){const subtype=penaltySubtype(item),childKey=[subtype.field,norm(subtype.value)].join('|');if(!children.has(childKey))children.set(childKey,{field:subtype.field,column:subtype.column,value:subtype.value,items:[]});children.get(childKey).items.push(item);}
         const childRows=expanded?[...children.values()].sort((a,b)=>a.value.localeCompare(b.value,'es')).map(child=>`<tr class="click-row breakdown-subrow" data-row-kind="subtype" data-penalty="${escapeHtml(g.penalty)}" data-zone="${escapeHtml(g.zone)}" data-subtype-field="${escapeHtml(child.field)}" data-subtype="${escapeHtml(child.value)}" title="Haz clic para filtrar este subtipo en el detalle"><td><span class="breakdown-subtype-prefix">${child.column?escapeHtml(child.column)+':':'↳'}</span> ${escapeHtml(child.value)}</td><td>${zoneBadge(g.zone)}</td>${renderMeasures(child.items)}</tr>`).join(''):'';
         return `<tr class="click-row breakdown-parent" data-row-kind="parent" data-penalty="${escapeHtml(g.penalty)}" data-zone="${escapeHtml(g.zone)}" data-group-key="${escapeHtml(g.key)}" title="Haz clic en una celda para filtrar el detalle"><td><button type="button" class="breakdown-expand-btn" data-expand-group="${escapeHtml(g.key)}" aria-expanded="${expanded}" aria-label="${expanded?'Contraer':'Expandir'} subtipos de ${escapeHtml(g.penalty)}" title="${expanded?'Contraer':'Expandir'} subtipos">${toggle}</button>${escapeHtml(g.penalty)}</td><td>${zoneBadge(g.zone)}</td>${renderMeasures(g.items)}</tr>${childRows}`;
-      }).join(''):`<tr><td colspan="8" class="empty">No hay penalidades.</td></tr>`;
+      }).join('')+breakdownGrandTotal:`<tr><td colspan="8" class="empty">No hay penalidades.</td></tr>`;
       renderBreachMatrix(r);renderSlaMatrix(r);renderReasonSummary(r);
     }
     function breachMatrixRows(record){
@@ -700,17 +721,25 @@
       $('breachMatrixBody').innerHTML=`<tr class="click-row breakdown-parent" data-pivot-row="breach" data-breach-parent="true"><td><button type="button" class="breakdown-expand-btn" data-matrix-expand="${escapeHtml(key)}" aria-expanded="${expanded}" aria-label="${expanded?'Contraer':'Expandir'} subtipos de brecha de actualización">${toggle}</button>Brecha de actualización de penalidad</td>${parentCells}</tr>${childRows}`;
     }
     function scanSignatureLabel(item){return `${txt(item.scanType)||'Sin tipo de escaneo'} · ${txt(item.signature)||'Sin dato de firma'}`;}
+    function isSlaMatrixItem(item){return !!txt(item.sla)&&(!item.breach||norm(item.penalty).includes('SLA')||norm(item.penalty).includes('COLA'));}
     function renderSlaMatrix(record){
-      const items=record.items.filter(item=>txt(item.sla)&&(!item.breach||norm(item.penalty).includes('SLA')||norm(item.penalty).includes('COLA'))),columns=[...new Set(items.map(scanSignatureLabel))].sort((a,b)=>a.localeCompare(b,'es')),subtypes=[...new Set(items.map(item=>txt(item.sla)||'Sin subtipo'))].sort((a,b)=>a.localeCompare(b,'es'));
+      const items=record.items.filter(isSlaMatrixItem),columns=[...new Set(items.map(scanSignatureLabel))].sort((a,b)=>a.localeCompare(b,'es')),subtypes=[...new Set(items.map(item=>txt(item.sla)||'Sin subtipo'))].sort((a,b)=>a.localeCompare(b,'es'));
       $('slaMatrixHead').innerHTML=`<tr><th>Subtipo SLA</th>${columns.map(label=>`<th>${escapeHtml(label)}</th>`).join('')}<th>Total guías</th></tr>`;
       if(!items.length){$('slaMatrixBody').innerHTML=`<tr><td colspan="${columns.length+2}" class="empty">No hay penalidades con subtipo SLA en esta liquidación.</td></tr>`;return;}
-      const cell=(group,column)=>{const selected=column==='__TOTAL__'?group:group.filter(item=>scanSignatureLabel(item)===column);return `<td class="num pivot-cell" data-pivot-cell="sla" data-label="${escapeHtml(txt(group[0]?.sla)||'Sin subtipo')}" data-combo="${escapeHtml(column)}" title="Haz clic para filtrar">${fmtCount(uniqueGuideCount(selected))}</td>`;};
-      $('slaMatrixBody').innerHTML=subtypes.map(subtype=>{const group=items.filter(item=>(txt(item.sla)||'Sin subtipo')===subtype);return `<tr class="click-row" data-pivot-row="sla" data-subtype="${escapeHtml(subtype)}"><td>${escapeHtml(subtype)}</td>${columns.map(column=>cell(group,column)).join('')}${cell(group,'__TOTAL__')}</tr>`;}).join('');
+      const cell=(group,column,label=txt(group[0]?.sla)||'Sin subtipo')=>{const selected=column==='__TOTAL__'?group:group.filter(item=>scanSignatureLabel(item)===column);return `<td class="num pivot-cell" data-pivot-cell="sla" data-label="${escapeHtml(label)}" data-combo="${escapeHtml(column)}" title="Haz clic para filtrar">${fmtCount(uniqueGuideCount(selected))}</td>`;};
+      const subtypeRows=subtypes.map(subtype=>{const group=items.filter(item=>(txt(item.sla)||'Sin subtipo')===subtype);return `<tr class="click-row" data-pivot-row="sla" data-subtype="${escapeHtml(subtype)}"><td>${escapeHtml(subtype)}</td>${columns.map(column=>cell(group,column)).join('')}${cell(group,'__TOTAL__')}</tr>`;}).join('');
+      const totalCells=columns.map(column=>cell(items,column,'TOTAL GENERAL')).join('')+cell(items,'__TOTAL__','TOTAL GENERAL');
+      $('slaMatrixBody').innerHTML=`${subtypeRows}<tr class="click-row summary-grand-total" data-pivot-row="sla" data-grand-total="true" title="Haz clic para filtrar todas las guías del resumen SLA"><td>TOTAL GENERAL</td>${totalCells}</tr>`;
     }
+
     function renderReasonSummary(record){
       const groups=new Map();for(const item of record.items){const reason=txt(item.reason)||'Sin motivo',percent=exemptionPercent(item),key=`${norm(reason)}|${percent}`;if(!groups.has(key))groups.set(key,{reason,percent,items:[]});groups.get(key).items.push(item);}
-      $('reasonSummaryBody').innerHTML=[...groups.values()].sort((a,b)=>a.reason.localeCompare(b.reason,'es')||a.percent-b.percent).map(group=>{const original=group.items.reduce((sum,item)=>sum+(Number(item.cost)||0),0),exempt=group.items.reduce((sum,item)=>sum+exemptionAmount(item),0),balance=original-exempt;return `<tr class="reason-summary-row" data-pivot-row="reason" data-reason="${escapeHtml(group.reason)}" data-percent="${group.percent}" title="Haz clic para filtrar el detalle"><td>${escapeHtml(group.reason)}</td><td class="num">${fmtMoney(group.percent)}%</td><td class="num">${fmtCount(group.items.length)}</td><td class="num">S/ ${fmtMoney(original)}</td><td class="num">S/ ${fmtMoney(exempt)}</td><td class="num">S/ ${fmtMoney(balance)}</td></tr>`;}).join('')||'<tr><td colspan="6" class="empty">No hay penalidades en este registro.</td></tr>';
+      const rows=[...groups.values()].sort((a,b)=>a.reason.localeCompare(b.reason,'es')||a.percent-b.percent).map(group=>{const original=group.items.reduce((sum,item)=>sum+(Number(item.cost)||0),0),exempt=group.items.reduce((sum,item)=>sum+exemptionAmount(item),0),balance=original-exempt;return `<tr class="reason-summary-row" data-pivot-row="reason" data-reason="${escapeHtml(group.reason)}" data-percent="${group.percent}" title="Haz clic para filtrar el detalle"><td>${escapeHtml(group.reason)}</td><td class="num">${fmtMoney(group.percent)}%</td><td class="num">${fmtCount(group.items.length)}</td><td class="num">S/ ${fmtMoney(original)}</td><td class="num">S/ ${fmtMoney(exempt)}</td><td class="num">S/ ${fmtMoney(balance)}</td></tr>`;}).join('');
+      const totalOriginal=record.items.reduce((sum,item)=>sum+(Number(item.cost)||0),0),totalExempt=record.items.reduce((sum,item)=>sum+exemptionAmount(item),0);
+      const total=record.items.length?`<tr class="reason-summary-row summary-grand-total" data-pivot-row="reason" data-grand-total="true" title="Haz clic para mostrar todas las guías del detalle"><td>TOTAL GENERAL</td><td class="num">—</td><td class="num">${fmtCount(record.items.length)}</td><td class="num">S/ ${fmtMoney(totalOriginal)}</td><td class="num">S/ ${fmtMoney(totalExempt)}</td><td class="num">S/ ${fmtMoney(totalOriginal-totalExempt)}</td></tr>`:'';
+      $('reasonSummaryBody').innerHTML=rows?rows+total:'<tr><td colspan="6" class="empty">No hay penalidades en este registro.</td></tr>';
     }
+
     function zoneBadge(value){const n=norm(value);const kind=n.includes('RURAL')?'rural':n.includes('URBANO')?'urban':n.includes('ASIGNADA')||n.includes('ENCONTRADA')?'unassigned':'';return `<span class="badge ${kind}">${escapeHtml(value||'NO ASIGNADA')}</span>`;}
     function filteredItems(){
       const r=currentRecord();if(!r)return [];const q=norm($('filterSearch').value);
@@ -780,6 +809,7 @@
     }
     function filterFromSummaryCell(event){
       const expandButton=event.target.closest('[data-expand-group]');if(expandButton){event.stopPropagation();const key=expandButton.dataset.expandGroup;if(expandedBreakdownGroups.has(key))expandedBreakdownGroups.delete(key);else expandedBreakdownGroups.add(key);renderMetricsAndBreakdown();return;}
+      const grandTotal=event.target.closest('tr[data-grand-total="true"]');if(grandTotal){matrixGuideSelection=null;$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});return;}
       const cell=event.target.closest('td'),row=event.target.closest('tr[data-penalty]');if(!cell||!row)return;
       matrixGuideSelection=null;const column=[...row.children].indexOf(cell);$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}
       if(row.dataset.rowKind==='subtype'){
@@ -795,7 +825,7 @@
       const expand=event.target.closest('[data-matrix-expand]');if(expand){event.stopPropagation();const key=expand.dataset.matrixExpand;if(expandedBreakdownGroups.has(key))expandedBreakdownGroups.delete(key);else expandedBreakdownGroups.add(key);renderMetricsAndBreakdown();return;}
       const row=event.target.closest('tr[data-pivot-row]');if(!row)return;const cell=event.target.closest('[data-pivot-cell]'),record=currentRecord();if(!record)return;
       $('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}
-      const kind=row.dataset.pivotRow||cell?.dataset.pivotCell;
+      const kind=row.dataset.pivotRow||cell?.dataset.pivotCell,isGrandTotal=row.dataset.grandTotal==='true';
       if(kind==='breach'){
         const subtype=row.dataset.subtype||'',operation=cell?.dataset.operation||'__TOTAL__';
         let sourceRows=breachMatrixRows(record);
@@ -804,13 +834,13 @@
         matrixGuideSelection=new Set(sourceRows.map(source=>idPart(source.tracking)).filter(Boolean));
       }else if(kind==='sla'){
         matrixGuideSelection=null;
-        const subtype=row.dataset.subtype||cell?.dataset.label||'';let items=record.items.filter(item=>(txt(item.sla)||'Sin subtipo')===subtype);const combo=cell?.dataset.combo||'__TOTAL__';
-        if(combo!=='__TOTAL__')items=items.filter(item=>scanSignatureLabel(item)===combo);
+        const subtype=row.dataset.subtype||cell?.dataset.label||'';let items=isGrandTotal?record.items.filter(isSlaMatrixItem):record.items.filter(item=>(txt(item.sla)||'Sin subtipo')===subtype);
+        const combo=cell?.dataset.combo||'__TOTAL__';if(combo!=='__TOTAL__')items=items.filter(item=>scanSignatureLabel(item)===combo);
         setPickerSelection('filterBreachSla',[...new Set(items.map(breachSlaLabel))]);
         if(combo!=='__TOTAL__'){setPickerSelection('filterScan',[...new Set(items.map(item=>item.scanType))]);setPickerSelection('filterSignature',[...new Set(items.map(item=>item.signature))]);}
       }else if(kind==='reason'){
         matrixGuideSelection=null;
-        const reason=row.dataset.reason||'Sin motivo',percent=String(row.dataset.percent??'0');setPickerSelection('filterReason',[reason]);setPickerSelection('filterPercent',[percent]);
+        if(!isGrandTotal){const reason=row.dataset.reason||'Sin motivo',percent=String(row.dataset.percent??'0');setPickerSelection('filterReason',[reason]);setPickerSelection('filterPercent',[percent]);}
       }
       renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});
     }

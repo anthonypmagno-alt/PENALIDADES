@@ -1,16 +1,38 @@
 PORTAL REVISION DE GUIAS + PENALIDADES V2
 
-IMPORTANTE: index.html es el inicio original del portal, con el login, Gestión de guías, Consulta desde Excel y los enlaces a Gestión V2 y Penalidades. No lo reemplaces con un index independiente. Penalidades se abre desde penalidades.html y reutiliza la sesión del portal.
+IMPORTANTE: este paquete conserva index.html y el login del portal. Para publicar esta corrección en un repositorio existente, reemplaza solo penalidades.html; no reemplaces index.html.
+
+ACTUALIZAR PENALIDADES
+1. En GitHub, reemplaza penalidades.html por el archivo de esta carpeta y espera que GitHub Pages publique el cambio.
+2. Como Penalidades V2 ya está instalada, en el SQL Editor ejecuta supabase_penalidades_tasa_firma.sql. Es una actualización pequeña que asegura las columnas Estado y Tasa de firma y actualiza su lectura y guardado, sin borrar registros. Si aplicaste una versión anterior del parche y viste «column l.estado does not exist», ejecuta esta versión corregida. El archivo supabase_penalidades_v2.sql queda para instalaciones completas o de cero.
+3. Recarga el portal con Ctrl+F5, inicia sesión y vuelve a abrir Penalidades.
+
+NO ejecutes supabase_penalidades_reiniciar.sql para esta actualización: ese archivo elimina los registros de Penalidades y no se necesita para corregir el timeout.
+
+CARGA Y RENDIMIENTO
+La pantalla inicial consulta los resúmenes y totales de las liquidaciones. Al abrir una liquidación, el detalle se descarga de Supabase por páginas de 500 penalidades. El respaldo completo descarga intencionalmente todos los detalles, también por páginas.
 
 MODELO DE DATOS
-Cada penalidad importada se guarda como una fila. Las liquidaciones agrupan esas filas por periodo y PDV. Las decisiones de porcentaje y motivo se almacenan por penalidad. Los Excel se procesan en el navegador; no se guardan copias de los archivos.
+Cada penalidad se guarda como una fila; las liquidaciones se agrupan por periodo y PDV. Los porcentajes y motivos se almacenan por penalidad. Los Excel se procesan en el navegador; no se guardan copias de los archivos originales.
 
-IMPLEMENTACION MANUAL
-1. En GitHub Pages, carga el contenido completo de esta carpeta en la raíz del repositorio, conservando rutas y nombres.
-2. Cierra pestañas antiguas de Penalidades y espera que termine la publicación de Pages.
-3. En Supabase SQL Editor, ejecuta completo supabase_penalidades_v2.sql. Actualiza de forma idempotente las funciones de guardado y eliminación.
-4. Cuando la instalación termine correctamente, ejecuta una sola vez supabase_penalidades_reiniciar.sql. Elimina cargas, liquidaciones, penalidades, decisiones y grupos existentes; vacía el estado JSON anterior y bloquea su función de escritura para que una página obsoleta no vuelva a guardar datos. Conserva Supabase Auth, la lista de autorización y los demás módulos.
-5. Cierra las pestañas abiertas del portal, vuelve a cargar GitHub Pages, inicia sesión y abre Penalidades. La tabla debe aparecer vacía.
+TOTALES Y FILTROS
+La tabla principal conserva los subtotales por grupo y el total general según los filtros activos. El resumen por penalización y motivo de decisión, y las matrices de Brecha y SLA/escaneo-firma, incluyen TOTAL GENERAL; al seleccionar sus filas se filtra el detalle correspondiente.
+El resumen ya no muestra la zona: agrupa cada penalización por motivo de decisión. Incluye los conteos de exoneradas y no exoneradas, filas, guías únicas, penalidad total, monto exonerado y saldo. Los registros sin texto se agrupan como “Sin motivo de decisión”. Cada fila se puede expandir para ver sus subtipos de Brecha o SLA.
+
+ESTADO Y FILTRO GLOBAL
+La columna Estado aparece junto a Actualizado. Sus opciones son Pendiente, En proceso, Finalizado, Notificado y En revalidación. A su lado puedes ingresar la Tasa de firma de 0% a 100%, con hasta dos decimales; si no la ingresas, el campo queda en blanco. Ambos campos se guardan en Supabase automáticamente. El botón Solo no exoneradas oculta en todas las tablas las penalidades que tengan un porcentaje de exoneración mayor que 0%, y recalcula sus totales. Pulsa Ver todas para quitar ese filtro.
 
 GUARDADO Y ELIMINACION
-El módulo guarda solo filas modificadas, en lotes secuenciales de hasta 500 penalidades. Al eliminar una liquidación, una función SQL borra el registro en una sola transacción; las claves foráneas eliminan sus penalidades, decisiones y asignación a grupo. Si falla el guardado, los cambios permanecen en esa pestaña y aparece el botón Reintentar sincronización.
+El módulo guarda solo filas modificadas, en lotes secuenciales de hasta 500 penalidades. Al eliminar una liquidación, sus penalidades, decisiones y asignación a grupo se eliminan en una transacción. Si falla el guardado, los cambios permanecen en esa pestaña y aparece el botón Reintentar sincronización.
+
+
+COSTOS COMPARTIDOS DE BRECHA EN CONSULTA DESDE EXCEL
+
+1. En Supabase SQL Editor ejecuta una sola vez supabase_costos_brecha_compartidos.sql. El parche crea una tabla privada de configuración y una función RPC; no borra ni cambia guías, liquidaciones, perfiles o fuentes existentes.
+2. En GitHub Pages reemplaza estos archivos por los de este paquete: index.html, gestion-v2.html, pdv.html, pdv-v2.html y bridge.js. Agrega brecha-costos.js en la misma carpeta raíz donde están esos HTML. Conserva config.js y el login; no reemplaces otros módulos.
+3. Recarga la página con Ctrl+F5 e inicia sesión. En Consulta desde Excel, carga o consulta el Track Break para mostrar sus tipos de interrupción.
+4. El rol ADMINISTRADOR puede definir los importes unitarios y pulsar Guardar valores para todos. Los demás roles ven los mismos valores en solo lectura. Las tarifas y las guías se mantienen separadas; actualizar un Excel no cambia la configuración.
+5. Las categorías preventivas de hasta 12 h, más de 12 a 24 h y más de 24 a 36 h también tienen una tarifa configurable. En el resumen, su importe calculado aparece en verde como costo evitado y no se suma al monto penalizable.
+6. En Consulta desde Excel, selecciona las guías y abre Ver guías seleccionadas. El botón Generar PDF: penalidades y QR imprime/guarda un PDF con el cuadro resumen de penalidades (incluye el total penalizable y el costo preventivo evitado en verde) seguido de los QR. El Excel de guías no incluye el cuadro de montos.
+
+La nueva migración SQL es adicional: no vuelvas a ejecutar supabase_penalidades_reiniciar.sql ni el SQL de instalación completa para esta actualización.

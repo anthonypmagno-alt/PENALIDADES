@@ -34,11 +34,42 @@ create table if not exists public.penalidades_liquidaciones (
   periodo text not null check (periodo ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'),
   pdv text not null,
   nombre text,
+  estado text not null default 'pendiente' check (estado in ('pendiente','en_proceso','finalizado','notificado','en_revalidacion')),
+  tasa_firma numeric(5,2) check (tasa_firma >= 0 and tasa_firma <= 100),
   creado_por uuid not null default auth.uid(),
   creado_en timestamptz not null default now(),
   actualizado_en timestamptz not null default now(),
   unique (periodo,pdv)
 );
+
+-- Actualiza de forma idempotente la tabla existente sin tocar las liquidaciones.
+alter table public.penalidades_liquidaciones
+  add column if not exists estado text not null default 'pendiente';
+alter table public.penalidades_liquidaciones
+  add column if not exists tasa_firma numeric(5,2);
+alter table public.penalidades_liquidaciones alter column tasa_firma drop default;
+alter table public.penalidades_liquidaciones alter column tasa_firma drop not null;
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname='penalidades_liquidaciones_estado_check'
+      and conrelid='public.penalidades_liquidaciones'::regclass
+  ) then
+    alter table public.penalidades_liquidaciones
+      add constraint penalidades_liquidaciones_estado_check
+      check (estado in ('pendiente','en_proceso','finalizado','notificado','en_revalidacion'));
+  end if;
+  if not exists (
+    select 1 from pg_constraint
+    where conname='penalidades_liquidaciones_tasa_firma_check'
+      and conrelid='public.penalidades_liquidaciones'::regclass
+  ) then
+    alter table public.penalidades_liquidaciones
+      add constraint penalidades_liquidaciones_tasa_firma_check
+      check (tasa_firma >= 0 and tasa_firma <= 100);
+  end if;
+end $$;
 
 -- Una fila representa una penalidad de la hoja LISTA DETALLADA DE PENALIDAD.
 -- Los campos de los otros tres Excel se reducen a sus columnas requeridas y
@@ -102,8 +133,12 @@ insert into public.penalidades_control(singleton) values(true) on conflict(singl
 
 create index if not exists idx_penalidades_liquidacion_periodo_pdv
   on public.penalidades_liquidaciones(periodo,pdv);
+create index if not exists idx_penalidades_liquidacion_estado
+  on public.penalidades_liquidaciones(estado);
 create index if not exists idx_penalidades_guias_liquidacion
   on public.penalidades_guias(liquidacion_id);
+create index if not exists idx_penalidades_guias_liquidacion_orden
+  on public.penalidades_guias(liquidacion_id,tracking,penalizacion,id);
 create index if not exists idx_penalidades_guias_pdv_tracking
   on public.penalidades_guias(pdv_key,tracking_key);
 create index if not exists idx_penalidades_guias_penalizacion
@@ -227,7 +262,7 @@ begin
     raise exception 'Cuenta no autorizada.' using errcode='42501';
   end if;
   return coalesce((select jsonb_agg(to_jsonb(q) order by q.periodo desc,q.pdv)
-    from (select l.id,l.periodo,l.pdv,l.nombre,l.actualizado_en,
+    from (select l.id,l.periodo,l.pdv,l.nombre,l.estado,l.tasa_firma,l.actualizado_en,
       count(g.id)::integer as total_guias,
       count(*) filter(where coalesce(d.porcentaje,0)>0)::integer as con_exoneracion,
       coalesce(sum(g.costo),0)::numeric(14,2) as penalidad_total,
@@ -236,6 +271,136 @@ begin
       left join public.penalidades_guias g on g.liquidacion_id=l.id
       left join public.penalidades_decisiones d on d.guia_id=g.id
       group by l.id) q), '[]'::jsonb);
+end $$;
+
+-- Carga rápida al abrir el módulo: solo devuelve metadatos y totales,
+-- nunca agrega todas las guías en una respuesta JSON gigante.
+create or replace function public.penalidades_obtener_resumen()
+returns jsonb language plpgsql security definer stable
+set search_path = pg_catalog, public
+as $$
+declare v_records jsonb;
+begin
+  if not public.penalidades_usuario_autorizado() then
+    raise exception 'Cuenta no autorizada.' using errcode='42501';
+  end if;
+  if not exists(select 1 from public.penalidades_control where singleton=true and v2_activo) then
+    return jsonb_build_object('version',1,'serverRevision',0,'sources',jsonb_build_object('penalties',null,'breaches',null,'guides',null,'zones',null),'records','[]'::jsonb,'groups','[]'::jsonb,'deletedRecords','{}'::jsonb);
+  end if;
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id',q.record_key,'period',q.periodo,'pdv',q.pdv,'status',q.estado,'signatureRate',q.tasa_firma,'createdAt',q.creado_en,'updatedAt',q.actualizado_en,
+    'groupId',q.grupo_id,
+    'summary',jsonb_build_object('count',q.total_guias,'yes',q.con_exoneracion,'no',q.sin_exoneracion,'total',q.penalidad_total,'exempt',q.monto_exonerado,'balance',q.saldo,'noExemptTotal',q.no_exonerated_total)
+  ) order by q.periodo desc,q.pdv),'[]'::jsonb) into v_records
+  from (
+    select l.record_key,l.periodo,l.pdv,l.estado,l.tasa_firma,l.creado_en,l.actualizado_en,
+      (select m.grupo_id from public.penalidades_liquidacion_grupos m where m.liquidacion_id=l.id) as grupo_id,
+      count(g.id)::integer as total_guias,
+      count(g.id) filter(where coalesce(d.porcentaje,0)>0)::integer as con_exoneracion,
+      count(g.id) filter(where coalesce(d.porcentaje,0)<=0)::integer as sin_exoneracion,
+      coalesce(sum(g.costo),0)::numeric(14,2) as penalidad_total,
+      coalesce(sum(g.costo) filter(where coalesce(d.porcentaje,0)<=0),0)::numeric(14,2) as no_exonerated_total,
+      coalesce(sum(g.costo*coalesce(d.porcentaje,0)/100),0)::numeric(14,2) as monto_exonerado,
+      coalesce(sum(g.costo)-sum(g.costo*coalesce(d.porcentaje,0)/100),0)::numeric(14,2) as saldo
+    from public.penalidades_liquidaciones l
+    left join public.penalidades_guias g on g.liquidacion_id=l.id
+    left join public.penalidades_decisiones d on d.guia_id=g.id
+    group by l.id
+  ) q;
+  return jsonb_build_object('version',1,'serverRevision',0,
+    'sources',jsonb_build_object('penalties',null,'breaches',null,'guides',null,'zones',null),
+    'records',v_records,
+    'groups',coalesce((select jsonb_agg(jsonb_build_object('id',id,'name',nombre,'createdAt',creado_en,'updatedAt',creado_en) order by nombre) from public.penalidades_grupos),'[]'::jsonb),
+    'deletedRecords','{}'::jsonb);
+end $$;
+
+create or replace function public.penalidades_actualizar_estados(p_estados jsonb)
+returns integer language plpgsql security definer
+set search_path = pg_catalog, public
+as $$
+declare v_count integer;
+begin
+  if not public.penalidades_usuario_autorizado() then
+    raise exception 'Cuenta no autorizada.' using errcode='42501';
+  end if;
+  if jsonb_typeof(p_estados) is distinct from 'array' or jsonb_array_length(p_estados)>500 then
+    raise exception 'La lista debe contener hasta 500 estados.' using errcode='22023';
+  end if;
+  if exists(
+    select 1 from jsonb_array_elements(p_estados) as entries(value)
+    where coalesce(entries.value->>'recordKey','')=''
+       or coalesce(entries.value->>'estado','') not in ('pendiente','en_proceso','finalizado','notificado','en_revalidacion')
+       or (
+         entries.value ? 'tasaFirma'
+         and nullif(entries.value->>'tasaFirma','') is not null
+         and case
+           when entries.value->>'tasaFirma' ~ '^[0-9]{1,3}(\.[0-9]{1,2})?$'
+             then (entries.value->>'tasaFirma')::numeric not between 0 and 100
+           else true
+         end
+       )
+  ) then
+    raise exception 'La clave, el estado o la tasa de firma no es válida.' using errcode='22023';
+  end if;
+  update public.penalidades_liquidaciones as liquidacion
+  set estado=entry.estado,
+      tasa_firma=case when entry.has_tasa_firma then entry.tasa_firma else liquidacion.tasa_firma end,
+      actualizado_en=now()
+  from (
+    select entries.value->>'recordKey' as record_key,entries.value->>'estado' as estado,
+      entries.value ? 'tasaFirma' as has_tasa_firma,
+      nullif(entries.value->>'tasaFirma','')::numeric as tasa_firma
+    from jsonb_array_elements(p_estados) as entries(value)
+  ) as entry
+  where liquidacion.record_key=entry.record_key
+    and (liquidacion.estado is distinct from entry.estado
+      or (entry.has_tasa_firma and liquidacion.tasa_firma is distinct from entry.tasa_firma));
+  get diagnostics v_count=row_count;
+  return v_count;
+end $$;
+
+-- El detalle se lee por páginas para evitar que una liquidación grande
+-- provoque statement timeout o una respuesta demasiado pesada.
+create or replace function public.penalidades_obtener_items(p_record_key text,p_offset integer default 0,p_limit integer default 500)
+returns jsonb language plpgsql security definer stable
+set search_path = pg_catalog, public
+as $$
+begin
+  if not public.penalidades_usuario_autorizado() then
+    raise exception 'Cuenta no autorizada.' using errcode='42501';
+  end if;
+  if p_offset<0 or p_limit<1 or p_limit>1000 then
+    raise exception 'Parámetros de paginación inválidos.' using errcode='22023';
+  end if;
+  return coalesce((
+    select jsonb_agg(q.item order by q.tracking,q.penalizacion,q.id)
+    from (
+      select g.tracking,g.penalizacion,g.id,
+        jsonb_build_object(
+          'id',g.id,'tracking',g.tracking,'pdv',g.pdv,'penalty',g.penalizacion,'breach',g.brecha,
+          'sla',g.sla,'liquidationBreach',g.brecha_liquidacion,'liquidationSla',g.sla_liquidacion,
+          'cost',g.costo,'dateRaw',g.fecha,'motive',g.motivo_origen,'observations',g.observaciones,
+          'district',g.distrito,'province',g.provincia,'department',g.departamento,
+          'latestOperation',g.tipo_operacion_reciente,'breachOperation',g.operacion_brecha,
+          'breachWaitHours',g.brecha_horas,'breachLastUpdate',g.brecha_ultima_actualizacion,
+          'scanType',g.tipo_escaneo_reciente,'signature',g.estatus_firma,
+          'zoneType',g.tipo_zona,'zoneName',g.zona,'slaDays',g.sla_asignado_dias,
+          'zoneMatched',g.coincidencia_zona,'sourceFile',g.origen_archivo,
+          'exemptionPercent',coalesce(d.porcentaje,0),'exonerated',coalesce(d.porcentaje,0)>0,
+          'reason',coalesce(d.motivo,''),'modifiedAt',d.actualizado_en,
+          'breachMatched',coalesce(g.operacion_brecha,'')<>'',
+          'guideMatched',g.distrito<>'' or g.provincia<>'' or g.departamento<>'',
+          'sourceRow',0,'period',l.periodo,'costRaw',g.costo::text,
+          'sourceZone',g.zona,'manualZone',g.zona_manual
+        ) as item
+      from public.penalidades_liquidaciones l
+      join public.penalidades_guias g on g.liquidacion_id=l.id
+      left join public.penalidades_decisiones d on d.guia_id=g.id
+      where l.record_key=p_record_key
+      order by g.tracking,g.penalizacion,g.id
+      limit p_limit offset p_offset
+    ) q
+  ),'[]'::jsonb);
 end $$;
 
 -- Estado compatible para validación/migración desde el HTML anterior.
@@ -253,7 +418,7 @@ begin
   end if;
   select coalesce(jsonb_agg(jsonb_build_object(
     'id',l.record_key,
-    'period',l.periodo,'pdv',l.pdv,'createdAt',l.creado_en,'updatedAt',l.actualizado_en,
+    'period',l.periodo,'pdv',l.pdv,'status',l.estado,'signatureRate',l.tasa_firma,'createdAt',l.creado_en,'updatedAt',l.actualizado_en,
     'groupId',(select m.grupo_id from public.penalidades_liquidacion_grupos m where m.liquidacion_id=l.id),
     'items',coalesce(q.rows,'[]'::jsonb)
   ) order by l.periodo desc,l.pdv),'[]'::jsonb) into v_records
@@ -393,8 +558,11 @@ revoke all on function public.penalidades_usuario_autorizado() from public,anon,
 revoke all on function public.penalidades_upsert_lote(jsonb,jsonb) from public,anon,authenticated;
 revoke all on function public.penalidades_guardar_decisiones(jsonb) from public,anon,authenticated;
 revoke all on function public.penalidades_listar_liquidaciones() from public,anon,authenticated;
+revoke all on function public.penalidades_actualizar_estados(jsonb) from public,anon,authenticated;
 revoke all on function public.penalidades_obtener_detalle(uuid) from public,anon,authenticated;
 revoke all on function public.penalidades_obtener_estado() from public,anon,authenticated;
+revoke all on function public.penalidades_obtener_resumen() from public,anon,authenticated;
+revoke all on function public.penalidades_obtener_items(text,integer,integer) from public,anon,authenticated;
 revoke all on function public.penalidades_activar_v2() from public,anon,authenticated;
 revoke all on function public.penalidades_borrar_guias(text[]) from public,anon,authenticated;
 revoke all on function public.penalidades_borrar_liquidaciones(text[]) from public,anon,authenticated;
@@ -403,8 +571,11 @@ revoke all on function public.penalidades_borrar_liquidaciones_vacias() from pub
 grant execute on function public.penalidades_upsert_lote(jsonb,jsonb) to authenticated;
 grant execute on function public.penalidades_guardar_decisiones(jsonb) to authenticated;
 grant execute on function public.penalidades_listar_liquidaciones() to authenticated;
+grant execute on function public.penalidades_actualizar_estados(jsonb) to authenticated;
 grant execute on function public.penalidades_obtener_detalle(uuid) to authenticated;
 grant execute on function public.penalidades_obtener_estado() to authenticated;
+grant execute on function public.penalidades_obtener_resumen() to authenticated;
+grant execute on function public.penalidades_obtener_items(text,integer,integer) to authenticated;
 grant execute on function public.penalidades_activar_v2() to authenticated;
 grant execute on function public.penalidades_borrar_guias(text[]) to authenticated;
 grant execute on function public.penalidades_borrar_liquidaciones(text[]) to authenticated;

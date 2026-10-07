@@ -281,7 +281,7 @@
       </div>
     </section>
 
-    <footer class="bottom-note"><span>Se cruza Brecha por el periodo seleccionado al cargarla + PDV + guía. Todas las filas con guía y PDV se consideran; Fecha y Periodo originales no filtran el match. Escaneo, firma y ubicación vienen de Exportación de guía.</span><span>Se normalizan tildes y se reconocen SAPALLANCA = SAPALLANGA y SAN JUAN DE YSCOS = SAN JUAN DE ISCOS.</span><span>La descarga incluye GUIA, PDV, PORCENTAJE DE EXONERACION y MOTIVO DE DECISION.</span></footer>
+    <footer class="bottom-note"><span>Se cruza Brecha por el periodo seleccionado al cargarla + PDV + guía. Todas las filas con guía y PDV se consideran; Fecha y Periodo originales no filtran el match. Escaneo, firma y ubicación vienen de Exportación de guía.</span><span>Se normalizan tildes y se reconocen SAPALLANCA = SAPALLANGA y SAN JUAN DE YSCOS = SAN JUAN DE ISCOS.</span><span>La descarga incluye GUIA, PENALIDAD, PDV, PORCENTAJE DE EXONERACION, MOTIVO DE DECISION y MONTO FINAL.</span></footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -852,7 +852,7 @@
     function downloadExcel(){
       const record=currentRecord();if(!record)return notify('Abre un registro antes de descargar.',true);if(!window.XLSX)return notify('El lector Excel requiere conexión a internet.',true);
       const rows=filteredItems();if(!rows.length)return notify('No hay guías en el detalle filtrado.',true);
-      const sheet=XLSX.utils.aoa_to_sheet([['GUIA','PDV','PORCENTAJE DE EXONERACION','MOTIVO DE DECISION'],...rows.map(x=>[x.tracking,x.pdv,exemptionPercent(x),x.reason||''])]);const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,sheet,'Detalle de guías');
+      const sheet=XLSX.utils.aoa_to_sheet([['GUIA','PENALIDAD','PDV','PORCENTAJE DE EXONERACION','MOTIVO DE DECISION','MONTO FINAL'],...rows.map(x=>[x.tracking,x.penalty||'Sin tipo de penalización',x.pdv,exemptionPercent(x),x.reason||'',balanceAmount(x)])]);const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,sheet,'Detalle de guías');
       const pdv=norm(record.pdv).replace(/\s+/g,'_').replace(/[^A-Z0-9_-]/g,'');XLSX.writeFile(book,`EXONERACIONES_${record.period}_${pdv}.xlsx`);
     }
     function filterFromSummaryCell(event){

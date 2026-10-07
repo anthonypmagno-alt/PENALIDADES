@@ -179,7 +179,7 @@
     return (print ? '<section class="brecha-summary-print">' : '') +
       '<h4>Cuadro resumen de penalidades · ' + numero(summary.totalGuias) + ' guías</h4>' +
       '<p>El monto de las filas preventivas se muestra en verde como costo evitado; no se suma a la penalidad. Total penalizable: <b>' + dinero(summary.totalPenalizable) + '</b> · Costo evitado: <b class="brecha-avoided">' + dinero(summary.totalEvitado) + '</b>.</p>' +
-      '<div class="brecha-summary-table-wrap"><table class="brecha-summary-table"><thead><tr><th>Clasificación</th><th>Tipo de interrupción</th><th>Guías</th><th>Costo unitario</th><th>Monto penalizable</th><th>Costo evitado</th></tr></thead><tbody>' + rows +
+      '<div class="brecha-summary-table-wrap"><table class="brecha-summary-table" border="1" cellspacing="0" style="border-collapse:collapse;border:1px solid #334155"><thead><tr><th>Clasificación</th><th>Tipo de interrupción</th><th>Guías</th><th>Costo unitario</th><th>Monto penalizable</th><th>Costo evitado</th></tr></thead><tbody>' + rows +
       '</tbody><tfoot><tr><td colspan="2">TOTAL</td><td class="brecha-num">' + numero(summary.totalGuias) + '</td><td></td><td class="brecha-num">' + dinero(summary.totalPenalizable) + '</td><td class="brecha-num brecha-avoided">' + dinero(summary.totalEvitado) + '</td></tr></tfoot></table></div>' +
       (print ? '</section>' : '');
   }
@@ -211,8 +211,8 @@
       .brecha-summary-print{margin:0 0 8mm;break-after:avoid;page-break-after:avoid}
       .brecha-summary-print h4{font-size:14pt;margin:0 0 3mm;color:#153e67}
       .brecha-summary-print p{font-size:9pt;margin:2mm 0 4mm}
-      .brecha-summary-print .brecha-summary-table{width:100%;min-width:0;table-layout:auto;margin:0 0 5mm}
-      .brecha-summary-print .brecha-summary-table th,.brecha-summary-print .brecha-summary-table td{font-size:9pt;padding:2mm}
+      .brecha-summary-print .brecha-summary-table{width:100%;min-width:0;table-layout:auto;margin:0 0 5mm;border-collapse:collapse!important;border:1px solid #1f2937!important}
+      .brecha-summary-print .brecha-summary-table th,.brecha-summary-print .brecha-summary-table td{font-size:9pt;padding:2mm;border:1px solid #1f2937!important;border-style:solid!important;}
       @media print{.brecha-avoided{color:#15803d!important;background:#dcfce7!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}.brecha-preventive-row td{background:#f0fdf4!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}}
     `;
     document.head.appendChild(style);
@@ -437,6 +437,8 @@
         let html = original.apply(this, arguments);
         if (!consultaSeleccionada.length || html.includes('brecha-summary-print')) return html;
         const summary = resumenHtml(consultaSeleccionada, true);
+        const printCss = '<style>.brecha-summary-print{margin:0 0 8mm;break-after:avoid;page-break-after:avoid}.brecha-summary-print h4{font-size:14pt;margin:0 0 3mm;color:#153e67}.brecha-summary-print p{font-size:9pt;margin:2mm 0 4mm}.brecha-summary-print .brecha-summary-table{width:100%;min-width:0;table-layout:auto;border-collapse:collapse!important;border:1px solid #1f2937!important;margin:0 0 5mm}.brecha-summary-print .brecha-summary-table th,.brecha-summary-print .brecha-summary-table td{width:auto!important;border:1px solid #1f2937!important;border-style:solid!important;padding:2mm;text-align:left;font-size:9pt}.brecha-summary-print .brecha-summary-table th{background:#e2e8f0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.brecha-summary-print .brecha-summary-table tfoot td{background:#dbeafe;font-weight:bold;print-color-adjust:exact;-webkit-print-color-adjust:exact}.brecha-summary-print .brecha-avoided{color:#15803d!important;background:#dcfce7!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}</style>';
+        html = html.replace('</head>', printCss + '</head>');
         return html.replace('<body>', '<body>' + summary);
       };
       wrapped.__brechaWrapped = true;

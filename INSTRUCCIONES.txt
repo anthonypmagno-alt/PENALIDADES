@@ -1,6 +1,6 @@
 PORTAL REVISION DE GUIAS + PENALIDADES V2
 
-IMPORTANTE: este paquete conserva index.html y el login del portal. Para publicar esta corrección en un repositorio existente, reemplaza solo penalidades.html; no reemplaces index.html.
+IMPORTANTE: este paquete conserva index.html y el login del portal. Para publicar esta corrección en un repositorio existente, reemplaza solo penalidades.html; no reemplaces index.html. La descarga Excel ahora incluye GUIA, PENALIDAD, PDV, PORCENTAJE DE EXONERACION, MOTIVO DE DECISION y MONTO FINAL, en ese orden.
 
 ACTUALIZAR PENALIDADES
 1. En GitHub, reemplaza penalidades.html por el archivo de esta carpeta y espera que GitHub Pages publique el cambio.
@@ -33,6 +33,6 @@ COSTOS COMPARTIDOS DE BRECHA EN CONSULTA DESDE EXCEL
 3. Recarga la página con Ctrl+F5 e inicia sesión. En Consulta desde Excel, carga o consulta el Track Break para mostrar sus tipos de interrupción.
 4. El rol ADMINISTRADOR puede definir los importes unitarios y pulsar Guardar valores para todos. Los demás roles ven los mismos valores en solo lectura. Las tarifas y las guías se mantienen separadas; actualizar un Excel no cambia la configuración.
 5. Las categorías preventivas de hasta 12 h, más de 12 a 24 h y más de 24 a 36 h también tienen una tarifa configurable. En el resumen, su importe calculado aparece en verde como costo evitado y no se suma al monto penalizable.
-6. En Consulta desde Excel, selecciona las guías y abre Ver guías seleccionadas. El botón Generar PDF: penalidades y QR imprime/guarda un PDF con el cuadro resumen de penalidades (incluye el total penalizable y el costo preventivo evitado en verde) seguido de los QR. El Excel de guías no incluye el cuadro de montos.
+6. En Consulta desde Excel, selecciona las guías y abre Ver guías seleccionadas. El botón Generar PDF: penalidades y QR imprime/guarda un PDF con el cuadro resumen de penalidades con bordes visibles (incluye el total penalizable y el costo preventivo evitado en verde) seguido de los QR. El Excel de guías no incluye el cuadro de montos.
 
 La nueva migración SQL es adicional: no vuelvas a ejecutar supabase_penalidades_reiniciar.sql ni el SQL de instalación completa para esta actualización.

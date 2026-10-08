@@ -15,15 +15,6 @@
     @media(max-width:600px){.topbar{display:block}.top-actions{margin-top:14px}.panel{padding:14px}.form-row>.field{flex:1;min-width:140px}.source-footer{align-items:flex-start;flex-direction:column}.detail-actions{justify-content:flex-start}.metrics{gap:7px}.metric{padding:10px}.metric strong{font-size:17px}}
   </style>
   <style>
-    .liquidation-status-select{min-width:132px;max-width:165px;min-height:34px;padding:6px 8px;border:1px solid #cfd9e2;border-radius:7px;background:#fff;color:var(--ink);font-size:11px;font-weight:650}
-    .liquidation-status-select:focus{outline:2px solid #f4b080;border-color:var(--orange)}
-    .liquidation-status-select:disabled{background:#f3f5f7;color:var(--muted)}
-    .signature-rate-editor{display:flex;align-items:center;gap:4px;min-width:82px}
-    .signature-rate-input{width:68px;min-height:34px;padding:5px 6px;border:1px solid #cfd9e2;border-radius:7px;background:#fff;color:var(--ink);font-size:11px;text-align:right;font-variant-numeric:tabular-nums}
-    .signature-rate-input:focus{outline:2px solid #f4b080;border-color:var(--orange)}
-    .global-exemption-filter[aria-pressed="true"]{background:#e8f5ee;border-color:#a8d8bd;color:#176b45}
-  </style>
-  <style>
     .multi-picker{position:relative;width:100%}
     .multi-picker-trigger{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:35px;padding:7px 9px;border:1px solid #cfd9e2;border-radius:7px;background:#fff;color:var(--ink);font-size:12px;text-align:left;white-space:nowrap;overflow:hidden}
     .multi-picker-trigger::after{content:'▾';color:var(--muted);flex:0 0 auto}
@@ -43,10 +34,6 @@
     .breakdown-subrow{background:#fbfcfd;color:#516273}
     .breakdown-subrow:hover{background:#fff8f2}
     .breakdown-subrow td:first-child{padding-left:34px}
-    .breakdown-exemption-row{background:#f3f6f8;color:#304254;font-weight:650}
-    .breakdown-exemption-row td:first-child{padding-left:28px}
-    .breakdown-exemption-subrow{background:#fff}
-    .breakdown-exemption-subrow td:first-child{padding-left:54px}
     .breakdown-subtype-prefix{color:#8a5b3c;font-weight:700}
     .detail-zone-group th{position:static;z-index:auto;padding:9px 10px;background:#edf2f6;border-top:2px solid #d6e0e8;border-bottom:1px solid #d6e0e8;color:#34485a;text-transform:none;letter-spacing:normal;font-size:11px}
     .detail-zone-heading{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -206,8 +193,6 @@
           <div class="field"><label>Periodo</label><div class="multi-picker" id="summaryPeriod"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por periodo" aria-haspopup="true" aria-expanded="false" aria-controls="summaryPeriodMenu">Todos</button><div class="multi-picker-menu" id="summaryPeriodMenu" role="group" hidden></div></div></div>
           <div class="field"><label>PDV</label><div class="multi-picker" id="summaryPdv"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por PDV" aria-haspopup="true" aria-expanded="false" aria-controls="summaryPdvMenu">Todos</button><div class="multi-picker-menu" id="summaryPdvMenu" role="group" hidden></div></div></div>
           <div class="field"><label>Grupo / zona</label><div class="multi-picker" id="summaryGroup"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por grupo o zona" aria-haspopup="true" aria-expanded="false" aria-controls="summaryGroupMenu">Todos</button><div class="multi-picker-menu" id="summaryGroupMenu" role="group" hidden></div></div></div>
-          <div class="field"><label>Estado</label><div class="multi-picker" id="summaryStatus"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por estado de liquidación" aria-haspopup="true" aria-expanded="false" aria-controls="summaryStatusMenu">Todos</button><div class="multi-picker-menu" id="summaryStatusMenu" role="group" hidden></div></div></div>
-          <button type="button" class="btn global-exemption-filter" id="onlyNonExemptBtn" aria-pressed="false" title="Oculta en todas las tablas las penalidades con exoneración mayor a 0%">Solo no exoneradas</button>
         </div>
       </div>
       <div class="group-management">
@@ -216,7 +201,7 @@
       </div>
       <div class="table-wrap">
         <table class="data-table" id="recordsTable">
-          <thead><tr><th class="record-select-cell"><input type="checkbox" id="selectAllVisibleRecords" aria-label="Seleccionar todas las liquidaciones visibles"></th><th>Periodo</th><th>PDV</th><th class="num">Penalidades</th><th class="num">Exoneradas</th><th class="num">No exoneradas</th><th class="num">Penalidad total</th><th class="num">Monto exonerado</th><th class="num">Saldo de penalidad</th><th>Actualizado</th><th>Estado</th><th>Tasa de firma (%)</th><th>Acciones</th></tr></thead>
+          <thead><tr><th class="record-select-cell"><input type="checkbox" id="selectAllVisibleRecords" aria-label="Seleccionar todas las liquidaciones visibles"></th><th>Periodo</th><th>PDV</th><th class="num">Penalidades</th><th class="num">Exoneradas</th><th class="num">No exoneradas</th><th class="num">Penalidad total</th><th class="num">Monto exonerado</th><th class="num">Saldo de penalidad</th><th>Actualizado</th><th>Acciones</th></tr></thead>
           <tbody id="recordsBody"></tbody>
         </table>
       </div>
@@ -229,8 +214,8 @@
       </div>
       <div class="metrics" id="metrics"></div>
       <div class="breakdown">
-        <h3>Resumen por penalización y motivo de decisión</h3><p class="note">Cada fila agrupa una penalización y un motivo. Los registros sin motivo aparecen como “Sin motivo de decisión”. Usa + o − para expandir los subtipos de Brecha o SLA; haz clic en una fila para filtrar el detalle.</p>
-        <div class="table-wrap"><table class="data-table"><thead><tr><th>Penalización / subtipo</th><th>Motivo de decisión</th><th class="num">Exoneradas (N.º)</th><th class="num">No exoneradas (N.º)</th><th class="num">Filas</th><th class="num">Guías únicas</th><th class="num">Penalidad total (S/)</th><th class="num">Monto exonerado (S/)</th><th class="num">Saldo (S/)</th></tr></thead><tbody id="breakdownBody"></tbody></table></div>
+        <h3>Resumen por penalización y tipo de zona</h3><p class="note">Usa + o − para expandir los subtipos: Brecha muestra la columna Brecha y Excede el SLA / cola larga muestra la columna SLA. Haz clic en una fila o subtipo para filtrar el detalle.</p>
+        <div class="table-wrap"><table class="data-table"><thead><tr><th>Penalización / subtipo</th><th>Tipo de zona</th><th class="num">Exoneradas (N.º)</th><th class="num">No exoneradas (N.º)</th><th class="num">Guías únicas</th><th class="num">Penalidad total (S/)</th><th class="num">Monto exonerado (S/)</th><th class="num">Saldo (S/)</th></tr></thead><tbody id="breakdownBody"></tbody></table></div>
       </div>
       <div class="breakdown">
         <h3>Brecha de actualización de penalidad</h3><p class="note">Las guías y subtipos salen de “LISTA DETALLADA DE PENALIDAD”; las columnas de operación reciente vienen del match con “Brecha máxima por guía y PDV”. Si no hay match, verás “Sin dato”. Expande para ver los subtipos y haz clic en una celda para filtrar el detalle.</p>
@@ -239,6 +224,10 @@
       <div class="breakdown">
         <h3>Resumen por SLA y escaneo / firma</h3><p class="note">Las filas usan el subtipo SLA de la penalidad. Las columnas combinan el tipo de escaneo más reciente con el estatus de firma.</p>
         <div class="table-wrap"><table class="data-table pivot-table"><thead id="slaMatrixHead"></thead><tbody id="slaMatrixBody"></tbody></table></div>
+      </div>
+      <div class="breakdown">
+        <h3>Resumen por motivo de decisión</h3><p class="note">El monto exonerado se calcula según el porcentaje asignado en cada penalidad.</p>
+        <div class="table-wrap"><table class="data-table"><thead><tr><th>Motivo</th><th class="num">Exoneración (%)</th><th class="num">Penalidades</th><th class="num">Penalidad original (S/)</th><th class="num">Monto exonerado (S/)</th><th class="num">Saldo (S/)</th></tr></thead><tbody id="reasonSummaryBody"></tbody></table></div>
       </div>
       <div class="detail-tools">
         <div class="filters">
@@ -281,7 +270,7 @@
       </div>
     </section>
 
-    <footer class="bottom-note"><span>Se cruza Brecha por el periodo seleccionado al cargarla + PDV + guía. Todas las filas con guía y PDV se consideran; Fecha y Periodo originales no filtran el match. Escaneo, firma y ubicación vienen de Exportación de guía.</span><span>Se normalizan tildes y se reconocen SAPALLANCA = SAPALLANGA y SAN JUAN DE YSCOS = SAN JUAN DE ISCOS.</span><span>La descarga incluye GUIA, PENALIDAD, PDV, PORCENTAJE DE EXONERACION, MOTIVO DE DECISION y MONTO FINAL.</span></footer>
+    <footer class="bottom-note"><span>Se cruza Brecha por el periodo seleccionado al cargarla + PDV + guía. Todas las filas con guía y PDV se consideran; Fecha y Periodo originales no filtran el match. Escaneo, firma y ubicación vienen de Exportación de guía.</span><span>Se normalizan tildes y se reconocen SAPALLANCA = SAPALLANGA y SAN JUAN DE YSCOS = SAN JUAN DE ISCOS.</span><span>La descarga incluye GUIA, PDV, PORCENTAJE DE EXONERACION y MOTIVO DE DECISION.</span></footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -293,10 +282,8 @@
     let currentRecordId = null;
     let selectedIds = new Set();
     let selectedRecordIds = new Set();
-    let onlyNonExempt = false;
     const UNASSIGNED_GROUP='__SIN_GRUPO__';
-    const LIQUIDATION_STATUSES=[{value:'pendiente',label:'Pendiente'},{value:'en_proceso',label:'En proceso'},{value:'finalizado',label:'Finalizado'},{value:'notificado',label:'Notificado'},{value:'en_revalidacion',label:'En revalidación'}];
-    const pickerIds=['summaryPeriod','summaryPdv','summaryGroup','summaryStatus','filterPenalty','filterBreachSla','filterOperation','filterReason','filterPercent','filterZone','filterSlaDays','filterExemption','filterScan','filterSignature'];
+    const pickerIds=['summaryPeriod','summaryPdv','summaryGroup','filterPenalty','filterBreachSla','filterOperation','filterReason','filterPercent','filterZone','filterSlaDays','filterExemption','filterScan','filterSignature'];
     const detailPickerIds=pickerIds.filter(id=>id.startsWith('filter'));
     const pickerSelections=Object.fromEntries(pickerIds.map(id=>[id,null]));
     const pickerOptions=Object.create(null),pickerAllLabels=Object.create(null);
@@ -312,10 +299,6 @@
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
     const norm = value => String(value ?? '').normalize('NFKD').replace(/[\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f]/g,'').toUpperCase().replace(/[^A-Z0-9\u3400-\u9FFF]+/g,' ').trim().replace(/\s+/g,' ');
     const txt = value => value == null ? '' : String(value).trim();
-    function liquidationStatusValue(value){return LIQUIDATION_STATUSES.some(status=>status.value===value)?value:'pendiente';}
-    function renderLiquidationStatus(record){const current=liquidationStatusValue(record.status);return `<select class="liquidation-status-select" data-record-id="${escapeHtml(record.id)}" aria-label="Estado de liquidación ${escapeHtml(periodLabel(record.period))} ${escapeHtml(record.pdv)}">${LIQUIDATION_STATUSES.map(status=>`<option value="${status.value}" ${current===status.value?'selected':''}>${status.label}</option>`).join('')}</select>`;}
-    function signatureRateValue(value){return value==null||txt(value)===''?null:Math.round(clampPercent(value)*100)/100;}
-    function renderSignatureRate(record){const rate=signatureRateValue(record.signatureRate);return `<div class="signature-rate-editor"><input class="signature-rate-input" type="number" min="0" max="100" step="0.01" data-record-id="${escapeHtml(record.id)}" value="${rate==null?'':rate}" aria-label="Tasa de firma en porcentaje para ${escapeHtml(periodLabel(record.period))} ${escapeHtml(record.pdv)}"><span>%</span></div>`;}
     const idPart = value => norm(value).replace(/\s/g,'');
     const pdvName = value => txt(value).split('|')[0].trim();
     function periodFromDate(value){const iso=parseDate(value);return iso?iso.slice(0,7):'';}
@@ -323,7 +306,6 @@
     function exemptionPercent(item){return item?.exemptionPercent==null?(item?.exonerated?100:0):clampPercent(item.exemptionPercent);}
     function exemptionAmount(item){return (Number(item?.cost)||0)*exemptionPercent(item)/100;}
     function balanceAmount(item){return (Number(item?.cost)||0)-exemptionAmount(item);}
-    function visibleSummaryItems(record){const items=Array.isArray(record?.items)?record.items:[];return onlyNonExempt?items.filter(item=>exemptionPercent(item)===0):items;}
     function readState(){return emptyState();}
     function persist(showMessage=false){
       if(cloudMode){cloudPending=true;cloudNotify=cloudNotify||showMessage;$('storageState').textContent='Sincronizando con Supabase…';clearTimeout(cloudTimer);cloudTimer=setTimeout(flushCloudSave,showMessage?0:350);return true;}
@@ -423,8 +405,8 @@
         const importedAt=new Date().toISOString();for(const entry of batch)addImportedSourceRows(slot,entry.file,entry.rows,importedAt);if(state.sources.penalties)state.sources.penalties.storedSnapshot=false;matrixGuideSelection=null;
         if(slot==='zones'&&batch.length)state.sources.zones={...state.sources.zones,filename:batch[0].file.name,importedAt,rows:batch[0].rows,files:[{filename:batch[0].file.name,importedAt,rowCount:batch[0].rows.length}]};
         let recordSummary={created:0,refreshed:0,groups:0};
-        if(slot==='penalties'){setDefaultPeriodAndPdvs();recordSummary=await createRecordsFromPenaltySources();}
-        else{if(cloudMode&&!state.records.every(record=>Array.isArray(record.items)))await ensureAllStoredRecordItemsLoaded();refreshRecordsFromSources();}
+        if(slot==='penalties'){setDefaultPeriodAndPdvs();recordSummary=createRecordsFromPenaltySources();}
+        else refreshRecordsFromSources();
         hydratePenaltySourceFromRecords();const slaBackfilled=backfillMissingSla();persist();updateSourceDiag();renderSummary();if(currentRecord())renderDetail();
         const importedCount=batch.reduce((sum,item)=>sum+item.rows.length,0),zoneSlaCount=slot==='zones'?batch[0].rows.filter(row=>txt(row.slaDays)!=='').length:null;
         const importedMessage=slot==='zones'?`${slotLabels[slot]} importada: ${fmtCount(importedCount)} filas; ${fmtCount(zoneSlaCount)} con “SLA ASIGNADO (DIAS)”.`:slot==='penalties'?`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas; ${fmtCount(recordSummary.created)} liquidaciones creadas y ${fmtCount(recordSummary.refreshed)} actualizadas.`:`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas.`;
@@ -561,12 +543,10 @@
       return updated;
     }
     function hydratePenaltySourceFromRecords(){
-      const source=state.sources.penalties,rows=[...(source?.rows||[])],covered=new Set(rows.map(row=>recordKey(row.period,row.pdv))),stored=[];
-      for(const record of state.records){if(covered.has(record.id)||!Array.isArray(record.items))continue;for(const item of record.items)stored.push({sourceRow:rows.length+stored.length+2,sourceId:'stored',sourceFile:item.sourceFile||'Registros guardados',sourceImportedAt:record.updatedAt||'',period:record.period,pdv:record.pdv,tracking:item.tracking,penalty:item.penalty,breach:item.liquidationBreach||item.breach||'',sla:item.liquidationSla||item.sla||'',dateRaw:item.dateRaw||'',dateISO:item.dateISO||parseDate(item.dateRaw),motive:item.motive||'',costRaw:item.costRaw||'',cost:Number(item.cost)||0,observations:item.observations||'',sourceZone:item.sourceZone||''});}
-      if(!stored.length)return;
-      const importedFiles=(source?.files||[]).filter(file=>file.sourceId!=='stored'),now=new Date().toISOString(),storedCount=rows.filter(row=>row.sourceId==='stored').length+stored.length;
-      const files=[...importedFiles,{sourceId:'stored',filename:'Registros guardados',importedAt:now,rowCount:storedCount}],allRows=[...rows,...stored];
-      state.sources.penalties={filename:files.map(file=>file.filename).join(', '),importedAt:source?.importedAt||now,rows:allRows,storedSnapshot:importedFiles.length===0,files};
+      if(state.sources.penalties?.rows?.length)return;
+      const rows=[];
+      for(const record of state.records)for(const item of record.items||[])rows.push({sourceRow:rows.length+2,sourceId:'stored',sourceFile:item.sourceFile||'Registros guardados',sourceImportedAt:record.updatedAt||'',period:record.period,pdv:record.pdv,tracking:item.tracking,penalty:item.penalty,breach:item.liquidationBreach||item.breach||'',sla:item.liquidationSla||item.sla||'',dateRaw:item.dateRaw||'',dateISO:item.dateISO||parseDate(item.dateRaw),motive:item.motive||'',costRaw:item.costRaw||'',cost:Number(item.cost)||0,observations:item.observations||'',sourceZone:item.sourceZone||''});
+      if(rows.length)state.sources.penalties={filename:'Registros guardados',importedAt:new Date().toISOString(),rows,storedSnapshot:true,files:[{sourceId:'stored',filename:'Registros guardados',importedAt:new Date().toISOString(),rowCount:rows.length}]};
     }
     function sourceFilesSnapshot(){return Object.fromEntries(['penalties','breaches','guides','zones'].map(slot=>[slot,sourceFileList(slot)]).filter(([,name])=>name));}
     function preserveDecisions(fresh,previousItems){
@@ -574,17 +554,12 @@
       for(const item of fresh){const old=previous.get(item.id);if(!old)continue;item.exemptionPercent=exemptionPercent(old);item.exonerated=item.exemptionPercent>0;item.reason=old.reason||'';item.manualZone=old.manualZone?{...old.manualZone}:null;if(item.manualZone)applyManualZone(item);item.modifiedAt=old.modifiedAt||'';if(!state.sources.guides?.rows?.length)for(const key of ['district','province','department','scanType','signature','scanTime'])if(old[key]!=null)item[key]=old[key];const hasRelevantBreach=!!state.sources.breaches?.rows?.some(row=>row.period===item.period);if(!hasRelevantBreach){for(const key of ['latestOperation','breachOperation','breachWaitHours','breachLastUpdate','breachMatched'])if(old[key]!=null)item[key]=old[key];if(old.breachMatched){item.breach=old.breach||item.breach;item.sla=old.sla||item.sla;}}if(!state.sources.zones?.rows?.length)for(const key of ['zoneName','zoneType','slaDays','zoneMatched','sourceZone'])if(old[key]!=null)item[key]=old[key];}
       return fresh;
     }
-    async function ensureAllStoredRecordItemsLoaded(){
-      const pending=state.records.filter(record=>!Array.isArray(record.items));
-      for(let i=0;i<pending.length;i+=3)await Promise.all(pending.slice(i,i+3).map(async record=>{record.items=await fetchStoredRecordItems(record.id);}));
-      hydratePenaltySourceFromRecords();
-    }
     function refreshRecordsFromSources(){
       if(!(state.sources.penalties?.rows||[]).length)return 0;const now=new Date().toISOString(),indexes={guides:buildGuideIndex(),breaches:buildBreachIndex(),zones:buildZoneIndex()};let refreshed=0;
       for(const record of state.records){const fresh=getRecordItems(record.period,record.pdv,indexes);if(!fresh.length)continue;record.items=preserveDecisions(fresh,record.items);record.sourceFiles=sourceFilesSnapshot();record.updatedAt=now;record.sourceSyncAt=now;refreshed++;}
       return refreshed;
     }
-    async function createRecordsFromPenaltySources(){
+    function createRecordsFromPenaltySources(){
       const rows=state.sources.penalties?.rows||[],fallbackPeriod=$('periodInput').value,groups=new Map();
       for(const row of rows){const period=row.period||periodFromDate(row.dateISO)||fallbackPeriod,pdv=pdvName(row.pdv);if(!period||!pdv)continue;const key=recordKey(period,pdv);if(!groups.has(key))groups.set(key,{period,pdv,rows:[]});groups.get(key).rows.push(row);}
       const now=new Date().toISOString(),indexes={guides:buildGuideIndex(),breaches:buildBreachIndex(),zones:buildZoneIndex()};let created=0,refreshed=0;
@@ -592,8 +567,8 @@
         const id=recordKey(group.period,group.pdv),deletedAt=timestampValue(state.deletedRecords?.[id]);
         if(deletedAt&& !group.rows.some(row=>timestampValue(row.sourceImportedAt)>deletedAt))continue;
         const fresh=getRecordItems(group.period,group.pdv,indexes),existing=state.records.find(record=>record.id===id);
-        if(existing){if(!Array.isArray(existing.items))existing.items=await fetchStoredRecordItems(existing.id);existing.items=preserveDecisions(fresh,existing.items);existing.sourceFiles=sourceFilesSnapshot();existing.updatedAt=now;existing.sourceSyncAt=now;refreshed++;}
-        else if(fresh.length){state.records.push({id,period:group.period,pdv:group.pdv,status:'pendiente',signatureRate:null,createdAt:now,updatedAt:now,sourceSyncAt:now,sourceFiles:sourceFilesSnapshot(),items:fresh});created++;}
+        if(existing){existing.items=preserveDecisions(fresh,existing.items);existing.sourceFiles=sourceFilesSnapshot();existing.updatedAt=now;existing.sourceSyncAt=now;refreshed++;}
+        else if(fresh.length){state.records.push({id,period:group.period,pdv:group.pdv,createdAt:now,updatedAt:now,sourceSyncAt:now,sourceFiles:sourceFilesSnapshot(),items:fresh});created++;}
       }
       return {created,refreshed,groups:groups.size};
     }
@@ -605,25 +580,9 @@
       const id=recordKey(period,pdv);let record=state.records.find(r=>r.id===id);
       if(record){showRecord(record.id);notify('Se abrió el registro guardado.');return;}
       const items=getRecordItems(period,pdv);if(!items.length){notify(`No hay penalidades para ${pdv} en ${period}. Verifica la fecha del archivo.`,true);return;}
-      record={id,period,pdv,status:'pendiente',signatureRate:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),sourceFiles:sourceFilesSnapshot(),items};state.records.push(record);persist();renderSummary();showRecord(record.id);notify(`${fmtCount(items.length)} penalidades agregadas al registro.`);
+      record={id,period,pdv,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),sourceFiles:sourceFilesSnapshot(),items};state.records.push(record);persist();renderSummary();showRecord(record.id);notify(`${fmtCount(items.length)} penalidades agregadas al registro.`);
     }
-    function fetchStoredRecordItems(recordKey){
-      if(!cloudMode)return Promise.resolve([]);
-      return new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getRecordItems(recordKey));
-    }
-    async function showRecord(id){
-      const record=state.records.find(item=>item.id===id);if(!record)return;
-      currentRecordId=id;selectedIds.clear();matrixGuideSelection=null;dirty=false;$('detailPanel').hidden=false;
-      $('detailHeading').innerHTML=`Detalle de penalidades <span class="badge">${escapeHtml(periodLabel(record.period))}</span> <span class="badge">${escapeHtml(record.pdv)}</span>`;
-      renderSummary();$('detailPanel').scrollIntoView({behavior:'smooth',block:'start'});
-      if(!Array.isArray(record.items)){
-        $('detailSubtitle').textContent='Cargando penalidades desde Supabase…';$('detailBody').innerHTML='<tr><td colspan="16" class="empty">Cargando detalle por lotes…</td></tr>';$('breakdownBody').innerHTML='';$('breachMatrixBody').innerHTML='';$('slaMatrixBody').innerHTML='';$('saveBtn').disabled=true;$('syncBtn').disabled=true;
-        try{record.items=await fetchStoredRecordItems(id);}
-        catch(error){$('detailSubtitle').textContent='No se pudo cargar el detalle. Haz clic nuevamente en la liquidación para reintentar.';$('detailBody').innerHTML='<tr><td colspan="16" class="empty">No se pudo cargar este detalle.</td></tr>';notify(`No se pudo cargar el detalle desde Supabase: ${error?.message||error||''}`,true);return;}
-        if(currentRecordId!==id)return;
-      }
-      $('saveBtn').disabled=!appReady;$('syncBtn').disabled=!appReady;renderDetail();renderSummary();
-    }
+    function showRecord(id){currentRecordId=id;selectedIds.clear();matrixGuideSelection=null;dirty=false;$('detailPanel').hidden=false;renderDetail();renderSummary();$('detailPanel').scrollIntoView({behavior:'smooth',block:'start'});}
     function deleteSavedRecord(id){
       const record=state.records.find(item=>item.id===id);if(!record)return;
       const label=`${periodLabel(record.period)} · ${record.pdv}`;
@@ -651,20 +610,16 @@
     function setDirty(){dirty=true;$('saveState').textContent='Cambios sin guardar';$('saveBtn').textContent='Guardar cambios';}
     function saveCurrent(){
       const record=currentRecord();if(!record)return;
-      if(!Array.isArray(record.items)){notify('Espera a que termine de cargar el detalle antes de guardar.',true);return;}
       const missing=record.items.find(i=>exemptionPercent(i)>0&&!txt(i.reason));if(missing){notify(`Completa el motivo de exoneración para la guía ${missing.tracking}.`,true);const input=[...$('detailBody').querySelectorAll('.reason-input')].find(el=>el.dataset.id===missing.id);input?.focus();input?.scrollIntoView({behavior:'smooth',block:'center'});return;}
       record.updatedAt=new Date().toISOString();dirty=false;if(!persist(true))return;$('saveState').textContent=cloudMode?'Sincronizando…':'Registro guardado';$('saveBtn').textContent='Guardar cambios';renderSummary();renderMetricsAndBreakdown();
     }
     function syncCurrent(){
-      const old=currentRecord();if(!old)return;if(!Array.isArray(old.items)){notify('Espera a que termine de cargar el detalle antes de actualizar.',true);return;}if(!(state.sources.penalties?.rows||[]).length){notify('Carga al menos un Excel de penalidades antes de actualizar.',true);return;}
+      const old=currentRecord();if(!old)return;if(!(state.sources.penalties?.rows||[]).length){notify('Carga al menos un Excel de penalidades antes de actualizar.',true);return;}
       if(!confirm('Se reemplazará la lista de penalidades del periodo y PDV con los archivos cargados. Las decisiones y motivos se conservarán cuando coincida la guía y la penalidad. ¿Continuar?'))return;
       const fresh=getRecordItems(old.period,old.pdv);if(!fresh.length){notify('Los archivos actuales no tienen penalidades para este periodo y PDV.',true);return;}
       const syncTime=new Date().toISOString();old.items=preserveDecisions(fresh,old.items);old.sourceFiles=sourceFilesSnapshot();old.updatedAt=syncTime;old.sourceSyncAt=syncTime;dirty=false;selectedIds.clear();persist();renderDetail();renderSummary();notify('Registro actualizado desde los archivos.');
     }
-    function recordTotals(record){
-      if(!Array.isArray(record.items)&&record.summary){const s=record.summary;if(onlyNonExempt){const count=Number(s.no)||0,total=Number(s.noExemptTotal)||0;return {count,yes:0,no:count,total,exempt:0,balance:total};}const count=Number(s.count)||0,yes=Number(s.yes)||0,total=Number(s.total)||0,exempt=Number(s.exempt)||0;return {count,yes,no:Number.isFinite(Number(s.no))?Number(s.no):count-yes,total,exempt,balance:Number.isFinite(Number(s.balance))?Number(s.balance):total-exempt};}
-      const items=visibleSummaryItems(record),total=items.reduce((a,x)=>a+(Number(x.cost)||0),0),exempt=items.reduce((a,x)=>a+exemptionAmount(x),0),yes=items.filter(x=>exemptionPercent(x)>0).length;return {count:items.length,yes,no:items.length-yes,total,exempt,balance:total-exempt};
-    }
+    function recordTotals(record){const items=record.items||[];const total=items.reduce((a,x)=>a+(Number(x.cost)||0),0);const exempt=items.reduce((a,x)=>a+exemptionAmount(x),0);const yes=items.filter(x=>exemptionPercent(x)>0).length;return {count:items.length,yes,no:items.length-yes,total,exempt,balance:total-exempt};}
     function periodLabel(period){const [y,m]=String(period||'').split('-');return m&&y?`${m}-${y}`:period||'';}
     function dateLabel(value){const d=new Date(value);return isNaN(d)?'':new Intl.DateTimeFormat('es-PE',{dateStyle:'short',timeStyle:'short'}).format(d);}
     function breachSlaLabel(item){return [txt(item.breach),txt(item.sla)].filter(Boolean).join(' · ')||'—';}
@@ -676,7 +631,6 @@
       if(txt(item.sla))return {field:'sla',column:'SLA',value:txt(item.sla)};
       return {field:'none',column:'',value:'Sin subtipo'};
     }
-    function decisionReasonKey(item){return txt(item?.reason)?norm(item.reason):'__NO_REASON__';}
     function renderMultiPicker(id,values,allLabel){
       const unique=new Map();for(const entry of values){const option=entry&&typeof entry==='object'?{value:String(entry.value??''),label:String(entry.label??entry.value??'')}:{value:String(entry??''),label:String(entry??'')};if(option.value&&!unique.has(option.value))unique.set(option.value,option);}
       const options=[...unique.values()].sort((a,b)=>id==='filterSlaDays'?(Number.isFinite(Number(a.value))&&Number.isFinite(Number(b.value))?Number(a.value)-Number(b.value):a.label.localeCompare(b.label,'es')):a.label.localeCompare(b.label,'es'));
@@ -695,10 +649,8 @@
     }
     function pickerMatches(id,value){const selected=pickerSelections[id];return selected===null||selected.has(String(value??''));}
     function setPickerSelection(id,values){const options=pickerOptions[id]||[],selected=new Set(values.map(String));pickerSelections[id]=selected.size===options.length?null:selected;refreshMultiPicker(id);}
-    function afterPickerChange(id){if(id==='summaryPeriod'||id==='summaryPdv'||id==='summaryGroup'||id==='summaryStatus')renderSummary();else renderDetailRows();}
-    function filteredRecords(){return state.records.filter(record=>pickerMatches('summaryPeriod',record.period)&&pickerMatches('summaryPdv',record.pdv)&&pickerMatches('summaryGroup',recordGroupId(record))&&pickerMatches('summaryStatus',liquidationStatusValue(record.status))&&(!onlyNonExempt||recordTotals(record).count>0));}
-    function updateOnlyNonExemptButton(){const button=$('onlyNonExemptBtn');button.setAttribute('aria-pressed',String(onlyNonExempt));button.textContent=onlyNonExempt?'Ver todas':'Solo no exoneradas';button.title=onlyNonExempt?'Mostrar también las penalidades exoneradas en todas las tablas':'Oculta en todas las tablas las penalidades con exoneración mayor a 0%';}
-    function toggleOnlyNonExempt(){onlyNonExempt=!onlyNonExempt;selectedIds.clear();selectedRecordIds.clear();updateOnlyNonExemptButton();renderSummary();if(currentRecord()&&Array.isArray(currentRecord().items)){renderMetricsAndBreakdown();renderDetailRows();}notify(onlyNonExempt?'Mostrando solo penalidades con 0% de exoneración en todas las tablas.':'Mostrando todas las penalidades.');}
+    function afterPickerChange(id){if(id==='summaryPeriod'||id==='summaryPdv'||id==='summaryGroup')renderSummary();else renderDetailRows();}
+    function filteredRecords(){return state.records.filter(record=>pickerMatches('summaryPeriod',record.period)&&pickerMatches('summaryPdv',record.pdv)&&pickerMatches('summaryGroup',recordGroupId(record)));}
     function updateRecordGroupSelectionControls(visibleRecords){
       const count=selectedRecordIds.size;$('recordSelectionCount').textContent=`${fmtCount(count)} ${count===1?'liquidación seleccionada':'liquidaciones seleccionadas'}`;$('assignGroupBtn').disabled=!appReady||count===0;$('clearRecordSelectionBtn').disabled=!appReady||count===0;
       const allSelected=visibleRecords.length>0&&visibleRecords.every(record=>selectedRecordIds.has(record.id));$('selectAllVisibleRecords').checked=allSelected;$('selectAllVisibleRecords').indeterminate=!allSelected&&visibleRecords.some(record=>selectedRecordIds.has(record.id));
@@ -709,58 +661,50 @@
     function renderRecordsTotalRow(label,records,grand=false){
       const t=aggregateRecordTotals(records),rowClass=grand?'records-total-row records-grand-total':'records-total-row';
       const liquidations=`${fmtCount(records.length)} ${records.length===1?'liquidación':'liquidaciones'}`;
-      return `<tr class="${rowClass}" aria-label="${escapeHtml(label)}"><td></td><td colspan="2" class="records-total-label">${escapeHtml(label)}<small>${liquidations} · ${fmtCount(t.count)} penalidades</small></td><td class="num">${fmtCount(t.count)}</td><td class="num">${fmtCount(t.yes)}</td><td class="num">${fmtCount(t.no)}</td><td class="num">S/ ${fmtMoney(t.total)}</td><td class="num">S/ ${fmtMoney(t.exempt)}</td><td class="num">S/ ${fmtMoney(t.balance)}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>`;
+      return `<tr class="${rowClass}" aria-label="${escapeHtml(label)}"><td></td><td colspan="2" class="records-total-label">${escapeHtml(label)}<small>${liquidations} · ${fmtCount(t.count)} penalidades</small></td><td class="num">${fmtCount(t.count)}</td><td class="num">${fmtCount(t.yes)}</td><td class="num">${fmtCount(t.no)}</td><td class="num">S/ ${fmtMoney(t.total)}</td><td class="num">S/ ${fmtMoney(t.exempt)}</td><td class="num">S/ ${fmtMoney(t.balance)}</td><td>—</td><td>—</td></tr>`;
     }
     function renderSummary(){
-      renderMultiPicker('summaryPeriod',state.records.map(r=>({value:r.period,label:periodLabel(r.period)})),'Todos');renderMultiPicker('summaryPdv',state.records.map(r=>r.pdv),'Todos');renderMultiPicker('summaryGroup',[{value:UNASSIGNED_GROUP,label:'Sin grupo'},...(state.groups||[]).map(group=>({value:group.id,label:group.name}))],'Todos');renderMultiPicker('summaryStatus',LIQUIDATION_STATUSES.map(status=>({value:status.value,label:status.label})),'Todos');updateOnlyNonExemptButton();
+      renderMultiPicker('summaryPeriod',state.records.map(r=>({value:r.period,label:periodLabel(r.period)})),'Todos');renderMultiPicker('summaryPdv',state.records.map(r=>r.pdv),'Todos');renderMultiPicker('summaryGroup',[{value:UNASSIGNED_GROUP,label:'Sin grupo'},...(state.groups||[]).map(group=>({value:group.id,label:group.name}))],'Todos');
       const bulkSelect=$('bulkGroupSelect'),previousGroup=bulkSelect.value;bulkSelect.innerHTML=`<option value="">Selecciona un grupo</option><option value="${UNASSIGNED_GROUP}">Sin grupo</option>${(state.groups||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'es')).map(group=>`<option value="${escapeHtml(group.id)}">${escapeHtml(group.name)}</option>`).join('')}`;if(previousGroup===UNASSIGNED_GROUP||(state.groups||[]).some(group=>group.id===previousGroup))bulkSelect.value=previousGroup;
       const filtered=filteredRecords(),groups=new Map();for(const record of filtered){const id=recordGroupId(record),groupName=id===UNASSIGNED_GROUP?'Sin grupo':(state.groups||[]).find(group=>group.id===id)?.name||'Sin grupo';if(!groups.has(id))groups.set(id,{id,name:groupName,records:[]});groups.get(id).records.push(record);}
       const orderedGroups=[...groups.values()].sort((a,b)=>a.id===UNASSIGNED_GROUP?-1:b.id===UNASSIGNED_GROUP?1:a.name.localeCompare(b.name,'es'));
       const groupBlocks=orderedGroups.map(group=>{
         group.records.sort((a,b)=>b.period.localeCompare(a.period)||a.pdv.localeCompare(b.pdv,'es'));
         const n=group.records.length,liquidationLabel=`${fmtCount(n)} ${n===1?'liquidación':'liquidaciones'}`;
-        const rows=group.records.map(r=>{const t=recordTotals(r);return `<tr class="click-row ${r.id===currentRecordId?'active':''}" data-record="${escapeHtml(r.id)}"><td class="record-select-cell"><input type="checkbox" class="record-select" data-record-id="${escapeHtml(r.id)}" ${selectedRecordIds.has(r.id)?'checked':''} aria-label="Seleccionar liquidación ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}"></td><td>${escapeHtml(periodLabel(r.period))}</td><td><strong>${escapeHtml(r.pdv)}</strong></td><td class="num">${fmtCount(t.count)}</td><td class="num"><span class="badge yes">${fmtCount(t.yes)}</span></td><td class="num">${fmtCount(t.no)}</td><td class="num">S/ ${fmtMoney(t.total)}</td><td class="num">S/ ${fmtMoney(t.exempt)}</td><td class="num">S/ ${fmtMoney(t.balance)}</td><td>${escapeHtml(dateLabel(r.updatedAt))}</td><td>${renderLiquidationStatus(r)}</td><td>${renderSignatureRate(r)}</td><td><button type="button" class="btn danger delete-record-btn" data-delete-record="${escapeHtml(r.id)}" aria-label="Eliminar registro ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}">Eliminar</button></td></tr>`;}).join('');
-        return `<tr class="records-group"><th colspan="13" scope="rowgroup"><div class="records-group-heading"><span>Grupo: <strong>${escapeHtml(group.name)}</strong></span><span class="badge records-group-count">${liquidationLabel}</span></div></th></tr>${rows}${renderRecordsTotalRow(`Total grupo: ${group.name}`,group.records)}`;
+        const rows=group.records.map(r=>{const t=recordTotals(r);return `<tr class="click-row ${r.id===currentRecordId?'active':''}" data-record="${escapeHtml(r.id)}"><td class="record-select-cell"><input type="checkbox" class="record-select" data-record-id="${escapeHtml(r.id)}" ${selectedRecordIds.has(r.id)?'checked':''} aria-label="Seleccionar liquidación ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}"></td><td>${escapeHtml(periodLabel(r.period))}</td><td><strong>${escapeHtml(r.pdv)}</strong></td><td class="num">${fmtCount(t.count)}</td><td class="num"><span class="badge yes">${fmtCount(t.yes)}</span></td><td class="num">${fmtCount(t.no)}</td><td class="num">S/ ${fmtMoney(t.total)}</td><td class="num">S/ ${fmtMoney(t.exempt)}</td><td class="num">S/ ${fmtMoney(t.balance)}</td><td>${escapeHtml(dateLabel(r.updatedAt))}</td><td><button type="button" class="btn danger delete-record-btn" data-delete-record="${escapeHtml(r.id)}" aria-label="Eliminar registro ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}">Eliminar</button></td></tr>`;}).join('');
+        return `<tr class="records-group"><th colspan="11" scope="rowgroup"><div class="records-group-heading"><span>Grupo: <strong>${escapeHtml(group.name)}</strong></span><span class="badge records-group-count">${liquidationLabel}</span></div></th></tr>${rows}${renderRecordsTotalRow(`Total grupo: ${group.name}`,group.records)}`;
       }).join('');
       const overall=filtered.length?renderRecordsTotalRow('TOTAL GENERAL',filtered,true):'';
-      $('recordsBody').innerHTML=filtered.length?groupBlocks+overall:`<tr><td colspan="13" class="empty">No hay registros con estos filtros. Importa los Excel y crea un registro por periodo y PDV.</td></tr>`;
+      $('recordsBody').innerHTML=filtered.length?groupBlocks+overall:`<tr><td colspan="11" class="empty">No hay registros con estos filtros. Importa los Excel y crea un registro por periodo y PDV.</td></tr>`;
       updateRecordGroupSelectionControls(filtered);
     }
 
     function renderDetail(){
       const r=currentRecord();if(!r)return;$('detailHeading').innerHTML=`Detalle de penalidades <span class="badge">${escapeHtml(periodLabel(r.period))}</span> <span class="badge">${escapeHtml(r.pdv)}</span>`;$('detailSubtitle').textContent=`${fmtCount(r.items.length)} penalidades · Fuentes: ${r.sourceFiles?.penalties||'sin referencia'}`;
       dirty=false;$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';
-      renderMultiPicker('filterPenalty',r.items.map(x=>txt(x.penalty)||'Sin tipo'),'Todas');renderMultiPicker('filterBreachSla',r.items.map(breachSlaLabel),'Todos');renderMultiPicker('filterOperation',r.items.map(x=>x.latestOperation||'Sin dato'),'Todos');renderMultiPicker('filterReason',r.items.map(x=>txt(x.reason)||'Sin motivo'),'Todos');renderMultiPicker('filterPercent',r.items.map(x=>({value:String(exemptionPercent(x)),label:`${fmtCount(exemptionPercent(x))}%`})),'Todos');renderMultiPicker('filterZone',r.items.map(x=>x.zoneType),'Todos');renderMultiPicker('filterSlaDays',r.items.map(x=>txt(x.slaDays)||'Sin coincidencia'),'Todos');renderMultiPicker('filterExemption',[{value:'yes',label:'Con exoneración'},{value:'no',label:'Sin exoneración'}],'Todas');renderMultiPicker('filterScan',r.items.map(x=>x.scanType),'Todos');renderMultiPicker('filterSignature',r.items.map(x=>x.signature),'Todos');
+      renderMultiPicker('filterPenalty',r.items.map(x=>x.penalty),'Todas');renderMultiPicker('filterBreachSla',r.items.map(breachSlaLabel),'Todos');renderMultiPicker('filterOperation',r.items.map(x=>x.latestOperation||'Sin dato'),'Todos');renderMultiPicker('filterReason',r.items.map(x=>x.reason||'Sin motivo'),'Todos');renderMultiPicker('filterPercent',r.items.map(x=>({value:String(exemptionPercent(x)),label:`${fmtCount(exemptionPercent(x))}%`})),'Todos');renderMultiPicker('filterZone',r.items.map(x=>x.zoneType),'Todos');renderMultiPicker('filterSlaDays',r.items.map(x=>txt(x.slaDays)||'Sin coincidencia'),'Todos');renderMultiPicker('filterExemption',[{value:'yes',label:'Con exoneración'},{value:'no',label:'Sin exoneración'}],'Todas');renderMultiPicker('filterScan',r.items.map(x=>x.scanType),'Todos');renderMultiPicker('filterSignature',r.items.map(x=>x.signature),'Todos');
       renderMetricsAndBreakdown();renderDetailRows();updateBulkState();
     }
     function uniqueGuideCount(items){return new Set(items.map(item=>txt(item.tracking)).filter(Boolean)).size;}
     function renderMetricsAndBreakdown(){
       const r=currentRecord();if(!r)return;const t=recordTotals(r);
       $('metrics').innerHTML=`<div class="metric"><span>Penalidades</span><strong>${fmtCount(t.count)}</strong></div><div class="metric"><span>Con exoneración</span><strong>${fmtCount(t.yes)}</strong></div><div class="metric"><span>Monto exonerado</span><strong>S/ ${fmtMoney(t.exempt)}</strong></div><div class="metric"><span>Saldo de penalidad</span><strong>S/ ${fmtMoney(t.balance)}</strong></div>`;
-      const summaryItems=visibleSummaryItems(r),groups=new Map();
-      for(const item of summaryItems){
-        const penalty=txt(item.penalty)||'Sin tipo',reason=txt(item.reason),reasonKey=decisionReasonKey(item),groupKey=[currentRecordId,norm(penalty),reasonKey].join('::'),key=`${norm(penalty)}|${reasonKey}`;
-        if(!groups.has(key))groups.set(key,{key:groupKey,penalty,reason:reason||'Sin motivo de decisión',reasonKey,items:[]});
-        groups.get(key).items.push(item);
-      }
-      const measureItems=items=>{
-        const exempted=items.filter(item=>exemptionPercent(item)>0).length,total=items.reduce((sum,item)=>sum+(Number(item.cost)||0),0),exempt=items.reduce((sum,item)=>sum+exemptionAmount(item),0);
-        return {rows:items.length,exempted,notExempted:items.length-exempted,guides:uniqueGuideCount(items),total,exempt,balance:total-exempt};
-      };
-      const renderMeasures=items=>{const m=measureItems(items);return `<td class="num">${fmtCount(m.exempted)}</td><td class="num">${fmtCount(m.notExempted)}</td><td class="num">${fmtCount(m.rows)}</td><td class="num">${fmtCount(m.guides)}</td><td class="num">S/ ${fmtMoney(m.total)}</td><td class="num">S/ ${fmtMoney(m.exempt)}</td><td class="num">S/ ${fmtMoney(m.balance)}</td>`;};
-      const rows=[...groups.values()].sort((a,b)=>a.penalty.localeCompare(b.penalty,'es')||a.reason.localeCompare(b.reason,'es'));
-      const breakdownGrandTotal=rows.length?`<tr class="click-row summary-grand-total breakdown-grand-total" data-grand-total="true" title="Haz clic para mostrar todas las guías del detalle"><td colspan="2">TOTAL GENERAL</td>${renderMeasures(summaryItems)}</tr>`:'';
-      $('breakdownBody').innerHTML=rows.length?rows.map(group=>{
-        const expanded=expandedBreakdownGroups.has(group.key),toggle=expanded?'−':'+',subtypes=new Map();
-        for(const item of group.items){const subtype=penaltySubtype(item),subtypeKey=[subtype.field,norm(subtype.value)].join('|');if(!subtypes.has(subtypeKey))subtypes.set(subtypeKey,{field:subtype.field,column:subtype.column,value:subtype.value,items:[]});subtypes.get(subtypeKey).items.push(item);}
-        const subtypeRows=expanded?[...subtypes.values()].sort((a,b)=>a.value.localeCompare(b.value,'es')).map(subtype=>`<tr class="click-row breakdown-subrow breakdown-exemption-subrow" data-row-kind="subtype" data-penalty="${escapeHtml(group.penalty)}" data-reason-key="${escapeHtml(group.reasonKey)}" data-subtype-field="${escapeHtml(subtype.field)}" data-subtype="${escapeHtml(subtype.value)}" title="Haz clic para filtrar este subtipo y motivo"><td><span class="breakdown-subtype-prefix">${subtype.column?escapeHtml(subtype.column)+':':'↳'}</span> ${escapeHtml(subtype.value)}</td><td>${escapeHtml(group.reason)}</td>${renderMeasures(subtype.items)}</tr>`).join(''):'';
-        return `<tr class="click-row breakdown-parent" data-row-kind="reason-group" data-penalty="${escapeHtml(group.penalty)}" data-reason-key="${escapeHtml(group.reasonKey)}" data-group-key="${escapeHtml(group.key)}" title="Haz clic en una fila para filtrar por penalización y motivo"><td><button type="button" class="breakdown-expand-btn" data-expand-group="${escapeHtml(group.key)}" aria-expanded="${expanded}" aria-label="${expanded?'Contraer':'Expandir'} subtipos de ${escapeHtml(group.penalty)} · ${escapeHtml(group.reason)}">${toggle}</button>${escapeHtml(group.penalty)}</td><td>${escapeHtml(group.reason)}</td>${renderMeasures(group.items)}</tr>${subtypeRows}`;
-      }).join('')+breakdownGrandTotal:`<tr><td colspan="9" class="empty">No hay penalidades.</td></tr>`;
-      renderBreachMatrix(r);renderSlaMatrix(r);
+      const groups=new Map();for(const item of r.items){const penalty=item.penalty||'Sin tipo',zone=item.zoneType||'NO ASIGNADA',key=[norm(penalty),norm(zone)].join('|');if(!groups.has(key))groups.set(key,{key:[currentRecordId,norm(penalty),norm(zone)].join('::'),penalty,zone,items:[]});groups.get(key).items.push(item);}
+      const measureItems=items=>{const result={yes:0,no:0,tracks:new Set(),total:0,exempt:0};for(const item of items){if(exemptionPercent(item)>0)result.yes++;else result.no++;result.tracks.add(item.tracking);result.total+=Number(item.cost)||0;result.exempt+=exemptionAmount(item);}return result;};
+      const rows=[...groups.values()].sort((a,b)=>a.penalty.localeCompare(b.penalty,'es')||a.zone.localeCompare(b.zone,'es'));
+      const renderMeasures=items=>{const m=measureItems(items);return `<td class="num"><span class="badge yes">${fmtCount(m.yes)}</span></td><td class="num"><span class="badge no">${fmtCount(m.no)}</span></td><td class="num">${fmtCount(m.tracks.size)}</td><td class="num">S/ ${fmtMoney(m.total)}</td><td class="num">S/ ${fmtMoney(m.exempt)}</td><td class="num">S/ ${fmtMoney(m.total-m.exempt)}</td>`;};
+      const breakdownGrandTotal=rows.length?`<tr class="click-row summary-grand-total breakdown-grand-total" data-grand-total="true" title="Haz clic para mostrar todas las guías del detalle"><td colspan="2">TOTAL GENERAL</td>${renderMeasures(r.items)}</tr>`:'';
+      $('breakdownBody').innerHTML=rows.length?rows.map(g=>{
+        const expanded=expandedBreakdownGroups.has(g.key),toggle=expanded?'−':'+',children=new Map();
+        for(const item of g.items){const subtype=penaltySubtype(item),childKey=[subtype.field,norm(subtype.value)].join('|');if(!children.has(childKey))children.set(childKey,{field:subtype.field,column:subtype.column,value:subtype.value,items:[]});children.get(childKey).items.push(item);}
+        const childRows=expanded?[...children.values()].sort((a,b)=>a.value.localeCompare(b.value,'es')).map(child=>`<tr class="click-row breakdown-subrow" data-row-kind="subtype" data-penalty="${escapeHtml(g.penalty)}" data-zone="${escapeHtml(g.zone)}" data-subtype-field="${escapeHtml(child.field)}" data-subtype="${escapeHtml(child.value)}" title="Haz clic para filtrar este subtipo en el detalle"><td><span class="breakdown-subtype-prefix">${child.column?escapeHtml(child.column)+':':'↳'}</span> ${escapeHtml(child.value)}</td><td>${zoneBadge(g.zone)}</td>${renderMeasures(child.items)}</tr>`).join(''):'';
+        return `<tr class="click-row breakdown-parent" data-row-kind="parent" data-penalty="${escapeHtml(g.penalty)}" data-zone="${escapeHtml(g.zone)}" data-group-key="${escapeHtml(g.key)}" title="Haz clic en una celda para filtrar el detalle"><td><button type="button" class="breakdown-expand-btn" data-expand-group="${escapeHtml(g.key)}" aria-expanded="${expanded}" aria-label="${expanded?'Contraer':'Expandir'} subtipos de ${escapeHtml(g.penalty)}" title="${expanded?'Contraer':'Expandir'} subtipos">${toggle}</button>${escapeHtml(g.penalty)}</td><td>${zoneBadge(g.zone)}</td>${renderMeasures(g.items)}</tr>${childRows}`;
+      }).join('')+breakdownGrandTotal:`<tr><td colspan="8" class="empty">No hay penalidades.</td></tr>`;
+      renderBreachMatrix(r);renderSlaMatrix(r);renderReasonSummary(r);
     }
     function breachMatrixRows(record){
       const sourceIndex=new Map((state.sources.penalties?.rows||[]).map(source=>[`${norm(source.sourceFile)}|${source.sourceRow}`,source]));
-      return visibleSummaryItems(record).filter(item=>norm(item.penalty).includes('BRECHA')||(!txt(item.sla)&&!!txt(item.breach))).map(item=>{
+      return (record?.items||[]).filter(item=>norm(item.penalty).includes('BRECHA')||(!txt(item.sla)&&!!txt(item.breach))).map(item=>{
         const source=sourceIndex.get(`${norm(item.sourceFile)}|${item.sourceRow}`);
         return {tracking:item.tracking,operation:txt(item.breachOperation)||'Sin dato',breach:txt(source?.breach||item.liquidationBreach||item.breach)||'Sin clasificación'};
       });
@@ -779,7 +723,7 @@
     function scanSignatureLabel(item){return `${txt(item.scanType)||'Sin tipo de escaneo'} · ${txt(item.signature)||'Sin dato de firma'}`;}
     function isSlaMatrixItem(item){return !!txt(item.sla)&&(!item.breach||norm(item.penalty).includes('SLA')||norm(item.penalty).includes('COLA'));}
     function renderSlaMatrix(record){
-      const items=visibleSummaryItems(record).filter(isSlaMatrixItem),columns=[...new Set(items.map(scanSignatureLabel))].sort((a,b)=>a.localeCompare(b,'es')),subtypes=[...new Set(items.map(item=>txt(item.sla)||'Sin subtipo'))].sort((a,b)=>a.localeCompare(b,'es'));
+      const items=record.items.filter(isSlaMatrixItem),columns=[...new Set(items.map(scanSignatureLabel))].sort((a,b)=>a.localeCompare(b,'es')),subtypes=[...new Set(items.map(item=>txt(item.sla)||'Sin subtipo'))].sort((a,b)=>a.localeCompare(b,'es'));
       $('slaMatrixHead').innerHTML=`<tr><th>Subtipo SLA</th>${columns.map(label=>`<th>${escapeHtml(label)}</th>`).join('')}<th>Total guías</th></tr>`;
       if(!items.length){$('slaMatrixBody').innerHTML=`<tr><td colspan="${columns.length+2}" class="empty">No hay penalidades con subtipo SLA en esta liquidación.</td></tr>`;return;}
       const cell=(group,column,label=txt(group[0]?.sla)||'Sin subtipo')=>{const selected=column==='__TOTAL__'?group:group.filter(item=>scanSignatureLabel(item)===column);return `<td class="num pivot-cell" data-pivot-cell="sla" data-label="${escapeHtml(label)}" data-combo="${escapeHtml(column)}" title="Haz clic para filtrar">${fmtCount(uniqueGuideCount(selected))}</td>`;};
@@ -788,13 +732,21 @@
       $('slaMatrixBody').innerHTML=`${subtypeRows}<tr class="click-row summary-grand-total" data-pivot-row="sla" data-grand-total="true" title="Haz clic para filtrar todas las guías del resumen SLA"><td>TOTAL GENERAL</td>${totalCells}</tr>`;
     }
 
+    function renderReasonSummary(record){
+      const groups=new Map();for(const item of record.items){const reason=txt(item.reason)||'Sin motivo',percent=exemptionPercent(item),key=`${norm(reason)}|${percent}`;if(!groups.has(key))groups.set(key,{reason,percent,items:[]});groups.get(key).items.push(item);}
+      const rows=[...groups.values()].sort((a,b)=>a.reason.localeCompare(b.reason,'es')||a.percent-b.percent).map(group=>{const original=group.items.reduce((sum,item)=>sum+(Number(item.cost)||0),0),exempt=group.items.reduce((sum,item)=>sum+exemptionAmount(item),0),balance=original-exempt;return `<tr class="reason-summary-row" data-pivot-row="reason" data-reason="${escapeHtml(group.reason)}" data-percent="${group.percent}" title="Haz clic para filtrar el detalle"><td>${escapeHtml(group.reason)}</td><td class="num">${fmtMoney(group.percent)}%</td><td class="num">${fmtCount(group.items.length)}</td><td class="num">S/ ${fmtMoney(original)}</td><td class="num">S/ ${fmtMoney(exempt)}</td><td class="num">S/ ${fmtMoney(balance)}</td></tr>`;}).join('');
+      const totalOriginal=record.items.reduce((sum,item)=>sum+(Number(item.cost)||0),0),totalExempt=record.items.reduce((sum,item)=>sum+exemptionAmount(item),0);
+      const total=record.items.length?`<tr class="reason-summary-row summary-grand-total" data-pivot-row="reason" data-grand-total="true" title="Haz clic para mostrar todas las guías del detalle"><td>TOTAL GENERAL</td><td class="num">—</td><td class="num">${fmtCount(record.items.length)}</td><td class="num">S/ ${fmtMoney(totalOriginal)}</td><td class="num">S/ ${fmtMoney(totalExempt)}</td><td class="num">S/ ${fmtMoney(totalOriginal-totalExempt)}</td></tr>`:'';
+      $('reasonSummaryBody').innerHTML=rows?rows+total:'<tr><td colspan="6" class="empty">No hay penalidades en este registro.</td></tr>';
+    }
+
     function zoneBadge(value){const n=norm(value);const kind=n.includes('RURAL')?'rural':n.includes('URBANO')?'urban':n.includes('ASIGNADA')||n.includes('ENCONTRADA')?'unassigned':'';return `<span class="badge ${kind}">${escapeHtml(value||'NO ASIGNADA')}</span>`;}
     function filteredItems(){
       const r=currentRecord();if(!r)return [];const q=norm($('filterSearch').value);
-      return r.items.filter(x=>(!onlyNonExempt||exemptionPercent(x)===0)&&(!matrixGuideSelection||matrixGuideSelection.has(idPart(x.tracking)))&&(!q||[x.tracking,x.district,x.province,x.department,x.zoneName,x.latestOperation,x.breachWaitHours].some(v=>norm(v).includes(q)))&&pickerMatches('filterPenalty',txt(x.penalty)||'Sin tipo')&&pickerMatches('filterBreachSla',breachSlaLabel(x))&&pickerMatches('filterOperation',x.latestOperation||'Sin dato')&&pickerMatches('filterReason',txt(x.reason)||'Sin motivo')&&pickerMatches('filterPercent',String(exemptionPercent(x)))&&pickerMatches('filterZone',x.zoneType)&&pickerMatches('filterSlaDays',txt(x.slaDays)||'Sin coincidencia')&&pickerMatches('filterExemption',exemptionPercent(x)>0?'yes':'no')&&pickerMatches('filterScan',x.scanType)&&pickerMatches('filterSignature',x.signature));
+      return r.items.filter(x=>(!matrixGuideSelection||matrixGuideSelection.has(idPart(x.tracking)))&&(!q||[x.tracking,x.district,x.province,x.department,x.zoneName,x.latestOperation,x.breachWaitHours].some(v=>norm(v).includes(q)))&&pickerMatches('filterPenalty',x.penalty)&&pickerMatches('filterBreachSla',breachSlaLabel(x))&&pickerMatches('filterOperation',x.latestOperation||'Sin dato')&&pickerMatches('filterReason',x.reason||'Sin motivo')&&pickerMatches('filterPercent',String(exemptionPercent(x)))&&pickerMatches('filterZone',x.zoneType)&&pickerMatches('filterSlaDays',txt(x.slaDays)||'Sin coincidencia')&&pickerMatches('filterExemption',exemptionPercent(x)>0?'yes':'no')&&pickerMatches('filterScan',x.scanType)&&pickerMatches('filterSignature',x.signature));
     }
     function renderDetailRows(){
-      const items=filteredItems();$('visibleCount').textContent=`Mostrando ${fmtCount(items.length)} de ${fmtCount(visibleSummaryItems(currentRecord()).length)} penalidades`;
+      const items=filteredItems();$('visibleCount').textContent=`Mostrando ${fmtCount(items.length)} de ${fmtCount(currentRecord()?.items.length||0)} penalidades`;
       const clearMatrixFilter=$('clearMatrixGuideFilterBtn');clearMatrixFilter.hidden=!matrixGuideSelection;clearMatrixFilter.textContent=matrixGuideSelection?`Quitar filtro de guías de Brecha (${fmtCount(matrixGuideSelection.size)})`:'Quitar filtro de guías de Brecha';
       const groups=new Map();for(const item of items){const zone=txt(item.zoneName)||'NO ASIGNADA',key=norm(zone)||'NO ASIGNADA';if(!groups.has(key))groups.set(key,{zone,items:[]});groups.get(key).items.push(item);}
       const sortedGroups=[...groups.values()].sort((a,b)=>a.zone.localeCompare(b.zone,'es'));
@@ -821,16 +773,16 @@
       try{await copyTextToClipboard(txt(item.tracking));notify('Guía '+txt(item.tracking)+' copiada al portapapeles.');}
       catch(e){notify('No se pudo copiar la guía.',true);}
     }
-    function refreshDecisionPickers(){const items=currentRecord()?.items||[];renderMultiPicker('filterReason',items.map(item=>txt(item.reason)||'Sin motivo'),'Todos');renderMultiPicker('filterPercent',items.map(item=>({value:String(exemptionPercent(item)),label:`${fmtCount(exemptionPercent(item))}%`})),'Todos');}
+    function refreshDecisionPickers(){const items=currentRecord()?.items||[];renderMultiPicker('filterReason',items.map(item=>item.reason||'Sin motivo'),'Todos');renderMultiPicker('filterPercent',items.map(item=>({value:String(exemptionPercent(item)),label:`${fmtCount(exemptionPercent(item))}%`})),'Todos');}
     function markExemptionPercent(itemId,value){
-      const item=currentRecord()?.items.find(x=>x.id===itemId);if(!item)return;item.exemptionPercent=clampPercent(value);item.exonerated=item.exemptionPercent>0;if(onlyNonExempt&&item.exemptionPercent>0)selectedIds.delete(itemId);item.modifiedAt=new Date().toISOString();setDirty();refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();
+      const item=currentRecord()?.items.find(x=>x.id===itemId);if(!item)return;item.exemptionPercent=clampPercent(value);item.exonerated=item.exemptionPercent>0;item.modifiedAt=new Date().toISOString();setDirty();refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();
     }
     function doBulkExempt(){
       const ids=new Set(selectedIds);if(!ids.size){notify('Selecciona al menos una penalidad.',true);return;}
       const raw=$('bulkPercent').value,pct=Number(raw),reason=txt($('bulkReason').value);
       if(raw===''||!Number.isFinite(pct)||pct<0||pct>100){notify('El porcentaje debe estar entre 0 y 100.',true);$('bulkPercent').focus();return;}
       if(pct>0&&!reason){notify('Escribe el motivo para aplicar una exoneración.',true);$('bulkReason').focus();return;}
-      for(const item of currentRecord()?.items||[])if(ids.has(item.id)){item.exemptionPercent=pct;item.exonerated=pct>0;if(reason)item.reason=reason;item.modifiedAt=new Date().toISOString();}if(onlyNonExempt&&pct>0)selectedIds.clear();
+      for(const item of currentRecord()?.items||[])if(ids.has(item.id)){item.exemptionPercent=pct;item.exonerated=pct>0;if(reason)item.reason=reason;item.modifiedAt=new Date().toISOString();}
       setDirty();refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();notify(`${fmtCount(ids.size)} penalidades actualizadas al ${fmtMoney(pct)}%.`);
     }
     function doBulkRemoveExemption(){
@@ -852,22 +804,22 @@
     function downloadExcel(){
       const record=currentRecord();if(!record)return notify('Abre un registro antes de descargar.',true);if(!window.XLSX)return notify('El lector Excel requiere conexión a internet.',true);
       const rows=filteredItems();if(!rows.length)return notify('No hay guías en el detalle filtrado.',true);
-      const sheet=XLSX.utils.aoa_to_sheet([['GUIA','PENALIDAD','PDV','PORCENTAJE DE EXONERACION','MOTIVO DE DECISION','MONTO FINAL'],...rows.map(x=>[x.tracking,x.penalty||'Sin tipo de penalización',x.pdv,exemptionPercent(x),x.reason||'',balanceAmount(x)])]);const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,sheet,'Detalle de guías');
+      const sheet=XLSX.utils.aoa_to_sheet([['GUIA','PDV','PORCENTAJE DE EXONERACION','MOTIVO DE DECISION'],...rows.map(x=>[x.tracking,x.pdv,exemptionPercent(x),x.reason||''])]);const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,sheet,'Detalle de guías');
       const pdv=norm(record.pdv).replace(/\s+/g,'_').replace(/[^A-Z0-9_-]/g,'');XLSX.writeFile(book,`EXONERACIONES_${record.period}_${pdv}.xlsx`);
     }
     function filterFromSummaryCell(event){
       const expandButton=event.target.closest('[data-expand-group]');if(expandButton){event.stopPropagation();const key=expandButton.dataset.expandGroup;if(expandedBreakdownGroups.has(key))expandedBreakdownGroups.delete(key);else expandedBreakdownGroups.add(key);renderMetricsAndBreakdown();return;}
       const grandTotal=event.target.closest('tr[data-grand-total="true"]');if(grandTotal){matrixGuideSelection=null;$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});return;}
       const cell=event.target.closest('td'),row=event.target.closest('tr[data-penalty]');if(!cell||!row)return;
-      matrixGuideSelection=null;$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}
-      const penalty=row.dataset.penalty,rowKind=row.dataset.rowKind;
-      const record=currentRecord(),reasonKey=row.dataset.reasonKey;
-      let items=visibleSummaryItems(record).filter(item=>norm(item.penalty)===norm(penalty)&&decisionReasonKey(item)===reasonKey);
-      if(rowKind==='subtype'){const field=row.dataset.subtypeField,value=norm(row.dataset.subtype);items=items.filter(item=>{const subtype=penaltySubtype(item);return subtype.field===field&&norm(subtype.value)===value;});}
-      setPickerSelection('filterPenalty',[...new Set(items.map(item=>txt(item.penalty)||'Sin tipo'))]);
-      setPickerSelection('filterReason',[...new Set(items.map(item=>txt(item.reason)||'Sin motivo'))]);
-      if(rowKind==='subtype')setPickerSelection('filterBreachSla',[...new Set(items.map(breachSlaLabel))]);
-      renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});
+      matrixGuideSelection=null;const column=[...row.children].indexOf(cell);$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}
+      if(row.dataset.rowKind==='subtype'){
+        const record=currentRecord(),field=row.dataset.subtypeField,value=norm(row.dataset.subtype),items=(record?.items||[]).filter(item=>norm(item.penalty)===norm(row.dataset.penalty)&&norm(item.zoneType||'NO ASIGNADA')===norm(row.dataset.zone)&&(()=>{const subtype=penaltySubtype(item);return subtype.field===field&&norm(subtype.value)===value;})());
+        setPickerSelection('filterPenalty',[row.dataset.penalty]);setPickerSelection('filterZone',[row.dataset.zone]);setPickerSelection('filterBreachSla',[...new Set(items.map(breachSlaLabel))]);
+        if(column===2||column===6)setPickerSelection('filterExemption',['yes']);else if(column===3||column===7)setPickerSelection('filterExemption',['no']);
+      }else if(column===0)setPickerSelection('filterPenalty',[row.dataset.penalty]);
+      else if(column===1)setPickerSelection('filterZone',[row.dataset.zone]);
+      else{setPickerSelection('filterPenalty',[row.dataset.penalty]);setPickerSelection('filterZone',[row.dataset.zone]);if(column===2||column===6)setPickerSelection('filterExemption',['yes']);else if(column===3||column===7)setPickerSelection('filterExemption',['no']);}
+      renderDetailRows();
     }
     function filterMatrixCell(event){
       const expand=event.target.closest('[data-matrix-expand]');if(expand){event.stopPropagation();const key=expand.dataset.matrixExpand;if(expandedBreakdownGroups.has(key))expandedBreakdownGroups.delete(key);else expandedBreakdownGroups.add(key);renderMetricsAndBreakdown();return;}
@@ -882,10 +834,13 @@
         matrixGuideSelection=new Set(sourceRows.map(source=>idPart(source.tracking)).filter(Boolean));
       }else if(kind==='sla'){
         matrixGuideSelection=null;
-        const subtype=row.dataset.subtype||cell?.dataset.label||'',summaryItems=visibleSummaryItems(record);let items=isGrandTotal?summaryItems.filter(isSlaMatrixItem):summaryItems.filter(item=>(txt(item.sla)||'Sin subtipo')===subtype);
+        const subtype=row.dataset.subtype||cell?.dataset.label||'';let items=isGrandTotal?record.items.filter(isSlaMatrixItem):record.items.filter(item=>(txt(item.sla)||'Sin subtipo')===subtype);
         const combo=cell?.dataset.combo||'__TOTAL__';if(combo!=='__TOTAL__')items=items.filter(item=>scanSignatureLabel(item)===combo);
         setPickerSelection('filterBreachSla',[...new Set(items.map(breachSlaLabel))]);
         if(combo!=='__TOTAL__'){setPickerSelection('filterScan',[...new Set(items.map(item=>item.scanType))]);setPickerSelection('filterSignature',[...new Set(items.map(item=>item.signature))]);}
+      }else if(kind==='reason'){
+        matrixGuideSelection=null;
+        if(!isGrandTotal){const reason=row.dataset.reason||'Sin motivo',percent=String(row.dataset.percent??'0');setPickerSelection('filterReason',[reason]);setPickerSelection('filterPercent',[percent]);}
       }
       renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});
     }
@@ -911,14 +866,13 @@
     $('detailScrollRight').addEventListener('click',()=>{const wrap=$('detailTableWrap');wrap.scrollBy({left:Math.max(320,wrap.clientWidth*.75),behavior:'smooth'});});
     $('openCreateBtn').addEventListener('click',openCreate);$('saveBtn').addEventListener('click',saveCurrent);$('syncBtn').addEventListener('click',syncCurrent);$('retrySyncBtn').addEventListener('click',()=>{if(cloudInFlight)return;cloudPending=true;cloudNotify=true;$('storageState').textContent='Reintentando sincronización…';$('retrySyncBtn').disabled=true;flushCloudSave();});
     $('exportStateBtn').addEventListener('click',exportStateBackup);
-    $('recordsBody').addEventListener('click',e=>{const deleteButton=e.target.closest('[data-delete-record]');if(deleteButton){e.stopPropagation();deleteSavedRecord(deleteButton.dataset.deleteRecord);return;}if(e.target.closest('.record-select,.liquidation-status-select,.signature-rate-editor')){e.stopPropagation();return;}const row=e.target.closest('tr[data-record]');if(row)showRecord(row.dataset.record);});
-    $('recordsBody').addEventListener('change',e=>{if(e.target.matches('.liquidation-status-select,.signature-rate-input')){const record=state.records.find(item=>item.id===e.target.dataset.recordId);if(!record)return;if(e.target.matches('.liquidation-status-select'))record.status=liquidationStatusValue(e.target.value);else record.signatureRate=signatureRateValue(e.target.value);record.updatedAt=new Date().toISOString();persist(true);renderSummary();return;}if(!e.target.matches('.record-select'))return;const id=e.target.dataset.recordId;if(e.target.checked)selectedRecordIds.add(id);else selectedRecordIds.delete(id);updateRecordGroupSelectionControls(filteredRecords());});
-    $('onlyNonExemptBtn').addEventListener('click',toggleOnlyNonExempt);
+    $('recordsBody').addEventListener('click',e=>{const deleteButton=e.target.closest('[data-delete-record]');if(deleteButton){e.stopPropagation();deleteSavedRecord(deleteButton.dataset.deleteRecord);return;}if(e.target.closest('.record-select')){e.stopPropagation();return;}const row=e.target.closest('tr[data-record]');if(row)showRecord(row.dataset.record);});
+    $('recordsBody').addEventListener('change',e=>{if(!e.target.matches('.record-select'))return;const id=e.target.dataset.recordId;if(e.target.checked)selectedRecordIds.add(id);else selectedRecordIds.delete(id);updateRecordGroupSelectionControls(filteredRecords());});
     $('selectAllVisibleRecords').addEventListener('change',e=>{for(const record of filteredRecords()){if(e.target.checked)selectedRecordIds.add(record.id);else selectedRecordIds.delete(record.id);}renderSummary();});
     $('createGroupBtn').addEventListener('click',createLiquidationGroup);$('groupNameInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();createLiquidationGroup();}});
     $('assignGroupBtn').addEventListener('click',assignSelectedRecordsToGroup);$('clearRecordSelectionBtn').addEventListener('click',clearRecordSelection);
     $('breakdownBody').addEventListener('click',filterFromSummaryCell);
-    $('breachMatrixBody').addEventListener('click',filterMatrixCell);$('slaMatrixBody').addEventListener('click',filterMatrixCell);
+    $('breachMatrixBody').addEventListener('click',filterMatrixCell);$('slaMatrixBody').addEventListener('click',filterMatrixCell);$('reasonSummaryBody').addEventListener('click',filterMatrixCell);
     $('filterSearch').addEventListener('input',renderDetailRows);
     $('clearMatrixGuideFilterBtn').addEventListener('click',()=>{matrixGuideSelection=null;renderDetailRows();});
     $('detailBody').addEventListener('change',e=>{
@@ -944,7 +898,7 @@
           if(!imported||imported.version!==1||!imported.sources||!Array.isArray(imported.records))throw new Error('El archivo no tiene un respaldo compatible.');
           if(!confirm(`Se importarán ${fmtCount(imported.records.length)} liquidaciones al almacenamiento Supabase. Continúa solo si este proyecto está vacío o si deseas combinar estos datos.`)){event.target.value='';return;}
           state={...emptyState(),...imported,sources:{...emptyState().sources,...(imported.sources||{})},records:imported.records,groups:Array.isArray(imported.groups)?imported.groups.filter(group=>group&&group.id&&group.name):[],deletedRecords:imported.deletedRecords&&typeof imported.deletedRecords==='object'?imported.deletedRecords:{}};
-          state.records=state.records.map(record=>({...record,status:liquidationStatusValue(record.status),signatureRate:signatureRateValue(record.signatureRate),items:(record.items||[]).map(item=>{const percent=item.exemptionPercent==null?(item.exonerated?100:0):clampPercent(item.exemptionPercent);return {...item,exemptionPercent:percent,exonerated:percent>0};})}));
+          state.records=state.records.map(record=>({...record,items:(record.items||[]).map(item=>{const percent=item.exemptionPercent==null?(item.exonerated?100:0):clampPercent(item.exemptionPercent);return {...item,exemptionPercent:percent,exonerated:percent>0};})}));
           selectedIds.clear();selectedRecordIds.clear();dirty=false;initializeView();setAvailable(true);persist(true);renderSummary();
           notify('Respaldo importado. Se está sincronizando con Supabase.');
         }catch(error){notify(`No se pudo importar el respaldo: ${error?.message||error}`,true);}finally{event.target.value='';}
@@ -957,18 +911,17 @@
       notify('Respaldo JSON descargado. Puedes importarlo en la versión Supabase.');
     }
     function exportStateBackup(){
-      const button=$('exportStateBtn'),label=button.textContent;button.disabled=true;button.textContent='Preparando respaldo…';
-      const finish=()=>{button.disabled=!appReady;button.textContent=label;};
-      if(!cloudMode){downloadStateJson(state);finish();return;}
+      const button=$('exportStateBtn');button.disabled=true;
+      if(!cloudMode){downloadStateJson(state);button.disabled=false;return;}
       const snapshot=JSON.parse(JSON.stringify(state));
       google.script.run.withSuccessHandler(result=>{
         state.serverRevision=Number(result?.revision)||state.serverRevision;
         google.script.run.withSuccessHandler(remote=>{
-          if(!remote||remote.version!==1||!Array.isArray(remote.records)){finish();notify('El estado central no tiene el formato esperado.',true);return;}
+          if(!remote||remote.version!==1||!Array.isArray(remote.records)){button.disabled=false;notify('El estado central no tiene el formato esperado.',true);return;}
           const merged=mergeLocalDeletionTombstones(remote,snapshot).state;merged.serverRevision=Number(remote.serverRevision)||state.serverRevision;
-          downloadStateJson(merged);finish();
-        }).withFailureHandler(error=>{finish();notify(`No se pudo descargar el respaldo central: ${error?.message||error}`,true);}).getFullAppState();
-      }).withFailureHandler(error=>{finish();notify(`No se pudo guardar el estado antes del respaldo: ${error?.message||error}`,true);}).saveAppState(snapshot);
+          downloadStateJson(merged);button.disabled=false;
+        }).withFailureHandler(error=>{button.disabled=false;notify(`No se pudo descargar el respaldo central: ${error?.message||error}`,true);}).getAppState();
+      }).withFailureHandler(error=>{button.disabled=false;notify(`No se pudo guardar el estado antes del respaldo: ${error?.message||error}`,true);}).saveAppState(snapshot);
     }
     function setAvailable(available){appReady=available;if($('importStateBtn'))$('importStateBtn').disabled=!available;if($('exportStateBtn'))$('exportStateBtn').disabled=!available;$('openCreateBtn').disabled=!available;$('saveBtn').disabled=!available;$('createGroupBtn').disabled=!available;$('groupNameInput').disabled=!available;$('bulkGroupSelect').disabled=!available;$('clearRecordSelectionBtn').disabled=!available||selectedRecordIds.size===0;for(const id of Object.values(inputBySlot))$(id).disabled=!available;updateRecordGroupSelectionControls(filteredRecords());}
     function stateHasData(value){return !!(value?.records?.length||value?.groups?.length||Object.keys(value?.deletedRecords||{}).length||Object.values(value?.sources||{}).some(source=>source?.rows?.length));}
@@ -979,7 +932,7 @@
       if(merged.records.length!==beforeCount)changed=true;return {state:merged,changed};
     }
     function initializeView(){
-      for(const record of state.records){record.status=liquidationStatusValue(record.status);record.signatureRate=signatureRateValue(record.signatureRate);}hydratePenaltySourceFromRecords();const slaBackfilled=backfillMissingSla();if(slaBackfilled){persist();notify(`Se actualizaron datos de Exportación y Zonificación en ${fmtCount(slaBackfilled)} penalidades guardadas.`);}updateSourceDiag();if(state.sources.penalties)setDefaultPeriodAndPdvs();renderSummary();
+      hydratePenaltySourceFromRecords();const slaBackfilled=backfillMissingSla();if(slaBackfilled){persist();notify(`Se actualizaron datos de Exportación y Zonificación en ${fmtCount(slaBackfilled)} penalidades guardadas.`);}updateSourceDiag();if(state.sources.penalties)setDefaultPeriodAndPdvs();renderSummary();
       if(state.records.length){const periods=state.records.map(r=>r.period).sort();if(!$('periodInput').value)$('periodInput').value=periods[periods.length-1];}
       if(!window.XLSX)notify('El lector Excel requiere conexión a internet al abrir el HTML.',true);
     }
@@ -1010,45 +963,19 @@
     const syncBatchSize = 500;
 
     function makeGoogleScriptBridge(){
-      const fetchItems=async recordKey=>{
-        const items=[],pageSize=500;let offset=0;
-        while(true){
-          const {data,error}=await exoSupabaseClient.rpc('penalidades_obtener_items',{p_record_key:recordKey,p_offset:offset,p_limit:pageSize});
-          if(error)throw error;
-          const page=Array.isArray(data)?data:[];items.push(...page);
-          if(page.length<pageSize)break;
-          offset+=pageSize;
-        }
-        return items;
-      };
-      const fetchFullState=async()=>{
-        const {data,error}=await exoSupabaseClient.rpc('penalidades_obtener_resumen');if(error)throw error;
-        const full=cloneState(data);
-        for(const record of full.records||[])record.items=await fetchItems(record.id);
-        return full;
-      };
       const createRunner = () => {
         let successHandler=()=>{}, failureHandler=()=>{};
         const runner={
           withSuccessHandler(fn){successHandler=typeof fn==='function'?fn:()=>{};return runner;},
           withFailureHandler(fn){failureHandler=typeof fn==='function'?fn:()=>{};return runner;},
           getAppState(){
-            exoSupabaseClient.rpc('penalidades_obtener_resumen').then(({data,error})=>{
+            exoSupabaseClient.rpc('penalidades_obtener_estado').then(({data,error})=>{
               if(error){failureHandler(error);return;}
               exoV2Baseline=cloneState(data);
               successHandler(data);
             }).catch(failureHandler);
             return runner;
           },
-          getRecordItems(recordKey){
-            fetchItems(recordKey).then(items=>{
-              const baselineRecord=(exoV2Baseline?.records||[]).find(record=>record.id===recordKey);
-              if(baselineRecord)baselineRecord.items=cloneState(items);
-              successHandler(items);
-            }).catch(failureHandler);
-            return runner;
-          },
-          getFullAppState(){fetchFullState().then(successHandler).catch(failureHandler);return runner;},
           saveAppState(snapshot){
             const keyNorm=value=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9\u3400-\u9FFF]+/g,' ').trim().replace(/\s+/g,' ').replace(/ /g,'');
             const dbItemId=(record,item)=>{const prefix=`${record.id}::`;return String(item.id??'').startsWith(prefix)?String(item.id):prefix+String(item.id??'');};
@@ -1070,10 +997,6 @@
               if(changed.length)changedByRecord.push({record,changed});
             }
             const deleted=[...baseItems.keys()].filter(id=>!nextItems.has(id)&&!deletedRecordSet.has(id.split('::',1)[0]));
-            const validStates=new Set(['pendiente','en_proceso','finalizado','notificado','en_revalidacion']);
-            const normalizeStatus=value=>validStates.has(value)?value:'pendiente';
-            const normalizedRate=value=>{if(value==null||String(value).trim()==='')return null;const rate=Number(value);return Number.isFinite(rate)?Math.round(Math.max(0,Math.min(100,rate))*100)/100:null;};
-            const changedLiquidations=(snapshot.records||[]).filter(record=>{const before=baseRecords.get(record.id);return normalizeStatus(before?.status)!==normalizeStatus(record.status)||normalizedRate(before?.signatureRate)!==normalizedRate(record.signatureRate);}).map(record=>({recordKey:record.id,estado:normalizeStatus(record.status),tasaFirma:normalizedRate(record.signatureRate)}));
             (async()=>{
               // Serializa todos los lotes para que dos guardados no compitan entre sí.
               for(const batch of changedByRecord)for(let i=0;i<batch.changed.length;i+=syncBatchSize){
@@ -1082,10 +1005,6 @@
               }
               for(let i=0;i<deletedRecordKeys.length;i+=syncBatchSize){
                 const {error}=await exoSupabaseClient.rpc('penalidades_borrar_liquidaciones',{p_record_keys:deletedRecordKeys.slice(i,i+syncBatchSize)});
-                if(error)throw error;
-              }
-              for(let i=0;i<changedLiquidations.length;i+=syncBatchSize){
-                const {error}=await exoSupabaseClient.rpc('penalidades_actualizar_estados',{p_estados:changedLiquidations.slice(i,i+syncBatchSize)});
                 if(error)throw error;
               }
               for(let i=0;i<deleted.length;i+=syncBatchSize){

@@ -866,11 +866,8 @@ async function exportarPdfPdvFiltrados(){
  exportacionPdvControl=new AbortController();btn.disabled=true;cancel.hidden=false;link.hidden=true;status.textContent='Preparando PDF de las guías filtradas…';
  try{
   const portada=leerPortadaPdf()?.imagen||null;
-  const {generarZipPdf}=await import('./pdf-pdv.js?v=2');
-  const resumirPenalidades=window.BrechaCostosCompartidos?.resumir;if(typeof resumirPenalidades!=='function')throw new Error('No se pudo preparar el cuadro resumen de penalidades. Recarga la página e inténtalo nuevamente.');
-  const gruposPdv=new Map();for(const fila of filas){const pdv=String(fila.pdv||'Sin PDV').trim()||'Sin PDV';if(!gruposPdv.has(pdv))gruposPdv.set(pdv,[]);gruposPdv.get(pdv).push(fila);}
-  const resumenesPorPdv=[...gruposPdv].map(([pdv,registros])=>({pdv,resumen:resumirPenalidades(registros)}));
-  const resultado=await generarZipPdf(filas,{portada,resumenesPorPdv,signal:exportacionPdvControl.signal,onProgress:p=>{status.textContent=p.pdv+' · '+p.done+'/'+p.total+' guías · '+p.pdfs+'/'+p.count+' PDF';}});
+  const {generarZipPdf}=await import('./pdf-pdv.js?v=1');
+  const resultado=await generarZipPdf(filas,{portada,signal:exportacionPdvControl.signal,onProgress:p=>{status.textContent=p.pdv+' · '+p.done+'/'+p.total+' guías · '+p.pdfs+'/'+p.count+' PDF';}});
   if(exportacionPdvUrl)URL.revokeObjectURL(exportacionPdvUrl);
   exportacionPdvUrl=URL.createObjectURL(new Blob([resultado.bytes],{type:'application/zip'}));link.href=exportacionPdvUrl;
   link.download='PDF_PDV_'+new Date().toISOString().replace(/[:.]/g,'-')+'.zip';link.hidden=false;link.click();

@@ -245,6 +245,8 @@
           <div class="filter search"><label for="filterSearch">Buscar guía o distrito</label><input id="filterSearch" type="search" placeholder="Número de guía, distrito…"></div>
           <div class="filter"><label>Penalización</label><div class="multi-picker" id="filterPenalty"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por penalización" aria-haspopup="true" aria-expanded="false" aria-controls="filterPenaltyMenu">Todas</button><div class="multi-picker-menu" id="filterPenaltyMenu" role="group" hidden></div></div></div>
           <div class="filter"><label>Brecha / SLA</label><div class="multi-picker" id="filterBreachSla"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por brecha o SLA" aria-haspopup="true" aria-expanded="false" aria-controls="filterBreachSlaMenu">Todos</button><div class="multi-picker-menu" id="filterBreachSlaMenu" role="group" hidden></div></div></div>
+          <div class="filter"><label for="filterWaitMin">Espera desde (h)</label><input id="filterWaitMin" type="number" min="0" step="0.01" placeholder="Mínimo"></div>
+          <div class="filter"><label for="filterWaitMax">Espera hasta (h)</label><input id="filterWaitMax" type="number" min="0" step="0.01" placeholder="Máximo"></div>
           <div class="filter"><label>Tipo de operación más reciente</label><div class="multi-picker" id="filterOperation"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por tipo de operación más reciente" aria-haspopup="true" aria-expanded="false" aria-controls="filterOperationMenu">Todos</button><div class="multi-picker-menu" id="filterOperationMenu" role="group" hidden></div></div></div>
           <div class="filter"><label>Motivo</label><div class="multi-picker" id="filterReason"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por motivo" aria-haspopup="true" aria-expanded="false" aria-controls="filterReasonMenu">Todos</button><div class="multi-picker-menu" id="filterReasonMenu" role="group" hidden></div></div></div>
           <div class="filter"><label>Exoneración (%)</label><div class="multi-picker" id="filterPercent"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por porcentaje de exoneración" aria-haspopup="true" aria-expanded="false" aria-controls="filterPercentMenu">Todos</button><div class="multi-picker-menu" id="filterPercentMenu" role="group" hidden></div></div></div>
@@ -254,7 +256,7 @@
           <div class="filter"><label>Último tipo de escaneo</label><div class="multi-picker" id="filterScan"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por último tipo de escaneo" aria-haspopup="true" aria-expanded="false" aria-controls="filterScanMenu">Todos</button><div class="multi-picker-menu" id="filterScanMenu" role="group" hidden></div></div></div>
           <div class="filter"><label>Estatus de firma</label><div class="multi-picker" id="filterSignature"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por estatus de firma" aria-haspopup="true" aria-expanded="false" aria-controls="filterSignatureMenu">Todos</button><div class="multi-picker-menu" id="filterSignatureMenu" role="group" hidden></div></div></div>
         </div>
-        <span class="note">Cada filtro permite seleccionar varios valores. <span id="visibleCount"></span></span>
+        <span class="note">Combina filtros; el rango de espera incluye ambos límites. <span id="visibleCount"></span></span>
         <button id="clearMatrixGuideFilterBtn" class="btn soft" type="button" hidden>Quitar filtro de guías de Brecha</button>
       </div>
       <div class="bulkbar">
@@ -677,6 +679,7 @@
       return {field:'none',column:'',value:'Sin subtipo'};
     }
     function decisionReasonKey(item){return txt(item?.reason)?norm(item.reason):'__NO_REASON__';}
+    function waitHoursValue(item){const raw=txt(item?.breachWaitHours),match=raw.match(/-?\d+(?:[.,]\d+)?/);if(!match)return null;const hours=Number(match[0].replace(',','.'));return Number.isFinite(hours)?hours:null;}
     function renderMultiPicker(id,values,allLabel){
       const unique=new Map();for(const entry of values){const option=entry&&typeof entry==='object'?{value:String(entry.value??''),label:String(entry.label??entry.value??'')}:{value:String(entry??''),label:String(entry??'')};if(option.value&&!unique.has(option.value))unique.set(option.value,option);}
       const options=[...unique.values()].sort((a,b)=>id==='filterSlaDays'?(Number.isFinite(Number(a.value))&&Number.isFinite(Number(b.value))?Number(a.value)-Number(b.value):a.label.localeCompare(b.label,'es')):a.label.localeCompare(b.label,'es'));
@@ -790,8 +793,8 @@
 
     function zoneBadge(value){const n=norm(value);const kind=n.includes('RURAL')?'rural':n.includes('URBANO')?'urban':n.includes('ASIGNADA')||n.includes('ENCONTRADA')?'unassigned':'';return `<span class="badge ${kind}">${escapeHtml(value||'NO ASIGNADA')}</span>`;}
     function filteredItems(){
-      const r=currentRecord();if(!r)return [];const q=norm($('filterSearch').value);
-      return r.items.filter(x=>(!onlyNonExempt||exemptionPercent(x)===0)&&(!matrixGuideSelection||matrixGuideSelection.has(idPart(x.tracking)))&&(!q||[x.tracking,x.district,x.province,x.department,x.zoneName,x.latestOperation,x.breachWaitHours].some(v=>norm(v).includes(q)))&&pickerMatches('filterPenalty',txt(x.penalty)||'Sin tipo')&&pickerMatches('filterBreachSla',breachSlaLabel(x))&&pickerMatches('filterOperation',x.latestOperation||'Sin dato')&&pickerMatches('filterReason',txt(x.reason)||'Sin motivo')&&pickerMatches('filterPercent',String(exemptionPercent(x)))&&pickerMatches('filterZone',x.zoneType)&&pickerMatches('filterSlaDays',txt(x.slaDays)||'Sin coincidencia')&&pickerMatches('filterExemption',exemptionPercent(x)>0?'yes':'no')&&pickerMatches('filterScan',x.scanType)&&pickerMatches('filterSignature',x.signature));
+      const r=currentRecord();if(!r)return [];const q=norm($('filterSearch').value),minRaw=$('filterWaitMin').value,maxRaw=$('filterWaitMax').value,minWait=minRaw===''?null:Number(minRaw),maxWait=maxRaw===''?null:Number(maxRaw);
+      return r.items.filter(x=>{const wait=waitHoursValue(x),waitMatches=minWait===null&&maxWait===null||(wait!==null&&(minWait===null||wait>=minWait)&&(maxWait===null||wait<=maxWait));return waitMatches&&(!onlyNonExempt||exemptionPercent(x)===0)&&(!matrixGuideSelection||matrixGuideSelection.has(idPart(x.tracking)))&&(!q||[x.tracking,x.district,x.province,x.department,x.zoneName,x.latestOperation,x.breachWaitHours].some(v=>norm(v).includes(q)))&&pickerMatches('filterPenalty',txt(x.penalty)||'Sin tipo')&&pickerMatches('filterBreachSla',breachSlaLabel(x))&&pickerMatches('filterOperation',x.latestOperation||'Sin dato')&&pickerMatches('filterReason',txt(x.reason)||'Sin motivo')&&pickerMatches('filterPercent',String(exemptionPercent(x)))&&pickerMatches('filterZone',x.zoneType)&&pickerMatches('filterSlaDays',txt(x.slaDays)||'Sin coincidencia')&&pickerMatches('filterExemption',exemptionPercent(x)>0?'yes':'no')&&pickerMatches('filterScan',x.scanType)&&pickerMatches('filterSignature',x.signature);});
     }
     function renderDetailRows(){
       const items=filteredItems();$('visibleCount').textContent=`Mostrando ${fmtCount(items.length)} de ${fmtCount(visibleSummaryItems(currentRecord()).length)} penalidades`;
@@ -855,11 +858,12 @@
       const sheet=XLSX.utils.aoa_to_sheet([['GUIA','PDV','PORCENTAJE DE EXONERACION','MOTIVO DE DECISION'],...rows.map(x=>[x.tracking,x.pdv,exemptionPercent(x),x.reason||''])]);const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,sheet,'Detalle de guías');
       const pdv=norm(record.pdv).replace(/\s+/g,'_').replace(/[^A-Z0-9_-]/g,'');XLSX.writeFile(book,`EXONERACIONES_${record.period}_${pdv}.xlsx`);
     }
+    function clearWaitRangeFilters(){if($('filterWaitMin'))$('filterWaitMin').value='';if($('filterWaitMax'))$('filterWaitMax').value='';}
     function filterFromSummaryCell(event){
       const expandButton=event.target.closest('[data-expand-group]');if(expandButton){event.stopPropagation();const key=expandButton.dataset.expandGroup;if(expandedBreakdownGroups.has(key))expandedBreakdownGroups.delete(key);else expandedBreakdownGroups.add(key);renderMetricsAndBreakdown();return;}
-      const grandTotal=event.target.closest('tr[data-grand-total="true"]');if(grandTotal){matrixGuideSelection=null;$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});return;}
+      const grandTotal=event.target.closest('tr[data-grand-total="true"]');if(grandTotal){matrixGuideSelection=null;$('filterSearch').value='';clearWaitRangeFilters();for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});return;}
       const cell=event.target.closest('td'),row=event.target.closest('tr[data-penalty]');if(!cell||!row)return;
-      matrixGuideSelection=null;$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}
+      matrixGuideSelection=null;$('filterSearch').value='';clearWaitRangeFilters();for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}
       const penalty=row.dataset.penalty,rowKind=row.dataset.rowKind;
       const record=currentRecord(),reasonKey=row.dataset.reasonKey;
       let items=visibleSummaryItems(record).filter(item=>norm(item.penalty)===norm(penalty)&&decisionReasonKey(item)===reasonKey);
@@ -872,7 +876,7 @@
     function filterMatrixCell(event){
       const expand=event.target.closest('[data-matrix-expand]');if(expand){event.stopPropagation();const key=expand.dataset.matrixExpand;if(expandedBreakdownGroups.has(key))expandedBreakdownGroups.delete(key);else expandedBreakdownGroups.add(key);renderMetricsAndBreakdown();return;}
       const row=event.target.closest('tr[data-pivot-row]');if(!row)return;const cell=event.target.closest('[data-pivot-cell]'),record=currentRecord();if(!record)return;
-      $('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}
+      $('filterSearch').value='';clearWaitRangeFilters();for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}
       const kind=row.dataset.pivotRow||cell?.dataset.pivotCell,isGrandTotal=row.dataset.grandTotal==='true';
       if(kind==='breach'){
         const subtype=row.dataset.subtype||'',operation=cell?.dataset.operation||'__TOTAL__';
@@ -920,6 +924,7 @@
     $('breakdownBody').addEventListener('click',filterFromSummaryCell);
     $('breachMatrixBody').addEventListener('click',filterMatrixCell);$('slaMatrixBody').addEventListener('click',filterMatrixCell);
     $('filterSearch').addEventListener('input',renderDetailRows);
+    $('filterWaitMin').addEventListener('input',renderDetailRows);$('filterWaitMax').addEventListener('input',renderDetailRows);
     $('clearMatrixGuideFilterBtn').addEventListener('click',()=>{matrixGuideSelection=null;renderDetailRows();});
     $('detailBody').addEventListener('change',e=>{
       const id=e.target.dataset.id;if(e.target.classList.contains('row-select')){if(e.target.checked)selectedIds.add(id);else selectedIds.delete(id);updateBulkState();const visible=filteredItems();$('selectAllVisible').checked=visible.length>0&&visible.every(x=>selectedIds.has(x.id));$('selectAllVisible').indeterminate=!$('selectAllVisible').checked&&visible.some(x=>selectedIds.has(x.id));}

@@ -1,6 +1,6 @@
 PORTAL REVISION DE GUIAS + PENALIDADES V2
 
-IMPORTANTE: este paquete conserva index.html y el login del portal. Para publicar esta corrección en un repositorio existente, reemplaza solo penalidades.html; no reemplaces index.html. La descarga Excel ahora incluye GUIA, PENALIDAD, PDV, PORCENTAJE DE EXONERACION, MOTIVO DE DECISION y MONTO FINAL, en ese orden.
+IMPORTANTE: este paquete conserva index.html y el login del portal. Para publicar esta corrección en un repositorio existente, reemplaza solo penalidades.html; no reemplaces index.html. El archivo `penalidades.html` conserva la descarga Excel del módulo Penalidades. Para cambios del PDF por PDV, sigue la sección específica al final.
 
 ACTUALIZAR PENALIDADES
 1. En GitHub, reemplaza penalidades.html por el archivo de esta carpeta y espera que GitHub Pages publique el cambio.
@@ -36,3 +36,6 @@ COSTOS COMPARTIDOS DE BRECHA EN CONSULTA DESDE EXCEL
 6. En Consulta desde Excel, selecciona las guías y abre Ver guías seleccionadas. El botón Generar PDF: penalidades y QR imprime/guarda un PDF con el cuadro resumen de penalidades con bordes visibles (incluye el total penalizable y el costo preventivo evitado en verde) seguido de los QR. El Excel de guías no incluye el cuadro de montos.
 
 La nueva migración SQL es adicional: no vuelvas a ejecutar supabase_penalidades_reiniciar.sql ni el SQL de instalación completa para esta actualización.
+
+CUADRO RESUMEN EN CADA PDF DEL ZIP POR PDV
+Para actualizar esta función en GitHub Pages, reemplaza index.html, gestion-v2.html, pdv.html, pdv-v2.html, pdf-pdv.js y brecha-costos.js por los de este paquete. Cada PDF generado dentro de PDF_PDV_*.zip incluye el cuadro resumen de penalidades de su PDV, según las guías filtradas: clasificación, tipo de interrupción, cantidad de guías, costo unitario, monto penalizable y costo preventivo evitado. No requiere cambios de SQL. Recarga el portal con Ctrl+F5.

@@ -1,41 +1,24 @@
-PORTAL REVISION DE GUIAS + PENALIDADES V2
+PORTAL COMPLETO: REVISION DE GUIAS + PENALIDADES
 
-IMPORTANTE: este paquete conserva index.html y el login del portal. Para publicar esta corrección en un repositorio existente, reemplaza solo penalidades.html; no reemplaces index.html. El archivo `penalidades.html` conserva la descarga Excel del módulo Penalidades. Para cambios del PDF por PDV, sigue la sección específica al final.
+Este paquete integra Penalidades dentro del portal principal. El index.html conserva el inicio de sesión de Revisión de Guías. penalidades.html valida y reutiliza la sesión del portal; no tiene un formulario de login propio.
 
-ACTUALIZAR PENALIDADES
-1. En GitHub, reemplaza penalidades.html por el archivo de esta carpeta y espera que GitHub Pages publique el cambio.
-2. Como Penalidades V2 ya está instalada, en el SQL Editor ejecuta supabase_penalidades_tasa_firma.sql. Es una actualización pequeña que asegura las columnas Estado y Tasa de firma y actualiza su lectura y guardado, sin borrar registros. Si aplicaste una versión anterior del parche y viste «column l.estado does not exist», ejecuta esta versión corregida. El archivo supabase_penalidades_v2.sql queda para instalaciones completas o de cero.
-3. Recarga el portal con Ctrl+F5, inicia sesión y vuelve a abrir Penalidades.
+PUBLICAR EN GITHUB PAGES
+1. Descomprime el ZIP.
+2. En el repositorio que publicarás con GitHub Pages, carga el CONTENIDO de esta carpeta en la raíz (donde quedará index.html). No subas la carpeta contenedora como un nivel adicional.
+3. Conserva juntos index.html, config.js, bridge.js, gestion-v2.html, pdv.html, pdv-v2.html, penalidades.html, process-worker.js, pdf-pdv.js y brecha-costos.js.
+4. Espera a que GitHub Pages termine de publicar y abre la raíz del portal, por ejemplo https://TU-USUARIO.github.io/TU-REPOSITORIO/. Inicia sesión ahí y entra a la pestaña Penalidades. No abras un index.html independiente de Penalidades.
 
-NO ejecutes supabase_penalidades_reiniciar.sql para esta actualización: ese archivo elimina los registros de Penalidades y no se necesita para corregir el timeout.
+La configuración apunta al proyecto Supabase akultekodxqmmfchxviq. El login usa las cuentas existentes de Supabase Auth. El archivo index.html corresponde al portal completo y debe conservarse para que se muestre ese login.
 
-CARGA Y RENDIMIENTO
-La pantalla inicial consulta los resúmenes y totales de las liquidaciones. Al abrir una liquidación, el detalle se descarga de Supabase por páginas de 500 penalidades. El respaldo completo descarga intencionalmente todos los detalles, también por páginas.
+ACTUALIZACION SQL PARA EL TIMEOUT DEL RESUMEN
+En Supabase, dentro del mismo proyecto, ejecuta una vez SUPABASE_SQL/supabase_penalidades_resumen_rapido.sql. Actualiza únicamente la función que entrega el resumen inicial. No borra tablas, liquidaciones, guías ni decisiones. La pantalla carga primero el resumen por periodo/PDV; las guías se solicitan por páginas cuando seleccionas una liquidación.
 
-MODELO DE DATOS
-Cada penalidad se guarda como una fila; las liquidaciones se agrupan por periodo y PDV. Los porcentajes y motivos se almacenan por penalidad. Los Excel se procesan en el navegador; no se guardan copias de los archivos originales.
+OTROS SQL (SOLO SI APLICA)
+- supabase_penalidades_tasa_firma.sql: ejecutar solo si faltan las columnas Estado/Tasa de firma o si se requiere esa corrección. Es incremental y no reinicia datos.
+- supabase_penalidades_autorizacion_perfiles.sql: ejecutar solo si una cuenta válida de administrador/encargado muestra “Cuenta no autorizada” DESPUES de iniciar sesión. No corrige contraseñas.
+- supabase_costos_brecha_compartidos.sql: necesario únicamente si aún no se instaló la configuración compartida de costos de brecha.
 
-TOTALES Y FILTROS
-La tabla principal conserva los subtotales por grupo y el total general según los filtros activos. El resumen por penalización y motivo de decisión, y las matrices de Brecha y SLA/escaneo-firma, incluyen TOTAL GENERAL; al seleccionar sus filas se filtra el detalle correspondiente.
-El resumen ya no muestra la zona: agrupa cada penalización por motivo de decisión. Incluye los conteos de exoneradas y no exoneradas, filas, guías únicas, penalidad total, monto exonerado y saldo. Los registros sin texto se agrupan como “Sin motivo de decisión”. Cada fila se puede expandir para ver sus subtipos de Brecha o SLA.
+No ejecutes una instalación desde cero ni scripts de reinicio para esta actualización.
 
-ESTADO Y FILTRO GLOBAL
-La columna Estado aparece junto a Actualizado. Sus opciones son Pendiente, En proceso, Finalizado, Notificado y En revalidación. A su lado puedes ingresar la Tasa de firma de 0% a 100%, con hasta dos decimales; si no la ingresas, el campo queda en blanco. Ambos campos se guardan en Supabase automáticamente. El botón Solo no exoneradas oculta en todas las tablas las penalidades que tengan un porcentaje de exoneración mayor que 0%, y recalcula sus totales. Pulsa Ver todas para quitar ese filtro.
-
-GUARDADO Y ELIMINACION
-El módulo guarda solo filas modificadas, en lotes secuenciales de hasta 500 penalidades. Al eliminar una liquidación, sus penalidades, decisiones y asignación a grupo se eliminan en una transacción. Si falla el guardado, los cambios permanecen en esa pestaña y aparece el botón Reintentar sincronización.
-
-
-COSTOS COMPARTIDOS DE BRECHA EN CONSULTA DESDE EXCEL
-
-1. En Supabase SQL Editor ejecuta una sola vez supabase_costos_brecha_compartidos.sql. El parche crea una tabla privada de configuración y una función RPC; no borra ni cambia guías, liquidaciones, perfiles o fuentes existentes.
-2. En GitHub Pages reemplaza estos archivos por los de este paquete: index.html, gestion-v2.html, pdv.html, pdv-v2.html y bridge.js. Agrega brecha-costos.js en la misma carpeta raíz donde están esos HTML. Conserva config.js y el login; no reemplaces otros módulos.
-3. Recarga la página con Ctrl+F5 e inicia sesión. En Consulta desde Excel, carga o consulta el Track Break para mostrar sus tipos de interrupción.
-4. El rol ADMINISTRADOR puede definir los importes unitarios y pulsar Guardar valores para todos. Los demás roles ven los mismos valores en solo lectura. Las tarifas y las guías se mantienen separadas; actualizar un Excel no cambia la configuración.
-5. Las categorías preventivas de hasta 12 h, más de 12 a 24 h y más de 24 a 36 h también tienen una tarifa configurable. En el resumen, su importe calculado aparece en verde como costo evitado y no se suma al monto penalizable.
-6. En Consulta desde Excel, selecciona las guías y abre Ver guías seleccionadas. El botón Generar PDF: penalidades y QR imprime/guarda un PDF con el cuadro resumen de penalidades con bordes visibles (incluye el total penalizable y el costo preventivo evitado en verde) seguido de los QR. El Excel de guías no incluye el cuadro de montos.
-
-La nueva migración SQL es adicional: no vuelvas a ejecutar supabase_penalidades_reiniciar.sql ni el SQL de instalación completa para esta actualización.
-
-CUADRO RESUMEN EN CADA PDF DEL ZIP POR PDV
-Para actualizar esta función en GitHub Pages, reemplaza index.html, gestion-v2.html, pdv.html, pdv-v2.html, pdf-pdv.js y brecha-costos.js por los de este paquete. Cada PDF generado dentro de PDF_PDV_*.zip incluye el cuadro resumen de penalidades de su PDV, según las guías filtradas: clasificación, tipo de interrupción, cantidad de guías, costo unitario, monto penalizable y costo preventivo evitado. No requiere cambios de SQL. Recarga el portal con Ctrl+F5.
+CAMBIO DE CRUCE
+En exportación de guías se busca primero coincidencia de guía y PDV; si el PDV no coincide, se usa la coincidencia por guía y la actualización más reciente.

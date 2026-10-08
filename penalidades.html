@@ -490,9 +490,9 @@
     function putNewest(map,key,row,stamp){if(!key)return;const prev=map.get(key);if(!prev||stamp>=prev.__indexStamp)map.set(key,{...row,__indexStamp:stamp});}
     function guidePdvKey(pdv,tracking){return `${idPart(pdvName(pdv))}|${idPart(tracking)}`;}
     function buildGuideIndex(){
-      const specific=new Map(),withoutPdv=new Map();for(const g of state.sources.guides?.rows||[]){const stamp=timestampValue(g.updatedAt||g.scanTime)||timestampValue(g.sourceImportedAt);if(pdvName(g.pdv))putNewest(specific,guidePdvKey(g.pdv,g.tracking),g,stamp);else putNewest(withoutPdv,idPart(g.tracking),g,stamp);}return {specific,withoutPdv};
+      const specific=new Map(),withoutPdv=new Map(),byTracking=new Map();for(const g of state.sources.guides?.rows||[]){const trackingKey=idPart(g.tracking);if(!trackingKey)continue;const stamp=timestampValue(g.updatedAt||g.scanTime)||timestampValue(g.sourceImportedAt);putNewest(byTracking,trackingKey,g,stamp);if(pdvName(g.pdv))putNewest(specific,guidePdvKey(g.pdv,g.tracking),g,stamp);else putNewest(withoutPdv,trackingKey,g,stamp);}return {specific,withoutPdv,byTracking};
     }
-    function findGuide(index,pdv,tracking){return index.specific.get(guidePdvKey(pdv,tracking))||index.withoutPdv.get(idPart(tracking))||null;}
+    function findGuide(index,pdv,tracking){return index.specific.get(guidePdvKey(pdv,tracking))||index.withoutPdv.get(idPart(tracking))||index.byTracking.get(idPart(tracking))||null;}
     function breachKey(period,pdv,tracking){return `${period||''}|${idPart(pdvName(pdv))}|${idPart(tracking)}`;}
     function breachRowStamp(row){return timestampValue(row.dateRaw||row.dateISO)||timestampValue(row.sourceImportedAt)||Number(row.sourceRow)||0;}
     function buildBreachIndex(){

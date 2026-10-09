@@ -8,6 +8,12 @@ PUBLICAR EN GITHUB PAGES
 3. Conserva juntos index.html, config.js, bridge.js, gestion-v2.html, pdv.html, pdv-v2.html, penalidades.html, process-worker.js, pdf-pdv.js y brecha-costos.js.
 4. Espera a que GitHub Pages termine de publicar y abre la raíz del portal, por ejemplo https://TU-USUARIO.github.io/TU-REPOSITORIO/. Inicia sesión ahí y entra a la pestaña Penalidades. No abras un index.html independiente de Penalidades.
 
+ACTUALIZACION DE PENALIDADES (09-10-2026)
+- El filtro “Brecha (columna E)” permite seleccionar uno o varios valores de la columna E (Brecha) del Excel de penalidades.
+- La descarga Excel del detalle incluye GUIA, PENALIDAD, PDV, PORCENTAJE DE EXONERACION, MONTO FINAL (S/) y MOTIVO DE DECISION.
+- Estos cambios son de interfaz y no requieren ejecutar SQL en Supabase.
+- Al actualizar manualmente, reemplaza index.html y penalidades.html. Si subes todo el ZIP, carga su contenido completo en la raíz del repositorio y conserva juntos todos los archivos indicados arriba.
+
 La configuración apunta al proyecto Supabase akultekodxqmmfchxviq. El login usa las cuentas existentes de Supabase Auth. El archivo index.html corresponde al portal completo y debe conservarse para que se muestre ese login.
 
 ACTUALIZACION SQL PARA EL TIMEOUT DEL RESUMEN

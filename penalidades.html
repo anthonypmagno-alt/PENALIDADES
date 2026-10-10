@@ -149,6 +149,39 @@
     #moduleGateMessage.error{color:#a52a22}
     @media(max-width:600px){.module-gate-card{padding:22px}.top-actions{margin-top:14px}}
   </style>
+  <style>
+    /* En escritorio, aprovecha el ancho disponible y distribuye las 15 columnas. */
+    .shell{width:100%;max-width:none;padding:14px clamp(10px,1.25vw,20px)}
+    #recordsTable{width:100%;min-width:0;table-layout:fixed}
+    #recordsTable th,#recordsTable td{padding:7px 4px;white-space:normal;overflow-wrap:anywhere}
+    #recordsTable th{font-size:9px;line-height:1.2;text-align:center}
+    #recordsTable td{font-size:10px}
+    #recordsTable td.num{font-size:9px;white-space:nowrap}
+    #recordsTable th:nth-child(1),#recordsTable td:nth-child(1){width:2.5%;text-align:center}
+    #recordsTable th:nth-child(2),#recordsTable td:nth-child(2){width:4.5%}
+    #recordsTable th:nth-child(3),#recordsTable td:nth-child(3){width:7%}
+    #recordsTable th:nth-child(4),#recordsTable td:nth-child(4){width:4.8%}
+    #recordsTable th:nth-child(5),#recordsTable td:nth-child(5){width:5%}
+    #recordsTable th:nth-child(6),#recordsTable td:nth-child(6){width:5.5%}
+    #recordsTable th:nth-child(7),#recordsTable td:nth-child(7){width:9.2%}
+    #recordsTable th:nth-child(8),#recordsTable td:nth-child(8){width:7.7%}
+    #recordsTable th:nth-child(9),#recordsTable td:nth-child(9){width:8.2%}
+    #recordsTable th:nth-child(10),#recordsTable td:nth-child(10){width:7.8%}
+    #recordsTable th:nth-child(11),#recordsTable td:nth-child(11){width:7.8%}
+    #recordsTable th:nth-child(12),#recordsTable td:nth-child(12){width:10%}
+    #recordsTable th:nth-child(13),#recordsTable td:nth-child(13){width:8.2%}
+    #recordsTable th:nth-child(14),#recordsTable td:nth-child(14){width:5.8%}
+    #recordsTable th:nth-child(15),#recordsTable td:nth-child(15){width:6%}
+    #recordsTable .liquidation-status-select{width:100%;min-width:0;max-width:100%;padding:4px 3px;font-size:9px}
+    #recordsTable .signature-rate-editor{min-width:0;gap:2px;justify-content:flex-end}
+    #recordsTable .signature-rate-input{width:calc(100% - 12px);min-width:0;padding:4px 3px;font-size:9px}
+    #recordsTable .delete-record-btn{padding:4px 5px;font-size:9px}
+    .liquidation-money-input{display:flex;align-items:center;justify-content:flex-end;gap:3px;width:100%;min-width:0}
+    .liquidation-money-input .currency-prefix{flex:0 0 auto;font-size:10px;font-weight:750;color:#174f8a}
+    .liquidation-amount-input{width:calc(100% - 19px);min-width:0;max-width:100%;padding:5px 3px;font-size:10px}
+    @media(max-width:1150px){#recordsTable{min-width:1120px}}
+    @media(max-width:600px){.shell{padding:10px}}
+  </style>
 </head>
 <body>
   <section class="module-gate" id="moduleGate" aria-labelledby="moduleGateTitle" aria-live="polite">
@@ -327,8 +360,8 @@
     function liquidationStatusValue(value){return LIQUIDATION_STATUSES.some(status=>status.value===value)?value:'pendiente';}
     function renderLiquidationStatus(record){const current=liquidationStatusValue(record.status);return `<select class="liquidation-status-select" data-record-id="${escapeHtml(record.id)}" aria-label="Estado de liquidación ${escapeHtml(periodLabel(record.period))} ${escapeHtml(record.pdv)}">${LIQUIDATION_STATUSES.map(status=>`<option value="${status.value}" ${current===status.value?'selected':''}>${status.label}</option>`).join('')}</select>`;}
     function signatureRateValue(value){return value==null||txt(value)===''?null:Math.round(clampPercent(value)*100)/100;}
-    function liquidationAmountValue(value){if(value==null||txt(value)==='')return null;const amount=typeof value==='number'?value:Number(String(value).replace(',','.'));return Number.isFinite(amount)&&amount>=0&&amount<=999999999999.99?Math.round(amount*100)/100:null;}
-    function renderLiquidationAmount(record){const amount=liquidationAmountValue(record.liquidationAmount),label='Monto de liquidación para '+periodLabel(record.period)+' '+record.pdv;return '<input class="liquidation-amount-input" type="number" min="0" max="999999999999.99" step="0.01" data-record-id="'+escapeHtml(record.id)+'" value="'+(amount===null?'':amount)+'" aria-label="'+escapeHtml(label)+'" title="Monto de liquidación en soles">';}
+    function liquidationAmountValue(value){if(value==null||txt(value)==='')return null;let raw=typeof value==='number'?String(value):String(value).trim().replace(/S\//gi,'').replace(/\s/g,'').replace(/[^\d,.-]/g,'');if(!raw)return null;if(typeof value!=='number'){if(raw.includes(',')&&raw.includes('.'))raw=raw.lastIndexOf(',')>raw.lastIndexOf('.')?raw.replace(/\./g,'').replace(',','.'):raw.replace(/,/g,'');else if(raw.includes(','))raw=raw.replace(',','.');}const amount=Number(raw);return Number.isFinite(amount)&&amount>=0&&amount<=999999999999.99?Math.round(amount*100)/100:null;}
+    function renderLiquidationAmount(record){const amount=liquidationAmountValue(record.liquidationAmount),label='Monto de liquidación para '+periodLabel(record.period)+' '+record.pdv;return '<div class="liquidation-money-input"><span class="currency-prefix" aria-hidden="true">S/</span><input class="liquidation-amount-input" type="text" inputmode="decimal" maxlength="18" data-record-id="'+escapeHtml(record.id)+'" value="'+(amount===null?'':escapeHtml(fmtMoney(amount)))+'" placeholder="0.00" aria-label="'+escapeHtml(label)+'" title="Monto de liquidación en soles. Se muestra con dos decimales."></div>';}
     function renderSignatureRate(record){const rate=signatureRateValue(record.signatureRate);return `<div class="signature-rate-editor"><input class="signature-rate-input" type="number" min="0" max="100" step="0.01" data-record-id="${escapeHtml(record.id)}" value="${rate==null?'':rate}" aria-label="Tasa de firma en porcentaje para ${escapeHtml(periodLabel(record.period))} ${escapeHtml(record.pdv)}"><span>%</span></div>`;}
     const idPart = value => norm(value).replace(/\s/g,'');
     const pdvName = value => txt(value).split('|')[0].trim();
@@ -941,6 +974,7 @@
     $('detailScrollRight').addEventListener('click',()=>{const wrap=$('detailTableWrap');wrap.scrollBy({left:Math.max(320,wrap.clientWidth*.75),behavior:'smooth'});});
     $('openCreateBtn').addEventListener('click',openCreate);$('saveBtn').addEventListener('click',saveCurrent);$('syncBtn').addEventListener('click',syncCurrent);$('retrySyncBtn').addEventListener('click',()=>{if(cloudInFlight)return;cloudPending=true;cloudNotify=true;$('storageState').textContent='Reintentando sincronización…';$('retrySyncBtn').disabled=true;flushCloudSave();});
     $('exportStateBtn').addEventListener('click',exportStateBackup);
+    $('recordsBody').addEventListener('focusin',e=>{if(!e.target.matches('.liquidation-amount-input'))return;const amount=liquidationAmountValue(e.target.value);e.target.value=amount===null?'':amount.toFixed(2);e.target.select();});
     $('recordsBody').addEventListener('click',e=>{const deleteButton=e.target.closest('[data-delete-record]');if(deleteButton){e.stopPropagation();deleteSavedRecord(deleteButton.dataset.deleteRecord);return;}if(e.target.closest('.record-select,.liquidation-status-select,.signature-rate-editor,.liquidation-amount-input')){e.stopPropagation();return;}const row=e.target.closest('tr[data-record]');if(row)showRecord(row.dataset.record);});
     $('recordsBody').addEventListener('change',e=>{if(e.target.matches('.liquidation-status-select,.signature-rate-input,.liquidation-amount-input')){const record=state.records.find(item=>item.id===e.target.dataset.recordId);if(!record)return;if(e.target.matches('.liquidation-status-select'))record.status=liquidationStatusValue(e.target.value);else if(e.target.matches('.signature-rate-input'))record.signatureRate=signatureRateValue(e.target.value);else record.liquidationAmount=liquidationAmountValue(e.target.value);record.updatedAt=new Date().toISOString();persist(true);renderSummary();if(currentRecordId===record.id)renderMetricsAndBreakdown();return;}if(!e.target.matches('.record-select'))return;const id=e.target.dataset.recordId;if(e.target.checked)selectedRecordIds.add(id);else selectedRecordIds.delete(id);updateRecordGroupSelectionControls(filteredRecords());});
     $('onlyNonExemptBtn').addEventListener('click',toggleOnlyNonExempt);

@@ -1,1 +1,1209 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Gestión de exoneraciones de penalidades por periodo y PDV">
+  <title>Penalidades · Revisión de Guías V16</title>
+  <script src="./config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root{--ink:#182635;--muted:#667789;--line:#dce4eb;--soft:#f4f7fa;--orange:#e97625;--orange-dark:#c85b12;--orange-pale:#fff1e6;--green:#18794e;--green-pale:#e8f5ee;--red:#b42318;--blue:#1769aa;--white:#fff;--shadow:0 8px 24px rgba(22,43,62,.07)}
+    *{box-sizing:border-box}body{margin:0;background:#f1f4f7;color:var(--ink);font:14px/1.45 Inter,Segoe UI,Arial,sans-serif}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.48;cursor:not-allowed}.shell{max-width:1600px;margin:auto;padding:24px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:20px}.brand{display:flex;gap:14px;align-items:center}.mark{width:44px;height:44px;background:var(--orange);border-radius:12px;display:grid;place-items:center;color:white;font-weight:800;font-size:18px;box-shadow:0 5px 14px #e9762540}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);font-weight:700}.topbar h1{font-size:25px;line-height:1.2;margin:2px 0 0}.top-actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:9px 13px;font-weight:650;transition:.15s}.btn:hover{border-color:#b9c5d0;background:#f9fbfc}.btn.primary{background:var(--orange);border-color:var(--orange);color:white}.btn.primary:hover{background:var(--orange-dark)}.btn.soft{background:var(--orange-pale);border-color:#ffd2b3;color:#a84208}.btn.danger{color:var(--red);border-color:#efc1bd;background:#fff8f7}.btn.danger:hover{background:#ffefed;border-color:#dfaaa5}.delete-record-btn{padding:5px 8px;font-size:10px;white-space:nowrap}.note{color:var(--muted);font-size:12px}.panel{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:20px;margin:0 0 16px;box-shadow:var(--shadow)}.panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}.panel h2{font-size:17px;margin:0 0 4px}.panel p{margin:0;color:var(--muted);font-size:12px}.step{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;background:var(--orange-pale);color:var(--orange-dark);font-weight:800;margin-right:8px}.upload-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.upload-card{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fbfcfd;min-height:126px;display:flex;flex-direction:column;justify-content:space-between}.upload-card.ready{border-color:#a8d8bd;background:#f7fcf9}.upload-title{font-weight:750;margin-bottom:5px}.upload-card label{display:inline-flex;width:max-content;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 10px;font-size:12px;font-weight:650;cursor:pointer}.upload-card input[type=file],#backupInput{display:none}.file-state{font-size:11px;color:var(--muted);margin-top:9px;overflow-wrap:anywhere}.source-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}.source-diag{font-size:12px;color:var(--muted)}.source-diag strong{color:var(--ink)}.form-row{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.field{display:flex;flex-direction:column;gap:5px;min-width:180px}.field label{font-size:11px;color:var(--muted);font-weight:750;text-transform:uppercase;letter-spacing:.04em}.field input,.field select,.filter input,.filter select,.bulk-reason{border:1px solid #cfd9e2;border-radius:7px;background:#fff;padding:9px 10px;color:var(--ink);min-height:38px}.field input:focus,.field select:focus,.filter input:focus,.filter select:focus,.bulk-reason:focus{outline:2px solid #f4b080;border-color:var(--orange)}.form-help{align-self:center;max-width:360px}.summary-filters{display:flex;align-items:end;gap:9px;flex-wrap:wrap}.summary-filters .field{min-width:145px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:8px}.data-table{width:100%;border-collapse:collapse;white-space:nowrap}.data-table th{background:#f5f7f9;color:#526274;text-align:left;text-transform:uppercase;font-size:10px;letter-spacing:.05em;padding:10px 11px;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1}.data-table td{padding:9px 11px;border-bottom:1px solid #e9eef2;vertical-align:middle;font-size:12px}.data-table tbody tr:last-child td{border-bottom:0}.click-row{cursor:pointer}.click-row:hover,.click-row.active{background:#fff8f2}.num{text-align:right;font-variant-numeric:tabular-nums}.badge{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:750;background:#edf1f5;color:#526274}.badge.yes{background:var(--green-pale);color:var(--green)}.badge.no{background:#f0f2f4;color:#596574}.badge.rural{background:#e8f1ff;color:#1c5da8}.badge.urban{background:#e8f5ee;color:#21734c}.badge.unassigned{background:#fff0ef;color:#a52a22}.empty{padding:26px;text-align:center;color:var(--muted)}.detail[hidden]{display:none}.detail-head{align-items:center}.detail-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.detail-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:15px}.metric{border:1px solid var(--line);background:#fbfcfd;border-radius:9px;padding:12px 14px}.metric span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:750}.metric strong{display:block;font-size:19px;margin-top:4px;font-variant-numeric:tabular-nums}.breakdown{margin:14px 0 18px}.breakdown h3{font-size:13px;margin:0 0 8px}.detail-tools{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:10px}.filters{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.filter{display:flex;flex-direction:column;gap:4px;min-width:130px}.filter label{font-size:10px;color:var(--muted);font-weight:750;text-transform:uppercase}.filter input,.filter select{min-height:35px;padding:7px 9px;font-size:12px}.filter.search{min-width:200px}.bulkbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid #f4d4bd;background:#fff9f5;border-radius:9px;padding:10px;margin-bottom:10px}.bulk-count{font-size:12px;font-weight:750;color:#8e451c;margin-right:3px}.bulk-reason{width:min(340px,100%);min-height:35px;padding:7px 9px;font-size:12px}.copy-guide-btn{display:block;margin-top:4px;padding:2px 4px;border:1px solid var(--line);border-radius:5px;background:#f7faff;color:var(--blue);font-size:9px;font-weight:700;line-height:1.2}.copy-guide-btn:hover{background:#eaf3fc;border-color:#b5d1e8}.detail-table{width:100%;min-width:0;table-layout:fixed;white-space:normal}.detail-table th,.detail-table td{padding:6px 5px;font-size:10px;white-space:normal;overflow-wrap:anywhere}.detail-table th:nth-child(1),.detail-table td:nth-child(1){width:2.5%;text-align:center}.detail-table th:nth-child(2),.detail-table td:nth-child(2){width:4%;text-align:center}.detail-table th:nth-child(3),.detail-table td:nth-child(3){width:6%}.detail-table th:nth-child(4),.detail-table td:nth-child(4){width:6%}.detail-table th:nth-child(5),.detail-table td:nth-child(5){width:9%}.detail-table th:nth-child(6),.detail-table td:nth-child(6){width:12%}.detail-table th:nth-child(7),.detail-table td:nth-child(7){width:5%}.detail-table th:nth-child(8),.detail-table td:nth-child(8){width:6%}.detail-table th:nth-child(9),.detail-table td:nth-child(9){width:6%}.detail-table th:nth-child(10),.detail-table td:nth-child(10){width:7%}.detail-table th:nth-child(11),.detail-table td:nth-child(11){width:11%}.detail-table th:nth-child(12),.detail-table td:nth-child(12){width:10%}.detail-table th:nth-child(13),.detail-table td:nth-child(13){width:7%}.detail-table th:nth-child(14),.detail-table td:nth-child(14){width:8.5%}.reason-input{width:100%;min-width:0;border:1px solid #d1dbe4;border-radius:6px;padding:6px 5px;font-size:10px}.reason-input:disabled{background:#f4f6f8;color:#a1aab3}.money{font-variant-numeric:tabular-nums}.muted-cell{color:#738293}.no-match{color:#a52a22;font-weight:700}.bottom-note{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:4px 2px 18px;color:#6d7b8a;font-size:11px}.toast{position:fixed;right:22px;bottom:22px;background:#203040;color:white;border-radius:8px;padding:11px 15px;box-shadow:0 8px 25px #152b3e35;max-width:min(420px,calc(100vw - 32px));z-index:10;opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:translateY(0)}.warning{color:#9b4e12}.save-state{color:var(--muted);font-size:11px;align-self:center}
+    @media(max-width:1200px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:900px){.shell{padding:14px}.detail-table{min-width:1050px;table-layout:auto}.upload-grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.topbar{align-items:flex-start}.topbar h1{font-size:21px}.detail-head{align-items:flex-start}}
+    @media(max-width:600px){.topbar{display:block}.top-actions{margin-top:14px}.panel{padding:14px}.form-row>.field{flex:1;min-width:140px}.source-footer{align-items:flex-start;flex-direction:column}.detail-actions{justify-content:flex-start}.metrics{gap:7px}.metric{padding:10px}.metric strong{font-size:17px}}
+  </style>
+  <style>
+    .liquidation-status-select{min-width:132px;max-width:165px;min-height:34px;padding:6px 8px;border:1px solid #cfd9e2;border-radius:7px;background:#fff;color:var(--ink);font-size:11px;font-weight:650}
+    .liquidation-status-select:focus{outline:2px solid #f4b080;border-color:var(--orange)}
+    .liquidation-status-select:disabled{background:#f3f5f7;color:var(--muted)}
+    .signature-rate-editor{display:flex;align-items:center;gap:4px;min-width:82px}
+    .signature-rate-input{width:68px;min-height:34px;padding:5px 6px;border:1px solid #cfd9e2;border-radius:7px;background:#fff;color:var(--ink);font-size:11px;text-align:right;font-variant-numeric:tabular-nums}
+    .signature-rate-input:focus{outline:2px solid #f4b080;border-color:var(--orange)}
+    .liquidation-amount-input{width:118px;min-height:34px;padding:5px 7px;border:1px solid #b8d2f0;border-radius:7px;background:#f1f7ff;color:#174f8a;font-size:11px;text-align:right;font-variant-numeric:tabular-nums}
+    .liquidation-amount-input:focus{outline:2px solid #8bb7eb;border-color:#4185d0}
+    .liquidation-amount-head,.liquidation-amount-cell{background:#edf5ff!important;color:#174f8a!important}
+    .liquidation-final-head,.liquidation-final-cell{background:#fff6d9!important;color:#715700!important}
+    .records-total-row .liquidation-amount-cell{background:#e5f0ff!important;font-weight:750}
+    .records-total-row .liquidation-final-cell{background:#ffefb8!important;font-weight:800}
+    .summary-cell-note{display:block;font-size:9px;color:#718096;margin-top:2px}
+    .metric.liquidation-amount{background:#edf5ff;border-color:#b8d2f0}
+    .metric.liquidation-amount span,.metric.liquidation-amount strong{color:#174f8a}
+    .metric.liquidation-final{background:#fff6d9;border-color:#efd98b}
+    .metric.liquidation-final span,.metric.liquidation-final strong{color:#715700}
+    .global-exemption-filter[aria-pressed="true"]{background:#e8f5ee;border-color:#a8d8bd;color:#176b45}
+  </style>
+  <style>
+    .multi-picker{position:relative;width:100%}
+    .multi-picker-trigger{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:35px;padding:7px 9px;border:1px solid #cfd9e2;border-radius:7px;background:#fff;color:var(--ink);font-size:12px;text-align:left;white-space:nowrap;overflow:hidden}
+    .multi-picker-trigger::after{content:'▾';color:var(--muted);flex:0 0 auto}
+    .multi-picker-trigger[aria-expanded="true"]{border-color:var(--orange);outline:2px solid #f4b080}
+    .multi-picker-menu{position:absolute;top:calc(100% + 5px);left:0;z-index:15;min-width:100%;width:max-content;max-width:min(360px,calc(100vw - 32px));max-height:270px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:6px}
+    .multi-picker-menu[hidden]{display:none}
+    .multi-picker-actions{display:flex;position:sticky;top:-6px;gap:6px;padding:6px 0;background:#fff;border-bottom:1px solid var(--line);z-index:1}
+    .multi-picker-actions button{border:1px solid var(--line);border-radius:5px;background:#f7f9fb;color:var(--ink);padding:4px 7px;font-size:10px;font-weight:650}
+    .multi-picker-option{display:flex;align-items:flex-start;gap:7px;padding:6px;border-radius:5px;color:var(--ink);font-size:12px;font-weight:500!important;text-transform:none!important;letter-spacing:normal!important;white-space:normal;cursor:pointer}
+    .multi-picker-option:hover{background:#f5f7f9}
+    .multi-picker-option input{margin:2px 0 0;flex:0 0 auto}
+    .multi-picker-empty{padding:9px 6px;color:var(--muted);font-size:11px}
+    .field .multi-picker{min-width:145px}
+    .breakdown-expand-btn{display:inline-grid;place-items:center;width:21px;height:21px;margin-right:7px;padding:0;border:1px solid #d8e0e7;border-radius:5px;background:#fff;color:#596b7b;font-size:14px;font-weight:750;line-height:1;vertical-align:middle}
+    .breakdown-expand-btn:hover{border-color:#efb18a;background:#fff5ee;color:var(--orange-dark)}
+    .breakdown-expand-btn:focus-visible{outline:2px solid #f4b080;outline-offset:1px}
+    .breakdown-subrow{background:#fbfcfd;color:#516273}
+    .breakdown-subrow:hover{background:#fff8f2}
+    .breakdown-subrow td:first-child{padding-left:34px}
+    .breakdown-exemption-row{background:#f3f6f8;color:#304254;font-weight:650}
+    .breakdown-exemption-row td:first-child{padding-left:28px}
+    .breakdown-exemption-subrow{background:#fff}
+    .breakdown-exemption-subrow td:first-child{padding-left:54px}
+    .breakdown-subtype-prefix{color:#8a5b3c;font-weight:700}
+    .detail-zone-group th{position:static;z-index:auto;padding:9px 10px;background:#edf2f6;border-top:2px solid #d6e0e8;border-bottom:1px solid #d6e0e8;color:#34485a;text-transform:none;letter-spacing:normal;font-size:11px}
+    .detail-zone-heading{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .detail-zone-count{background:#e8f1ff;color:#1c5da8}
+    .detail-zone-guides{color:var(--muted);font-size:10px;font-weight:600}
+    .group-management{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin:0 0 12px;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fbfcfd}
+    .group-create,.group-assign{display:flex;align-items:end;gap:8px;flex-wrap:wrap}
+    .group-management .field{min-width:180px;gap:4px}
+    .group-management .field label{font-size:10px}
+    .group-management input,.group-management select{min-height:35px;padding:7px 9px}
+    .group-selection-count{align-self:center;color:var(--muted);font-size:11px;font-weight:700}
+    .records-group th{position:static;z-index:auto;padding:9px 11px;background:#edf2f6;border-top:2px solid #d6e0e8;border-bottom:1px solid #d6e0e8;color:#34485a;text-transform:none;letter-spacing:normal;font-size:11px}
+    .records-group-heading{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .records-group-count{background:#e8f1ff;color:#1c5da8}
+    .records-total-row td,.summary-grand-total td{font-weight:800;background:#eef4f8;border-top:2px solid #9aaebf;color:#263a4b}
+    .records-grand-total td,.breakdown-grand-total td{background:#dce8f1;border-top:3px double #647b8d;font-weight:850}
+    .records-total-label small{display:block;color:#647789;font-size:10px;font-weight:650}
+    .records-total-row,.summary-grand-total{cursor:pointer}.records-total-row:hover td,.summary-grand-total:hover td{background:#fff1e6;color:#8a3f12}
+    .record-select-cell{text-align:center;width:36px}
+    .upload-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .bulk-percent,.percent-input{width:78px;min-height:35px;padding:6px 8px;border:1px solid #cfd9e2;border-radius:7px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums}
+    .percent-input{width:58px;min-height:29px;padding:4px;font-size:10px}
+    .detail-table{min-width:1800px;table-layout:auto}
+    .pivot-table{width:max-content;min-width:100%}
+    .pivot-table th,.pivot-table td{text-align:center}
+    .pivot-table th:first-child,.pivot-table td:first-child{text-align:left;min-width:220px}
+    .pivot-cell{cursor:pointer}.pivot-cell:hover{background:#fff1e6;color:#9b4e12;font-weight:750}
+    .reason-summary-row{cursor:pointer}.reason-summary-row:hover{background:#fff8f2}
+    .money-stack strong,.money-stack span{display:block}.money-stack span{color:var(--muted);font-size:9px}
+    @media(max-width:1150px){.upload-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:900px){.upload-grid{grid-template-columns:1fr}}
+    .bulkbar{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin:0 0 12px;padding:15px 16px;border:1px solid #f1d3c0;border-radius:12px;background:linear-gradient(135deg,#fffaf6 0%,#fff 100%);box-shadow:0 3px 12px rgba(83,48,24,.04)}
+    .bulkbar-heading,.bulkbar-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .bulkbar-kicker{color:#a85a2b;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+    .bulkbar-title{margin-top:2px;color:var(--ink);font-size:13px;font-weight:750}
+    .bulk-count{display:inline-flex;align-items:center;min-height:30px;margin:0;padding:5px 11px;border:1px solid #f2d5c2;border-radius:999px;background:#fff;color:#974719;font-size:11px;font-weight:750}
+    .bulkbar-fields{display:grid;grid-template-columns:minmax(260px,1fr) 150px auto;align-items:end;gap:10px}
+    .bulk-field{display:flex;flex-direction:column;gap:5px;min-width:0;color:#526274;font-size:10px;font-weight:750;letter-spacing:.03em;text-transform:uppercase}
+    .bulk-field .bulk-reason,.bulk-field .bulk-percent{width:100%;min-height:38px;margin:0;padding:8px 10px;border:1px solid #d5dee6;border-radius:8px;background:#fff;color:var(--ink);font-size:12px;font-weight:450;letter-spacing:normal;text-transform:none;text-align:left}
+    .bulk-field .bulk-reason:focus,.bulk-field .bulk-percent:focus{outline:2px solid #f4b080;border-color:var(--orange)}
+    #bulkExemptBtn{min-height:38px;padding:8px 14px;white-space:nowrap}
+    .bulkbar-footer{padding-top:10px;border-top:1px solid #f1e5dc}
+    .bulkbar-hint{color:var(--muted);font-size:11px}
+    .bulkbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .bulkbar-actions .btn{min-height:34px;padding:7px 10px;font-size:11px}
+    .detail-table-wrap{scrollbar-color:#bdc9d4 #f1f4f7;scrollbar-width:thin}
+    .detail-table{width:max-content;min-width:2100px;table-layout:auto;white-space:normal}
+    .detail-table th,.detail-table td{padding:8px 9px;font-size:11px;white-space:normal;overflow-wrap:anywhere;vertical-align:top}
+    .detail-table th:nth-child(1),.detail-table td:nth-child(1){width:42px;min-width:42px;text-align:center}
+    .detail-table th:nth-child(2),.detail-table td:nth-child(2){width:95px;min-width:95px;text-align:center}
+    .detail-table th:nth-child(3),.detail-table td:nth-child(3){width:120px;min-width:120px}
+    .detail-table th:nth-child(4),.detail-table td:nth-child(4){width:155px;min-width:155px}
+    .detail-table th:nth-child(5),.detail-table td:nth-child(5){width:120px;min-width:120px}
+    .detail-table th:nth-child(6),.detail-table td:nth-child(6){width:210px;min-width:210px}
+    .detail-table th:nth-child(7),.detail-table td:nth-child(7){width:175px;min-width:175px}
+    .detail-table th:nth-child(8),.detail-table td:nth-child(8){width:170px;min-width:170px}
+    .detail-table th:nth-child(9),.detail-table td:nth-child(9){width:110px;min-width:110px}
+    .detail-table th:nth-child(10),.detail-table td:nth-child(10){width:120px;min-width:120px}
+    .detail-table th:nth-child(11),.detail-table td:nth-child(11){width:190px;min-width:190px}
+    .detail-table th:nth-child(12),.detail-table td:nth-child(12){width:185px;min-width:185px}
+    .detail-table th:nth-child(13),.detail-table td:nth-child(13){width:170px;min-width:170px}
+    .detail-table th:nth-child(14),.detail-table td:nth-child(14){width:140px;min-width:140px}
+    .detail-table th:nth-child(15),.detail-table td:nth-child(15){width:210px;min-width:210px}
+    .detail-table th:nth-child(16),.detail-table td:nth-child(16){width:210px;min-width:210px}
+    .detail-table-wrap{max-height:68vh;min-height:220px;overflow:auto;overscroll-behavior:contain}
+    .detail-table thead th:nth-child(-n+4){position:sticky;top:0;z-index:4;background:#f1f5f8}
+    .detail-table tbody td:nth-child(1){position:sticky;left:0;z-index:2;background:#fff}
+    .detail-table tbody td:nth-child(2){position:sticky;left:42px;z-index:2;background:#fff}
+    .detail-table tbody td:nth-child(3){position:sticky;left:137px;z-index:2;background:#fff}
+    .detail-table tbody td:nth-child(4){position:sticky;left:257px;z-index:2;background:#fff;box-shadow:5px 0 7px -7px #23384c}
+    .detail-table thead th:nth-child(1){left:0}.detail-table thead th:nth-child(2){left:42px}.detail-table thead th:nth-child(3){left:137px}.detail-table thead th:nth-child(4){left:257px;box-shadow:5px 0 7px -7px #23384c}
+    .detail-table tbody tr[data-row]:hover td{background:#fff8f2}
+    .detail-table-nav{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#f8fafc}
+    .detail-table-nav-copy{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:11px}
+    .detail-table-nav-copy strong{color:var(--ink);font-size:12px}
+    .detail-table-nav-actions{display:flex;gap:6px}
+    .detail-table-nav-actions .btn{min-height:30px;padding:5px 9px;font-size:11px}
+    @media(max-width:900px){.bulkbar-fields{grid-template-columns:minmax(0,1fr) 140px}.bulkbar-fields #bulkExemptBtn{grid-column:1/-1;justify-self:start}.detail-table{min-width:2100px;table-layout:auto}}
+    @media(max-width:600px){.bulkbar{padding:12px}.bulkbar-fields{grid-template-columns:1fr}.bulkbar-fields #bulkExemptBtn{grid-column:auto;width:100%}.bulkbar-actions{width:100%}.bulkbar-actions .btn{flex:1 1 auto}}
+    .manual-zone-select{display:block;width:100%;min-width:150px;min-height:34px;margin-top:7px;padding:6px 8px;border:1px solid #cfd9e2;border-radius:7px;background:#fff;color:var(--ink);font-size:11px;line-height:1.35}
+    .manual-zone-select:focus{outline:2px solid #f4b080;border-color:var(--orange)}
+    .manual-zone-select:disabled{background:#f3f5f7;color:var(--muted)}
+    body:not(.exo-ready) .shell{display:none}
+    body.exo-ready #moduleGate{display:none}
+    .module-gate{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 12% 15%,#fff0e4 0,transparent 32%),#f1f4f7}
+    .module-gate-card{width:min(460px,100%);padding:28px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 55px rgba(22,43,62,.12)}
+    .module-gate-card h1{font-size:23px;line-height:1.25;margin:14px 0 6px}.module-gate-card p{margin:0 0 14px;color:var(--muted);font-size:13px}
+    .module-gate-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:13px;background:var(--orange);color:#fff;font-weight:850;font-size:18px}
+    #moduleGateMessage.error{color:#a52a22}
+    @media(max-width:600px){.module-gate-card{padding:22px}.top-actions{margin-top:14px}}
+  </style>
+  <style>
+    /* En escritorio, aprovecha el ancho disponible y distribuye las 15 columnas. */
+    .shell{width:100%;max-width:none;padding:14px clamp(10px,1.25vw,20px)}
+    #recordsTable{width:100%;min-width:0;table-layout:fixed}
+    #recordsTable th,#recordsTable td{padding:7px 4px;white-space:normal;overflow-wrap:anywhere}
+    #recordsTable th{font-size:9px;line-height:1.2;text-align:center}
+    #recordsTable td{font-size:10px}
+    #recordsTable td.num{font-size:9px;white-space:nowrap}
+    #recordsTable th:nth-child(1),#recordsTable td:nth-child(1){width:2.5%;text-align:center}
+    #recordsTable th:nth-child(2),#recordsTable td:nth-child(2){width:4.5%}
+    #recordsTable th:nth-child(3),#recordsTable td:nth-child(3){width:7%}
+    #recordsTable th:nth-child(4),#recordsTable td:nth-child(4){width:4.8%}
+    #recordsTable th:nth-child(5),#recordsTable td:nth-child(5){width:5%}
+    #recordsTable th:nth-child(6),#recordsTable td:nth-child(6){width:5.5%}
+    #recordsTable th:nth-child(7),#recordsTable td:nth-child(7){width:9.2%}
+    #recordsTable th:nth-child(8),#recordsTable td:nth-child(8){width:7.7%}
+    #recordsTable th:nth-child(9),#recordsTable td:nth-child(9){width:8.2%}
+    #recordsTable th:nth-child(10),#recordsTable td:nth-child(10){width:7.8%}
+    #recordsTable th:nth-child(11),#recordsTable td:nth-child(11){width:7.8%}
+    #recordsTable th:nth-child(12),#recordsTable td:nth-child(12){width:10%}
+    #recordsTable th:nth-child(13),#recordsTable td:nth-child(13){width:8.2%}
+    #recordsTable th:nth-child(14),#recordsTable td:nth-child(14){width:5.8%}
+    #recordsTable th:nth-child(15),#recordsTable td:nth-child(15){width:6%}
+    #recordsTable .liquidation-status-select{width:100%;min-width:0;max-width:100%;padding:4px 3px;font-size:9px}
+    #recordsTable .signature-rate-editor{min-width:0;gap:2px;justify-content:flex-end}
+    #recordsTable .signature-rate-input{width:calc(100% - 12px);min-width:0;padding:4px 3px;font-size:9px}
+    #recordsTable .delete-record-btn{padding:4px 5px;font-size:9px}
+    .liquidation-money-input{display:flex;align-items:center;justify-content:flex-end;gap:3px;width:100%;min-width:0}
+    .liquidation-money-input .currency-prefix{flex:0 0 auto;font-size:10px;font-weight:750;color:#174f8a}
+    .liquidation-amount-input{width:calc(100% - 19px);min-width:0;max-width:100%;padding:5px 3px;font-size:10px}
+    @media(max-width:1150px){#recordsTable{min-width:1120px}}
+    @media(max-width:600px){.shell{padding:10px}}
+  </style>
+</head>
+<body>
+  <section class="module-gate" id="moduleGate" aria-labelledby="moduleGateTitle" aria-live="polite">
+    <div class="module-gate-card">
+      <div class="module-gate-icon">PD</div>
+      <div class="eyebrow" style="margin-top:16px">Portal Revisión de Guías · V16</div>
+      <h1 id="moduleGateTitle">Módulo Penalidades</h1>
+      <p id="moduleGateMessage">Verificando la sesión del portal…</p>
+      <a class="btn primary" href="./index.html">Volver al portal e iniciar sesión</a>
+    </div>
+  </section>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">EX</div>
+        <div><div class="eyebrow">Portal V16 · Módulo de gestión</div><h1>Penalidades y exoneraciones</h1></div>
+      </div>
+      <div class="top-actions"><span id="moduleIdentity" class="note"></span><button type="button" class="btn" id="importStateBtn" disabled>Importar respaldo JSON</button><input id="stateBackupInput" type="file" accept=".json,application/json" hidden><button type="button" class="btn" id="exportStateBtn" disabled>Descargar respaldo</button><a class="btn" href="./index.html">← Revisión de Guías</a></div>
+    </header>
+
+    <section class="panel" aria-labelledby="sourcesHeading">
+      <div class="panel-head">
+        <div><h2 id="sourcesHeading"><span class="step">1</span>Archivos fuente</h2><p>Importa las liquidaciones del periodo y carga por separado brechas, exportaciones de guía y zonificación.</p></div>
+        <span class="note">Formatos Excel .xlsx y .xls</span>
+      </div>
+      <div class="upload-grid">
+        <article class="upload-card" id="cardPenalties">
+          <div><div class="upload-title">Liquidaciones de penalidades</div><div class="note">Puedes cargar varios Excel. Se crean registros por periodo y PDV desde “LISTA DETALLADA DE PENALIDAD”.</div></div>
+          <div><label for="filePenalties">Agregar Excel(s)</label><input id="filePenalties" type="file" accept=".xlsx,.xls" multiple><div id="statePenalties" class="file-state">Sin archivos cargados</div></div>
+        </article>
+        <article class="upload-card" id="cardBreaches">
+          <div><div class="upload-title">Brecha máxima por guía y PDV</div><div class="note">Al cargarla, todas las filas con guía y PDV se asignan al periodo seleccionado. La fecha del archivo no excluye coincidencias; el cruce usa PDV + guía.</div></div>
+          <div><label for="fileBreaches">Seleccionar Excel</label><input id="fileBreaches" type="file" accept=".xlsx,.xls"><div id="stateBreaches" class="file-state">Sin archivo cargado</div></div>
+        </article>
+        <article class="upload-card" id="cardGuides">
+          <div><div class="upload-title">Exportaciones de guía</div><div class="note">Se obtiene distrito, provincia, departamento, operación más reciente, escaneo y firma. Puedes sumar exportaciones.</div></div>
+          <div><label for="fileGuides">Agregar Excel(s)</label><input id="fileGuides" type="file" accept=".xlsx,.xls" multiple><div id="stateGuides" class="file-state">Sin archivos cargados</div></div>
+        </article>
+        <article class="upload-card" id="cardZones">
+          <div><div class="upload-title">Zonificación</div><div class="note">Tipo de zona, nombre de zona y días desde “SLA ASIGNADO (DIAS)”.</div></div>
+          <div><label for="fileZones">Seleccionar Excel</label><input id="fileZones" type="file" accept=".xlsx,.xls"><div id="stateZones" class="file-state">Sin archivo cargado</div></div>
+        </article>
+      </div>
+      <div class="source-footer">
+        <div id="sourceDiag" class="source-diag">Carga penalidades para crear liquidaciones. Brechas, exportación y zonificación se pueden actualizar después.</div>
+        <span id="storageState" class="save-state">Conectando con Supabase…</span><button id="retrySyncBtn" type="button" class="btn" hidden style="padding:6px 9px;font-size:11px">Reintentar sincronización</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="newRecordHeading">
+      <div class="panel-head">
+        <div><h2 id="newRecordHeading"><span class="step">2</span>Periodo y PDV</h2><p>Abre un registro guardado o crea uno desde las penalidades importadas.</p></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label for="periodInput">Periodo</label><input id="periodInput" type="month" required></div>
+        <div class="field"><label for="pdvInput">PDV</label><select id="pdvInput"><option value="">Carga el archivo de penalidades</option></select></div>
+        <button class="btn primary" id="openCreateBtn">Crear / abrir registro</button>
+        <div class="note form-help">Se crea un registro por cada combinación de periodo y PDV. Al reabrirlo, podrás editar las decisiones y sus motivos.</div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="historyHeading">
+      <div class="panel-head">
+        <div><h2 id="historyHeading"><span class="step">3</span>Registros guardados</h2><p>Selecciona una fila para abrir el detalle o elimínala si ya no necesitas conservarla.</p></div>
+        <div class="summary-filters">
+          <div class="field"><label>Periodo</label><div class="multi-picker" id="summaryPeriod"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por periodo" aria-haspopup="true" aria-expanded="false" aria-controls="summaryPeriodMenu">Todos</button><div class="multi-picker-menu" id="summaryPeriodMenu" role="group" hidden></div></div></div>
+          <div class="field"><label>PDV</label><div class="multi-picker" id="summaryPdv"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por PDV" aria-haspopup="true" aria-expanded="false" aria-controls="summaryPdvMenu">Todos</button><div class="multi-picker-menu" id="summaryPdvMenu" role="group" hidden></div></div></div>
+          <div class="field"><label>Grupo / zona</label><div class="multi-picker" id="summaryGroup"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por grupo o zona" aria-haspopup="true" aria-expanded="false" aria-controls="summaryGroupMenu">Todos</button><div class="multi-picker-menu" id="summaryGroupMenu" role="group" hidden></div></div></div>
+          <div class="field"><label>Estado</label><div class="multi-picker" id="summaryStatus"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por estado de liquidación" aria-haspopup="true" aria-expanded="false" aria-controls="summaryStatusMenu">Todos</button><div class="multi-picker-menu" id="summaryStatusMenu" role="group" hidden></div></div></div>
+          <button type="button" class="btn global-exemption-filter" id="onlyNonExemptBtn" aria-pressed="false" title="Oculta en todas las tablas las penalidades con exoneración mayor a 0%">Solo no exoneradas</button>
+        </div>
+      </div>
+      <div class="group-management">
+        <div class="group-create"><div class="field"><label for="groupNameInput">Crear grupo de liquidaciones</label><input id="groupNameInput" type="text" maxlength="80" placeholder="Ej. Áncash"></div><button type="button" class="btn primary" id="createGroupBtn">Crear grupo</button></div>
+        <div class="group-assign"><span id="recordSelectionCount" class="group-selection-count">0 liquidaciones seleccionadas</span><div class="field"><label for="bulkGroupSelect">Agregar seleccionadas a</label><select id="bulkGroupSelect"><option value="">Selecciona un grupo</option><option value="__SIN_GRUPO__">Sin grupo</option></select></div><button type="button" class="btn" id="assignGroupBtn" disabled>Asignar grupo</button><button type="button" class="btn" id="clearRecordSelectionBtn">Limpiar selección</button></div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="recordsTable">
+          <thead><tr><th class="record-select-cell"><input type="checkbox" id="selectAllVisibleRecords" aria-label="Seleccionar todas las liquidaciones visibles"></th><th>Periodo</th><th>PDV</th><th class="num">Penalidades</th><th class="num">Exoneradas</th><th class="num">No exoneradas</th><th class="num liquidation-amount-head">Monto de liquidación</th><th class="num">Penalidad total</th><th class="num">Monto exonerado</th><th class="num">Saldo de penalidad</th><th class="num liquidation-final-head">Liq. final</th><th>Actualizado</th><th>Estado</th><th>Tasa de firma (%)</th><th>Acciones</th></tr></thead>
+          <tbody id="recordsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel detail" id="detailPanel" hidden aria-labelledby="detailHeading">
+      <div class="panel-head detail-head">
+        <div><h2 class="detail-title" id="detailHeading">Detalle de penalidades</h2><p id="detailSubtitle"></p></div>
+        <div class="detail-actions"><span id="saveState" class="save-state">Registro guardado</span><button class="btn soft" id="exportXlsxBtn">Descargar Excel</button><button class="btn" id="syncBtn">Actualizar desde archivos</button><button class="btn primary" id="saveBtn">Guardar cambios</button></div>
+      </div>
+      <div class="metrics" id="metrics"></div>
+      <div class="breakdown">
+        <h3>Resumen por penalización y motivo de decisión</h3><p class="note">Cada fila agrupa una penalización y un motivo. Los registros sin motivo aparecen como “Sin motivo de decisión”. Usa + o − para expandir los subtipos de Brecha o SLA; haz clic en una fila para filtrar el detalle.</p>
+        <div class="table-wrap"><table class="data-table"><thead><tr><th>Penalización / subtipo</th><th>Motivo de decisión</th><th class="num">Exoneradas (N.º)</th><th class="num">No exoneradas (N.º)</th><th class="num">Filas</th><th class="num">Guías únicas</th><th class="num">Penalidad total (S/)</th><th class="num">Monto exonerado (S/)</th><th class="num">Saldo (S/)</th></tr></thead><tbody id="breakdownBody"></tbody></table></div>
+      </div>
+      <div class="breakdown">
+        <h3>Brecha de actualización de penalidad</h3><p class="note">Las guías y subtipos salen de “LISTA DETALLADA DE PENALIDAD”; las columnas de operación reciente vienen del match con “Brecha máxima por guía y PDV”. Si no hay match, verás “Sin dato”. Expande para ver los subtipos y haz clic en una celda para filtrar el detalle.</p>
+        <div class="table-wrap"><table class="data-table pivot-table"><thead id="breachMatrixHead"></thead><tbody id="breachMatrixBody"></tbody></table></div>
+      </div>
+      <div class="breakdown">
+        <h3>Resumen por SLA y escaneo / firma</h3><p class="note">Las filas usan el subtipo SLA de la penalidad. Las columnas combinan el tipo de escaneo más reciente con el estatus de firma.</p>
+        <div class="table-wrap"><table class="data-table pivot-table"><thead id="slaMatrixHead"></thead><tbody id="slaMatrixBody"></tbody></table></div>
+      </div>
+      <div class="detail-tools">
+        <div class="filters">
+          <div class="filter search"><label for="filterSearch">Buscar guía o distrito</label><input id="filterSearch" type="search" placeholder="Número de guía, distrito…"></div>
+          <div class="filter"><label>Penalización</label><div class="multi-picker" id="filterPenalty"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por penalización" aria-haspopup="true" aria-expanded="false" aria-controls="filterPenaltyMenu">Todas</button><div class="multi-picker-menu" id="filterPenaltyMenu" role="group" hidden></div></div></div>
+          <div class="filter"><label>Brecha (columna E)</label><div class="multi-picker" id="filterSourceBreach"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por la columna E del Excel de penalidades" aria-haspopup="true" aria-expanded="false" aria-controls="filterSourceBreachMenu">Todos</button><div class="multi-picker-menu" id="filterSourceBreachMenu" role="group" hidden></div></div></div>
+          <div class="filter"><label>Brecha / SLA</label><div class="multi-picker" id="filterBreachSla"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por brecha o SLA" aria-haspopup="true" aria-expanded="false" aria-controls="filterBreachSlaMenu">Todos</button><div class="multi-picker-menu" id="filterBreachSlaMenu" role="group" hidden></div></div></div>
+          <div class="filter"><label>Tipo de operación más reciente</label><div class="multi-picker" id="filterOperation"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por tipo de operación más reciente" aria-haspopup="true" aria-expanded="false" aria-controls="filterOperationMenu">Todos</button><div class="multi-picker-menu" id="filterOperationMenu" role="group" hidden></div></div></div>
+          <div class="filter"><label>Motivo</label><div class="multi-picker" id="filterReason"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por motivo" aria-haspopup="true" aria-expanded="false" aria-controls="filterReasonMenu">Todos</button><div class="multi-picker-menu" id="filterReasonMenu" role="group" hidden></div></div></div>
+          <div class="filter"><label>Exoneración (%)</label><div class="multi-picker" id="filterPercent"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por porcentaje de exoneración" aria-haspopup="true" aria-expanded="false" aria-controls="filterPercentMenu">Todos</button><div class="multi-picker-menu" id="filterPercentMenu" role="group" hidden></div></div></div>
+          <div class="filter"><label>Tipo de zona</label><div class="multi-picker" id="filterZone"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por tipo de zona" aria-haspopup="true" aria-expanded="false" aria-controls="filterZoneMenu">Todos</button><div class="multi-picker-menu" id="filterZoneMenu" role="group" hidden></div></div></div>
+          <div class="filter"><label>SLA asignado (días)</label><div class="multi-picker" id="filterSlaDays"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por SLA asignado en días" aria-haspopup="true" aria-expanded="false" aria-controls="filterSlaDaysMenu">Todos</button><div class="multi-picker-menu" id="filterSlaDaysMenu" role="group" hidden></div></div></div>
+          <div class="filter"><label>Exoneración</label><div class="multi-picker" id="filterExemption"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por exoneración" aria-haspopup="true" aria-expanded="false" aria-controls="filterExemptionMenu">Todas</button><div class="multi-picker-menu" id="filterExemptionMenu" role="group" hidden></div></div></div>
+          <div class="filter"><label>Último tipo de escaneo</label><div class="multi-picker" id="filterScan"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por último tipo de escaneo" aria-haspopup="true" aria-expanded="false" aria-controls="filterScanMenu">Todos</button><div class="multi-picker-menu" id="filterScanMenu" role="group" hidden></div></div></div>
+          <div class="filter"><label>Estatus de firma</label><div class="multi-picker" id="filterSignature"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por estatus de firma" aria-haspopup="true" aria-expanded="false" aria-controls="filterSignatureMenu">Todos</button><div class="multi-picker-menu" id="filterSignatureMenu" role="group" hidden></div></div></div>
+        </div>
+        <span class="note">Cada filtro permite seleccionar varios valores. <span id="visibleCount"></span></span>
+        <button id="clearMatrixGuideFilterBtn" class="btn soft" type="button" hidden>Quitar filtro de guías de Brecha</button>
+      </div>
+      <div class="bulkbar">
+        <div class="bulkbar-heading">
+          <div><div class="bulkbar-kicker">Acciones sobre la selección</div><div class="bulkbar-title">Aplica una decisión a varias penalidades</div></div>
+          <span id="bulkCount" class="bulk-count">0 penalidades seleccionadas</span>
+        </div>
+        <div class="bulkbar-fields">
+          <label class="bulk-field" for="bulkReason"><span>Motivo común de decisión</span><input id="bulkReason" class="bulk-reason" type="text" maxlength="300" placeholder="Escribe el motivo para las penalidades seleccionadas"></label>
+          <label class="bulk-field" for="bulkPercent"><span>Exoneración (%)</span><input id="bulkPercent" class="bulk-percent" type="number" min="0" max="100" step="1" value="100" aria-label="Porcentaje de exoneración para la selección"></label>
+          <button class="btn primary" id="bulkExemptBtn" disabled>Aplicar decisión</button>
+        </div>
+        <div class="bulkbar-footer">
+          <span class="bulkbar-hint">0% = no exonerar · 100% = saldo S/ 0</span>
+          <div class="bulkbar-actions"><button class="btn danger" id="bulkRemoveExemptionBtn" disabled title="Poner en 0% las penalidades seleccionadas">Quitar exoneración</button><button class="btn danger" id="bulkRemoveReasonBtn" disabled title="Borrar el motivo de decisión de las penalidades seleccionadas">Quitar motivo</button><button class="btn" id="copySelectedGuidesBtn" disabled>Copiar guías seleccionadas</button><button class="btn" id="selectVisibleBtn">Seleccionar visibles</button><button class="btn" id="clearSelectionBtn">Limpiar selección</button></div>
+        </div>
+      </div>
+      <div class="detail-table-nav"><div class="detail-table-nav-copy"><strong>Detalle completo</strong><span>Guía, fecha, PDV y casilla se mantienen visibles al desplazarte por las demás columnas.</span></div><div class="detail-table-nav-actions"><button type="button" class="btn" id="detailScrollLeft" aria-label="Desplazar detalle a la izquierda" title="Desplazar a la izquierda">←</button><button type="button" class="btn" id="detailScrollRight" aria-label="Desplazar detalle a la derecha" title="Desplazar a la derecha">→</button></div></div>
+      <div class="table-wrap detail-table-wrap" id="detailTableWrap">
+        <table class="data-table detail-table">
+          <thead><tr><th><input type="checkbox" id="selectAllVisible" aria-label="Seleccionar todas las filas visibles"></th><th>Fecha</th><th>PDV</th><th>Número de guía</th><th>Exoneración (%)</th><th>Penalización / Brecha / SLA</th><th>Tipo de operación más reciente</th><th>Penalidad original / saldo (S/)</th><th>Tipo de zona</th><th>SLA asignado (días)</th><th>Zona de zonificación / asignación manual</th><th>Destino: distrito / provincia / departamento</th><th>Tipo de escaneo / firma</th><th>Fecha y hora del último escaneo</th><th>Motivo / observaciones de origen</th><th>Motivo de decisión</th></tr></thead>
+          <tbody id="detailBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="bottom-note"><span>Se cruza Brecha por el periodo seleccionado al cargarla + PDV + guía. Todas las filas con guía y PDV se consideran; Fecha y Periodo originales no filtran el match. Escaneo, firma y ubicación vienen de Exportación de guía.</span><span>Se normalizan tildes y se reconocen SAPALLANCA = SAPALLANGA y SAN JUAN DE YSCOS = SAN JUAN DE ISCOS.</span><span>La descarga incluye GUIA, PDV, PORCENTAJE DE EXONERACION y MOTIVO DE DECISION.</span></footer>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="text/plain" id="appLogic">
+  (() => {
+    'use strict';
+    const emptyState = () => ({version:1,serverRevision:0,sources:{penalties:null,breaches:null,guides:null,zones:null},records:[],groups:[],deletedRecords:{}});
+    let state = readState();
+    let currentRecordId = null;
+    let selectedIds = new Set();
+    let selectedRecordIds = new Set();
+    let onlyNonExempt = false;
+    const UNASSIGNED_GROUP='__SIN_GRUPO__';
+    const LIQUIDATION_STATUSES=[{value:'pendiente',label:'Pendiente'},{value:'en_proceso',label:'En proceso'},{value:'finalizado',label:'Finalizado'},{value:'notificado',label:'Notificado'},{value:'en_revalidacion',label:'En revalidación'}];
+    const pickerIds=['summaryPeriod','summaryPdv','summaryGroup','summaryStatus','filterPenalty','filterSourceBreach','filterBreachSla','filterOperation','filterReason','filterPercent','filterZone','filterSlaDays','filterExemption','filterScan','filterSignature'];
+    const detailPickerIds=pickerIds.filter(id=>id.startsWith('filter'));
+    const pickerSelections=Object.fromEntries(pickerIds.map(id=>[id,null]));
+    const pickerOptions=Object.create(null),pickerAllLabels=Object.create(null);
+    const expandedBreakdownGroups=new Set();
+    let matrixGuideSelection = null;
+    let dirty = false;
+    let toastTimer = null;
+    const cloudMode = typeof google !== 'undefined' && !!(google.script && google.script.run);
+    let cloudPending = false, cloudInFlight = false, cloudTimer = null, cloudNotify = false, appReady = false;
+    const $ = id => document.getElementById(id);
+    const fmtMoney = n => new Intl.NumberFormat('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n)||0);
+    const fmtCount = n => new Intl.NumberFormat('es-PE',{maximumFractionDigits:0}).format(Number(n)||0);
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const norm = value => String(value ?? '').normalize('NFKD').replace(/[\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f]/g,'').toUpperCase().replace(/[^A-Z0-9\u3400-\u9FFF]+/g,' ').trim().replace(/\s+/g,' ');
+    const txt = value => value == null ? '' : String(value).trim();
+    function liquidationStatusValue(value){return LIQUIDATION_STATUSES.some(status=>status.value===value)?value:'pendiente';}
+    function renderLiquidationStatus(record){const current=liquidationStatusValue(record.status);return `<select class="liquidation-status-select" data-record-id="${escapeHtml(record.id)}" aria-label="Estado de liquidación ${escapeHtml(periodLabel(record.period))} ${escapeHtml(record.pdv)}">${LIQUIDATION_STATUSES.map(status=>`<option value="${status.value}" ${current===status.value?'selected':''}>${status.label}</option>`).join('')}</select>`;}
+    function signatureRateValue(value){return value==null||txt(value)===''?null:Math.round(clampPercent(value)*100)/100;}
+    function liquidationAmountValue(value){if(value==null||txt(value)==='')return null;let raw=typeof value==='number'?String(value):String(value).trim().replace(/S\//gi,'').replace(/\s/g,'').replace(/[^\d,.-]/g,'');if(!raw)return null;if(typeof value!=='number'){if(raw.includes(',')&&raw.includes('.'))raw=raw.lastIndexOf(',')>raw.lastIndexOf('.')?raw.replace(/\./g,'').replace(',','.'):raw.replace(/,/g,'');else if(raw.includes(','))raw=raw.replace(',','.');}const amount=Number(raw);return Number.isFinite(amount)&&amount>=0&&amount<=999999999999.99?Math.round(amount*100)/100:null;}
+    function renderLiquidationAmount(record){const amount=liquidationAmountValue(record.liquidationAmount),label='Monto de liquidación para '+periodLabel(record.period)+' '+record.pdv;return '<div class="liquidation-money-input"><span class="currency-prefix" aria-hidden="true">S/</span><input class="liquidation-amount-input" type="text" inputmode="decimal" maxlength="18" data-record-id="'+escapeHtml(record.id)+'" value="'+(amount===null?'':escapeHtml(fmtMoney(amount)))+'" placeholder="0.00" aria-label="'+escapeHtml(label)+'" title="Monto de liquidación en soles. Se muestra con dos decimales."></div>';}
+    function renderSignatureRate(record){const rate=signatureRateValue(record.signatureRate);return `<div class="signature-rate-editor"><input class="signature-rate-input" type="number" min="0" max="100" step="0.01" data-record-id="${escapeHtml(record.id)}" value="${rate==null?'':rate}" aria-label="Tasa de firma en porcentaje para ${escapeHtml(periodLabel(record.period))} ${escapeHtml(record.pdv)}"><span>%</span></div>`;}
+    const idPart = value => norm(value).replace(/\s/g,'');
+    const pdvName = value => txt(value).split('|')[0].trim();
+    function periodFromDate(value){const iso=parseDate(value);return iso?iso.slice(0,7):'';}
+    function clampPercent(value){const n=Number(value);return Number.isFinite(n)?Math.max(0,Math.min(100,n)):0;}
+    function exemptionPercent(item){return item?.exemptionPercent==null?(item?.exonerated?100:0):clampPercent(item.exemptionPercent);}
+    function exemptionAmount(item){return (Number(item?.cost)||0)*exemptionPercent(item)/100;}
+    function balanceAmount(item){return (Number(item?.cost)||0)-exemptionAmount(item);}
+    function visibleSummaryItems(record){const items=Array.isArray(record?.items)?record.items:[];return onlyNonExempt?items.filter(item=>exemptionPercent(item)===0):items;}
+    function readState(){return emptyState();}
+    function persist(showMessage=false){
+      if(cloudMode){cloudPending=true;cloudNotify=cloudNotify||showMessage;$('storageState').textContent='Sincronizando con Supabase…';clearTimeout(cloudTimer);cloudTimer=setTimeout(flushCloudSave,showMessage?0:350);return true;}
+      $('storageState').textContent='No hay conexión con el almacenamiento Supabase';if(showMessage)notify('No se pudo guardar en Supabase.',true);return false;
+    }
+    function flushCloudSave(){
+      if(!cloudMode||!cloudPending||cloudInFlight)return;cloudPending=false;cloudInFlight=true;const snapshot=JSON.parse(JSON.stringify(state));
+      google.script.run.withSuccessHandler(result=>{state.serverRevision=Number(result?.revision)||state.serverRevision;$('storageState').textContent='Guardado en Supabase';$('retrySyncBtn').hidden=true;$('retrySyncBtn').disabled=false;if(cloudNotify)notify('Cambios guardados en Supabase.');if(!dirty){$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';}cloudNotify=false;cloudInFlight=false;if(cloudPending)setTimeout(flushCloudSave,0);})
+        .withFailureHandler(error=>{$('storageState').textContent='Error al guardar en Supabase';$('retrySyncBtn').hidden=false;$('retrySyncBtn').disabled=false;notify(`No se pudo sincronizar con Supabase: ${error?.message||error}. Tus cambios siguen en esta pestaña; corrige el problema y pulsa Reintentar sincronización.`,true);cloudNotify=false;cloudInFlight=false;cloudPending=true;})
+        .saveAppState(snapshot);
+    }
+    function notify(message,error=false){const el=$('toast');el.textContent=message;el.style.background=error?'#8b211a':'#203040';el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3500);}
+    function asString(value){if(value instanceof Date)return value.toISOString().replace('T',' ').slice(0,19);return txt(value);}
+    function parseDate(value){
+      if(value instanceof Date&&!isNaN(value))return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`;
+      if(typeof value==='number'&&Number.isFinite(value)&&value>1000){const d=new Date(Date.UTC(1899,11,30)+value*86400000);return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;}
+      const s=txt(value);if(!s)return '';
+      let m=s.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})/);if(m)return `${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+      m=s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);if(m)return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+      const d=new Date(s);if(!isNaN(d))return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      return '';
+    }
+    function parseMoney(value){
+      if(typeof value==='number'&&Number.isFinite(value))return value;
+      let s=txt(value).replace(/S\s*\/?\s*/ig,'').replace(/[^0-9,.-]/g,'');if(!s)return 0;
+      if(s.includes(',')&&s.includes('.'))s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');
+      else if(s.includes(','))s=s.replace(',','.');
+      const n=Number(s);return Number.isFinite(n)?n:0;
+    }
+    function readRows(file,preferredSheet=''){
+      return new Promise((resolve,reject)=>{
+        if(!window.XLSX){reject(new Error('No se pudo cargar el lector de Excel. Revisa la conexión a internet y vuelve a abrir el HTML.'));return;}
+        const reader=new FileReader();reader.onerror=()=>reject(new Error('No se pudo leer el archivo seleccionado.'));
+        reader.onload=event=>{try{
+          const wb=XLSX.read(event.target.result,{type:'array',cellDates:true});if(!wb.SheetNames.length)throw new Error('El archivo no contiene hojas.');
+          let sheetName=wb.SheetNames[0];if(preferredSheet){const wanted=norm(preferredSheet);const match=wb.SheetNames.find(name=>norm(name)===wanted);if(match)sheetName=match;else if(wb.SheetNames.length>1)throw new Error(`No se encontró la hoja “${preferredSheet}”. Hojas disponibles: ${wb.SheetNames.join(', ')}.`);}
+          const sheet=wb.Sheets[sheetName];if(!sheet)throw new Error('No se pudo abrir la hoja seleccionada.');
+          // Corrige hojas que declaran A1 como dimensión aunque tengan celdas en filas posteriores.
+          const cells=Object.keys(sheet).filter(k=>/^[A-Z]+\d+$/.test(k));if(cells.length){let mr=0,mc=0;for(const address of cells){const p=XLSX.utils.decode_cell(address);mr=Math.max(mr,p.r);mc=Math.max(mc,p.c);}sheet['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:mr,c:mc}});}
+          const rows=XLSX.utils.sheet_to_json(sheet,{defval:'',raw:true});if(!rows.length)throw new Error(`La hoja “${sheetName}” no contiene registros debajo de los encabezados.`);resolve(rows);
+        }catch(e){reject(e);}};
+        reader.readAsArrayBuffer(file);
+      });
+    }
+    function getValue(row,aliases){
+      const keys=Object.keys(row||{});for(const alias of aliases){const match=keys.find(k=>norm(k)===norm(alias));if(match!==undefined)return row[match];}
+      for(const alias of aliases){const a=norm(alias);const match=keys.find(k=>norm(k).includes(a));if(match!==undefined)return row[match];}
+      return '';
+    }
+    function readAssignedSlaDays(row){
+      return getValue(row,['SLA ASIGNADO (DIAS)','SLA ASIGNADO (DÍAS)','SLA asignado (días)','SLA asignado dias','DÍAS SLA ASIGNADO','SLA (días)']);
+    }
+    function transformRows(slot,rawRows){
+      if(slot==='penalties')return rawRows.map((r,i)=>{
+        const dateValue=getValue(r,['Fecha / 日期','Fecha','Date','Periodo','Período']);const dateRaw=asString(dateValue);
+        return {sourceRow:i+2,dateRaw,dateISO:parseDate(dateValue),pdv:pdvName(getValue(r,['PDV / 销售点','PDV','Punto de distribución'])),tracking:txt(getValue(r,['Tracking Number / 运单号','Tracking Number','Número de Guía','Numero de Guia','Guía'])),penalty:txt(getValue(r,['Penalización - 罚款','Penalización','Penalidad','Tipo de penalidad'])),breach:txt(getValue(r,['Brecha','Breach'])),sla:txt(getValue(r,['SLA','Subtipo SLA'])),motive:asString(getValue(r,['Motivo / 原因','Motivo'])),costRaw:asString(getValue(r,['Costo /成本','Costo','Costo de penalidad','Importe de penalidad'])),cost:parseMoney(getValue(r,['Costo /成本','Costo','Costo de penalidad','Importe de penalidad'])),observations:asString(getValue(r,['Observaciones / 备注','Observaciones'])),sourceZone:txt(getValue(r,['Zona']))};
+      }).filter(x=>x.tracking||x.pdv||x.dateRaw);
+      if(slot==='breaches')return rawRows.map((r,i)=>{
+        const dateValue=getValue(r,['Fecha','Fecha de reporte','Date']),periodValue=getValue(r,['Periodo','Período','Periodo de liquidación','Mes','Month']);
+        const lastOperationPoint=txt(getValue(r,['Último punto de operación','Ultimo punto de operacion','PDV','PDV asignado a cliente','PDV de recolección','Punto de distribución','Punto de entrega']));
+        return {sourceRow:i+2,dateRaw:asString(dateValue),dateISO:parseDate(dateValue),period:periodFromDate(periodValue),sourcePeriodRaw:asString(periodValue),pdv:pdvName(lastOperationPoint),lastOperationPoint,tracking:txt(getValue(r,['Número de Guía','Numero de Guia','Tracking Number','Número de guía','Guía'])),breach:txt(getValue(r,['Brecha máxima por guía y PDV','Brecha mayor','Brecha máxima','Clasificación de brecha','Penalidad de brecha mayor','Brecha','Tipo de tiempo de espera'])),sla:txt(getValue(r,['SLA máximo','SLA','Cola larga'])),operation:txt(getValue(r,['Tipo de operación más reciente','Tipo de operación mas reciente','Último tipo de operación','Ultimo tipo de operacion','Operación más reciente','Última operación','Tipo de operación reciente','Tipo de escaneo más reciente'])),waitHours:asString(getValue(r,['Duración del tiempo de espera','Horas sin actualización','Horas de brecha','Duración (horas)'])),lastUpdate:asString(getValue(r,['Último tiempo de funcionamiento','Última actualización','Fecha de última actualización','Último escaneo']))};
+      }).filter(x=>x.tracking&&x.pdv);
+      if(slot==='guides')return rawRows.map((r,i)=>{
+        const district=txt(getValue(r,['Colonia de destino','Distrito','Distrito de destino','District']));
+        const province=txt(getValue(r,['Ciudad de destino','Ciudad de Destino','Provincia','Provincia destino','Provincia (geográfica)','Provincia real','Province']));
+        const department=txt(getValue(r,['Provincia de destino','Departamento','Departamento de destino','Department']));
+        const updatedAt=asString(getValue(r,['Última actualización','Ultima actualizacion','Fecha de exportación','Fecha de reporte']));
+        return {sourceRow:i+2,tracking:txt(getValue(r,['Número de Guía','Numero de Guia','Tracking Number','Guía'])),pdv:pdvName(getValue(r,['PDV','PDV asignado a cliente','PDV de recolección','Punto de entrega'])),scanType:txt(getValue(r,['Tipo de escaneo más reciente','Tipo de escaneo mas reciente','Último tipo de escaneo'])),signature:txt(getValue(r,['Estatus de firma','Estado de firma'])),scanTime:asString(getValue(r,['Tiempo del escaneo más reciente','Tiempo del escaneo mas reciente','Último escaneo'])),updatedAt,district,province,department};
+      }).filter(x=>x.tracking);
+      return rawRows.map((r,i)=>({sourceRow:i+2,zone:txt(getValue(r,['Zona','Nombre de zona'])),ubigeo:txt(getValue(r,['UBIGEO','Ubigeo'])),district:txt(getValue(r,['Distrito','District'])),province:txt(getValue(r,['Provincia','Province'])),department:txt(getValue(r,['Departamento','Department'])),slaDays:readAssignedSlaDays(r),type:txt(getValue(r,['Tipo de zona','Tipo zona','Tipo'])).toUpperCase()})).filter(x=>x.district||x.province||x.department);
+    }
+    function sourcePeriodForImportedRow(slot,row,selectedPeriod){
+      const selected=selectedPeriod||'';
+      // Todas las filas de Brecha pertenecen al periodo elegido al cargar el archivo; Fecha y Periodo originales son informativos.
+      return (slot==='breaches'||slot==='penalties')?selected:(row.period||periodFromDate(row.dateISO)||selected);
+    }
+    const slotLabels={penalties:'Liquidaciones de penalidades',breaches:'Brecha máxima',guides:'Exportación de guía',zones:'Zonificación'};
+    const inputBySlot={penalties:'filePenalties',breaches:'fileBreaches',guides:'fileGuides',zones:'fileZones'};
+    const stateBySlot={penalties:'statePenalties',breaches:'stateBreaches',guides:'stateGuides',zones:'stateZones'};
+    const cardBySlot={penalties:'cardPenalties',breaches:'cardBreaches',guides:'cardGuides',zones:'cardZones'};
+    function sourceFileId(file){return `${norm(file.name)}|${file.size||0}|${file.lastModified||0}`;}
+    function addImportedSourceRows(slot,file,rows,importedAt){
+      const fileId=sourceFileId(file),source=state.sources[slot]&&Array.isArray(state.sources[slot].rows)?state.sources[slot]:{filename:'',importedAt:'',rows:[],files:[]};
+      if(!Array.isArray(source.files))source.files=source.filename?[{sourceId:'legacy:'+norm(source.filename),filename:source.filename,importedAt:source.importedAt||'',rowCount:source.rows.length}]:[];
+      source.rows=source.rows.filter(row=>row.sourceId!==fileId);source.files=source.files.filter(meta=>meta.sourceId!==fileId);
+      const fallbackPeriod=$('periodInput')?.value||'';
+      const importedRows=rows.map(row=>{const period=sourcePeriodForImportedRow(slot,row,fallbackPeriod);return {...row,period,sourceId:fileId,sourceFile:file.name,sourceImportedAt:importedAt,sourcePeriod:period};});
+      source.rows.push(...importedRows);
+      source.files.push({sourceId:fileId,filename:file.name,importedAt,rowCount:rows.length,periods:[...new Set(importedRows.map(row=>row.period).filter(Boolean))]});
+      source.filename=source.files.map(meta=>meta.filename).join(', ');source.importedAt=importedAt;state.sources[slot]=source;
+    }
+    for(const slot of Object.keys(inputBySlot))$(inputBySlot[slot]).addEventListener('change',async e=>{
+      const files=[...(e.target.files||[])];if(!files.length)return;$(stateBySlot[slot]).textContent=`Leyendo ${fmtCount(files.length)} archivo(s)…`;
+      try{
+        const batch=[];for(const file of files){if((slot==='breaches'||slot==='penalties')&&!$('periodInput').value)throw new Error(`Selecciona el periodo de liquidación antes de cargar ${slot==='penalties'?'las liquidaciones':'Brecha'}. El periodo ingresado determina a qué registro pertenecen las filas.`);const rows=transformRows(slot,await readRows(file,slot==='penalties'?'LISTA DETALLADA DE PENALIDAD':''));if(!rows.length)throw new Error(`${file.name}: no se encontraron filas utilizables en la hoja seleccionada.`);batch.push({file,rows});}
+        if(slot==='penalties'){const period=$('periodInput').value,newPdvs=new Set(batch.flatMap(entry=>entry.rows.map(row=>idPart(row.pdv))));if(state.sources.penalties?.rows)state.sources.penalties.rows=state.sources.penalties.rows.filter(row=>!(row.sourceId==='stored'&&row.period===period&&newPdvs.has(idPart(row.pdv))));}
+        const importedAt=new Date().toISOString();for(const entry of batch)addImportedSourceRows(slot,entry.file,entry.rows,importedAt);if(state.sources.penalties)state.sources.penalties.storedSnapshot=false;matrixGuideSelection=null;
+        if(slot==='zones'&&batch.length)state.sources.zones={...state.sources.zones,filename:batch[0].file.name,importedAt,rows:batch[0].rows,files:[{filename:batch[0].file.name,importedAt,rowCount:batch[0].rows.length}]};
+        let recordSummary={created:0,refreshed:0,groups:0};
+        if(slot==='penalties'){setDefaultPeriodAndPdvs();recordSummary=await createRecordsFromPenaltySources();}
+        else{if(cloudMode&&!state.records.every(record=>Array.isArray(record.items)))await ensureAllStoredRecordItemsLoaded();refreshRecordsFromSources();}
+        hydratePenaltySourceFromRecords();const slaBackfilled=backfillMissingSla();persist();updateSourceDiag();renderSummary();if(currentRecord())renderDetail();
+        const importedCount=batch.reduce((sum,item)=>sum+item.rows.length,0),zoneSlaCount=slot==='zones'?batch[0].rows.filter(row=>txt(row.slaDays)!=='').length:null;
+        const importedMessage=slot==='zones'?`${slotLabels[slot]} importada: ${fmtCount(importedCount)} filas; ${fmtCount(zoneSlaCount)} con “SLA ASIGNADO (DIAS)”.`:slot==='penalties'?`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas; ${fmtCount(recordSummary.created)} liquidaciones creadas y ${fmtCount(recordSummary.refreshed)} actualizadas.`:`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas.`;
+        notify(slaBackfilled?`${importedMessage} Se completó el SLA de ${fmtCount(slaBackfilled)} penalidades.`:importedMessage);
+      }catch(err){$(stateBySlot[slot]).textContent='No se pudo importar: '+err.message;notify(err.message,true);}
+      e.target.value='';
+    });
+    function setDefaultPeriodAndPdvs(){
+      const rows=state.sources.penalties?.rows||[];const periods=[...new Set(rows.map(r=>periodFromDate(r.dateISO)).filter(Boolean))].sort();
+      if(periods.length&&!$('periodInput').value)$('periodInput').value=periods[periods.length-1];
+      const current=$('pdvInput').value;const pdvs=[...new Set(rows.map(r=>pdvName(r.pdv)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+      $('pdvInput').innerHTML=pdvs.length?pdvs.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join(''):'<option value="">No hay PDV</option>';
+      if(pdvs.includes(current))$('pdvInput').value=current;
+    }
+    const districtAliases={'SAPALLANCA':{district:'SAPALLANGA',province:'HUANCAYO',department:'JUNIN'},'SAN JUAN DE YSCOS':{district:'SAN JUAN DE ISCOS',province:'CHUPACA',department:'JUNIN'},'RAYMONDI':{district:'RAIMONDI',province:'ATALAYA',department:'UCAYALI'}};
+    function canonicalDistrict(value,province,department){const name=norm(value),alias=districtAliases[name];return alias&&norm(province)===alias.province&&norm(department)===alias.department?alias.district:name;}
+    function zoneKey(district,province,department){const normalizedProvince=norm(province),normalizedDepartment=norm(department);return [canonicalDistrict(district,normalizedProvince,normalizedDepartment),normalizedProvince,normalizedDepartment].join('|');}
+    function findZone(district,province,department,zones){
+      // Las equivalencias se aplican solo si también coinciden provincia y departamento.
+      return zones.get(zoneKey(district,province,department))||null;
+    }
+    function manualZoneKey(zone){return [norm(zone?.zone),norm(zone?.type),norm(zone?.slaDays)].join('|');}
+    function manualZoneChoices(){
+      const options=new Map();for(const row of state.sources.zones?.rows||[]){const choice={zone:txt(row.zone),type:txt(row.type)||'NO ASIGNADA',slaDays:row.slaDays??''};if(!choice.zone)continue;const key=manualZoneKey(choice);if(!options.has(key))options.set(key,{...choice,key});}
+      return [...options.values()].sort((a,b)=>a.zone.localeCompare(b.zone,'es')||a.type.localeCompare(b.type,'es')||String(a.slaDays).localeCompare(String(b.slaDays),'es'));
+    }
+    function manualZoneLabel(zone){return `${zone.zone} · ${zone.type||'Sin tipo'} · SLA ${txt(zone.slaDays)||'sin dato'} días`;}
+    function applyManualZone(item){
+      const zone=item.manualZone;if(!zone)return;
+      item.zoneName=zone.zone;item.zoneType=zone.type||'NO ASIGNADA';item.slaDays=zone.slaDays??'';item.zoneMatched=true;item.manualZoneApplied=true;
+    }
+    function applyAutomaticZone(item,guides=buildGuideIndex(),zones=buildZoneIndex()){
+      item.manualZone=null;item.manualZoneApplied=false;
+      const guide=findGuide(guides,item.pdv,item.tracking);
+      if(guide){item.district=guide.district||item.district;item.province=guide.province||item.province;item.department=guide.department||item.department;item.scanType=guide.scanType||'Sin dato';item.signature=guide.signature||'Sin dato';item.scanTime=guide.scanTime||'';}
+      const zone=findZone(item.district,item.province,item.department,zones);
+      item.zoneName=zone?.zone||'Zona no encontrada';item.zoneType=zone?.type||'NO ASIGNADA';item.slaDays=zone?.slaDays??'';item.zoneMatched=!!zone;
+    }
+    function manualZoneControl(item){
+      if(item.zoneMatched&&!item.manualZone)return '';
+      const choices=manualZoneChoices(),currentKey=item.manualZone?manualZoneKey(item.manualZone):'';
+      if(item.manualZone&&currentKey&&!choices.some(choice=>choice.key===currentKey))choices.unshift({...item.manualZone,key:currentKey});
+      const options=choices.map(choice=>`<option value="${escapeHtml(choice.key)}" ${choice.key===currentKey?'selected':''}>${escapeHtml(manualZoneLabel(choice))}</option>`).join('');
+      const placeholder=choices.length?'Asignar zona manual…':'Carga Zonificación para asignar';
+      return `<select class="manual-zone-select" data-id="${escapeHtml(item.id)}" aria-label="Asignar zona manual para la guía ${escapeHtml(item.tracking)}" ${choices.length?'':'disabled'}><option value="" disabled ${currentKey?'':'selected'}>${placeholder}</option>${item.manualZone?'<option value="__AUTO__">Restablecer coincidencia automática</option>':''}${options}</select>`;
+    }
+    function applyManualZoneChoice(select){
+      const record=currentRecord(),sourceItem=record?.items.find(item=>item.id===select.dataset.id);if(!record||!sourceItem)return;
+      const guideId=idPart(sourceItem.tracking),items=record.items.filter(item=>idPart(item.tracking)===guideId),now=new Date().toISOString();
+      if(select.value==='__AUTO__'){
+        const guides=buildGuideIndex(),zones=buildZoneIndex();for(const item of items)applyAutomaticZone(item,guides,zones);
+      }else{
+        const choice=manualZoneChoices().find(option=>option.key===select.value);if(!choice)return;
+        for(const item of items){item.manualZone={zone:choice.zone,type:choice.type,slaDays:choice.slaDays};applyManualZone(item);}
+      }
+      for(const item of items)item.modifiedAt=now;
+      pickerSelections.filterZone=null;pickerSelections.filterSlaDays=null;
+      renderMultiPicker('filterZone',record.items.map(item=>item.zoneType),'Todos');renderMultiPicker('filterSlaDays',record.items.map(item=>txt(item.slaDays)||'Sin coincidencia'),'Todos');
+      setDirty();renderMetricsAndBreakdown();renderDetailRows();renderSummary();
+      notify(select.value==='__AUTO__'?`Se restableció la zona automática para ${fmtCount(items.length)} penalidades de la guía.`:`Zona manual aplicada a ${fmtCount(items.length)} penalidades de la guía.`);
+    }
+    function timestampValue(value){if(value instanceof Date)return value.getTime();if(typeof value==='number'&&value>1000)return new Date(Date.UTC(1899,11,30)+value*86400000).getTime();const parsed=Date.parse(value||'');return Number.isFinite(parsed)?parsed:(parseDate(value)?Date.parse(parseDate(value)):0);}
+    function putNewest(map,key,row,stamp){if(!key)return;const prev=map.get(key);if(!prev||stamp>=prev.__indexStamp)map.set(key,{...row,__indexStamp:stamp});}
+    function guidePdvKey(pdv,tracking){return `${idPart(pdvName(pdv))}|${idPart(tracking)}`;}
+    function buildGuideIndex(){
+      const specific=new Map(),withoutPdv=new Map(),byTracking=new Map();for(const g of state.sources.guides?.rows||[]){const trackingKey=idPart(g.tracking);if(!trackingKey)continue;const stamp=timestampValue(g.updatedAt||g.scanTime)||timestampValue(g.sourceImportedAt);putNewest(byTracking,trackingKey,g,stamp);if(pdvName(g.pdv))putNewest(specific,guidePdvKey(g.pdv,g.tracking),g,stamp);else putNewest(withoutPdv,trackingKey,g,stamp);}return {specific,withoutPdv,byTracking};
+    }
+    function findGuide(index,pdv,tracking){return index.specific.get(guidePdvKey(pdv,tracking))||index.withoutPdv.get(idPart(tracking))||index.byTracking.get(idPart(tracking))||null;}
+    function breachKey(period,pdv,tracking){return `${period||''}|${idPart(pdvName(pdv))}|${idPart(tracking)}`;}
+    function breachRowStamp(row){return timestampValue(row.dateRaw||row.dateISO)||timestampValue(row.sourceImportedAt)||Number(row.sourceRow)||0;}
+    function buildBreachIndex(){
+      const exact=new Map(),withoutPeriod=new Map();for(const row of state.sources.breaches?.rows||[]){const period=row.period||row.sourcePeriod||'';const stamp=breachRowStamp(row);if(period)putNewest(exact,breachKey(period,row.pdv,row.tracking),row,stamp);else putNewest(withoutPeriod,breachKey('',row.pdv,row.tracking),row,stamp);}return {exact,withoutPeriod};
+    }
+    function findMaxBreach(index,period,pdv,tracking){return index.exact.get(breachKey(period,pdv,tracking))||index.withoutPeriod.get(breachKey('',pdv,tracking))||null;}
+    function breachRowsForRecord(record){
+      const rows=state.sources.breaches?.rows||[],hasPeriod=rows.some(row=>row.period||row.sourcePeriod),matched=new Map();
+      for(const row of rows){
+        const rowPeriod=row.period||row.sourcePeriod||'';
+        if(hasPeriod&&rowPeriod!==record.period)continue;
+        if(idPart(pdvName(row.pdv))!==idPart(pdvName(record.pdv))||!txt(row.tracking))continue;
+        const key=breachKey(record.period,row.pdv,row.tracking),stamp=breachRowStamp(row);
+        putNewest(matched,key,row,stamp);
+      }
+      return [...matched.values()];
+    }
+    function buildZoneIndex(){
+      const map=new Map();for(const z of state.sources.zones?.rows||[]){const key=zoneKey(z.district,z.province,z.department);if(!key.replaceAll('|',''))continue;const prev=map.get(key);const usable=x=>x&&!norm(x.type).includes('NO ASIGNADA')&&!norm(x.zone).includes('NO ASIGNADA');if(!prev||(usable(z)&&!usable(prev)))map.set(key,z);}return map;
+    }
+    function sourceFileList(slot){const source=state.sources[slot];if(!source)return '';if(Array.isArray(source.files)&&source.files.length)return source.files.map(meta=>meta.filename).join(', ');return source.filename||'';}
+    function updateSourceDiag(){
+      for(const slot of Object.keys(inputBySlot)){const source=state.sources[slot];if(source&&Array.isArray(source.rows)){const files=Array.isArray(source.files)?source.files.length:1;$(stateBySlot[slot]).textContent=`${sourceFileList(slot)} · ${fmtCount(source.rows.length)} filas${files>1?` · ${fmtCount(files)} archivos`:''}`;$(cardBySlot[slot]).classList.add('ready');}}
+      const penalties=state.sources.penalties?.rows||[],guides=state.sources.guides?.rows||[],breaches=state.sources.breaches?.rows||[],zones=state.sources.zones?.rows||[];
+      if(state.sources.penalties?.storedSnapshot){$('sourceDiag').innerHTML=`Los registros guardados contienen <strong>${fmtCount(penalties.length)}</strong> penalidades y sus datos de cruce ya calculados. Para crear liquidaciones nuevas o actualizar los cruces, carga los Excel fuente correspondientes; los archivos originales no se guardan.`;return;}
+      if(!penalties.length){$('sourceDiag').textContent='Carga los Excel de penalidades para crear liquidaciones. Los demás archivos se pueden cargar después.';return;}
+      const guideIndex=buildGuideIndex(),breachIndex=buildBreachIndex(),zoneIndex=buildZoneIndex();
+      const guideMatches=penalties.filter(p=>findGuide(guideIndex,p.pdv,p.tracking)).length;
+      const breachMatches=penalties.filter(p=>findMaxBreach(breachIndex,p.period||periodFromDate(p.dateISO)||'',p.pdv,p.tracking)).length;
+      const zoneMatches=penalties.filter(p=>{const g=findGuide(guideIndex,p.pdv,p.tracking);const z=g&&findZone(g.district,g.province,g.department,zoneIndex);return !!(z&&txt(z.slaDays)!=='');}).length;
+      $('sourceDiag').innerHTML=`<strong>${fmtCount(penalties.length)}</strong> penalidades · <strong>${fmtCount(state.records.length)}</strong> liquidaciones · Brecha máxima <strong>${fmtCount(breachMatches)}/${fmtCount(penalties.length)}</strong> · Exportación <strong>${fmtCount(guideMatches)}/${fmtCount(penalties.length)}</strong> · SLA asignado <strong>${fmtCount(zoneMatches)}/${fmtCount(penalties.length)}</strong> · Fuentes cargadas: brecha <strong>${fmtCount(breaches.length)}</strong>, guías <strong>${fmtCount(guides.length)}</strong>, zonificación <strong>${fmtCount(zones.length)}</strong> filas.`;
+    }
+    function penaltyId(p,occurrence){return [idPart(p.tracking),norm(p.penalty),p.dateISO||norm(p.dateRaw),norm(p.breach),norm(p.sla),String(Number(p.cost)||0),occurrence].join('~');}
+    function getRecordItems(period,pdv,indexes=null){
+      const penalties=state.sources.penalties?.rows||[],guides=indexes?.guides||buildGuideIndex(),breaches=indexes?.breaches||buildBreachIndex(),zones=indexes?.zones||buildZoneIndex(),occurrences=new Map();
+      return penalties.filter(p=>(p.period||periodFromDate(p.dateISO)||$('periodInput').value)===period&&idPart(pdvName(p.pdv))===idPart(pdvName(pdv))).map(p=>{
+        const base=[idPart(p.tracking),norm(p.penalty),p.dateISO||norm(p.dateRaw),norm(p.breach),norm(p.sla),String(Number(p.cost)||0)].join('~');const occurrence=(occurrences.get(base)||0)+1;occurrences.set(base,occurrence);
+        const g=findGuide(guides,p.pdv,p.tracking),b=findMaxBreach(breaches,period,p.pdv,p.tracking),z=g?findZone(g.district,g.province,g.department,zones):null;
+        const penaltyName=norm(p.penalty),isBreachPenalty=penaltyName.includes('BRECHA')||(!txt(p.sla)&&!!txt(p.breach)),isSlaPenalty=penaltyName.includes('SLA')||penaltyName.includes('COLA')||!!txt(p.sla);
+        const breach=isBreachPenalty?(txt(b?.breach)||p.breach):p.breach,sla=isSlaPenalty?(txt(b?.sla)||p.sla):p.sla;
+        return {id:`${recordKey(period,pdv)}::${penaltyId(p,occurrence)}`,sourceRow:p.sourceRow,sourceFile:p.sourceFile||'',dateRaw:p.dateRaw,dateISO:p.dateISO,period,pdv:pdvName(p.pdv),tracking:p.tracking,penalty:p.penalty||'Sin tipo de penalización',breach,liquidationBreach:p.breach||'',sla,liquidationSla:p.sla||'',breachOperation:isBreachPenalty?(b?.operation||''):'',breachWaitHours:isBreachPenalty?(b?.waitHours||''):'',breachLastUpdate:isBreachPenalty?(b?.lastUpdate||''):'',breachMatched:!!(b&&isBreachPenalty),latestOperation:b?.operation||'Sin dato',motive:p.motive,costRaw:p.costRaw,cost:Number(p.cost)||0,observations:p.observations,sourceZone:p.sourceZone,scanType:g?.scanType||'Sin dato',signature:g?.signature||'Sin dato',scanTime:g?.scanTime||'',district:g?.district||'Sin dato',province:g?.province||'Sin dato',department:g?.department||'Sin dato',zoneType:z?.type||'NO ASIGNADA',slaDays:z?.slaDays??'',zoneName:z?.zone||'Zona no encontrada',zoneMatched:!!z,guideMatched:!!g,manualZone:null,exemptionPercent:0,exonerated:false,reason:''};
+      });
+    }
+    function backfillMissingSla(){
+      const guides=buildGuideIndex(),breaches=buildBreachIndex(),zones=buildZoneIndex(),hasBreaches=!!state.sources.breaches?.rows?.length,hasZones=Array.isArray(state.sources.zones?.rows);let updated=0;
+      for(const record of state.records){
+        for(const item of record.items||[]){
+          const guide=findGuide(guides,item.pdv,item.tracking);
+          const breach=findMaxBreach(breaches,record.period,item.pdv,item.tracking);
+          if(hasBreaches){const operation=breach?.operation||'Sin dato';if(item.latestOperation!==operation){item.latestOperation=operation;updated++;}if(item.breachOperation!==operation){item.breachOperation=operation;updated++;}if(item.breachMatched!==!!breach){item.breachMatched=!!breach;updated++;}if(breach){item.breachWaitHours=breach.waitHours||'';item.breachLastUpdate=breach.lastUpdate||'';}}
+          let changed=false;
+          if(guide){
+            const guideValues={district:guide.district||'Sin dato',province:guide.province||'Sin dato',department:guide.department||'Sin dato',scanType:guide.scanType||'Sin dato',signature:guide.signature||'Sin dato',scanTime:guide.scanTime||''};
+            for(const [key,value] of Object.entries(guideValues))if(item[key]!==value){item[key]=value;changed=true;}
+          }
+          if(item.manualZone){
+            const before=[item.zoneName,item.zoneType,item.slaDays,item.zoneMatched];applyManualZone(item);
+            if(JSON.stringify(before)!==JSON.stringify([item.zoneName,item.zoneType,item.slaDays,item.zoneMatched]))changed=true;
+          }else if(hasZones){
+            const zone=findZone(item.district,item.province,item.department,zones),zoneValues={zoneName:zone?.zone||'Zona no encontrada',zoneType:zone?.type||'NO ASIGNADA',slaDays:zone?.slaDays??'',zoneMatched:!!zone};
+            for(const [key,value] of Object.entries(zoneValues))if(item[key]!==value){item[key]=value;changed=true;}
+          }
+          if(changed)updated++;
+        }
+      }
+      return updated;
+    }
+    function hydratePenaltySourceFromRecords(){
+      const source=state.sources.penalties,rows=[...(source?.rows||[])],covered=new Set(rows.map(row=>recordKey(row.period,row.pdv))),stored=[];
+      for(const record of state.records){if(covered.has(record.id)||!Array.isArray(record.items))continue;for(const item of record.items)stored.push({sourceRow:rows.length+stored.length+2,sourceId:'stored',sourceFile:item.sourceFile||'Registros guardados',sourceImportedAt:record.updatedAt||'',period:record.period,pdv:record.pdv,tracking:item.tracking,penalty:item.penalty,breach:item.liquidationBreach||item.breach||'',sla:item.liquidationSla||item.sla||'',dateRaw:item.dateRaw||'',dateISO:item.dateISO||parseDate(item.dateRaw),motive:item.motive||'',costRaw:item.costRaw||'',cost:Number(item.cost)||0,observations:item.observations||'',sourceZone:item.sourceZone||''});}
+      if(!stored.length)return;
+      const importedFiles=(source?.files||[]).filter(file=>file.sourceId!=='stored'),now=new Date().toISOString(),storedCount=rows.filter(row=>row.sourceId==='stored').length+stored.length;
+      const files=[...importedFiles,{sourceId:'stored',filename:'Registros guardados',importedAt:now,rowCount:storedCount}],allRows=[...rows,...stored];
+      state.sources.penalties={filename:files.map(file=>file.filename).join(', '),importedAt:source?.importedAt||now,rows:allRows,storedSnapshot:importedFiles.length===0,files};
+    }
+    function sourceFilesSnapshot(){return Object.fromEntries(['penalties','breaches','guides','zones'].map(slot=>[slot,sourceFileList(slot)]).filter(([,name])=>name));}
+    function preserveDecisions(fresh,previousItems){
+      const previous=new Map((previousItems||[]).map(item=>[item.id,item]));
+      for(const item of fresh){const old=previous.get(item.id);if(!old)continue;item.exemptionPercent=exemptionPercent(old);item.exonerated=item.exemptionPercent>0;item.reason=old.reason||'';item.manualZone=old.manualZone?{...old.manualZone}:null;if(item.manualZone)applyManualZone(item);item.modifiedAt=old.modifiedAt||'';if(!state.sources.guides?.rows?.length)for(const key of ['district','province','department','scanType','signature','scanTime'])if(old[key]!=null)item[key]=old[key];const hasRelevantBreach=!!state.sources.breaches?.rows?.some(row=>row.period===item.period);if(!hasRelevantBreach){for(const key of ['latestOperation','breachOperation','breachWaitHours','breachLastUpdate','breachMatched'])if(old[key]!=null)item[key]=old[key];if(old.breachMatched){item.breach=old.breach||item.breach;item.sla=old.sla||item.sla;}}if(!state.sources.zones?.rows?.length)for(const key of ['zoneName','zoneType','slaDays','zoneMatched','sourceZone'])if(old[key]!=null)item[key]=old[key];}
+      return fresh;
+    }
+    async function ensureAllStoredRecordItemsLoaded(){
+      const pending=state.records.filter(record=>!Array.isArray(record.items));
+      for(let i=0;i<pending.length;i+=3)await Promise.all(pending.slice(i,i+3).map(async record=>{record.items=await fetchStoredRecordItems(record.id);}));
+      hydratePenaltySourceFromRecords();
+    }
+    function refreshRecordsFromSources(){
+      if(!(state.sources.penalties?.rows||[]).length)return 0;const now=new Date().toISOString(),indexes={guides:buildGuideIndex(),breaches:buildBreachIndex(),zones:buildZoneIndex()};let refreshed=0;
+      for(const record of state.records){const fresh=getRecordItems(record.period,record.pdv,indexes);if(!fresh.length)continue;record.items=preserveDecisions(fresh,record.items);record.sourceFiles=sourceFilesSnapshot();record.updatedAt=now;record.sourceSyncAt=now;refreshed++;}
+      return refreshed;
+    }
+    async function createRecordsFromPenaltySources(){
+      const rows=state.sources.penalties?.rows||[],fallbackPeriod=$('periodInput').value,groups=new Map();
+      for(const row of rows){const period=row.period||periodFromDate(row.dateISO)||fallbackPeriod,pdv=pdvName(row.pdv);if(!period||!pdv)continue;const key=recordKey(period,pdv);if(!groups.has(key))groups.set(key,{period,pdv,rows:[]});groups.get(key).rows.push(row);}
+      const now=new Date().toISOString(),indexes={guides:buildGuideIndex(),breaches:buildBreachIndex(),zones:buildZoneIndex()};let created=0,refreshed=0;
+      for(const group of groups.values()){
+        const id=recordKey(group.period,group.pdv),deletedAt=timestampValue(state.deletedRecords?.[id]);
+        if(deletedAt&& !group.rows.some(row=>timestampValue(row.sourceImportedAt)>deletedAt))continue;
+        const fresh=getRecordItems(group.period,group.pdv,indexes),existing=state.records.find(record=>record.id===id);
+        if(existing){if(!Array.isArray(existing.items))existing.items=await fetchStoredRecordItems(existing.id);existing.items=preserveDecisions(fresh,existing.items);existing.sourceFiles=sourceFilesSnapshot();existing.updatedAt=now;existing.sourceSyncAt=now;refreshed++;}
+        else if(fresh.length){state.records.push({id,period:group.period,pdv:group.pdv,status:'pendiente',signatureRate:null,liquidationAmount:null,createdAt:now,updatedAt:now,sourceSyncAt:now,sourceFiles:sourceFilesSnapshot(),items:fresh});created++;}
+      }
+      return {created,refreshed,groups:groups.size};
+    }
+    function currentRecord(){return state.records.find(r=>r.id===currentRecordId)||null;}
+    function recordKey(period,pdv){return `${period}|${norm(pdv)}`;}
+    function openCreate(){
+      const period=$('periodInput').value,pdv=$('pdvInput').value;if(!period||!pdv){notify('Selecciona el periodo y el PDV.',true);return;}
+      if(!(state.sources.penalties?.rows||[]).length){notify('Antes de crear una liquidación, importa al menos un Excel de penalidades.',true);return;}
+      const id=recordKey(period,pdv);let record=state.records.find(r=>r.id===id);
+      if(record){showRecord(record.id);notify('Se abrió el registro guardado.');return;}
+      const items=getRecordItems(period,pdv);if(!items.length){notify(`No hay penalidades para ${pdv} en ${period}. Verifica la fecha del archivo.`,true);return;}
+      record={id,period,pdv,status:'pendiente',signatureRate:null,liquidationAmount:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),sourceFiles:sourceFilesSnapshot(),items};state.records.push(record);persist();renderSummary();showRecord(record.id);notify(`${fmtCount(items.length)} penalidades agregadas al registro.`);
+    }
+    function fetchStoredRecordItems(recordKey){
+      if(!cloudMode)return Promise.resolve([]);
+      return new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getRecordItems(recordKey));
+    }
+    async function showRecord(id){
+      const record=state.records.find(item=>item.id===id);if(!record)return;
+      currentRecordId=id;selectedIds.clear();matrixGuideSelection=null;dirty=false;$('detailPanel').hidden=false;
+      $('detailHeading').innerHTML=`Detalle de penalidades <span class="badge">${escapeHtml(periodLabel(record.period))}</span> <span class="badge">${escapeHtml(record.pdv)}</span>`;
+      renderSummary();$('detailPanel').scrollIntoView({behavior:'smooth',block:'start'});
+      if(!Array.isArray(record.items)){
+        $('detailSubtitle').textContent='Cargando penalidades desde Supabase…';$('detailBody').innerHTML='<tr><td colspan="16" class="empty">Cargando detalle por lotes…</td></tr>';$('breakdownBody').innerHTML='';$('breachMatrixBody').innerHTML='';$('slaMatrixBody').innerHTML='';$('saveBtn').disabled=true;$('syncBtn').disabled=true;
+        try{record.items=await fetchStoredRecordItems(id);}
+        catch(error){$('detailSubtitle').textContent='No se pudo cargar el detalle. Haz clic nuevamente en la liquidación para reintentar.';$('detailBody').innerHTML='<tr><td colspan="16" class="empty">No se pudo cargar este detalle.</td></tr>';notify(`No se pudo cargar el detalle desde Supabase: ${error?.message||error||''}`,true);return;}
+        if(currentRecordId!==id)return;
+      }
+      $('saveBtn').disabled=!appReady;$('syncBtn').disabled=!appReady;renderDetail();renderSummary();
+    }
+    function deleteSavedRecord(id){
+      const record=state.records.find(item=>item.id===id);if(!record)return;
+      const label=`${periodLabel(record.period)} · ${record.pdv}`;
+      if(!confirm(`¿Eliminar el registro ${label}? Se borrarán sus decisiones y motivos guardados. Esta acción no se puede deshacer.`))return;
+      state.deletedRecords=state.deletedRecords||{};state.deletedRecords[id]=new Date().toISOString();state.records=state.records.filter(item=>item.id!==id);
+      selectedRecordIds.delete(id);
+      if(currentRecordId===id){currentRecordId=null;selectedIds.clear();dirty=false;$('detailPanel').hidden=true;}
+      persist(true);renderSummary();notify(`Registro ${label} eliminado.`);
+    }
+    function createLiquidationGroup(){
+      const name=txt($('groupNameInput').value);if(!name){notify('Escribe el nombre del grupo.',true);$('groupNameInput').focus();return;}
+      if((state.groups||[]).some(group=>norm(group.name)===norm(name))){notify('Ya existe un grupo con ese nombre.',true);$('groupNameInput').focus();return;}
+      const now=new Date().toISOString(),group={id:`grp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`,name,createdAt:now,updatedAt:now};state.groups=state.groups||[];state.groups.push(group);
+      $('groupNameInput').value='';persist();renderSummary();$('bulkGroupSelect').value=group.id;notify(`Grupo "${name}" creado. Ahora selecciona las liquidaciones que agregarás.`);
+    }
+    function assignSelectedRecordsToGroup(){
+      if(!selectedRecordIds.size){notify('Selecciona al menos una liquidación.',true);return;}
+      const selection=$('bulkGroupSelect').value;if(!selection){notify('Selecciona el grupo al que agregarás las liquidaciones.',true);return;}
+      const groupId=selection===UNASSIGNED_GROUP?'':selection;if(groupId&&!state.groups.some(group=>group.id===groupId)){notify('El grupo seleccionado ya no está disponible. Actualiza la lista.',true);return;}
+      const now=new Date().toISOString(),groupName=groupId?(state.groups.find(group=>group.id===groupId)?.name||'el grupo'):'Sin grupo';let count=0;for(const record of state.records){if(!selectedRecordIds.has(record.id))continue;record.groupId=groupId;record.updatedAt=now;count++;}
+      selectedRecordIds.clear();persist();renderSummary();notify(`${fmtCount(count)} liquidaciones asignadas a "${groupName}".`);
+    }
+    function clearRecordSelection(){selectedRecordIds.clear();renderSummary();}
+    function recordGroupId(record){return (state.groups||[]).some(group=>group.id===record.groupId)?record.groupId:UNASSIGNED_GROUP;}
+    function setDirty(){dirty=true;$('saveState').textContent='Cambios sin guardar';$('saveBtn').textContent='Guardar cambios';}
+    function saveCurrent(){
+      const record=currentRecord();if(!record)return;
+      if(!Array.isArray(record.items)){notify('Espera a que termine de cargar el detalle antes de guardar.',true);return;}
+      const missing=record.items.find(i=>exemptionPercent(i)>0&&!txt(i.reason));if(missing){notify(`Completa el motivo de exoneración para la guía ${missing.tracking}.`,true);const input=[...$('detailBody').querySelectorAll('.reason-input')].find(el=>el.dataset.id===missing.id);input?.focus();input?.scrollIntoView({behavior:'smooth',block:'center'});return;}
+      record.updatedAt=new Date().toISOString();dirty=false;if(!persist(true))return;$('saveState').textContent=cloudMode?'Sincronizando…':'Registro guardado';$('saveBtn').textContent='Guardar cambios';renderSummary();renderMetricsAndBreakdown();
+    }
+    function syncCurrent(){
+      const old=currentRecord();if(!old)return;if(!Array.isArray(old.items)){notify('Espera a que termine de cargar el detalle antes de actualizar.',true);return;}if(!(state.sources.penalties?.rows||[]).length){notify('Carga al menos un Excel de penalidades antes de actualizar.',true);return;}
+      if(!confirm('Se reemplazará la lista de penalidades del periodo y PDV con los archivos cargados. Las decisiones y motivos se conservarán cuando coincida la guía y la penalidad. ¿Continuar?'))return;
+      const fresh=getRecordItems(old.period,old.pdv);if(!fresh.length){notify('Los archivos actuales no tienen penalidades para este periodo y PDV.',true);return;}
+      const syncTime=new Date().toISOString();old.items=preserveDecisions(fresh,old.items);old.sourceFiles=sourceFilesSnapshot();old.updatedAt=syncTime;old.sourceSyncAt=syncTime;dirty=false;selectedIds.clear();persist();renderDetail();renderSummary();notify('Registro actualizado desde los archivos.');
+    }
+    function recordTotals(record){
+      const liquidationAmount=liquidationAmountValue(record?.liquidationAmount);
+      let count,yes,no,total,exempt,balance;
+      if(!Array.isArray(record.items)&&record.summary){
+        const summary=record.summary;
+        if(onlyNonExempt){count=Number(summary.no)||0;total=Number(summary.noExemptTotal)||0;yes=0;no=count;exempt=0;balance=total;}
+        else{count=Number(summary.count)||0;yes=Number(summary.yes)||0;no=Number.isFinite(Number(summary.no))?Number(summary.no):count-yes;total=Number(summary.total)||0;exempt=Number(summary.exempt)||0;balance=Number.isFinite(Number(summary.balance))?Number(summary.balance):total-exempt;}
+      }else{
+        const items=visibleSummaryItems(record);total=items.reduce((sum,item)=>sum+(Number(item.cost)||0),0);exempt=items.reduce((sum,item)=>sum+exemptionAmount(item),0);yes=items.filter(item=>exemptionPercent(item)>0).length;count=items.length;no=count-yes;balance=total-exempt;
+      }
+      return {count,yes,no,total,exempt,balance,liquidationAmount,liquidationFinal:liquidationAmount===null?null:liquidationAmount-balance};
+    }
+    function periodLabel(period){const [y,m]=String(period||'').split('-');return m&&y?`${m}-${y}`:period||'';}
+    function dateLabel(value){const d=new Date(value);return isNaN(d)?'':new Intl.DateTimeFormat('es-PE',{dateStyle:'short',timeStyle:'short'}).format(d);}
+    function breachSlaLabel(item){return [txt(item.breach),txt(item.sla)].filter(Boolean).join(' · ')||'—';}
+    function sourceBrechaLabel(item){return txt(item?.liquidationBreach)||'Sin dato';}
+    function penaltySubtype(item){
+      const penalty=norm(item.penalty);
+      if(penalty.includes('BRECHA'))return {field:'breach',column:'Brecha',value:txt(item.breach)||'Sin subtipo'};
+      if(penalty.includes('EXCEDE EL SLA')||penalty.includes('COLA LARGA'))return {field:'sla',column:'SLA',value:txt(item.sla)||'Sin subtipo'};
+      if(txt(item.breach))return {field:'breach',column:'Brecha',value:txt(item.breach)};
+      if(txt(item.sla))return {field:'sla',column:'SLA',value:txt(item.sla)};
+      return {field:'none',column:'',value:'Sin subtipo'};
+    }
+    function decisionReasonKey(item){return txt(item?.reason)?norm(item.reason):'__NO_REASON__';}
+    function renderMultiPicker(id,values,allLabel){
+      const unique=new Map();for(const entry of values){const option=entry&&typeof entry==='object'?{value:String(entry.value??''),label:String(entry.label??entry.value??'')}:{value:String(entry??''),label:String(entry??'')};if(option.value&&!unique.has(option.value))unique.set(option.value,option);}
+      const options=[...unique.values()].sort((a,b)=>id==='filterSlaDays'?(Number.isFinite(Number(a.value))&&Number.isFinite(Number(b.value))?Number(a.value)-Number(b.value):a.label.localeCompare(b.label,'es')):a.label.localeCompare(b.label,'es'));
+      pickerOptions[id]=options;pickerAllLabels[id]=allLabel;
+      const current=pickerSelections[id];if(current!==null){const valid=new Set(options.map(option=>option.value));const next=new Set([...current].filter(value=>valid.has(value)));pickerSelections[id]=next.size===options.length?null:next;}
+      refreshMultiPicker(id);
+    }
+    function refreshMultiPicker(id){
+      const root=$(id);if(!root)return;const options=pickerOptions[id]||[],selected=pickerSelections[id],allLabel=pickerAllLabels[id]||'Todos';
+      const trigger=root.querySelector('.multi-picker-trigger'),menu=root.querySelector('.multi-picker-menu');if(!trigger||!menu)return;
+      const count=selected===null?options.length:selected.size;
+      const label=!options.length?'Sin opciones':count===options.length?allLabel:count===0?'Ninguno':count===1?(options.find(option=>selected.has(option.value))?.label||'1 seleccionado'):`${count} seleccionados`;
+      trigger.textContent=label;trigger.title=selected===null||count===options.length?allLabel:options.filter(option=>selected.has(option.value)).map(option=>option.label).join(', ');
+      menu.setAttribute('aria-label',allLabel);
+      menu.innerHTML=`<div class="multi-picker-actions"><button type="button" data-picker-action="all">Todos</button><button type="button" data-picker-action="none">Ninguno</button></div>${options.length?options.map(option=>`<label class="multi-picker-option"><input type="checkbox" value="${escapeHtml(option.value)}" ${selected===null||selected.has(option.value)?'checked':''}><span>${escapeHtml(option.label)}</span></label>`).join(''):'<div class="multi-picker-empty">No hay valores para seleccionar.</div>'}`;
+    }
+    function pickerMatches(id,value){const selected=pickerSelections[id];return selected===null||selected.has(String(value??''));}
+    function setPickerSelection(id,values){const options=pickerOptions[id]||[],selected=new Set(values.map(String));pickerSelections[id]=selected.size===options.length?null:selected;refreshMultiPicker(id);}
+    function afterPickerChange(id){if(id==='summaryPeriod'||id==='summaryPdv'||id==='summaryGroup'||id==='summaryStatus')renderSummary();else renderDetailRows();}
+    function filteredRecords(){return state.records.filter(record=>pickerMatches('summaryPeriod',record.period)&&pickerMatches('summaryPdv',record.pdv)&&pickerMatches('summaryGroup',recordGroupId(record))&&pickerMatches('summaryStatus',liquidationStatusValue(record.status))&&(!onlyNonExempt||recordTotals(record).count>0));}
+    function updateOnlyNonExemptButton(){const button=$('onlyNonExemptBtn');button.setAttribute('aria-pressed',String(onlyNonExempt));button.textContent=onlyNonExempt?'Ver todas':'Solo no exoneradas';button.title=onlyNonExempt?'Mostrar también las penalidades exoneradas en todas las tablas':'Oculta en todas las tablas las penalidades con exoneración mayor a 0%';}
+    function toggleOnlyNonExempt(){onlyNonExempt=!onlyNonExempt;selectedIds.clear();selectedRecordIds.clear();updateOnlyNonExemptButton();renderSummary();if(currentRecord()&&Array.isArray(currentRecord().items)){renderMetricsAndBreakdown();renderDetailRows();}notify(onlyNonExempt?'Mostrando solo penalidades con 0% de exoneración en todas las tablas.':'Mostrando todas las penalidades.');}
+    function updateRecordGroupSelectionControls(visibleRecords){
+      const count=selectedRecordIds.size;$('recordSelectionCount').textContent=`${fmtCount(count)} ${count===1?'liquidación seleccionada':'liquidaciones seleccionadas'}`;$('assignGroupBtn').disabled=!appReady||count===0;$('clearRecordSelectionBtn').disabled=!appReady||count===0;
+      const allSelected=visibleRecords.length>0&&visibleRecords.every(record=>selectedRecordIds.has(record.id));$('selectAllVisibleRecords').checked=allSelected;$('selectAllVisibleRecords').indeterminate=!allSelected&&visibleRecords.some(record=>selectedRecordIds.has(record.id));
+    }
+    function aggregateRecordTotals(records){
+      const totals=records.reduce((sum,record)=>{const current=recordTotals(record);sum.count+=current.count;sum.yes+=current.yes;sum.no+=current.no;sum.total+=current.total;sum.exempt+=current.exempt;sum.balance+=current.balance;if(current.liquidationAmount!==null){sum.liquidationAmount+=current.liquidationAmount;sum.amountCount++;}return sum;},{count:0,yes:0,no:0,total:0,exempt:0,balance:0,liquidationAmount:0,amountCount:0});
+      totals.liquidationFinal=totals.amountCount===records.length?totals.liquidationAmount-totals.balance:null;
+      return totals;
+    }
+    function renderRecordsTotalRow(label,records,grand=false){
+      const totals=aggregateRecordTotals(records),rowClass=grand?'records-total-row records-grand-total':'records-total-row';
+      const liquidations=fmtCount(records.length)+' '+(records.length===1?'liquidación':'liquidaciones');
+      const amountNote=totals.amountCount<records.length?'<div class="summary-cell-note">'+fmtCount(totals.amountCount)+'/'+fmtCount(records.length)+' con monto</div>':'';
+      const amountCell=totals.amountCount?'S/ '+fmtMoney(totals.liquidationAmount)+amountNote:'Pendiente'+amountNote;
+      const finalCell=totals.liquidationFinal===null?'Pendiente':'S/ '+fmtMoney(totals.liquidationFinal);
+      return '<tr class="'+rowClass+'" aria-label="'+escapeHtml(label)+'"><td></td><td colspan="2" class="records-total-label">'+escapeHtml(label)+'<small>'+liquidations+' · '+fmtCount(totals.count)+' penalidades</small></td><td class="num">'+fmtCount(totals.count)+'</td><td class="num">'+fmtCount(totals.yes)+'</td><td class="num">'+fmtCount(totals.no)+'</td><td class="num liquidation-amount-cell">'+amountCell+'</td><td class="num">S/ '+fmtMoney(totals.total)+'</td><td class="num">S/ '+fmtMoney(totals.exempt)+'</td><td class="num">S/ '+fmtMoney(totals.balance)+'</td><td class="num liquidation-final-cell">'+finalCell+'</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
+    }
+    function renderSummary(){
+      renderMultiPicker('summaryPeriod',state.records.map(r=>({value:r.period,label:periodLabel(r.period)})),'Todos');renderMultiPicker('summaryPdv',state.records.map(r=>r.pdv),'Todos');renderMultiPicker('summaryGroup',[{value:UNASSIGNED_GROUP,label:'Sin grupo'},...(state.groups||[]).map(group=>({value:group.id,label:group.name}))],'Todos');renderMultiPicker('summaryStatus',LIQUIDATION_STATUSES.map(status=>({value:status.value,label:status.label})),'Todos');updateOnlyNonExemptButton();
+      const bulkSelect=$('bulkGroupSelect'),previousGroup=bulkSelect.value;bulkSelect.innerHTML=`<option value="">Selecciona un grupo</option><option value="${UNASSIGNED_GROUP}">Sin grupo</option>${(state.groups||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'es')).map(group=>`<option value="${escapeHtml(group.id)}">${escapeHtml(group.name)}</option>`).join('')}`;if(previousGroup===UNASSIGNED_GROUP||(state.groups||[]).some(group=>group.id===previousGroup))bulkSelect.value=previousGroup;
+      const filtered=filteredRecords(),groups=new Map();for(const record of filtered){const id=recordGroupId(record),groupName=id===UNASSIGNED_GROUP?'Sin grupo':(state.groups||[]).find(group=>group.id===id)?.name||'Sin grupo';if(!groups.has(id))groups.set(id,{id,name:groupName,records:[]});groups.get(id).records.push(record);}
+      const orderedGroups=[...groups.values()].sort((a,b)=>a.id===UNASSIGNED_GROUP?-1:b.id===UNASSIGNED_GROUP?1:a.name.localeCompare(b.name,'es'));
+      const groupBlocks=orderedGroups.map(group=>{
+        group.records.sort((a,b)=>b.period.localeCompare(a.period)||a.pdv.localeCompare(b.pdv,'es'));
+        const n=group.records.length,liquidationLabel=`${fmtCount(n)} ${n===1?'liquidación':'liquidaciones'}`;
+        const rows=group.records.map(r=>{const t=recordTotals(r);return `<tr class="click-row ${r.id===currentRecordId?'active':''}" data-record="${escapeHtml(r.id)}"><td class="record-select-cell"><input type="checkbox" class="record-select" data-record-id="${escapeHtml(r.id)}" ${selectedRecordIds.has(r.id)?'checked':''} aria-label="Seleccionar liquidación ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}"></td><td>${escapeHtml(periodLabel(r.period))}</td><td><strong>${escapeHtml(r.pdv)}</strong></td><td class="num">${fmtCount(t.count)}</td><td class="num"><span class="badge yes">${fmtCount(t.yes)}</span></td><td class="num">${fmtCount(t.no)}</td><td class="num liquidation-amount-cell">${renderLiquidationAmount(r)}</td><td class="num">S/ ${fmtMoney(t.total)}</td><td class="num">S/ ${fmtMoney(t.exempt)}</td><td class="num">S/ ${fmtMoney(t.balance)}</td><td class="num liquidation-final-cell">${t.liquidationFinal===null?'Pendiente':'S/ '+fmtMoney(t.liquidationFinal)}</td><td>${escapeHtml(dateLabel(r.updatedAt))}</td><td>${renderLiquidationStatus(r)}</td><td>${renderSignatureRate(r)}</td><td><button type="button" class="btn danger delete-record-btn" data-delete-record="${escapeHtml(r.id)}" aria-label="Eliminar registro ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}">Eliminar</button></td></tr>`;}).join('');
+        return `<tr class="records-group"><th colspan="15" scope="rowgroup"><div class="records-group-heading"><span>Grupo: <strong>${escapeHtml(group.name)}</strong></span><span class="badge records-group-count">${liquidationLabel}</span></div></th></tr>${rows}${renderRecordsTotalRow(`Total grupo: ${group.name}`,group.records)}`;
+      }).join('');
+      const overall=filtered.length?renderRecordsTotalRow('TOTAL GENERAL',filtered,true):'';
+      $('recordsBody').innerHTML=filtered.length?groupBlocks+overall:`<tr><td colspan="15" class="empty">No hay registros con estos filtros. Importa los Excel y crea un registro por periodo y PDV.</td></tr>`;
+      updateRecordGroupSelectionControls(filtered);
+    }
+
+    function renderDetail(){
+      const r=currentRecord();if(!r)return;$('detailHeading').innerHTML=`Detalle de penalidades <span class="badge">${escapeHtml(periodLabel(r.period))}</span> <span class="badge">${escapeHtml(r.pdv)}</span>`;$('detailSubtitle').textContent=`${fmtCount(r.items.length)} penalidades · Fuentes: ${r.sourceFiles?.penalties||'sin referencia'}`;
+      dirty=false;$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';
+      renderMultiPicker('filterPenalty',r.items.map(x=>txt(x.penalty)||'Sin tipo'),'Todas');renderMultiPicker('filterSourceBreach',r.items.map(sourceBrechaLabel),'Todos');renderMultiPicker('filterBreachSla',r.items.map(breachSlaLabel),'Todos');renderMultiPicker('filterOperation',r.items.map(x=>x.latestOperation||'Sin dato'),'Todos');renderMultiPicker('filterReason',r.items.map(x=>txt(x.reason)||'Sin motivo'),'Todos');renderMultiPicker('filterPercent',r.items.map(x=>({value:String(exemptionPercent(x)),label:`${fmtCount(exemptionPercent(x))}%`})),'Todos');renderMultiPicker('filterZone',r.items.map(x=>x.zoneType),'Todos');renderMultiPicker('filterSlaDays',r.items.map(x=>txt(x.slaDays)||'Sin coincidencia'),'Todos');renderMultiPicker('filterExemption',[{value:'yes',label:'Con exoneración'},{value:'no',label:'Sin exoneración'}],'Todas');renderMultiPicker('filterScan',r.items.map(x=>x.scanType),'Todos');renderMultiPicker('filterSignature',r.items.map(x=>x.signature),'Todos');
+      renderMetricsAndBreakdown();renderDetailRows();updateBulkState();
+    }
+    function uniqueGuideCount(items){return new Set(items.map(item=>txt(item.tracking)).filter(Boolean)).size;}
+    function metricCard(label,value,tone=''){return '<div class="metric '+tone+'"><span>'+label+'</span><strong>'+value+'</strong></div>';}
+    function renderMetricsAndBreakdown(){
+      const r=currentRecord();if(!r)return;const t=recordTotals(r);
+      const amountMetric=t.liquidationAmount===null?'Pendiente':'S/ '+fmtMoney(t.liquidationAmount),finalMetric=t.liquidationFinal===null?'Pendiente de monto':'S/ '+fmtMoney(t.liquidationFinal);
+      $('metrics').innerHTML=metricCard('Monto de liquidación',amountMetric,'liquidation-amount')+metricCard('Penalidades',fmtCount(t.count))+metricCard('Con exoneración',fmtCount(t.yes))+metricCard('Monto exonerado','S/ '+fmtMoney(t.exempt))+metricCard('Saldo de penalidad','S/ '+fmtMoney(t.balance))+metricCard('Liq. final',finalMetric,'liquidation-final');
+      const summaryItems=visibleSummaryItems(r),groups=new Map();
+      for(const item of summaryItems){
+        const penalty=txt(item.penalty)||'Sin tipo',reason=txt(item.reason),reasonKey=decisionReasonKey(item),groupKey=[currentRecordId,norm(penalty),reasonKey].join('::'),key=`${norm(penalty)}|${reasonKey}`;
+        if(!groups.has(key))groups.set(key,{key:groupKey,penalty,reason:reason||'Sin motivo de decisión',reasonKey,items:[]});
+        groups.get(key).items.push(item);
+      }
+      const measureItems=items=>{
+        const exempted=items.filter(item=>exemptionPercent(item)>0).length,total=items.reduce((sum,item)=>sum+(Number(item.cost)||0),0),exempt=items.reduce((sum,item)=>sum+exemptionAmount(item),0);
+        return {rows:items.length,exempted,notExempted:items.length-exempted,guides:uniqueGuideCount(items),total,exempt,balance:total-exempt};
+      };
+      const renderMeasures=items=>{const m=measureItems(items);return `<td class="num">${fmtCount(m.exempted)}</td><td class="num">${fmtCount(m.notExempted)}</td><td class="num">${fmtCount(m.rows)}</td><td class="num">${fmtCount(m.guides)}</td><td class="num">S/ ${fmtMoney(m.total)}</td><td class="num">S/ ${fmtMoney(m.exempt)}</td><td class="num">S/ ${fmtMoney(m.balance)}</td>`;};
+      const rows=[...groups.values()].sort((a,b)=>a.penalty.localeCompare(b.penalty,'es')||a.reason.localeCompare(b.reason,'es'));
+      const breakdownGrandTotal=rows.length?`<tr class="click-row summary-grand-total breakdown-grand-total" data-grand-total="true" title="Haz clic para mostrar todas las guías del detalle"><td colspan="2">TOTAL GENERAL</td>${renderMeasures(summaryItems)}</tr>`:'';
+      $('breakdownBody').innerHTML=rows.length?rows.map(group=>{
+        const expanded=expandedBreakdownGroups.has(group.key),toggle=expanded?'−':'+',subtypes=new Map();
+        for(const item of group.items){const subtype=penaltySubtype(item),subtypeKey=[subtype.field,norm(subtype.value)].join('|');if(!subtypes.has(subtypeKey))subtypes.set(subtypeKey,{field:subtype.field,column:subtype.column,value:subtype.value,items:[]});subtypes.get(subtypeKey).items.push(item);}
+        const subtypeRows=expanded?[...subtypes.values()].sort((a,b)=>a.value.localeCompare(b.value,'es')).map(subtype=>`<tr class="click-row breakdown-subrow breakdown-exemption-subrow" data-row-kind="subtype" data-penalty="${escapeHtml(group.penalty)}" data-reason-key="${escapeHtml(group.reasonKey)}" data-subtype-field="${escapeHtml(subtype.field)}" data-subtype="${escapeHtml(subtype.value)}" title="Haz clic para filtrar este subtipo y motivo"><td><span class="breakdown-subtype-prefix">${subtype.column?escapeHtml(subtype.column)+':':'↳'}</span> ${escapeHtml(subtype.value)}</td><td>${escapeHtml(group.reason)}</td>${renderMeasures(subtype.items)}</tr>`).join(''):'';
+        return `<tr class="click-row breakdown-parent" data-row-kind="reason-group" data-penalty="${escapeHtml(group.penalty)}" data-reason-key="${escapeHtml(group.reasonKey)}" data-group-key="${escapeHtml(group.key)}" title="Haz clic en una fila para filtrar por penalización y motivo"><td><button type="button" class="breakdown-expand-btn" data-expand-group="${escapeHtml(group.key)}" aria-expanded="${expanded}" aria-label="${expanded?'Contraer':'Expandir'} subtipos de ${escapeHtml(group.penalty)} · ${escapeHtml(group.reason)}">${toggle}</button>${escapeHtml(group.penalty)}</td><td>${escapeHtml(group.reason)}</td>${renderMeasures(group.items)}</tr>${subtypeRows}`;
+      }).join('')+breakdownGrandTotal:`<tr><td colspan="9" class="empty">No hay penalidades.</td></tr>`;
+      renderBreachMatrix(r);renderSlaMatrix(r);
+    }
+    function breachMatrixRows(record){
+      const sourceIndex=new Map((state.sources.penalties?.rows||[]).map(source=>[`${norm(source.sourceFile)}|${source.sourceRow}`,source]));
+      return visibleSummaryItems(record).filter(item=>norm(item.penalty).includes('BRECHA')||(!txt(item.sla)&&!!txt(item.breach))).map(item=>{
+        const source=sourceIndex.get(`${norm(item.sourceFile)}|${item.sourceRow}`);
+        return {tracking:item.tracking,operation:txt(item.breachOperation)||'Sin dato',breach:txt(source?.breach||item.liquidationBreach||item.breach)||'Sin clasificación'};
+      });
+    }
+    function renderBreachMatrix(record){
+      const rows=breachMatrixRows(record),operations=[...new Set(rows.map(row=>txt(row.operation)||'Sin dato'))].sort((a,b)=>a.localeCompare(b,'es'));
+      $('breachMatrixHead').innerHTML=`<tr><th>Brecha de actualización / subtipo</th>${operations.map(operation=>`<th>${escapeHtml(operation)}</th>`).join('')}<th>Total guías</th></tr>`;
+      if(!rows.length){$('breachMatrixBody').innerHTML=`<tr><td colspan="${operations.length+2}" class="empty">No hay penalidades de brecha de actualización en esta liquidación.</td></tr>`;return;}
+      const key=`breach::${record.id}`,expanded=expandedBreakdownGroups.has(key),toggle=expanded?'−':'+';
+      const cell=(group,operation,label)=>{const selected=operation==='__TOTAL__'?group:group.filter(row=>(txt(row.operation)||'Sin dato')===operation);return `<td class="num pivot-cell" data-pivot-cell="breach" data-label="${escapeHtml(label||'')}" data-operation="${escapeHtml(operation)}" title="Haz clic para filtrar estas guías">${fmtCount(uniqueGuideCount(selected))}</td>`;};
+      const parentCells=operations.map(operation=>cell(rows,operation,'Brecha de actualización')).join('')+cell(rows,'__TOTAL__','Brecha de actualización');
+      const subtypes=new Map();for(const row of rows){const subtype=txt(row.breach)||'Sin clasificación';if(!subtypes.has(subtype))subtypes.set(subtype,[]);subtypes.get(subtype).push(row);}
+      const childRows=expanded?[...subtypes.entries()].sort((a,b)=>a[0].localeCompare(b[0],'es')).map(([subtype,subtypeRows])=>`<tr class="click-row breakdown-subrow" data-pivot-row="breach" data-subtype="${escapeHtml(subtype)}"><td><span class="breakdown-subtype-prefix">Brecha:</span> ${escapeHtml(subtype)}</td>${operations.map(operation=>cell(subtypeRows,operation,subtype)).join('')}${cell(subtypeRows,'__TOTAL__',subtype)}</tr>`).join(''):'';
+      $('breachMatrixBody').innerHTML=`<tr class="click-row breakdown-parent" data-pivot-row="breach" data-breach-parent="true"><td><button type="button" class="breakdown-expand-btn" data-matrix-expand="${escapeHtml(key)}" aria-expanded="${expanded}" aria-label="${expanded?'Contraer':'Expandir'} subtipos de brecha de actualización">${toggle}</button>Brecha de actualización de penalidad</td>${parentCells}</tr>${childRows}`;
+    }
+    function scanSignatureLabel(item){return `${txt(item.scanType)||'Sin tipo de escaneo'} · ${txt(item.signature)||'Sin dato de firma'}`;}
+    function isSlaMatrixItem(item){return !!txt(item.sla)&&(!item.breach||norm(item.penalty).includes('SLA')||norm(item.penalty).includes('COLA'));}
+    function renderSlaMatrix(record){
+      const items=visibleSummaryItems(record).filter(isSlaMatrixItem),columns=[...new Set(items.map(scanSignatureLabel))].sort((a,b)=>a.localeCompare(b,'es')),subtypes=[...new Set(items.map(item=>txt(item.sla)||'Sin subtipo'))].sort((a,b)=>a.localeCompare(b,'es'));
+      $('slaMatrixHead').innerHTML=`<tr><th>Subtipo SLA</th>${columns.map(label=>`<th>${escapeHtml(label)}</th>`).join('')}<th>Total guías</th></tr>`;
+      if(!items.length){$('slaMatrixBody').innerHTML=`<tr><td colspan="${columns.length+2}" class="empty">No hay penalidades con subtipo SLA en esta liquidación.</td></tr>`;return;}
+      const cell=(group,column,label=txt(group[0]?.sla)||'Sin subtipo')=>{const selected=column==='__TOTAL__'?group:group.filter(item=>scanSignatureLabel(item)===column);return `<td class="num pivot-cell" data-pivot-cell="sla" data-label="${escapeHtml(label)}" data-combo="${escapeHtml(column)}" title="Haz clic para filtrar">${fmtCount(uniqueGuideCount(selected))}</td>`;};
+      const subtypeRows=subtypes.map(subtype=>{const group=items.filter(item=>(txt(item.sla)||'Sin subtipo')===subtype);return `<tr class="click-row" data-pivot-row="sla" data-subtype="${escapeHtml(subtype)}"><td>${escapeHtml(subtype)}</td>${columns.map(column=>cell(group,column)).join('')}${cell(group,'__TOTAL__')}</tr>`;}).join('');
+      const totalCells=columns.map(column=>cell(items,column,'TOTAL GENERAL')).join('')+cell(items,'__TOTAL__','TOTAL GENERAL');
+      $('slaMatrixBody').innerHTML=`${subtypeRows}<tr class="click-row summary-grand-total" data-pivot-row="sla" data-grand-total="true" title="Haz clic para filtrar todas las guías del resumen SLA"><td>TOTAL GENERAL</td>${totalCells}</tr>`;
+    }
+
+    function zoneBadge(value){const n=norm(value);const kind=n.includes('RURAL')?'rural':n.includes('URBANO')?'urban':n.includes('ASIGNADA')||n.includes('ENCONTRADA')?'unassigned':'';return `<span class="badge ${kind}">${escapeHtml(value||'NO ASIGNADA')}</span>`;}
+    function filteredItems(){
+      const r=currentRecord();if(!r)return [];const q=norm($('filterSearch').value);
+      return r.items.filter(x=>(!onlyNonExempt||exemptionPercent(x)===0)&&(!matrixGuideSelection||matrixGuideSelection.has(idPart(x.tracking)))&&(!q||[x.tracking,x.district,x.province,x.department,x.zoneName,x.latestOperation,x.breachWaitHours].some(v=>norm(v).includes(q)))&&pickerMatches('filterPenalty',txt(x.penalty)||'Sin tipo')&&pickerMatches('filterSourceBreach',sourceBrechaLabel(x))&&pickerMatches('filterBreachSla',breachSlaLabel(x))&&pickerMatches('filterOperation',x.latestOperation||'Sin dato')&&pickerMatches('filterReason',txt(x.reason)||'Sin motivo')&&pickerMatches('filterPercent',String(exemptionPercent(x)))&&pickerMatches('filterZone',x.zoneType)&&pickerMatches('filterSlaDays',txt(x.slaDays)||'Sin coincidencia')&&pickerMatches('filterExemption',exemptionPercent(x)>0?'yes':'no')&&pickerMatches('filterScan',x.scanType)&&pickerMatches('filterSignature',x.signature));
+    }
+    function renderDetailRows(){
+      const items=filteredItems();$('visibleCount').textContent=`Mostrando ${fmtCount(items.length)} de ${fmtCount(visibleSummaryItems(currentRecord()).length)} penalidades`;
+      const clearMatrixFilter=$('clearMatrixGuideFilterBtn');clearMatrixFilter.hidden=!matrixGuideSelection;clearMatrixFilter.textContent=matrixGuideSelection?`Quitar filtro de guías de Brecha (${fmtCount(matrixGuideSelection.size)})`:'Quitar filtro de guías de Brecha';
+      const groups=new Map();for(const item of items){const zone=txt(item.zoneName)||'NO ASIGNADA',key=norm(zone)||'NO ASIGNADA';if(!groups.has(key))groups.set(key,{zone,items:[]});groups.get(key).items.push(item);}
+      const sortedGroups=[...groups.values()].sort((a,b)=>a.zone.localeCompare(b.zone,'es'));
+      const renderItem=x=>{const pct=exemptionPercent(x),net=balanceAmount(x);return `<tr data-row="${escapeHtml(x.id)}"><td><input class="row-select" type="checkbox" data-id="${escapeHtml(x.id)}" ${selectedIds.has(x.id)?'checked':''} aria-label="Seleccionar guía ${escapeHtml(x.tracking)}"></td><td>${escapeHtml(x.dateRaw||x.dateISO)}</td><td>${escapeHtml(x.pdv)}</td><td><strong>${escapeHtml(x.tracking)}</strong><button type="button" class="copy-guide-btn" data-id="${escapeHtml(x.id)}" aria-label="Copiar guía ${escapeHtml(x.tracking)}">Copiar guía</button></td><td><input class="percent-input" type="number" min="0" max="100" step="1" data-id="${escapeHtml(x.id)}" value="${pct}" aria-label="Porcentaje de exoneración para ${escapeHtml(x.tracking)}"><div class="badge ${pct>0?'yes':'no'}">${pct>0?`${fmtMoney(pct)}%`:'0%'}</div></td><td><strong>${escapeHtml(x.penalty)}</strong><div class="muted-cell">Brecha / SLA: ${escapeHtml(breachSlaLabel(x))}</div><div class="muted-cell">Espera: ${escapeHtml(x.breachWaitHours||'—')} h</div></td><td><div>${escapeHtml(x.latestOperation||'Sin dato')}</div></td><td class="num money money-stack"><strong>Saldo: S/ ${fmtMoney(net)}</strong><span>Original: S/ ${fmtMoney(x.cost)} · Exonerado: S/ ${fmtMoney(exemptionAmount(x))}</span></td><td>${zoneBadge(x.zoneType)}</td><td title="${escapeHtml([x.district,x.province,x.department].join(' / '))}">${escapeHtml(txt(x.slaDays)===''?'Sin coincidencia':x.slaDays)}</td><td><div>${escapeHtml(txt(x.zoneName)||'NO ASIGNADA')}</div><div class="muted-cell">Zona fuente: ${escapeHtml(txt(x.sourceZone)||'—')}</div>${manualZoneControl(x)}</td><td>${escapeHtml([x.district,x.province,x.department].join(' / '))}</td><td><div>${escapeHtml(x.scanType)}</div><div class="muted-cell">Firma: ${escapeHtml(x.signature)}</div></td><td>${escapeHtml(x.scanTime||'—')}</td><td><div>${escapeHtml(txt(x.motive)||'—')}</div><div class="muted-cell">Observaciones: ${escapeHtml(txt(x.observations)||'—')}</div></td><td><input class="reason-input" type="text" maxlength="300" data-id="${escapeHtml(x.id)}" value="${escapeHtml(x.reason||'')}" placeholder="Motivo de exoneración o decisión"></td></tr>`;};
+      $('detailBody').innerHTML=items.length?sortedGroups.map(group=>{const guideCount=uniqueGuideCount(group.items),label=`${fmtCount(group.items.length)} ${group.items.length===1?'penalidad':'penalidades'}`;return `<tr class="detail-zone-group"><th colspan="16" scope="rowgroup"><div class="detail-zone-heading"><span>Zona: ${escapeHtml(group.zone)}</span><span class="badge detail-zone-count">${label}</span><span class="detail-zone-guides">${fmtCount(guideCount)} ${guideCount===1?'guía única':'guías únicas'}</span></div></th></tr>${group.items.map(renderItem).join('')}`;}).join(''):`<tr><td colspan="16" class="empty">No hay penalidades para los filtros seleccionados.</td></tr>`;
+      const allSelected=items.length>0&&items.every(x=>selectedIds.has(x.id));$('selectAllVisible').checked=allSelected;$('selectAllVisible').indeterminate=!allSelected&&items.some(x=>selectedIds.has(x.id));updateBulkState();
+    }
+    function updateBulkState(){const n=selectedIds.size;$('bulkCount').textContent=`${fmtCount(n)} penalidades seleccionadas`;$('bulkExemptBtn').disabled=n===0;$('bulkRemoveExemptionBtn').disabled=n===0;$('bulkRemoveReasonBtn').disabled=n===0;$('copySelectedGuidesBtn').disabled=n===0;}
+    async function copyTextToClipboard(value){
+      const text=String(value||'');if(!text)return;
+      if(navigator.clipboard&&navigator.clipboard.writeText){try{await navigator.clipboard.writeText(text);return;}catch(e){}}
+      const field=document.createElement('textarea');field.value=text;field.setAttribute('readonly','');field.style.position='fixed';field.style.left='-9999px';document.body.appendChild(field);field.select();
+      const copied=document.execCommand('copy');field.remove();if(!copied)throw new Error('No se pudo acceder al portapapeles.');
+    }
+    async function copySelectedGuides(){
+      const record=currentRecord();if(!record)return;
+      const guides=[...new Set(record.items.filter(item=>selectedIds.has(item.id)).map(item=>txt(item.tracking)).filter(Boolean))];
+      if(!guides.length){notify('Selecciona al menos una guía.',true);return;}
+      try{await copyTextToClipboard(guides.join(String.fromCharCode(10)));notify(fmtCount(guides.length)+' guías copiadas al portapapeles.');}
+      catch(e){notify('No se pudieron copiar las guías. Revisa el permiso del portapapeles.',true);}
+    }
+    async function copyGuide(itemId){
+      const item=currentRecord()?.items.find(x=>x.id===itemId);if(!item||!txt(item.tracking))return;
+      try{await copyTextToClipboard(txt(item.tracking));notify('Guía '+txt(item.tracking)+' copiada al portapapeles.');}
+      catch(e){notify('No se pudo copiar la guía.',true);}
+    }
+    function refreshDecisionPickers(){const items=currentRecord()?.items||[];renderMultiPicker('filterReason',items.map(item=>txt(item.reason)||'Sin motivo'),'Todos');renderMultiPicker('filterPercent',items.map(item=>({value:String(exemptionPercent(item)),label:`${fmtCount(exemptionPercent(item))}%`})),'Todos');}
+    function markExemptionPercent(itemId,value){
+      const item=currentRecord()?.items.find(x=>x.id===itemId);if(!item)return;item.exemptionPercent=clampPercent(value);item.exonerated=item.exemptionPercent>0;if(onlyNonExempt&&item.exemptionPercent>0)selectedIds.delete(itemId);item.modifiedAt=new Date().toISOString();setDirty();refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();
+    }
+    function doBulkExempt(){
+      const ids=new Set(selectedIds);if(!ids.size){notify('Selecciona al menos una penalidad.',true);return;}
+      const raw=$('bulkPercent').value,pct=Number(raw),reason=txt($('bulkReason').value);
+      if(raw===''||!Number.isFinite(pct)||pct<0||pct>100){notify('El porcentaje debe estar entre 0 y 100.',true);$('bulkPercent').focus();return;}
+      if(pct>0&&!reason){notify('Escribe el motivo para aplicar una exoneración.',true);$('bulkReason').focus();return;}
+      for(const item of currentRecord()?.items||[])if(ids.has(item.id)){item.exemptionPercent=pct;item.exonerated=pct>0;if(reason)item.reason=reason;item.modifiedAt=new Date().toISOString();}if(onlyNonExempt&&pct>0)selectedIds.clear();
+      setDirty();refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();notify(`${fmtCount(ids.size)} penalidades actualizadas al ${fmtMoney(pct)}%.`);
+    }
+    function doBulkRemoveExemption(){
+      const ids=new Set(selectedIds);if(!ids.size){notify('Selecciona al menos una penalidad.',true);return;}
+      let changed=0;const now=new Date().toISOString();
+      for(const item of currentRecord()?.items||[])if(ids.has(item.id)&&exemptionPercent(item)>0){item.exemptionPercent=0;item.exonerated=false;item.modifiedAt=now;changed++;}
+      if(!changed){notify('Las penalidades seleccionadas ya tienen 0% de exoneración.');return;}
+      setDirty();refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();notify(`Se quitó la exoneración de ${fmtCount(changed)} penalidades. Se conservaron sus motivos.`);
+    }
+    function doBulkRemoveReason(){
+      const ids=new Set(selectedIds);if(!ids.size){notify('Selecciona al menos una penalidad.',true);return;}
+      const items=currentRecord()?.items||[];let changed=0;const now=new Date().toISOString();
+      for(const item of items)if(ids.has(item.id)&&txt(item.reason)){item.reason='';item.modifiedAt=now;changed++;}
+      if(!changed){notify('Las penalidades seleccionadas ya no tienen motivo de decisión.');return;}
+      setDirty();refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();
+      const stillExempt=items.filter(item=>ids.has(item.id)&&exemptionPercent(item)>0).length;
+      notify(`Se quitaron ${fmtCount(changed)} motivos de decisión.${stillExempt?` ${fmtCount(stillExempt)} penalidades siguen exoneradas y necesitarán un motivo antes de guardar.`:''}`);
+    }
+    function downloadExcel(){
+      const record=currentRecord();if(!record)return notify('Abre un registro antes de descargar.',true);if(!window.XLSX)return notify('El lector Excel requiere conexión a internet.',true);
+      const rows=filteredItems();if(!rows.length)return notify('No hay guías en el detalle filtrado.',true);
+      const headers=['GUIA','PENALIDAD','PDV','PORCENTAJE DE EXONERACION','MONTO FINAL (S/)','MOTIVO DE DECISION'];const exportRows=rows.map(x=>[x.tracking,txt(x.penalty)||'Sin tipo de penalización',x.pdv,exemptionPercent(x),balanceAmount(x),x.reason||'']);const sheet=XLSX.utils.aoa_to_sheet([headers,...exportRows]);sheet['!cols']=[{wch:22},{wch:44},{wch:20},{wch:27},{wch:20},{wch:40}];sheet['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:exportRows.length,c:headers.length-1}})};for(let row=1;row<=exportRows.length;row++){const percentCell=sheet[XLSX.utils.encode_cell({r:row,c:3})];if(percentCell)percentCell.z='0.##"%"';const amountCell=sheet[XLSX.utils.encode_cell({r:row,c:4})];if(amountCell)amountCell.z='"S/" #,##0.00';}const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,sheet,'Detalle de guías');
+      const pdv=norm(record.pdv).replace(/\s+/g,'_').replace(/[^A-Z0-9_-]/g,'');XLSX.writeFile(book,`EXONERACIONES_${record.period}_${pdv}.xlsx`);
+    }
+    function filterFromSummaryCell(event){
+      const expandButton=event.target.closest('[data-expand-group]');if(expandButton){event.stopPropagation();const key=expandButton.dataset.expandGroup;if(expandedBreakdownGroups.has(key))expandedBreakdownGroups.delete(key);else expandedBreakdownGroups.add(key);renderMetricsAndBreakdown();return;}
+      const grandTotal=event.target.closest('tr[data-grand-total="true"]');if(grandTotal){matrixGuideSelection=null;$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});return;}
+      const cell=event.target.closest('td'),row=event.target.closest('tr[data-penalty]');if(!cell||!row)return;
+      matrixGuideSelection=null;$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}
+      const penalty=row.dataset.penalty,rowKind=row.dataset.rowKind;
+      const record=currentRecord(),reasonKey=row.dataset.reasonKey;
+      let items=visibleSummaryItems(record).filter(item=>norm(item.penalty)===norm(penalty)&&decisionReasonKey(item)===reasonKey);
+      if(rowKind==='subtype'){const field=row.dataset.subtypeField,value=norm(row.dataset.subtype);items=items.filter(item=>{const subtype=penaltySubtype(item);return subtype.field===field&&norm(subtype.value)===value;});}
+      setPickerSelection('filterPenalty',[...new Set(items.map(item=>txt(item.penalty)||'Sin tipo'))]);
+      setPickerSelection('filterReason',[...new Set(items.map(item=>txt(item.reason)||'Sin motivo'))]);
+      if(rowKind==='subtype')setPickerSelection('filterBreachSla',[...new Set(items.map(breachSlaLabel))]);
+      renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});
+    }
+    function filterMatrixCell(event){
+      const expand=event.target.closest('[data-matrix-expand]');if(expand){event.stopPropagation();const key=expand.dataset.matrixExpand;if(expandedBreakdownGroups.has(key))expandedBreakdownGroups.delete(key);else expandedBreakdownGroups.add(key);renderMetricsAndBreakdown();return;}
+      const row=event.target.closest('tr[data-pivot-row]');if(!row)return;const cell=event.target.closest('[data-pivot-cell]'),record=currentRecord();if(!record)return;
+      $('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}
+      const kind=row.dataset.pivotRow||cell?.dataset.pivotCell,isGrandTotal=row.dataset.grandTotal==='true';
+      if(kind==='breach'){
+        const subtype=row.dataset.subtype||'',operation=cell?.dataset.operation||'__TOTAL__';
+        let sourceRows=breachMatrixRows(record);
+        if(subtype)sourceRows=sourceRows.filter(source=>norm(source.breach||'Sin clasificación')===norm(subtype));
+        if(operation!=='__TOTAL__')sourceRows=sourceRows.filter(source=>(txt(source.operation)||'Sin dato')===operation);
+        matrixGuideSelection=new Set(sourceRows.map(source=>idPart(source.tracking)).filter(Boolean));
+      }else if(kind==='sla'){
+        matrixGuideSelection=null;
+        const subtype=row.dataset.subtype||cell?.dataset.label||'',summaryItems=visibleSummaryItems(record);let items=isGrandTotal?summaryItems.filter(isSlaMatrixItem):summaryItems.filter(item=>(txt(item.sla)||'Sin subtipo')===subtype);
+        const combo=cell?.dataset.combo||'__TOTAL__';if(combo!=='__TOTAL__')items=items.filter(item=>scanSignatureLabel(item)===combo);
+        setPickerSelection('filterBreachSla',[...new Set(items.map(breachSlaLabel))]);
+        if(combo!=='__TOTAL__'){setPickerSelection('filterScan',[...new Set(items.map(item=>item.scanType))]);setPickerSelection('filterSignature',[...new Set(items.map(item=>item.signature))]);}
+      }
+      renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});
+    }
+    function closeMultiPickers(except=null){for(const id of pickerIds){const root=$(id);if(!root||root===except)continue;root.querySelector('.multi-picker-menu').hidden=true;root.querySelector('.multi-picker-trigger').setAttribute('aria-expanded','false');}}
+    for(const id of pickerIds){
+      const root=$(id);
+      root.addEventListener('click',event=>{
+        const trigger=event.target.closest('.multi-picker-trigger');
+        if(trigger){const opening=trigger.getAttribute('aria-expanded')!=='true';closeMultiPickers(root);root.querySelector('.multi-picker-menu').hidden=!opening;trigger.setAttribute('aria-expanded',String(opening));return;}
+        const action=event.target.closest('[data-picker-action]');if(!action)return;
+        pickerSelections[id]=action.dataset.pickerAction==='all'?null:new Set();refreshMultiPicker(id);afterPickerChange(id);
+      });
+      root.addEventListener('change',event=>{
+        if(!event.target.matches('.multi-picker-menu input[type="checkbox"]'))return;
+        const options=pickerOptions[id]||[];const selected=pickerSelections[id]===null?new Set(options.map(option=>option.value)):new Set(pickerSelections[id]);
+        if(event.target.checked)selected.add(event.target.value);else selected.delete(event.target.value);
+        pickerSelections[id]=selected.size===options.length?null:selected;refreshMultiPicker(id);afterPickerChange(id);
+      });
+    }
+    document.addEventListener('click',event=>{if(!event.target.closest('.multi-picker'))closeMultiPickers();});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMultiPickers();});
+    $('detailScrollLeft').addEventListener('click',()=>{const wrap=$('detailTableWrap');wrap.scrollBy({left:-Math.max(320,wrap.clientWidth*.75),behavior:'smooth'});});
+    $('detailScrollRight').addEventListener('click',()=>{const wrap=$('detailTableWrap');wrap.scrollBy({left:Math.max(320,wrap.clientWidth*.75),behavior:'smooth'});});
+    $('openCreateBtn').addEventListener('click',openCreate);$('saveBtn').addEventListener('click',saveCurrent);$('syncBtn').addEventListener('click',syncCurrent);$('retrySyncBtn').addEventListener('click',()=>{if(cloudInFlight)return;cloudPending=true;cloudNotify=true;$('storageState').textContent='Reintentando sincronización…';$('retrySyncBtn').disabled=true;flushCloudSave();});
+    $('exportStateBtn').addEventListener('click',exportStateBackup);
+    $('recordsBody').addEventListener('focusin',e=>{if(!e.target.matches('.liquidation-amount-input'))return;const amount=liquidationAmountValue(e.target.value);e.target.value=amount===null?'':amount.toFixed(2);e.target.select();});
+    $('recordsBody').addEventListener('click',e=>{const deleteButton=e.target.closest('[data-delete-record]');if(deleteButton){e.stopPropagation();deleteSavedRecord(deleteButton.dataset.deleteRecord);return;}if(e.target.closest('.record-select,.liquidation-status-select,.signature-rate-editor,.liquidation-amount-input')){e.stopPropagation();return;}const row=e.target.closest('tr[data-record]');if(row)showRecord(row.dataset.record);});
+    $('recordsBody').addEventListener('change',e=>{if(e.target.matches('.liquidation-status-select,.signature-rate-input,.liquidation-amount-input')){const record=state.records.find(item=>item.id===e.target.dataset.recordId);if(!record)return;if(e.target.matches('.liquidation-status-select'))record.status=liquidationStatusValue(e.target.value);else if(e.target.matches('.signature-rate-input'))record.signatureRate=signatureRateValue(e.target.value);else record.liquidationAmount=liquidationAmountValue(e.target.value);record.updatedAt=new Date().toISOString();persist(true);renderSummary();if(currentRecordId===record.id)renderMetricsAndBreakdown();return;}if(!e.target.matches('.record-select'))return;const id=e.target.dataset.recordId;if(e.target.checked)selectedRecordIds.add(id);else selectedRecordIds.delete(id);updateRecordGroupSelectionControls(filteredRecords());});
+    $('onlyNonExemptBtn').addEventListener('click',toggleOnlyNonExempt);
+    $('selectAllVisibleRecords').addEventListener('change',e=>{for(const record of filteredRecords()){if(e.target.checked)selectedRecordIds.add(record.id);else selectedRecordIds.delete(record.id);}renderSummary();});
+    $('createGroupBtn').addEventListener('click',createLiquidationGroup);$('groupNameInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();createLiquidationGroup();}});
+    $('assignGroupBtn').addEventListener('click',assignSelectedRecordsToGroup);$('clearRecordSelectionBtn').addEventListener('click',clearRecordSelection);
+    $('breakdownBody').addEventListener('click',filterFromSummaryCell);
+    $('breachMatrixBody').addEventListener('click',filterMatrixCell);$('slaMatrixBody').addEventListener('click',filterMatrixCell);
+    $('filterSearch').addEventListener('input',renderDetailRows);
+    $('clearMatrixGuideFilterBtn').addEventListener('click',()=>{matrixGuideSelection=null;renderDetailRows();});
+    $('detailBody').addEventListener('change',e=>{
+      const id=e.target.dataset.id;if(e.target.classList.contains('row-select')){if(e.target.checked)selectedIds.add(id);else selectedIds.delete(id);updateBulkState();const visible=filteredItems();$('selectAllVisible').checked=visible.length>0&&visible.every(x=>selectedIds.has(x.id));$('selectAllVisible').indeterminate=!$('selectAllVisible').checked&&visible.some(x=>selectedIds.has(x.id));}
+      if(e.target.classList.contains('percent-input'))markExemptionPercent(id,e.target.value);
+      if(e.target.classList.contains('manual-zone-select'))applyManualZoneChoice(e.target);
+    });
+    $('detailBody').addEventListener('input',e=>{if(e.target.classList.contains('reason-input')){const item=currentRecord()?.items.find(x=>x.id===e.target.dataset.id);if(item){item.reason=e.target.value;item.modifiedAt=new Date().toISOString();setDirty();}}});
+    $('detailBody').addEventListener('change',e=>{if(e.target.classList.contains('reason-input')){refreshDecisionPickers();renderMetricsAndBreakdown();}});
+    $('selectAllVisible').addEventListener('change',e=>{for(const item of filteredItems()){if(e.target.checked)selectedIds.add(item.id);else selectedIds.delete(item.id);}renderDetailRows();});
+    $('selectVisibleBtn').addEventListener('click',()=>{for(const item of filteredItems())selectedIds.add(item.id);renderDetailRows();});
+    $('clearSelectionBtn').addEventListener('click',()=>{selectedIds.clear();renderDetailRows();});
+    $('copySelectedGuidesBtn').addEventListener('click',copySelectedGuides);
+    $('detailBody').addEventListener('click',e=>{const button=e.target.closest('.copy-guide-btn');if(button)copyGuide(button.dataset.id);});
+    $('bulkExemptBtn').addEventListener('click',doBulkExempt);$('bulkRemoveExemptionBtn').addEventListener('click',doBulkRemoveExemption);$('bulkRemoveReasonBtn').addEventListener('click',doBulkRemoveReason);
+    $('exportXlsxBtn').addEventListener('click',downloadExcel);
+    if($('importStateBtn')){
+      $('importStateBtn').addEventListener('click',()=>$('stateBackupInput').click());
+      $('stateBackupInput').addEventListener('change',async event=>{
+        const file=event.target.files?.[0];if(!file)return;
+        try{
+          const imported=JSON.parse(await file.text());
+          if(!imported||imported.version!==1||!imported.sources||!Array.isArray(imported.records))throw new Error('El archivo no tiene un respaldo compatible.');
+          if(!confirm(`Se importarán ${fmtCount(imported.records.length)} liquidaciones al almacenamiento Supabase. Continúa solo si este proyecto está vacío o si deseas combinar estos datos.`)){event.target.value='';return;}
+          state={...emptyState(),...imported,sources:{...emptyState().sources,...(imported.sources||{})},records:imported.records,groups:Array.isArray(imported.groups)?imported.groups.filter(group=>group&&group.id&&group.name):[],deletedRecords:imported.deletedRecords&&typeof imported.deletedRecords==='object'?imported.deletedRecords:{}};
+          state.records=state.records.map(record=>({...record,status:liquidationStatusValue(record.status),signatureRate:signatureRateValue(record.signatureRate),items:(record.items||[]).map(item=>{const percent=item.exemptionPercent==null?(item.exonerated?100:0):clampPercent(item.exemptionPercent);return {...item,exemptionPercent:percent,exonerated:percent>0};})}));
+          selectedIds.clear();selectedRecordIds.clear();dirty=false;initializeView();setAvailable(true);persist(true);renderSummary();
+          notify('Respaldo importado. Se está sincronizando con Supabase.');
+        }catch(error){notify(`No se pudo importar el respaldo: ${error?.message||error}`,true);}finally{event.target.value='';}
+      });
+    }
+    function downloadStateJson(value){
+      const filename=`EXONERACIONES_RESPALDO_${new Date().toISOString().slice(0,10)}.json`;
+      const blob=new Blob([JSON.stringify(value,null,2)],{type:'application/json;charset=utf-8'});
+      const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      notify('Respaldo JSON descargado. Puedes importarlo en la versión Supabase.');
+    }
+    function exportStateBackup(){
+      const button=$('exportStateBtn'),label=button.textContent;button.disabled=true;button.textContent='Preparando respaldo…';
+      const finish=()=>{button.disabled=!appReady;button.textContent=label;};
+      if(!cloudMode){downloadStateJson(state);finish();return;}
+      const snapshot=JSON.parse(JSON.stringify(state));
+      google.script.run.withSuccessHandler(result=>{
+        state.serverRevision=Number(result?.revision)||state.serverRevision;
+        google.script.run.withSuccessHandler(remote=>{
+          if(!remote||remote.version!==1||!Array.isArray(remote.records)){finish();notify('El estado central no tiene el formato esperado.',true);return;}
+          const merged=mergeLocalDeletionTombstones(remote,snapshot).state;merged.serverRevision=Number(remote.serverRevision)||state.serverRevision;
+          downloadStateJson(merged);finish();
+        }).withFailureHandler(error=>{finish();notify(`No se pudo descargar el respaldo central: ${error?.message||error}`,true);}).getFullAppState();
+      }).withFailureHandler(error=>{finish();notify(`No se pudo guardar el estado antes del respaldo: ${error?.message||error}`,true);}).saveAppState(snapshot);
+    }
+    function setAvailable(available){appReady=available;if($('importStateBtn'))$('importStateBtn').disabled=!available;if($('exportStateBtn'))$('exportStateBtn').disabled=!available;$('openCreateBtn').disabled=!available;$('saveBtn').disabled=!available;$('createGroupBtn').disabled=!available;$('groupNameInput').disabled=!available;$('bulkGroupSelect').disabled=!available;$('clearRecordSelectionBtn').disabled=!available||selectedRecordIds.size===0;for(const id of Object.values(inputBySlot))$(id).disabled=!available;updateRecordGroupSelectionControls(filteredRecords());}
+    function stateHasData(value){return !!(value?.records?.length||value?.groups?.length||Object.keys(value?.deletedRecords||{}).length||Object.values(value?.sources||{}).some(source=>source?.rows?.length));}
+    function mergeLocalDeletionTombstones(remote,local){
+      const merged={...remote,deletedRecords:{...(remote.deletedRecords||{})}},beforeCount=(remote.records||[]).length;let changed=false;
+      for(const [id,deletedAt] of Object.entries(local.deletedRecords||{}))if(timestampValue(deletedAt)>timestampValue(merged.deletedRecords[id])){merged.deletedRecords[id]=deletedAt;changed=true;}
+      merged.records=(remote.records||[]).filter(record=>{const deletedAt=timestampValue(merged.deletedRecords[record.id]);return !deletedAt||timestampValue(record.createdAt)>deletedAt;});
+      if(merged.records.length!==beforeCount)changed=true;return {state:merged,changed};
+    }
+    function initializeView(){
+      for(const record of state.records){record.status=liquidationStatusValue(record.status);record.signatureRate=signatureRateValue(record.signatureRate);record.liquidationAmount=liquidationAmountValue(record.liquidationAmount);}hydratePenaltySourceFromRecords();const slaBackfilled=backfillMissingSla();if(slaBackfilled){persist();notify(`Se actualizaron datos de Exportación y Zonificación en ${fmtCount(slaBackfilled)} penalidades guardadas.`);}updateSourceDiag();if(state.sources.penalties)setDefaultPeriodAndPdvs();renderSummary();
+      if(state.records.length){const periods=state.records.map(r=>r.period).sort();if(!$('periodInput').value)$('periodInput').value=periods[periods.length-1];}
+      if(!window.XLSX)notify('El lector Excel requiere conexión a internet al abrir el HTML.',true);
+    }
+    function init(){
+      if(!cloudMode){$('storageState').textContent='Modo local: datos disponibles solo en este navegador.';setAvailable(true);initializeView();return;}
+      $('storageState').textContent='Conectando con Supabase…';setAvailable(false);
+      google.script.run.withSuccessHandler(remote=>{
+        if(!remote||remote.version!==1||!remote.sources||!Array.isArray(remote.records))throw new Error('El almacenamiento devolvió datos inválidos.');
+        const local=state;if(!stateHasData(remote)&&stateHasData(local)){local.serverRevision=Number(remote.serverRevision)||0;state=local;initializeView();setAvailable(true);persist();notify('Se copiaron los datos de este navegador a Supabase.');return;}
+        const deletionMerge=mergeLocalDeletionTombstones(remote,local);state=deletionMerge.state;state.groups=Array.isArray(state.groups)?state.groups.filter(group=>group&&group.id&&group.name):[];state.serverRevision=Number(remote.serverRevision)||0;$('storageState').textContent='Conectado a Supabase';setAvailable(true);initializeView();if(deletionMerge.changed)persist();
+      }).withFailureHandler(error=>{$('storageState').textContent='No se pudo conectar con Supabase';setAvailable(false);notify(`No se pudo cargar el almacenamiento de Supabase: ${error?.message||error||''}`,true);}).getAppState();
+    }
+    init();
+  })();
+  </script>
+  <script>
+    // Reutiliza la sesión del portal V16 y guarda cada penalidad en filas relacionales.
+    const V16_CONFIG = window.V16_CONFIG;
+    let exoSupabaseClient = null;
+    let exoAppStarted = false;
+    let exoV2Baseline = null;
+    const gateMessage = document.getElementById('moduleGateMessage');
+    const showModuleGate = (message, isError=false) => {
+      gateMessage.textContent = message || '';
+      gateMessage.classList.toggle('error', Boolean(isError));
+    };
+    const cloneState = value => JSON.parse(JSON.stringify(value || {}));
+    const syncBatchSize = 500;
+
+    function makeGoogleScriptBridge(){
+      const fetchItems=async recordKey=>{
+        const items=[],pageSize=500;let offset=0;
+        while(true){
+          const {data,error}=await exoSupabaseClient.rpc('penalidades_obtener_items',{p_record_key:recordKey,p_offset:offset,p_limit:pageSize});
+          if(error)throw error;
+          const page=Array.isArray(data)?data:[];items.push(...page);
+          if(page.length<pageSize)break;
+          offset+=pageSize;
+        }
+        return items;
+      };
+      const fetchFullState=async()=>{
+        const {data,error}=await exoSupabaseClient.rpc('penalidades_obtener_resumen');if(error)throw error;
+        const full=cloneState(data);
+        for(const record of full.records||[])record.items=await fetchItems(record.id);
+        return full;
+      };
+      const createRunner = () => {
+        let successHandler=()=>{}, failureHandler=()=>{};
+        const runner={
+          withSuccessHandler(fn){successHandler=typeof fn==='function'?fn:()=>{};return runner;},
+          withFailureHandler(fn){failureHandler=typeof fn==='function'?fn:()=>{};return runner;},
+          getAppState(){
+            exoSupabaseClient.rpc('penalidades_obtener_resumen').then(({data,error})=>{
+              if(error){failureHandler(error);return;}
+              exoV2Baseline=cloneState(data);
+              successHandler(data);
+            }).catch(failureHandler);
+            return runner;
+          },
+          getRecordItems(recordKey){
+            fetchItems(recordKey).then(items=>{
+              const baselineRecord=(exoV2Baseline?.records||[]).find(record=>record.id===recordKey);
+              if(baselineRecord)baselineRecord.items=cloneState(items);
+              successHandler(items);
+            }).catch(failureHandler);
+            return runner;
+          },
+          getFullAppState(){fetchFullState().then(successHandler).catch(failureHandler);return runner;},
+          saveAppState(snapshot){
+            const keyNorm=value=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9\u3400-\u9FFF]+/g,' ').trim().replace(/\s+/g,' ').replace(/ /g,'');
+            const dbItemId=(record,item)=>{const prefix=`${record.id}::`;return String(item.id??'').startsWith(prefix)?String(item.id):prefix+String(item.id??'');};
+            const baseline=exoV2Baseline||{records:[],groups:[]};
+            const baseRecords=new Map((baseline.records||[]).map(record=>[record.id,record]));
+            const nextRecords=new Map((snapshot.records||[]).map(record=>[record.id,record]));
+            const deletedRecordKeys=[...baseRecords.keys()].filter(id=>!nextRecords.has(id));
+            const deletedRecordSet=new Set(deletedRecordKeys);
+            const baseItems=new Map();
+            for(const record of (baseline.records||[]))for(const item of(record.items||[])){const id=dbItemId(record,item);baseItems.set(id,JSON.stringify({...item,id}));}
+            const nextItems=new Map(), changedByRecord=[];
+            for(const record of(snapshot.records||[])){
+              const changed=[];
+              for(const item of(record.items||[])){
+                const id=dbItemId(record,item),packed=JSON.stringify({...item,id});nextItems.set(id,packed);
+                if(baseItems.get(id)===packed)continue;
+                changed.push({id,tracking:item.tracking||'',tracking_key:keyNorm(item.tracking),pdv_key:keyNorm(item.pdv||record.pdv),penalizacion:item.penalty||'',brecha:item.breach||'',sla:item.sla||'',brecha_liquidacion:item.liquidationBreach||'',sla_liquidacion:item.liquidationSla||'',costo:Number(item.cost)||0,fecha:item.dateRaw||'',motivo_origen:item.motive||'',observaciones:item.observations||'',distrito:item.district||'',provincia:item.province||'',departamento:item.department||'',tipo_operacion_reciente:item.latestOperation||'',operacion_brecha:item.breachOperation||'',brecha_horas:item.breachWaitHours||'',brecha_ultima_actualizacion:item.breachLastUpdate||'',tipo_escaneo_reciente:item.scanType||'',estatus_firma:item.signature||'',tipo_zona:item.zoneType||'',zona:item.zoneName||'',sla_asignado_dias:String(item.slaDays??''),coincidencia_zona:!!item.zoneMatched,origen_archivo:item.sourceFile||'',porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||'',zona_manual:item.manualZone||null});
+              }
+              if(changed.length)changedByRecord.push({record,changed});
+            }
+            const deleted=[...baseItems.keys()].filter(id=>!nextItems.has(id)&&!deletedRecordSet.has(id.split('::',1)[0]));
+            const validStates=new Set(['pendiente','en_proceso','finalizado','notificado','en_revalidacion']);
+            const normalizeStatus=value=>validStates.has(value)?value:'pendiente';
+            const normalizedRate=value=>{if(value==null||String(value).trim()==='')return null;const rate=Number(value);return Number.isFinite(rate)?Math.round(Math.max(0,Math.min(100,rate))*100)/100:null;};
+            const normalizedAmount=value=>{if(value==null||String(value).trim()==='')return null;const amount=Number(String(value).replace(',','.'));return Number.isFinite(amount)&&amount>=0&&amount<=999999999999.99?Math.round(amount*100)/100:null;};
+            const changedLiquidations=(snapshot.records||[]).filter(record=>{const before=baseRecords.get(record.id);return normalizeStatus(before?.status)!==normalizeStatus(record.status)||normalizedRate(before?.signatureRate)!==normalizedRate(record.signatureRate)||normalizedAmount(before?.liquidationAmount)!==normalizedAmount(record.liquidationAmount);}).map(record=>({recordKey:record.id,estado:normalizeStatus(record.status),tasaFirma:normalizedRate(record.signatureRate),montoLiquidacion:normalizedAmount(record.liquidationAmount)}));
+            (async()=>{
+              // Serializa todos los lotes para que dos guardados no compitan entre sí.
+              for(const batch of changedByRecord)for(let i=0;i<batch.changed.length;i+=syncBatchSize){
+                const {error}=await exoSupabaseClient.rpc('penalidades_upsert_lote',{p_liquidacion:{id:batch.record.id,periodo:batch.record.period,pdv:batch.record.pdv},p_guias:batch.changed.slice(i,i+syncBatchSize)});
+                if(error)throw error;
+              }
+              for(let i=0;i<deletedRecordKeys.length;i+=syncBatchSize){
+                const {error}=await exoSupabaseClient.rpc('penalidades_borrar_liquidaciones',{p_record_keys:deletedRecordKeys.slice(i,i+syncBatchSize)});
+                if(error)throw error;
+              }
+              for(let i=0;i<changedLiquidations.length;i+=syncBatchSize){
+                const {error}=await exoSupabaseClient.rpc('penalidades_actualizar_estados',{p_estados:changedLiquidations.slice(i,i+syncBatchSize)});
+                if(error)throw error;
+              }
+              for(let i=0;i<deleted.length;i+=syncBatchSize){
+                const {error}=await exoSupabaseClient.rpc('penalidades_borrar_guias',{p_ids:deleted.slice(i,i+syncBatchSize)});
+                if(error)throw error;
+              }
+              if(deleted.length){const {error}=await exoSupabaseClient.rpc('penalidades_borrar_liquidaciones_vacias');if(error)throw error;}
+              const assignments=(snapshot.records||[]).filter(record=>record.groupId).map(record=>({recordKey:record.id,groupId:record.groupId}));
+              const {error:groupError}=await exoSupabaseClient.rpc('penalidades_guardar_grupos',{p_grupos:snapshot.groups||[],p_asignaciones:assignments});
+              if(groupError)throw groupError;
+              const {error:activateError}=await exoSupabaseClient.rpc('penalidades_activar_v2');
+              if(activateError)throw activateError;
+              exoV2Baseline=cloneState(snapshot);
+              successHandler({ok:true,revision:Date.now()});
+            })().catch(failureHandler);
+            return runner;
+          }
+        };
+        return runner;
+      };
+      window.google={script:{}};
+      Object.defineProperty(window.google.script,'run',{get:createRunner,configurable:true});
+    }
+
+    function startPenalidadesModule(profile){
+      if(exoAppStarted)return;
+      exoAppStarted=true;
+      makeGoogleScriptBridge();
+      document.getElementById('moduleIdentity').textContent=String(profile.usuario||'')+' · '+String(profile.rol||'');
+      document.body.classList.add('exo-ready');
+      document.getElementById('storageState').textContent='Conectando con Supabase…';
+      const appScript=document.createElement('script');
+      appScript.textContent=document.getElementById('appLogic').textContent;
+      document.body.appendChild(appScript);
+    }
+
+    async function initializePenalidadesModule(){
+      if(!V16_CONFIG?.url||!V16_CONFIG?.key)throw new Error('No se encontró la configuración del portal. Verifica config.js.');
+      if(!window.supabase?.createClient)throw new Error('No se pudo cargar el cliente Supabase. Verifica tu conexión a internet.');
+      exoSupabaseClient=window.supabase.createClient(V16_CONFIG.url,V16_CONFIG.key,{auth:{storageKey:'v16-replica-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+      const {data:sessionData,error:sessionError}=await exoSupabaseClient.auth.getSession();
+      if(sessionError)throw new Error('No se pudo validar la sesión del portal: '+sessionError.message);
+      if(!sessionData.session){showModuleGate('Primero inicia sesión en Revisión de Guías y luego abre Penalidades desde el menú.');return;}
+      const {data:accessData,error:accessError}=await exoSupabaseClient.rpc('v16_call',{method:'inicio',payload:{}});
+      if(accessError)throw new Error(accessError.message||'No se pudo validar tu perfil en el portal.');
+      const profile=accessData?.perfil;
+      if(!profile||!['ADMINISTRADOR','ENCARGADO'].includes(profile.rol)){showModuleGate('Tu perfil no tiene acceso a Penalidades. Solicita acceso a un administrador.',true);return;}
+      showModuleGate('');
+      startPenalidadesModule(profile);
+      exoSupabaseClient.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT')window.location.replace('./index.html');});
+    }
+    initializePenalidadesModule().catch(error=>showModuleGate('No se pudo abrir Penalidades: '+(error?.message||error),true));
+  </script>
+</body>
+</html>
 

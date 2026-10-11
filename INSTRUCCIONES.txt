@@ -10,7 +10,7 @@ PUBLICAR EN GITHUB PAGES
 
 ACTUALIZACION DE PENALIDADES (09-10-2026)
 - El filtro “Brecha (columna E)” permite seleccionar uno o varios valores de la columna E (Brecha) del Excel de penalidades.
-- La descarga Excel del detalle incluye GUIA, PENALIDAD, PDV, PORCENTAJE DE EXONERACION, MONTO FINAL (S/) y MOTIVO DE DECISION.
+- La descarga Excel del detalle incluye GUIA, PENALIDAD, PDV, PORCENTAJE DE EXONERACION, MONTO FINAL (S/), MOTIVO DE DECISION y MONTO INICIAL DE PENALIDAD (S/) como última columna. El archivo descargado termina en _MONTO_INICIAL.xlsx.
 - Estos cambios son de interfaz y no requieren ejecutar SQL en Supabase.
 - Al actualizar manualmente, reemplaza index.html y penalidades.html. Si subes todo el ZIP, carga su contenido completo en la raíz del repositorio y conserva juntos todos los archivos indicados arriba.
 
@@ -28,3 +28,23 @@ No ejecutes una instalación desde cero ni scripts de reinicio para esta actuali
 
 CAMBIO DE CRUCE
 En exportación de guías se busca primero coincidencia de guía y PDV; si el PDV no coincide, se usa la coincidencia por guía y la actualización más reciente.
+
+
+CAMPO MONTO DE LIQUIDACION (10-10-2026)
+- El monto se ingresa por cada liquidación en la tabla “Registros guardados”, antes de Penalidad total.
+- “Liq. final” se calcula como Monto de liquidación menos Saldo de penalidad. Mientras falte ingresar un monto, el resultado figura como pendiente.
+- Los indicadores del detalle muestran el monto de liquidación en azul y la Liq. final en amarillo dorado.
+- Para conservar y compartir el monto entre usuarios, ejecuta una sola vez SUPABASE_SQL/supabase_penalidades_monto_liquidacion.sql en el mismo proyecto Supabase. El script es incremental, conserva los registros y decisiones y no requiere reinstalación.
+
+AJUSTE DE TABLA Y MONTO (10-10-2026)
+- La tabla de liquidaciones aprovecha el ancho de la pantalla y ajusta los encabezados para mostrar todas sus columnas en escritorio. En pantallas pequeñas conserva el desplazamiento horizontal.
+- El campo Monto de liquidación muestra S/ y dos decimales. Al editarlo, se acepta separador decimal con punto o coma; al guardar vuelve a mostrarse con formato monetario.
+- No requiere un SQL adicional. El guardado compartido del monto sigue requiriendo la columna instalada por supabase_penalidades_monto_liquidacion.sql.
+- El enlace de Penalidades del index.html usa un nuevo identificador para evitar la caché anterior.
+
+
+ACTUALIZACION MONTO INICIAL DE PENALIDAD (11-10-2026)
+- El monto inicial se toma de la penalidad original antes de aplicar el porcentaje de exoneración.
+- El monto final permanece como saldo posterior a la exoneración.
+- El enlace de Penalidades usa la versión 20261011-monto-inicial-verificado-5 para evitar la caché anterior.
+- Este cambio es de exportación y no requiere ejecutar SQL.

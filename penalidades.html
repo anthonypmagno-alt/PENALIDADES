@@ -326,7 +326,7 @@
       </div>
     </section>
 
-    <footer class="bottom-note"><span>Se cruza Brecha por el periodo seleccionado al cargarla + PDV + guía. Todas las filas con guía y PDV se consideran; Fecha y Periodo originales no filtran el match. Escaneo, firma y ubicación vienen de Exportación de guía.</span><span>Se normalizan tildes y se reconocen SAPALLANCA = SAPALLANGA y SAN JUAN DE YSCOS = SAN JUAN DE ISCOS.</span><span>La descarga incluye GUIA, PDV, PORCENTAJE DE EXONERACION y MOTIVO DE DECISION.</span></footer>
+    <footer class="bottom-note"><span>Se cruza Brecha por el periodo seleccionado al cargarla + PDV + guía. Todas las filas con guía y PDV se consideran; Fecha y Periodo originales no filtran el match. Escaneo, firma y ubicación vienen de Exportación de guía.</span><span>Se normalizan tildes y se reconocen SAPALLANCA = SAPALLANGA y SAN JUAN DE YSCOS = SAN JUAN DE ISCOS.</span><span>Excel de detalle: GUIA, PENALIDAD, PDV, PORCENTAJE DE EXONERACION, MONTO FINAL (S/), MOTIVO DE DECISION y MONTO INICIAL DE PENALIDAD (S/) como última columna. Versión de descarga: 20261011-monto-inicial-verificado-5.</span></footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -915,8 +915,8 @@
     function downloadExcel(){
       const record=currentRecord();if(!record)return notify('Abre un registro antes de descargar.',true);if(!window.XLSX)return notify('El lector Excel requiere conexión a internet.',true);
       const rows=filteredItems();if(!rows.length)return notify('No hay guías en el detalle filtrado.',true);
-      const headers=['GUIA','PENALIDAD','PDV','PORCENTAJE DE EXONERACION','MONTO FINAL (S/)','MOTIVO DE DECISION'];const exportRows=rows.map(x=>[x.tracking,txt(x.penalty)||'Sin tipo de penalización',x.pdv,exemptionPercent(x),balanceAmount(x),x.reason||'']);const sheet=XLSX.utils.aoa_to_sheet([headers,...exportRows]);sheet['!cols']=[{wch:22},{wch:44},{wch:20},{wch:27},{wch:20},{wch:40}];sheet['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:exportRows.length,c:headers.length-1}})};for(let row=1;row<=exportRows.length;row++){const percentCell=sheet[XLSX.utils.encode_cell({r:row,c:3})];if(percentCell)percentCell.z='0.##"%"';const amountCell=sheet[XLSX.utils.encode_cell({r:row,c:4})];if(amountCell)amountCell.z='"S/" #,##0.00';}const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,sheet,'Detalle de guías');
-      const pdv=norm(record.pdv).replace(/\s+/g,'_').replace(/[^A-Z0-9_-]/g,'');XLSX.writeFile(book,`EXONERACIONES_${record.period}_${pdv}.xlsx`);
+      const headers=['GUIA','PENALIDAD','PDV','PORCENTAJE DE EXONERACION','MONTO FINAL (S/)','MOTIVO DE DECISION','MONTO INICIAL DE PENALIDAD (S/)'];const exportRows=rows.map(x=>[x.tracking,txt(x.penalty)||'Sin tipo de penalización',x.pdv,exemptionPercent(x),balanceAmount(x),x.reason||'',Number(x.cost)||0]);const sheet=XLSX.utils.aoa_to_sheet([headers,...exportRows]);sheet['!cols']=[{wch:22},{wch:44},{wch:20},{wch:27},{wch:20},{wch:40},{wch:32}];sheet['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:exportRows.length,c:headers.length-1}})};for(let row=1;row<=exportRows.length;row++){const percentCell=sheet[XLSX.utils.encode_cell({r:row,c:3})];if(percentCell)percentCell.z='0.##"%"';const amountCell=sheet[XLSX.utils.encode_cell({r:row,c:4})];if(amountCell)amountCell.z='"S/" #,##0.00';const initialAmountCell=sheet[XLSX.utils.encode_cell({r:row,c:6})];if(initialAmountCell)initialAmountCell.z='"S/" #,##0.00';}const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,sheet,'Detalle de guías');
+      const pdv=norm(record.pdv).replace(/\s+/g,'_').replace(/[^A-Z0-9_-]/g,'');XLSX.writeFile(book,`EXONERACIONES_${record.period}_${pdv}_MONTO_INICIAL.xlsx`);
     }
     function filterFromSummaryCell(event){
       const expandButton=event.target.closest('[data-expand-group]');if(expandButton){event.stopPropagation();const key=expandButton.dataset.expandGroup;if(expandedBreakdownGroups.has(key))expandedBreakdownGroups.delete(key);else expandedBreakdownGroups.add(key);renderMetricsAndBreakdown();return;}
@@ -1206,4 +1206,3 @@
   </script>
 </body>
 </html>
-

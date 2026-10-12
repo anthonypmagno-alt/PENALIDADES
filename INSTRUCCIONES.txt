@@ -48,3 +48,10 @@ ACTUALIZACION MONTO INICIAL DE PENALIDAD (11-10-2026)
 - El monto final permanece como saldo posterior a la exoneración.
 - El enlace de Penalidades usa la versión 20261011-monto-inicial-verificado-5 para evitar la caché anterior.
 - Este cambio es de exportación y no requiere ejecutar SQL.
+
+
+ACTUALIZACION GESTION DE GUIAS V2 (12-10-2026)
+- El resumen incluye el botón “Solo casos críticos”. Al activarlo, conserva los filtros elegidos y muestra únicamente los PDV cuyo “Total crítico” es mayor que cero; recalcula subtotales y total general para los PDV visibles.
+- “Excel resumen” exporta la tabla V2 que se ve en pantalla, con encabezados agrupados, filas por región y área, subtotales, total general y colores. La descarga respeta los filtros aplicados y los grupos que estén desplegados o contraídos.
+- El resumen se descarga como archivo Excel compatible (.xls) para conservar los estilos; se abre con Excel y no requiere ejecutar SQL.
+- El enlace de Gestión de guías V2 incluye el identificador 20261012-resumen-v2-1 para evitar que el navegador conserve la versión anterior.

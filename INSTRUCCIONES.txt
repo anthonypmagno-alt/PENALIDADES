@@ -5,7 +5,7 @@ Este paquete integra Penalidades dentro del portal principal. El index.html cons
 PUBLICAR EN GITHUB PAGES
 1. Descomprime el ZIP.
 2. En el repositorio que publicarás con GitHub Pages, carga el CONTENIDO de esta carpeta en la raíz (donde quedará index.html). No subas la carpeta contenedora como un nivel adicional.
-3. Conserva juntos index.html, config.js, bridge.js, gestion-v2.html, pdv.html, pdv-v2.html, penalidades.html, process-worker.js, pdf-pdv.js y brecha-costos.js.
+3. Conserva juntos index.html, config.js, bridge.js, gestion-v2.html, xlsx-resumen.js, pdv.html, pdv-v2.html, penalidades.html, process-worker.js, pdf-pdv.js y brecha-costos.js.
 4. Espera a que GitHub Pages termine de publicar y abre la raíz del portal, por ejemplo https://TU-USUARIO.github.io/TU-REPOSITORIO/. Inicia sesión ahí y entra a la pestaña Penalidades. No abras un index.html independiente de Penalidades.
 
 ACTUALIZACION DE PENALIDADES (09-10-2026)
@@ -53,5 +53,6 @@ ACTUALIZACION MONTO INICIAL DE PENALIDAD (11-10-2026)
 ACTUALIZACION GESTION DE GUIAS V2 (12-10-2026)
 - El resumen incluye el botón “Solo casos críticos”. Al activarlo, conserva los filtros elegidos y muestra únicamente los PDV cuyo “Total crítico” es mayor que cero; recalcula subtotales y total general para los PDV visibles.
 - “Excel resumen” exporta la tabla V2 que se ve en pantalla, con encabezados agrupados, filas por región y área, subtotales, total general y colores. La descarga respeta los filtros aplicados y los grupos que estén desplegados o contraídos.
-- El resumen se descarga como archivo Excel compatible (.xls) para conservar los estilos; se abre con Excel y no requiere ejecutar SQL.
-- El enlace de Gestión de guías V2 incluye el identificador 20261012-resumen-v2-1 para evitar que el navegador conserve la versión anterior.
+- El resumen se descarga como un archivo .xlsx real, conservando combinaciones de encabezados, grupos, subtotales, colores y estilos; ya no debe aparecer la advertencia de que la extensión y el formato no coinciden.
+- El generador XLSX está incluido localmente como xlsx-resumen.js, así que esa descarga no depende de un CDN ni requiere ejecutar SQL.
+- El enlace de Gestión de guías V2 incluye el identificador 20261012-resumen-v2-xlsx-3 para evitar que el navegador conserve la versión anterior.

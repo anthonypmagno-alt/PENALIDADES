@@ -947,52 +947,15 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function descargarExcelResumen(){
     if(!(resumen.filas||[]).length){toast("No existen PDV visibles para exportar.",false);return;}
     const tabla=document.getElementById("tablaResumenV2");if(!tabla){toast("No se encontró la tabla resumen de Gestión V2.",false);return;}
+    const boton=document.querySelector('button[onclick="descargarExcelResumen()"]');if(boton?.disabled)return;if(boton)boton.disabled=true;
+    mostrarLoading(true,"Generando archivo .xlsx del resumen visible...");
     try{
-      mostrarLoading(true,"Preparando Excel con el formato visible del resumen...");
-      const xml=generarXmlExcelResumenV2(tabla),blob=new Blob(["\ufeff",xml],{type:"application/vnd.ms-excel;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
-      a.href=url;a.download="Resumen_Gestion_Guias_V2_"+new Date().toISOString().replace(/[:.]/g,"-")+".xls";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
-      mostrarLoading(false);toast("Resumen V2 descargado con grupos, subtotales y estilos de la tabla visible.",true);
+      if(!window.XlsxResumenV2||typeof window.XlsxResumenV2.generarDesdeTabla!=="function")throw new Error("No se cargó el generador XLSX local. Reemplace también xlsx-resumen.js en el repositorio.");
+      const bytes=window.XlsxResumenV2.generarDesdeTabla(tabla),blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+      a.href=url;a.download="Resumen_Gestion_Guias_V2_"+new Date().toISOString().replace(/[:.]/g,"-")+".xlsx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+      mostrarLoading(false);toast("Resumen V2 descargado como XLSX, con grupos, subtotales y estilos de la tabla visible.",true);
     }catch(e){mostrarLoading(false);toast("No se pudo generar el Excel del resumen: "+(e.message||String(e)),false);}
-  }
-  function generarXmlExcelResumenV2(tabla){
-    const filas=Array.from(tabla.rows||[]),columnas=Array.from(tabla.querySelectorAll("colgroup col")),cantidadColumnas=Math.max(columnas.length,14);
-    if(!filas.length)throw new Error("La tabla resumen no contiene filas.");
-    if(filas.length>65000)throw new Error("El resumen supera el límite de filas del formato Excel compatible.");
-    const ocupadas=new Set(),estilos=[],indiceEstilos=new Map();
-    const xmlEscapar=v=>String(v==null?"":v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&apos;");
-    const hexColor=v=>{const m=String(v||"").match(/rgba?\(([^)]+)\)/i);if(!m)return /^#[0-9a-f]{6}$/i.test(v)?v.toUpperCase():"";const partes=m[1].split(/[\s,\/]+/).filter(Boolean),alfa=partes.length>3?Number(partes[3]):1;if(alfa===0)return"";return"#"+partes.slice(0,3).map(x=>Math.max(0,Math.min(255,parseInt(x,10)||0)).toString(16).padStart(2,"0")).join("").toUpperCase();};
-    const estiloCelda=celda=>{
-      const cs=getComputedStyle(celda),bordes={};
-      ["Top","Right","Bottom","Left"].forEach(lado=>{const ancho=parseFloat(cs["border"+lado+"Width"])||0,forma=cs["border"+lado+"Style"],color=hexColor(cs["border"+lado+"Color"]);if(ancho>0&&forma!=="none"&&color)bordes[lado]={color,weight:ancho>=3?3:ancho>=2?2:1};});
-      const peso=String(cs.fontWeight||"400"),tamaño=Math.max(8,Math.min(24,parseFloat(cs.fontSize)||10));
-      return{color:hexColor(cs.color)||"#1F2937",fondo:hexColor(cs.backgroundColor),negrita:peso==="bold"||Number(peso)>=600,tamaño,alineacion:["left","right","center"].includes(cs.textAlign)?cs.textAlign:"center",vertical:cs.verticalAlign==="top"?"Top":"Center",ajustar:cs.whiteSpace!=="nowrap"||cs.overflowWrap==="anywhere",bordes};
-    };
-    const estiloId=celda=>{const s=estiloCelda(celda),clave=JSON.stringify(s);if(indiceEstilos.has(clave))return indiceEstilos.get(clave);const id="s"+(estilos.length+1);indiceEstilos.set(clave,id);estilos.push({id,s});return id;};
-    const xmlBordes=(s)=>{const entradas=Object.entries(s.bordes);if(!entradas.length)return"";return"<Borders>"+entradas.map(([lado,b])=>`<Border ss:Position="${lado}" ss:LineStyle="Continuous" ss:Weight="${b.weight}" ss:Color="${b.color}"/>`).join("")+"</Borders>";};
-    const xmlEstilos=estilos=>estilos.map(({id,s})=>`<Style ss:ID="${id}"><Alignment ss:Horizontal="${s.alineacion}" ss:Vertical="${s.vertical}"${s.ajustar?' ss:WrapText="1"':''}/><Font ss:FontName="Arial" ss:Size="${s.tamaño}"${s.negrita?' ss:Bold="1"':''} ss:Color="${s.color}"/>${s.fondo?`<Interior ss:Color="${s.fondo}" ss:Pattern="Solid"/>`:""}${xmlBordes(s)}</Style>`).join("");
-    const celdasPorFila=filas.map((fila,filaIdx)=>{
-      const celdas=Array.from(fila.cells||[]);let cursor=0,siguienteColumna=0,xmlCeldas="";
-      celdas.forEach(celda=>{
-        while(ocupadas.has(filaIdx+":"+cursor))cursor++;
-        const inicio=cursor,colspan=Math.max(1,Number(celda.colSpan)||1),rowspan=Math.max(1,Number(celda.rowSpan)||1),texto=String(celda.innerText||celda.textContent||"").replace(/\u00a0/g," ").trim(),atributos=[];
-        if(inicio>siguienteColumna)atributos.push(`ss:Index="${inicio+1}"`);
-        atributos.push(`ss:StyleID="${estiloId(celda)}"`);
-        if(colspan>1)atributos.push(`ss:MergeAcross="${colspan-1}"`);
-        if(rowspan>1)atributos.push(`ss:MergeDown="${rowspan-1}"`);
-        let contenido="";
-        if(texto){let tipo="String",valor=texto;if(/^-?\d+$/.test(texto)){tipo="Number";}else if(/^-?\d{1,3}(?:[,.]\d{3})+$/.test(texto)){tipo="Number";valor=texto.replace(/[,.]/g,"");}contenido=`<Data ss:Type="${tipo}" xml:space="preserve">${xmlEscapar(valor)}</Data>`;}
-        xmlCeldas+=`<Cell ${atributos.join(" ")}>${contenido}</Cell>`;
-        for(let rr=filaIdx;rr<Math.min(filas.length,filaIdx+rowspan);rr++)for(let cc=inicio;cc<Math.min(cantidadColumnas,inicio+colspan);cc++)ocupadas.add(rr+":"+cc);
-        cursor=inicio+colspan;siguienteColumna=cursor;
-      });
-      const alto=Math.max(15,Math.min(120,(fila.getBoundingClientRect().height||24)*0.75));
-      return`<Row ss:Height="${alto.toFixed(1)}">${xmlCeldas}</Row>`;
-    });
-    const anchoTabla=tabla.getBoundingClientRect().width||1320;
-    const xmlColumnas=Array.from({length:cantidadColumnas},(_,i)=>{const c=columnas[i],anchoReal=c?(c.getBoundingClientRect().width||0):0,porcentaje=c?parseFloat(c.style.width)||0:0,ancho=anchoReal||anchoTabla*(porcentaje?porcentaje/100:1/cantidadColumnas);return`<Column ss:Width="${Math.max(34,Math.round(ancho*0.75))}"/>`;}).join("");
-    const workbookStyles=`<Styles><Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Borders/><Font ss:FontName="Arial" ss:Size="10" ss:Color="#1F2937"/><Interior/><NumberFormat ss:Format="General"/></Style>${xmlEstilos(estilos)}</Styles>`;
-    const opciones=`<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><DoNotDisplayGridlines/><PageSetup><Layout x:Orientation="Landscape"/></PageSetup></WorksheetOptions>`;
-    return`<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40"><DocumentProperties xmlns="urn:schemas-microsoft-com:office:office"><Author>Gestión de guías</Author><Created>${new Date().toISOString()}</Created></DocumentProperties>${workbookStyles}<Worksheet ss:Name="Resumen V2"><Table ss:ExpandedColumnCount="${cantidadColumnas}" ss:ExpandedRowCount="${filas.length}" x:FullColumns="1" x:FullRows="1">${xmlColumnas}${celdasPorFila.join("")}</Table>${opciones}</Worksheet></Workbook>`;
+    finally{if(boton)boton.disabled=false;}
   }
   function limpiarFiltros(){limpiarListaGuias('gestion',false);limpiarEntradaExportacion('fEntrada',false);limpiarFechaExportacion('fFechaExportacion',false);limpiarFiltroExcelMultiple('fEscaneoExportacion');limpiarFiltroExcelMultiple('fActualizacion');document.querySelectorAll("#fEscaneoMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fEscaneo");document.querySelectorAll("#fRegionMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fRegion");document.getElementById("buscar").value="";["fArea","fEncargado","fPdv","fEstado","fComentario","fTipo"].forEach(id=>{document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti(id);});filtroResumenActivo=null;actualizarChipResumen();renderResumen();cerrarMultis();filtrar();}
   function actualizarTarjetas(){document.getElementById("totalGuias").textContent=filtradas.length;document.getElementById("pendientes").textContent=filtradas.filter(x=>estado(x)==="PENDIENTE").length;document.getElementById("proceso").textContent=filtradas.filter(x=>estado(x)==="EN PROCESO").length;document.getElementById("finalizados").textContent=filtradas.filter(x=>estado(x)==="FINALIZADO").length;}
@@ -1558,4 +1521,4 @@ function actualizarClasificacionV2(){
  else{resumen=r.resumen;renderResumen();filtrar();}
 }
 setInterval(actualizarClasificacionV2,60000);
-</script><script src="./brecha-costos.js?v=2"></script></body></html>
+</script><script src="./brecha-costos.js?v=2"></script><script src="./xlsx-resumen.js?v=20261012-xlsx-local-1"></script></body></html>

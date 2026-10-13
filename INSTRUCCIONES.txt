@@ -64,4 +64,10 @@ RETENCION PARA MEJORA (13-10-2026)
 - La retención es condicional y no se resta de la Liq. final.
 - El Excel de detalle conserva sus columnas existentes y termina con RETENCIÓN PARA MEJORA (%) y RETENCIÓN PARA MEJORA (S/).
 - Para conservar la retención entre sesiones y compartirla entre usuarios, ejecuta una sola vez SUPABASE_SQL/supabase_penalidades_retencion_mejora.sql en el mismo proyecto Supabase. El cambio agrega una columna a las decisiones existentes y actualiza tres funciones; no elimina registros.
-- Publica el contenido completo del ZIP en la raíz del repositorio. El enlace de Penalidades del index usa la versión 20261013-retencion-mejora-2.
+- Publica el contenido completo del ZIP en la raíz del repositorio. El enlace de Penalidades del index usa la versión 20261013-resumen-penalidad-1.
+
+
+RESUMEN CONTRAIBLE POR PENALIDAD (13-10-2026)
+- Cada penalidad muestra una fila agregada. “Expandir todo” abre los motivos y los subtipos; “Contraer por penalidad” vuelve a una fila por penalidad. Los motivos conservan su propio control para abrir o cerrar los subtipos de Brecha o SLA.
+- El enlace de Penalidades se actualiza con la versión 20261013-resumen-penalidad-1.
+- No requiere ejecutar SQL adicional.

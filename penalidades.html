@@ -58,6 +58,7 @@
     .breakdown-exemption-row td:first-child{padding-left:28px}
     .breakdown-exemption-subrow{background:#fff}
     .breakdown-exemption-subrow td:first-child{padding-left:54px}
+    .breakdown-penalty-row{background:#f3f6f8;color:#304254;font-weight:700}
     .breakdown-subtype-prefix{color:#8a5b3c;font-weight:700}
     .detail-zone-group th{position:static;z-index:auto;padding:9px 10px;background:#edf2f6;border-top:2px solid #d6e0e8;border-bottom:1px solid #d6e0e8;color:#34485a;text-transform:none;letter-spacing:normal;font-size:11px}
     .detail-zone-heading{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -291,7 +292,7 @@
       </div>
       <div class="metrics" id="metrics"></div>
       <div class="breakdown">
-        <div class="breakdown-heading"><div><h3>Resumen por penalización y motivo de decisión</h3><p class="note">Expande cada fila para subdividir Brecha por la columna E o SLA por la columna F del Excel de penalidades. Fin perdida y No reconoce entrega se mantienen sin subdivisión. Haz clic en una fila para filtrar el detalle.</p></div><div class="breakdown-toggle-actions"><button type="button" class="btn" id="expandBreakdownBtn">Expandir subtipos</button><button type="button" class="btn" id="collapseBreakdownBtn">Contraer subtipos</button></div></div>
+        <div class="breakdown-heading"><div><h3>Resumen por penalización y motivo de decisión</h3><p class="note">Cada penalidad se muestra en una sola fila al contraer. Expándela para ver motivos y, luego, los subtipos de Brecha (columna E) o SLA (columna F). Fin perdida y No reconoce entrega no se subdividen. Haz clic en una fila para filtrar el detalle.</p></div><div class="breakdown-toggle-actions"><button type="button" class="btn" id="expandBreakdownBtn">Expandir todo</button><button type="button" class="btn" id="collapseBreakdownBtn">Contraer por penalidad</button></div></div>
         <div class="table-wrap"><table class="data-table"><thead><tr><th>Penalización / subtipo</th><th>Motivo de decisión</th><th class="num">Exoneradas (N.º)</th><th class="num">No exoneradas (N.º)</th><th class="num">Filas</th><th class="num">Guías únicas</th><th class="num">Penalidad total (S/)</th><th class="num">Monto exonerado (S/)</th><th class="num">Saldo (S/)</th></tr></thead><tbody id="breakdownBody"></tbody></table></div>
       </div>
       <div class="breakdown">
@@ -365,6 +366,7 @@
     const pickerSelections=Object.fromEntries(pickerIds.map(id=>[id,null]));
     const pickerOptions=Object.create(null),pickerAllLabels=Object.create(null);
     const expandedBreakdownGroups=new Set();
+    const expandedPenaltyGroups=new Set();
     let matrixGuideSelection = null;
     let dirty = false;
     let toastTimer = null;
@@ -821,36 +823,49 @@
       const r=currentRecord();if(!r)return;const t=recordTotals(r);
       const amountMetric=t.liquidationAmount===null?'Pendiente':'S/ '+fmtMoney(t.liquidationAmount),finalMetric=t.liquidationFinal===null?'Pendiente de monto':'S/ '+fmtMoney(t.liquidationFinal);
       $('metrics').innerHTML=metricCard('Monto de liquidación',amountMetric,'liquidation-amount')+metricCard('Penalidades',fmtCount(t.count))+metricCard('Con exoneración',fmtCount(t.yes))+metricCard('Monto exonerado','S/ '+fmtMoney(t.exempt))+metricCard('Saldo de penalidad','S/ '+fmtMoney(t.balance))+metricCard('Liq. final',finalMetric,'liquidation-final')+metricCard('Retención para mejora','S/ '+fmtMoney(t.retentionAmount),'retention');
-      const summaryItems=visibleSummaryItems(r),groups=new Map();
+      const summaryItems=visibleSummaryItems(r),penalties=new Map();
       for(const item of summaryItems){
-        const penalty=txt(item.penalty)||'Sin tipo',reason=txt(item.reason),reasonKey=decisionReasonKey(item),groupKey=[currentRecordId,norm(penalty),reasonKey].join('::'),key=`${norm(penalty)}|${reasonKey}`;
-        if(!groups.has(key))groups.set(key,{key:groupKey,penalty,reason:reason||'Sin motivo de decisión',reasonKey,items:[]});
-        groups.get(key).items.push(item);
+        const penalty=txt(item.penalty)||'Sin tipo',reason=txt(item.reason)||'Sin motivo de decisión',reasonKey=decisionReasonKey(item),penaltyKey=[currentRecordId,norm(penalty)].join('::'),reasonGroupKey=[currentRecordId,norm(penalty),reasonKey].join('::');
+        if(!penalties.has(penaltyKey))penalties.set(penaltyKey,{key:penaltyKey,penalty,items:[],reasons:new Map()});
+        const penaltyGroup=penalties.get(penaltyKey);penaltyGroup.items.push(item);
+        if(!penaltyGroup.reasons.has(reasonKey))penaltyGroup.reasons.set(reasonKey,{key:reasonGroupKey,penalty,reason,reasonKey,items:[],subtypes:new Map()});
+        const reasonGroup=penaltyGroup.reasons.get(reasonKey);reasonGroup.items.push(item);
+        const subtype=penaltySubtype(item);if(subtype){const subtypeKey=[subtype.field,norm(subtype.value)].join('|');if(!reasonGroup.subtypes.has(subtypeKey))reasonGroup.subtypes.set(subtypeKey,{field:subtype.field,column:subtype.column,value:subtype.value,items:[]});reasonGroup.subtypes.get(subtypeKey).items.push(item);}
       }
       const measureItems=items=>{
         const exempted=items.filter(item=>exemptionPercent(item)>0).length,total=items.reduce((sum,item)=>sum+(Number(item.cost)||0),0),exempt=items.reduce((sum,item)=>sum+exemptionAmount(item),0);
         return {rows:items.length,exempted,notExempted:items.length-exempted,guides:uniqueGuideCount(items),total,exempt,balance:total-exempt};
       };
       const renderMeasures=items=>{const m=measureItems(items);return `<td class="num">${fmtCount(m.exempted)}</td><td class="num">${fmtCount(m.notExempted)}</td><td class="num">${fmtCount(m.rows)}</td><td class="num">${fmtCount(m.guides)}</td><td class="num">S/ ${fmtMoney(m.total)}</td><td class="num">S/ ${fmtMoney(m.exempt)}</td><td class="num">S/ ${fmtMoney(m.balance)}</td>`;};
-      const rows=[...groups.values()].sort((a,b)=>a.penalty.localeCompare(b.penalty,'es')||a.reason.localeCompare(b.reason,'es'));
-      const breakdownGrandTotal=rows.length?`<tr class="click-row summary-grand-total breakdown-grand-total" data-grand-total="true" title="Haz clic para mostrar todas las guías del detalle"><td colspan="2">TOTAL GENERAL</td>${renderMeasures(summaryItems)}</tr>`:'';
-      $('breakdownBody').innerHTML=rows.length?rows.map(group=>{
-        const subtypes=new Map();
-        for(const item of group.items){const subtype=penaltySubtype(item);if(!subtype)continue;const subtypeKey=[subtype.field,norm(subtype.value)].join('|');if(!subtypes.has(subtypeKey))subtypes.set(subtypeKey,{field:subtype.field,column:subtype.column,value:subtype.value,items:[]});subtypes.get(subtypeKey).items.push(item);}
-        const expandable=subtypes.size>0,expanded=expandable&&expandedBreakdownGroups.has(group.key),toggle=expanded?'−':'+';
-        const subtypeRows=expanded?[...subtypes.values()].sort((a,b)=>a.value.localeCompare(b.value,'es')).map(subtype=>`<tr class="click-row breakdown-subrow breakdown-exemption-subrow" data-row-kind="subtype" data-penalty="${escapeHtml(group.penalty)}" data-reason-key="${escapeHtml(group.reasonKey)}" data-subtype-field="${escapeHtml(subtype.field)}" data-subtype="${escapeHtml(subtype.value)}" title="Haz clic para filtrar este subtipo y motivo"><td><span class="breakdown-subtype-prefix">${subtype.column?escapeHtml(subtype.column)+':':'↳'}</span> ${escapeHtml(subtype.value)}</td><td>${escapeHtml(group.reason)}</td>${renderMeasures(subtype.items)}</tr>`).join(''):'';
-        const expander=expandable?`<button type="button" class="breakdown-expand-btn" data-expand-group="${escapeHtml(group.key)}" aria-expanded="${expanded}" aria-label="${expanded?'Contraer':'Expandir'} subtipos de ${escapeHtml(group.penalty)} · ${escapeHtml(group.reason)}">${toggle}</button>`:'';
-        return `<tr class="click-row breakdown-parent" data-row-kind="reason-group" data-penalty="${escapeHtml(group.penalty)}" data-reason-key="${escapeHtml(group.reasonKey)}" data-group-key="${escapeHtml(group.key)}" title="Haz clic en una fila para filtrar por penalización y motivo"><td>${expander}${escapeHtml(group.penalty)}</td><td>${escapeHtml(group.reason)}</td>${renderMeasures(group.items)}</tr>${subtypeRows}`;
+      const penaltyRows=[...penalties.values()].sort((a,b)=>a.penalty.localeCompare(b.penalty,'es'));
+      const breakdownGrandTotal=penaltyRows.length?`<tr class="click-row summary-grand-total breakdown-grand-total" data-grand-total="true" title="Haz clic para mostrar todas las guías del detalle"><td colspan="2">TOTAL GENERAL</td>${renderMeasures(summaryItems)}</tr>`:'';
+      const renderReasonGroup=group=>{
+        const subtypes=[...group.subtypes.values()].sort((a,b)=>a.value.localeCompare(b.value,'es')),expanded=expandedBreakdownGroups.has(group.key),toggle=expanded?'−':'+';
+        const subtypeRows=expanded?subtypes.map(subtype=>`<tr class="click-row breakdown-subrow breakdown-exemption-subrow" data-row-kind="subtype" data-penalty="${escapeHtml(group.penalty)}" data-reason-key="${escapeHtml(group.reasonKey)}" data-subtype-field="${escapeHtml(subtype.field)}" data-subtype="${escapeHtml(subtype.value)}" title="Haz clic para filtrar este subtipo y motivo"><td><span class="breakdown-subtype-prefix">${subtype.column?escapeHtml(subtype.column)+':':'↳'}</span> ${escapeHtml(subtype.value)}</td><td>${escapeHtml(group.reason)}</td>${renderMeasures(subtype.items)}</tr>`).join(''):'';
+        const expander=subtypes.length?`<button type="button" class="breakdown-expand-btn" data-expand-group="${escapeHtml(group.key)}" aria-expanded="${expanded}" aria-label="${expanded?'Contraer':'Expandir'} subtipos de ${escapeHtml(group.penalty)} · ${escapeHtml(group.reason)}">${toggle}</button>`:'';
+        return `<tr class="click-row breakdown-subrow breakdown-reason-row" data-row-kind="reason-group" data-penalty="${escapeHtml(group.penalty)}" data-reason-key="${escapeHtml(group.reasonKey)}" data-group-key="${escapeHtml(group.key)}" title="Haz clic para filtrar por penalización y motivo"><td>${expander}<span class="breakdown-subtype-prefix">Motivo</span></td><td>${escapeHtml(group.reason)}</td>${renderMeasures(group.items)}</tr>${subtypeRows}`;
+      };
+      $('breakdownBody').innerHTML=penaltyRows.length?penaltyRows.map(group=>{
+        const reasonGroups=[...group.reasons.values()].sort((a,b)=>a.reason.localeCompare(b.reason,'es')),
+          expandable=reasonGroups.length>1||reasonGroups.some(reason=>reason.subtypes.size>0),
+          expanded=expandedPenaltyGroups.has(group.key),toggle=expanded?'−':'+',
+          reasonLabel=reasonGroups.length===1?reasonGroups[0].reason:`Todos los motivos (${fmtCount(reasonGroups.length)})`;
+        const expander=expandable?`<button type="button" class="breakdown-expand-btn" data-expand-penalty="${escapeHtml(group.key)}" aria-expanded="${expanded}" aria-label="${expanded?'Contraer':'Expandir'} motivos de ${escapeHtml(group.penalty)}">${toggle}</button>`:'';
+        const reasonRows=expanded&&expandable?reasonGroups.map(renderReasonGroup).join(''):'';
+        return `<tr class="click-row breakdown-parent breakdown-penalty-row" data-row-kind="penalty-group" data-penalty="${escapeHtml(group.penalty)}" data-penalty-key="${escapeHtml(group.key)}" title="Haz clic para filtrar todas las guías de esta penalización"><td>${expander}${escapeHtml(group.penalty)}</td><td>${escapeHtml(reasonLabel)}</td>${renderMeasures(group.items)}</tr>${reasonRows}`;
       }).join('')+breakdownGrandTotal:`<tr><td colspan="9" class="empty">No hay penalidades.</td></tr>`;
       renderBreachMatrix(r);renderSlaMatrix(r);
     }
     function setBreakdownExpansion(expanded){
-      const record=currentRecord();if(!record)return;
-      for(const item of visibleSummaryItems(record)){
-        if(!penaltySubtype(item))continue;
-        const penalty=txt(item.penalty)||'Sin tipo',reasonKey=decisionReasonKey(item),key=[currentRecordId,norm(penalty),reasonKey].join('::');
-        if(expanded)expandedBreakdownGroups.add(key);else expandedBreakdownGroups.delete(key);
+      const record=currentRecord();if(!record||!Array.isArray(record.items))return;
+      const penaltyKeys=new Set(),reasonKeys=new Set();
+      for(const item of record.items){
+        const penalty=txt(item.penalty)||'Sin tipo',reasonKey=decisionReasonKey(item);
+        penaltyKeys.add([currentRecordId,norm(penalty)].join('::'));
+        reasonKeys.add([currentRecordId,norm(penalty),reasonKey].join('::'));
       }
+      for(const key of penaltyKeys){if(expanded)expandedPenaltyGroups.add(key);else expandedPenaltyGroups.delete(key);}
+      for(const key of reasonKeys){if(expanded)expandedBreakdownGroups.add(key);else expandedBreakdownGroups.delete(key);}
       renderMetricsAndBreakdown();
     }
     function breachMatrixRows(record){
@@ -955,16 +970,18 @@
       const pdv=norm(record.pdv).replace(/\s+/g,'_').replace(/[^A-Z0-9_-]/g,'');XLSX.writeFile(book,`EXONERACIONES_${record.period}_${pdv}_RETENCION_MEJORA.xlsx`);
     }
     function filterFromSummaryCell(event){
+      const penaltyExpand=event.target.closest('[data-expand-penalty]');if(penaltyExpand){event.stopPropagation();const key=penaltyExpand.dataset.expandPenalty;if(expandedPenaltyGroups.has(key))expandedPenaltyGroups.delete(key);else expandedPenaltyGroups.add(key);renderMetricsAndBreakdown();return;}
       const expandButton=event.target.closest('[data-expand-group]');if(expandButton){event.stopPropagation();const key=expandButton.dataset.expandGroup;if(expandedBreakdownGroups.has(key))expandedBreakdownGroups.delete(key);else expandedBreakdownGroups.add(key);renderMetricsAndBreakdown();return;}
       const grandTotal=event.target.closest('tr[data-grand-total="true"]');if(grandTotal){matrixGuideSelection=null;$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});return;}
       const cell=event.target.closest('td'),row=event.target.closest('tr[data-penalty]');if(!cell||!row)return;
       matrixGuideSelection=null;$('filterSearch').value='';for(const id of detailPickerIds){pickerSelections[id]=null;refreshMultiPicker(id);}
       const penalty=row.dataset.penalty,rowKind=row.dataset.rowKind;
       const record=currentRecord(),reasonKey=row.dataset.reasonKey;
-      let items=visibleSummaryItems(record).filter(item=>norm(item.penalty)===norm(penalty)&&decisionReasonKey(item)===reasonKey);
-      if(rowKind==='subtype'){const field=row.dataset.subtypeField,value=norm(row.dataset.subtype);items=items.filter(item=>{const subtype=penaltySubtype(item);return subtype.field===field&&norm(subtype.value)===value;});}
+      let items=visibleSummaryItems(record).filter(item=>norm(item.penalty)===norm(penalty));
+      if(rowKind==='reason-group'||rowKind==='subtype')items=items.filter(item=>decisionReasonKey(item)===reasonKey);
+      if(rowKind==='subtype'){const field=row.dataset.subtypeField,value=norm(row.dataset.subtype);items=items.filter(item=>{const subtype=penaltySubtype(item);return subtype&&subtype.field===field&&norm(subtype.value)===value;});}
       setPickerSelection('filterPenalty',[...new Set(items.map(item=>txt(item.penalty)||'Sin tipo'))]);
-      setPickerSelection('filterReason',[...new Set(items.map(item=>txt(item.reason)||'Sin motivo'))]);
+      if(rowKind!=='penalty-group')setPickerSelection('filterReason',[...new Set(items.map(item=>txt(item.reason)||'Sin motivo'))]);
       if(rowKind==='subtype')setPickerSelection('filterBreachSla',[...new Set(items.map(breachSlaLabel))]);
       renderDetailRows();$('detailBody').scrollIntoView({behavior:'smooth',block:'center'});
     }

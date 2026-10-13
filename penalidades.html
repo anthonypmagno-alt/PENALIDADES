@@ -404,6 +404,8 @@
     let toastTimer = null;
     const cloudMode = typeof google !== 'undefined' && !!(google.script && google.script.run);
     let cloudPending = false, cloudInFlight = false, cloudTimer = null, cloudNotify = false, appReady = false;
+    const pendingDecisionItems = new Map();
+    let nonDecisionDirty = false, nonDecisionGeneration = 0, decisionSavePending = false;
     const $ = id => document.getElementById(id);
     const fmtMoney = n => new Intl.NumberFormat('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n)||0);
     const fmtCount = n => new Intl.NumberFormat('es-PE',{maximumFractionDigits:0}).format(Number(n)||0);
@@ -432,14 +434,37 @@
     function visibleSummaryItems(record){const items=Array.isArray(record?.items)?record.items:[];return onlyNonExempt?items.filter(item=>exemptionPercent(item)===0):items;}
     function readState(){return emptyState();}
     function persist(showMessage=false){
-      if(cloudMode){cloudPending=true;cloudNotify=cloudNotify||showMessage;$('storageState').textContent='Preparando sincronización…';clearTimeout(cloudTimer);cloudTimer=setTimeout(flushCloudSave,showMessage?0:350);return true;}
+      if(cloudMode){nonDecisionDirty=true;nonDecisionGeneration++;cloudPending=true;cloudNotify=cloudNotify||showMessage;$('storageState').textContent='Preparando sincronización…';clearTimeout(cloudTimer);cloudTimer=setTimeout(flushCloudSave,showMessage?0:350);return true;}
       $('storageState').textContent='No hay conexión con el almacenamiento Supabase';if(showMessage)notify('No se pudo guardar en Supabase.',true);return false;
     }
     function flushCloudSave(){
-      if(!cloudMode||!cloudPending||cloudInFlight)return;cloudPending=false;cloudInFlight=true;const snapshot=JSON.parse(JSON.stringify({serverRevision:state.serverRevision,records:state.records||[],groups:state.groups||[],deletedRecords:state.deletedRecords||{}}));
-      google.script.run.withSuccessHandler(result=>{state.serverRevision=Number(result?.revision)||state.serverRevision;$('storageState').textContent='Guardado en Supabase';$('storageState').title='Última sincronización confirmada por Supabase';$('retrySyncBtn').hidden=true;$('retrySyncBtn').disabled=false;if(cloudNotify)notify('Cambios guardados en Supabase.');if(!dirty){$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';}cloudNotify=false;cloudInFlight=false;if(cloudPending)setTimeout(flushCloudSave,0);})
-        .withFailureHandler(error=>{const detail=error?.message||String(error||'Error sin detalle');$('storageState').textContent='Error al guardar en Supabase';$('storageState').title=detail;$('retrySyncBtn').hidden=false;$('retrySyncBtn').disabled=false;notify(`Supabase no confirmó el guardado: ${detail}. Los cambios siguen en esta pestaña; corrige el problema y pulsa Reintentar sincronización.`,true);cloudNotify=false;cloudInFlight=false;cloudPending=true;})
+      if(!cloudMode||!cloudPending||cloudInFlight)return;cloudPending=false;cloudInFlight=true;const generationAtStart=nonDecisionGeneration;const snapshot=JSON.parse(JSON.stringify({serverRevision:state.serverRevision,records:state.records||[],groups:state.groups||[],deletedRecords:state.deletedRecords||{}}));
+      const sentDecisions=new Map();for(const record of snapshot.records||[])for(const item of record.items||[])if(pendingDecisionItems.has(item.id))sentDecisions.set(item.id,item.modifiedAt||'');
+      google.script.run.withSuccessHandler(result=>{state.serverRevision=Number(result?.revision)||state.serverRevision;for(const [id,modifiedAt] of sentDecisions)if(pendingDecisionItems.get(id)?.modifiedAt===modifiedAt)pendingDecisionItems.delete(id);if(nonDecisionGeneration===generationAtStart)nonDecisionDirty=false;$('storageState').textContent='Guardado en Supabase';$('storageState').title='Última sincronización confirmada por Supabase';$('retrySyncBtn').hidden=true;$('retrySyncBtn').disabled=false;if(cloudNotify)notify('Cambios guardados en Supabase.');if(!dirty&&!pendingDecisionItems.size&&!nonDecisionDirty){$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';}cloudNotify=false;cloudInFlight=false;const replayDecision=decisionSavePending;decisionSavePending=false;if(cloudPending)setTimeout(flushCloudSave,0);else if(replayDecision&&pendingDecisionItems.size)setTimeout(()=>savePendingDecisionItems(true),0);})
+        .withFailureHandler(error=>{const detail=error?.message||String(error||'Error sin detalle');$('storageState').textContent='Error al guardar en Supabase';$('storageState').title=detail;$('retrySyncBtn').hidden=false;$('retrySyncBtn').disabled=false;notify(`Supabase no confirmó el guardado: ${detail}. Los cambios siguen en esta pestaña; corrige el problema y pulsa Reintentar sincronización.`,true);cloudNotify=false;cloudInFlight=false;decisionSavePending=false;cloudPending=true;})
         .saveAppState(snapshot);
+    }
+    function savePendingDecisionItems(showMessage=false){
+      if(!cloudMode||!pendingDecisionItems.size)return false;
+      if(nonDecisionDirty){persist(showMessage);return true;}
+      if(cloudInFlight){decisionSavePending=true;cloudNotify=cloudNotify||showMessage;return true;}
+      const missing=[...pendingDecisionItems.values()].find(item=>(exemptionPercent(item)>0||retentionPercent(item)>0)&&!txt(item.reason));
+      if(missing){$('retrySyncBtn').disabled=false;notify(`Completa el motivo de decisión para la guía ${missing.tracking}.`,true);return false;}
+      const sent=[...pendingDecisionItems.values()].map(item=>({id:item.id,porcentaje_exoneracion:exemptionPercent(item),retencion_mejora_porcentaje:retentionPercent(item),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||''}));
+      cloudInFlight=true;decisionSavePending=false;cloudNotify=cloudNotify||showMessage;$('storageState').textContent=`Guardando ${fmtCount(sent.length)} decisión(es) en Supabase…`;$('storageState').title='Se envían únicamente exoneración, retención y motivo de las filas modificadas.';$('saveState').textContent='Sincronizando…';$('saveBtn').textContent='Guardando…';$('saveBtn').disabled=true;
+      google.script.run.withSuccessHandler(result=>{
+        state.serverRevision=Number(result?.revision)||state.serverRevision;
+        for(const decision of sent)if(pendingDecisionItems.get(decision.id)?.modifiedAt===decision.modificado_en)pendingDecisionItems.delete(decision.id);
+        cloudInFlight=false;if(!pendingDecisionItems.size&&!nonDecisionDirty)dirty=false;$('saveBtn').disabled=!appReady;$('retrySyncBtn').hidden=true;$('retrySyncBtn').disabled=false;
+        if(cloudNotify)notify('Cambios guardados en Supabase.');cloudNotify=false;
+        if(!dirty&&!pendingDecisionItems.size&&!nonDecisionDirty){$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';$('storageState').textContent='Guardado en Supabase';$('storageState').title='Última sincronización confirmada por Supabase.';}
+        else{$('saveState').textContent='Cambios sin guardar';$('saveBtn').textContent='Guardar cambios';}
+        if(cloudPending){decisionSavePending=false;setTimeout(flushCloudSave,0);}else if(decisionSavePending){decisionSavePending=false;setTimeout(()=>savePendingDecisionItems(true),0);}
+      }).withFailureHandler(error=>{
+        const detail=error?.message||String(error||'Error sin detalle');cloudInFlight=false;decisionSavePending=false;$('saveBtn').disabled=!appReady;$('saveBtn').textContent='Guardar cambios';$('saveState').textContent='Cambios sin guardar';$('storageState').textContent='Error al guardar en Supabase';$('storageState').title=detail;$('retrySyncBtn').hidden=false;$('retrySyncBtn').disabled=false;
+        notify(`Supabase no confirmó el guardado de decisiones: ${detail}. Los cambios siguen en esta pestaña.`,true);cloudNotify=false;
+      }).saveDecisionChanges(sent);
+      return true;
     }
     function notify(message,error=false){const el=$('toast');el.textContent=message;el.style.background=error?'#8b211a':'#203040';el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3500);}
     function asString(value){if(value instanceof Date)return value.toISOString().replace('T',' ').slice(0,19);return txt(value);}
@@ -776,12 +801,13 @@
     }
     function clearRecordSelection(){selectedRecordIds.clear();renderSummary();}
     function recordGroupId(record){return (state.groups||[]).some(group=>group.id===record.groupId)?record.groupId:UNASSIGNED_GROUP;}
-    function setDirty(){dirty=true;$('saveState').textContent='Cambios sin guardar';$('saveBtn').textContent='Guardar cambios';}
+    function setDirty(kind='other'){dirty=true;if(kind!=='decision'){nonDecisionDirty=true;nonDecisionGeneration++;}$('saveState').textContent='Cambios sin guardar';$('saveBtn').textContent='Guardar cambios';}
+    function markDecisionChange(item){if(item)pendingDecisionItems.set(String(item.id),item);}
     function saveCurrent(){
       const record=currentRecord();if(!record)return;
       if(!Array.isArray(record.items)){notify('Espera a que termine de cargar el detalle antes de guardar.',true);return;}
       const missing=record.items.find(i=>(exemptionPercent(i)>0||retentionPercent(i)>0)&&!txt(i.reason));if(missing){notify(`Completa el motivo de decisión para la guía ${missing.tracking}.`,true);const input=[...$('detailBody').querySelectorAll('.reason-input')].find(el=>el.dataset.id===missing.id);input?.focus();input?.scrollIntoView({behavior:'smooth',block:'center'});return;}
-      record.updatedAt=new Date().toISOString();dirty=false;if(!persist(true))return;$('saveState').textContent=cloudMode?'Sincronizando…':'Registro guardado';$('saveBtn').textContent='Guardar cambios';renderSummary();renderMetricsAndBreakdown();
+      if(cloudMode&&pendingDecisionItems.size&&!nonDecisionDirty){dirty=false;savePendingDecisionItems(true);}else{record.updatedAt=new Date().toISOString();dirty=false;if(!persist(true))return;$('saveState').textContent=cloudMode?'Sincronizando…':'Registro guardado';$('saveBtn').textContent='Guardar cambios';}
     }
     function syncCurrent(){
       const old=currentRecord();if(!old)return;if(!Array.isArray(old.items)){notify('Espera a que termine de cargar el detalle antes de actualizar.',true);return;}if(!(state.sources.penalties?.rows||[]).length){notify('Carga al menos un Excel de penalidades antes de actualizar.',true);return;}
@@ -990,10 +1016,10 @@
     }
     function refreshDecisionPickers(){const items=currentRecord()?.items||[];renderMultiPicker('filterReason',items.map(item=>txt(item.reason)||'Sin motivo'),'Todos');renderMultiPicker('filterPercent',items.map(item=>({value:String(exemptionPercent(item)),label:`${fmtCount(exemptionPercent(item))}%`})),'Todos');}
     function markExemptionPercent(itemId,value){
-      const item=currentRecord()?.items.find(x=>x.id===itemId);if(!item)return;item.exemptionPercent=clampPercent(value);item.exonerated=item.exemptionPercent>0;if(onlyNonExempt&&item.exemptionPercent>0)selectedIds.delete(itemId);item.modifiedAt=new Date().toISOString();setDirty();refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();
+      const item=currentRecord()?.items.find(x=>x.id===itemId);if(!item)return;item.exemptionPercent=clampPercent(value);item.exonerated=item.exemptionPercent>0;if(onlyNonExempt&&item.exemptionPercent>0)selectedIds.delete(itemId);item.modifiedAt=new Date().toISOString();markDecisionChange(item);setDirty('decision');refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();
     }
     function markRetentionPercent(itemId,value){
-      const item=currentRecord()?.items.find(x=>x.id===itemId);if(!item)return;item.retentionPercent=retentionPercentValue(value);item.modifiedAt=new Date().toISOString();setDirty();renderMetricsAndBreakdown();renderDetailRows();renderSummary();
+      const item=currentRecord()?.items.find(x=>x.id===itemId);if(!item)return;item.retentionPercent=retentionPercentValue(value);item.modifiedAt=new Date().toISOString();markDecisionChange(item);setDirty('decision');renderMetricsAndBreakdown();renderDetailRows();renderSummary();
     }
     function doBulkExempt(){
       const ids=new Set(selectedIds);if(!ids.size){notify('Selecciona al menos una penalidad.',true);return;}
@@ -1001,22 +1027,22 @@
       if(raw===''||!Number.isFinite(pct)||pct<0||pct>100){notify('El porcentaje debe estar entre 0 y 100.',true);$('bulkPercent').focus();return;}
       if(rawRetention===''||!Number.isFinite(retentionPct)||retentionPct<0||retentionPct>100){notify('La retención para mejora debe estar entre 0 y 100%.',true);$('bulkRetention').focus();return;}
       if((pct>0||retentionPct>0)&&!reason){notify('Escribe el motivo de decisión para aplicar exoneración o retención.',true);$('bulkReason').focus();return;}
-      for(const item of currentRecord()?.items||[])if(ids.has(item.id)){item.exemptionPercent=pct;item.exonerated=pct>0;item.retentionPercent=retentionPercentValue(retentionPct);if(reason)item.reason=reason;item.modifiedAt=new Date().toISOString();}if(onlyNonExempt&&pct>0)selectedIds.clear();
-      setDirty();refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();notify(`${fmtCount(ids.size)} penalidades actualizadas: exoneración ${fmtMoney(pct)}% y retención ${fmtMoney(retentionPct)}%.`);
+      for(const item of currentRecord()?.items||[])if(ids.has(item.id)){item.exemptionPercent=pct;item.exonerated=pct>0;item.retentionPercent=retentionPercentValue(retentionPct);if(reason)item.reason=reason;item.modifiedAt=new Date().toISOString();markDecisionChange(item);}if(onlyNonExempt&&pct>0)selectedIds.clear();
+      setDirty('decision');refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();notify(`${fmtCount(ids.size)} penalidades actualizadas: exoneración ${fmtMoney(pct)}% y retención ${fmtMoney(retentionPct)}%.`);
     }
     function doBulkRemoveExemption(){
       const ids=new Set(selectedIds);if(!ids.size){notify('Selecciona al menos una penalidad.',true);return;}
       let changed=0;const now=new Date().toISOString();
-      for(const item of currentRecord()?.items||[])if(ids.has(item.id)&&exemptionPercent(item)>0){item.exemptionPercent=0;item.exonerated=false;item.modifiedAt=now;changed++;}
+      for(const item of currentRecord()?.items||[])if(ids.has(item.id)&&exemptionPercent(item)>0){item.exemptionPercent=0;item.exonerated=false;item.modifiedAt=now;markDecisionChange(item);changed++;}
       if(!changed){notify('Las penalidades seleccionadas ya tienen 0% de exoneración.');return;}
-      setDirty();refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();notify(`Se quitó la exoneración de ${fmtCount(changed)} penalidades. Se conservaron sus motivos.`);
+      setDirty('decision');refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();notify(`Se quitó la exoneración de ${fmtCount(changed)} penalidades. Se conservaron sus motivos.`);
     }
     function doBulkRemoveReason(){
       const ids=new Set(selectedIds);if(!ids.size){notify('Selecciona al menos una penalidad.',true);return;}
       const items=currentRecord()?.items||[];let changed=0;const now=new Date().toISOString();
-      for(const item of items)if(ids.has(item.id)&&txt(item.reason)){item.reason='';item.modifiedAt=now;changed++;}
+      for(const item of items)if(ids.has(item.id)&&txt(item.reason)){item.reason='';item.modifiedAt=now;markDecisionChange(item);changed++;}
       if(!changed){notify('Las penalidades seleccionadas ya no tienen motivo de decisión.');return;}
-      setDirty();refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();
+      setDirty('decision');refreshDecisionPickers();renderMetricsAndBreakdown();renderDetailRows();renderSummary();
       const stillDecision=items.filter(item=>ids.has(item.id)&&(exemptionPercent(item)>0||retentionPercent(item)>0)).length;
       notify(`Se quitaron ${fmtCount(changed)} motivos de decisión.${stillDecision?` ${fmtCount(stillDecision)} penalidades siguen exoneradas o con retención y necesitarán un motivo antes de guardar.`:''}`);
     }
@@ -1082,7 +1108,7 @@
     document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMultiPickers();});
     $('detailScrollLeft').addEventListener('click',()=>{const wrap=$('detailTableWrap');wrap.scrollBy({left:-Math.max(320,wrap.clientWidth*.75),behavior:'smooth'});});
     $('detailScrollRight').addEventListener('click',()=>{const wrap=$('detailTableWrap');wrap.scrollBy({left:Math.max(320,wrap.clientWidth*.75),behavior:'smooth'});});
-    $('openCreateBtn').addEventListener('click',openCreate);$('saveBtn').addEventListener('click',saveCurrent);$('syncBtn').addEventListener('click',syncCurrent);$('retrySyncBtn').addEventListener('click',()=>{if(cloudInFlight)return;cloudPending=true;cloudNotify=true;$('storageState').textContent='Reintentando sincronización…';$('retrySyncBtn').disabled=true;flushCloudSave();});
+    $('openCreateBtn').addEventListener('click',openCreate);$('saveBtn').addEventListener('click',saveCurrent);$('syncBtn').addEventListener('click',syncCurrent);$('retrySyncBtn').addEventListener('click',()=>{if(cloudInFlight)return;$('retrySyncBtn').disabled=true;$('storageState').textContent='Reintentando sincronización…';if(pendingDecisionItems.size&&!nonDecisionDirty){cloudNotify=true;savePendingDecisionItems(true);return;}cloudPending=true;cloudNotify=true;flushCloudSave();});
     $('exportStateBtn').addEventListener('click',exportStateBackup);
     $('recordsBody').addEventListener('focusin',e=>{if(!e.target.matches('.liquidation-amount-input'))return;const amount=liquidationAmountValue(e.target.value);e.target.value=amount===null?'':amount.toFixed(2);e.target.select();});
     $('recordsBody').addEventListener('click',e=>{const deleteButton=e.target.closest('[data-delete-record]');if(deleteButton){e.stopPropagation();deleteSavedRecord(deleteButton.dataset.deleteRecord);return;}if(e.target.closest('.record-select,.liquidation-status-select,.signature-rate-editor,.liquidation-amount-input')){e.stopPropagation();return;}const row=e.target.closest('tr[data-record]');if(row)showRecord(row.dataset.record);});
@@ -1101,7 +1127,7 @@
       if(e.target.classList.contains('retention-percent-input'))markRetentionPercent(id,e.target.value);
       if(e.target.classList.contains('manual-zone-select'))applyManualZoneChoice(e.target);
     });
-    $('detailBody').addEventListener('input',e=>{if(e.target.classList.contains('reason-input')){const item=currentRecord()?.items.find(x=>x.id===e.target.dataset.id);if(item){item.reason=e.target.value;item.modifiedAt=new Date().toISOString();setDirty();}}});
+    $('detailBody').addEventListener('input',e=>{if(e.target.classList.contains('reason-input')){const item=currentRecord()?.items.find(x=>x.id===e.target.dataset.id);if(item){item.reason=e.target.value;item.modifiedAt=new Date().toISOString();markDecisionChange(item);setDirty('decision');}}});
     $('detailBody').addEventListener('change',e=>{if(e.target.classList.contains('reason-input')){refreshDecisionPickers();renderMetricsAndBreakdown();}});
     $('selectAllVisible').addEventListener('change',e=>{for(const item of filteredItems()){if(e.target.checked)selectedIds.add(item.id);else selectedIds.delete(item.id);}renderDetailRows();});
     $('selectVisibleBtn').addEventListener('click',()=>{for(const item of filteredItems())selectedIds.add(item.id);renderDetailRows();});
@@ -1120,7 +1146,7 @@
           if(!confirm(`Se importarán ${fmtCount(imported.records.length)} liquidaciones al almacenamiento Supabase. Continúa solo si este proyecto está vacío o si deseas combinar estos datos.`)){event.target.value='';return;}
           state={...emptyState(),...imported,sources:{...emptyState().sources,...(imported.sources||{})},records:imported.records,groups:Array.isArray(imported.groups)?imported.groups.filter(group=>group&&group.id&&group.name):[],deletedRecords:imported.deletedRecords&&typeof imported.deletedRecords==='object'?imported.deletedRecords:{}};
           state.records=state.records.map(record=>({...record,status:liquidationStatusValue(record.status),signatureRate:signatureRateValue(record.signatureRate),items:(record.items||[]).map(item=>{const percent=item.exemptionPercent==null?(item.exonerated?100:0):clampPercent(item.exemptionPercent);return {...item,exemptionPercent:percent,retentionPercent:retentionPercentValue(item.retentionPercent),exonerated:percent>0};})}));
-          selectedIds.clear();selectedRecordIds.clear();dirty=false;initializeView();setAvailable(true);persist(true);renderSummary();
+          selectedIds.clear();selectedRecordIds.clear();pendingDecisionItems.clear();nonDecisionDirty=false;decisionSavePending=false;dirty=false;initializeView();setAvailable(true);persist(true);renderSummary();
           notify('Respaldo importado. Se está sincronizando con Supabase.');
         }catch(error){notify(`No se pudo importar el respaldo: ${error?.message||error}`,true);}finally{event.target.value='';}
       });
@@ -1176,6 +1202,7 @@
     let exoSupabaseClient = null;
     let exoAppStarted = false;
     let exoV2Baseline = null;
+    const exoV2BaselineItemsById = new Map();
     const gateMessage = document.getElementById('moduleGateMessage');
     const showModuleGate = (message, isError=false) => {
       gateMessage.textContent = message || '';
@@ -1234,6 +1261,7 @@
             exoSupabaseClient.rpc('penalidades_obtener_resumen').then(({data,error})=>{
               if(error){failureHandler(error);return;}
               exoV2Baseline=cloneState(data);
+              exoV2BaselineItemsById.clear();
               exoV2Activated=Boolean((data.records||[]).length||(data.groups||[]).length);
               successHandler(data);
             }).catch(failureHandler);
@@ -1242,12 +1270,28 @@
           getRecordItems(recordKey){
             fetchItems(recordKey).then(items=>{
               const baselineRecord=(exoV2Baseline?.records||[]).find(record=>record.id===recordKey);
-              if(baselineRecord)baselineRecord.items=cloneState(items);
+              if(baselineRecord){baselineRecord.items=cloneState(items);for(const item of baselineRecord.items)exoV2BaselineItemsById.set(String(item.id),item);}
               successHandler(items);
             }).catch(failureHandler);
             return runner;
           },
           getFullAppState(){fetchFullState().then(successHandler).catch(failureHandler);return runner;},
+          saveDecisionChanges(decisions){
+            (async()=>{
+              for(let i=0;i<decisions.length;i+=syncGuideBatchSize){
+                const part=decisions.slice(i,i+syncGuideBatchSize);
+                const {data,error}=await exoSupabaseClient.rpc('penalidades_actualizar_decisiones',{p_decisiones:part});
+                if(error)throw new Error(`Exoneraciones, retenciones y motivos: ${error.message||error.details||error.code||String(error)}`);
+                if(Number(data)!==part.length)throw new Error(`Supabase confirmó ${Number(data)||0} de ${part.length} decisiones. No se marcaron como guardadas.`);
+              }
+              for(const decision of decisions){
+                const baselineItem=exoV2BaselineItemsById.get(String(decision.id));
+                if(baselineItem){baselineItem.exemptionPercent=Number(decision.porcentaje_exoneracion)||0;baselineItem.exonerated=baselineItem.exemptionPercent>0;baselineItem.retentionPercent=Number(decision.retencion_mejora_porcentaje)||0;baselineItem.reason=decision.motivo_decision||'';baselineItem.modifiedAt=decision.modificado_en||'';}
+              }
+              successHandler({ok:true,revision:Date.now()});
+            })().catch(failureHandler);
+            return runner;
+          },
           saveAppState(snapshot){
             const keyNorm=value=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9\u3400-\u9FFF]+/g,' ').trim().replace(/\s+/g,' ').replace(/ /g,'');
             const dbItemId=(record,item)=>{const prefix=`${record.id}::`;return String(item.id??'').startsWith(prefix)?String(item.id):prefix+String(item.id??'');};
@@ -1333,7 +1377,7 @@
                 await saveRpc('grupos y asignaciones','penalidades_guardar_grupos',{p_grupos:snapshot.groups||[],p_asignaciones:assignments});
               }
               if(!exoV2Activated){await saveRpc('activación inicial del módulo','penalidades_activar_v2',undefined);exoV2Activated=true;}
-              exoV2Baseline=cloneState(snapshot);
+              exoV2Baseline=cloneState(snapshot);exoV2BaselineItemsById.clear();for(const record of exoV2Baseline.records||[])for(const item of record.items||[])exoV2BaselineItemsById.set(String(item.id),item);
               document.getElementById('storageState').title='Última sincronización confirmada por Supabase';
               successHandler({ok:true,revision:Date.now()});
             })().catch(failureHandler);

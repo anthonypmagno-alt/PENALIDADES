@@ -188,7 +188,7 @@
     #recordsTable{min-width:1760px;table-layout:auto}
     #recordsTable thead th{white-space:normal;line-height:1.2;vertical-align:bottom;min-width:76px;max-width:135px}
     #recordsTable thead th:first-child{min-width:38px;width:38px}
-    #recordsTable thead th.retention-head,#recordsTable td.retention-cell{min-width:115px;background:#f5f0ff!important;color:#563b8b!important}
+    #recordsTable thead th.retention-head,#recordsTable td.retention-cell{min-width:145px;width:145px;background:#f5f0ff!important;color:#563b8b!important}
     .metric.retention{background:#f5f0ff;border-color:#d9c9f4}.metric.retention span,.metric.retention strong{color:#563b8b}
     .retention-head,.retention-cell{background:#f5f0ff!important;color:#563b8b!important}
     .records-total-row .retention-cell{font-weight:800}
@@ -200,6 +200,38 @@
     .breakdown-parent:not(:has(.breakdown-expand-btn)){cursor:pointer}
     #detailBody .retention-amount-cell{background:#faf7ff;color:#563b8b;font-weight:750}
     @media(max-width:1200px){#recordsTable{min-width:1660px}}
+  </style>
+  <style id="compactTableWidths">
+    .breakdown-retention-head,.breakdown-retention-cell{min-width:165px;width:165px;white-space:normal;background:#f5f0ff!important;color:#563b8b!important}
+    #detailTableWrap .detail-table{width:1855px;min-width:1855px;table-layout:fixed;white-space:normal}
+    #detailTableWrap .detail-table th,#detailTableWrap .detail-table td{padding:6px 5px;font-size:10px;white-space:normal;overflow-wrap:anywhere;vertical-align:top}
+    #detailTableWrap .detail-table th:nth-child(1),#detailTableWrap .detail-table td:nth-child(1){width:34px;min-width:34px;text-align:center}
+    #detailTableWrap .detail-table th:nth-child(2),#detailTableWrap .detail-table td:nth-child(2){width:75px;min-width:75px;text-align:center}
+    #detailTableWrap .detail-table th:nth-child(3),#detailTableWrap .detail-table td:nth-child(3){width:78px;min-width:78px}
+    #detailTableWrap .detail-table th:nth-child(4),#detailTableWrap .detail-table td:nth-child(4){width:105px;min-width:105px}
+    #detailTableWrap .detail-table th:nth-child(5),#detailTableWrap .detail-table td:nth-child(5){width:80px;min-width:80px}
+    #detailTableWrap .detail-table th:nth-child(6),#detailTableWrap .detail-table td:nth-child(6){width:130px;min-width:130px}
+    #detailTableWrap .detail-table th:nth-child(7),#detailTableWrap .detail-table td:nth-child(7){width:115px;min-width:115px}
+    #detailTableWrap .detail-table th:nth-child(8),#detailTableWrap .detail-table td:nth-child(8){width:105px;min-width:105px}
+    #detailTableWrap .detail-table th:nth-child(9),#detailTableWrap .detail-table td:nth-child(9){width:98px;min-width:98px}
+    #detailTableWrap .detail-table th:nth-child(10),#detailTableWrap .detail-table td:nth-child(10){width:135px;min-width:135px}
+    #detailTableWrap .detail-table th:nth-child(11),#detailTableWrap .detail-table td:nth-child(11){width:110px;min-width:110px}
+    #detailTableWrap .detail-table th:nth-child(12),#detailTableWrap .detail-table td:nth-child(12){width:105px;min-width:105px}
+    #detailTableWrap .detail-table th:nth-child(13),#detailTableWrap .detail-table td:nth-child(13){width:95px;min-width:95px}
+    #detailTableWrap .detail-table th:nth-child(14),#detailTableWrap .detail-table td:nth-child(14){width:110px;min-width:110px}
+    #detailTableWrap .detail-table th:nth-child(15),#detailTableWrap .detail-table td:nth-child(15){width:120px;min-width:120px}
+    #detailTableWrap .detail-table th:nth-child(16),#detailTableWrap .detail-table td:nth-child(16){width:110px;min-width:110px}
+    #detailTableWrap .detail-table th:nth-child(17),#detailTableWrap .detail-table td:nth-child(17){width:125px;min-width:125px}
+    #detailTableWrap .detail-table th:nth-child(18),#detailTableWrap .detail-table td:nth-child(18){width:125px;min-width:125px}
+    #detailTableWrap .detail-table thead th:nth-child(-n+4){position:sticky;top:0;z-index:4;background:#f1f5f8}
+    #detailTableWrap .detail-table tbody td:nth-child(1){position:sticky;left:0;z-index:2;background:#fff}
+    #detailTableWrap .detail-table tbody td:nth-child(2){position:sticky;left:34px;z-index:2;background:#fff}
+    #detailTableWrap .detail-table tbody td:nth-child(3){position:sticky;left:109px;z-index:2;background:#fff}
+    #detailTableWrap .detail-table tbody td:nth-child(4){position:sticky;left:187px;z-index:2;background:#fff;box-shadow:5px 0 7px -7px #23384c}
+    #detailTableWrap .detail-table thead th:nth-child(1){left:0}
+    #detailTableWrap .detail-table thead th:nth-child(2){left:34px}
+    #detailTableWrap .detail-table thead th:nth-child(3){left:109px}
+    #detailTableWrap .detail-table thead th:nth-child(4){left:187px;box-shadow:5px 0 7px -7px #23384c}
   </style>
 </head>
 <body>
@@ -293,7 +325,7 @@
       <div class="metrics" id="metrics"></div>
       <div class="breakdown">
         <div class="breakdown-heading"><div><h3>Resumen por penalización y motivo de decisión</h3><p class="note">Cada penalidad se muestra en una sola fila al contraer. Expándela para ver motivos y, luego, los subtipos de Brecha (columna E) o SLA (columna F). Fin perdida y No reconoce entrega no se subdividen. Haz clic en una fila para filtrar el detalle.</p></div><div class="breakdown-toggle-actions"><button type="button" class="btn" id="expandBreakdownBtn">Expandir todo</button><button type="button" class="btn" id="collapseBreakdownBtn">Contraer por penalidad</button></div></div>
-        <div class="table-wrap"><table class="data-table"><thead><tr><th>Penalización / subtipo</th><th>Motivo de decisión</th><th class="num">Exoneradas (N.º)</th><th class="num">No exoneradas (N.º)</th><th class="num">Filas</th><th class="num">Guías únicas</th><th class="num">Penalidad total (S/)</th><th class="num">Monto exonerado (S/)</th><th class="num">Saldo (S/)</th></tr></thead><tbody id="breakdownBody"></tbody></table></div>
+        <div class="table-wrap"><table class="data-table breakdown-table"><thead><tr><th>Penalización / subtipo</th><th>Motivo de decisión</th><th class="num">Exoneradas (N.º)</th><th class="num">No exoneradas (N.º)</th><th class="num">Filas</th><th class="num">Guías únicas</th><th class="num">Penalidad total (S/)</th><th class="num">Monto exonerado (S/)</th><th class="num">Saldo (S/)</th><th class="num breakdown-retention-head">Retención<br>para mejora (S/)</th></tr></thead><tbody id="breakdownBody"></tbody></table></div>
       </div>
       <div class="breakdown">
         <h3>Brecha de actualización de penalidad</h3><p class="note">Las guías y subtipos salen de “LISTA DETALLADA DE PENALIDAD”; las columnas de operación reciente vienen del match con “Brecha máxima por guía y PDV”. Si no hay match, verás “Sin dato”. Expande para ver los subtipos y haz clic en una celda para filtrar el detalle.</p>
@@ -833,10 +865,10 @@
         const subtype=penaltySubtype(item);if(subtype){const subtypeKey=[subtype.field,norm(subtype.value)].join('|');if(!reasonGroup.subtypes.has(subtypeKey))reasonGroup.subtypes.set(subtypeKey,{field:subtype.field,column:subtype.column,value:subtype.value,items:[]});reasonGroup.subtypes.get(subtypeKey).items.push(item);}
       }
       const measureItems=items=>{
-        const exempted=items.filter(item=>exemptionPercent(item)>0).length,total=items.reduce((sum,item)=>sum+(Number(item.cost)||0),0),exempt=items.reduce((sum,item)=>sum+exemptionAmount(item),0);
-        return {rows:items.length,exempted,notExempted:items.length-exempted,guides:uniqueGuideCount(items),total,exempt,balance:total-exempt};
+        const exempted=items.filter(item=>exemptionPercent(item)>0).length,total=items.reduce((sum,item)=>sum+(Number(item.cost)||0),0),exempt=items.reduce((sum,item)=>sum+exemptionAmount(item),0),retention=items.reduce((sum,item)=>sum+retentionAmount(item),0);
+        return {rows:items.length,exempted,notExempted:items.length-exempted,guides:uniqueGuideCount(items),total,exempt,balance:total-exempt,retention};
       };
-      const renderMeasures=items=>{const m=measureItems(items);return `<td class="num">${fmtCount(m.exempted)}</td><td class="num">${fmtCount(m.notExempted)}</td><td class="num">${fmtCount(m.rows)}</td><td class="num">${fmtCount(m.guides)}</td><td class="num">S/ ${fmtMoney(m.total)}</td><td class="num">S/ ${fmtMoney(m.exempt)}</td><td class="num">S/ ${fmtMoney(m.balance)}</td>`;};
+      const renderMeasures=items=>{const m=measureItems(items);return `<td class="num">${fmtCount(m.exempted)}</td><td class="num">${fmtCount(m.notExempted)}</td><td class="num">${fmtCount(m.rows)}</td><td class="num">${fmtCount(m.guides)}</td><td class="num">S/ ${fmtMoney(m.total)}</td><td class="num">S/ ${fmtMoney(m.exempt)}</td><td class="num">S/ ${fmtMoney(m.balance)}</td><td class="num breakdown-retention-cell">S/ ${fmtMoney(m.retention)}</td>`;};
       const penaltyRows=[...penalties.values()].sort((a,b)=>a.penalty.localeCompare(b.penalty,'es'));
       const breakdownGrandTotal=penaltyRows.length?`<tr class="click-row summary-grand-total breakdown-grand-total" data-grand-total="true" title="Haz clic para mostrar todas las guías del detalle"><td colspan="2">TOTAL GENERAL</td>${renderMeasures(summaryItems)}</tr>`:'';
       const renderReasonGroup=group=>{
@@ -853,7 +885,7 @@
         const expander=expandable?`<button type="button" class="breakdown-expand-btn" data-expand-penalty="${escapeHtml(group.key)}" aria-expanded="${expanded}" aria-label="${expanded?'Contraer':'Expandir'} motivos de ${escapeHtml(group.penalty)}">${toggle}</button>`:'';
         const reasonRows=expanded&&expandable?reasonGroups.map(renderReasonGroup).join(''):'';
         return `<tr class="click-row breakdown-parent breakdown-penalty-row" data-row-kind="penalty-group" data-penalty="${escapeHtml(group.penalty)}" data-penalty-key="${escapeHtml(group.key)}" title="Haz clic para filtrar todas las guías de esta penalización"><td>${expander}${escapeHtml(group.penalty)}</td><td>${escapeHtml(reasonLabel)}</td>${renderMeasures(group.items)}</tr>${reasonRows}`;
-      }).join('')+breakdownGrandTotal:`<tr><td colspan="9" class="empty">No hay penalidades.</td></tr>`;
+      }).join('')+breakdownGrandTotal:`<tr><td colspan="10" class="empty">No hay penalidades.</td></tr>`;
       renderBreachMatrix(r);renderSlaMatrix(r);
     }
     function setBreakdownExpansion(expanded){

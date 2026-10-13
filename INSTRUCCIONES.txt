@@ -71,3 +71,11 @@ RESUMEN CONTRAIBLE POR PENALIDAD (13-10-2026)
 - Cada penalidad muestra una fila agregada. “Expandir todo” abre los motivos y los subtipos; “Contraer por penalidad” vuelve a una fila por penalidad. Los motivos conservan su propio control para abrir o cerrar los subtipos de Brecha o SLA.
 - El enlace de Penalidades se actualiza con la versión 20261013-resumen-penalidad-1.
 - No requiere ejecutar SQL adicional.
+
+
+AJUSTE DE RETENCION Y ANCHO DE TABLAS (13-10-2026)
+- El resumen por penalización y motivo de decisión agrega la columna “Retención para mejora (S/)” después del saldo; los importes se totalizan en cada grupo y en el total general.
+- Se amplía la columna de retención para mejora en las liquidaciones guardadas y en el detalle para facilitar la lectura.
+- El detalle completo reduce el ancho de sus columnas para mostrar más información a la vez; conserva desplazamiento horizontal cuando la pantalla no alcanza y mantiene fijas las columnas de selección, fecha, PDV y guía.
+- El enlace de Penalidades del index.html usa la versión 20261013-retencion-ancho-tablas-2 para actualizar la caché.
+- Es un ajuste visual y no requiere ejecutar SQL adicional.

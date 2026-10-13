@@ -104,5 +104,6 @@ OPTIMIZACION DE SINCRONIZACION (13-10-2026)
 - Los cambios de exoneración, retención y motivo se envían a una función que actualiza solo la tabla de decisiones; no vuelve a escribir las otras columnas de esas guías. Los cambios de datos fuente sí actualizan los campos de la guía.
 - Los grupos solo se envían cuando cambian, y la activación de Penalidades se ejecuta una sola vez por sesión.
 - El indicador superior informa el avance de guías sincronizadas.
-- Ejecuta una vez SUPABASE_SQL/supabase_penalidades_guardar_solo_decisiones.sql en Supabase para habilitar el guardado parcial. Solo crea/reemplaza una función; no modifica ni elimina datos existentes.
-- El enlace de Penalidades del index.html usa la versión 20261013-sync-decisiones-1 para actualizar la caché.
+- El CSV de lints enviado el 13-10-2026 confirma que `public.penalidades_actualizar_decisiones(p_decisiones jsonb)` ya existe en Supabase; no vuelvas a ejecutar el SQL de guardado parcial para corregir el indicador de sincronización.
+- Las solicitudes a Supabase tienen un límite de 60 segundos; si alguna queda bloqueada, la pantalla informa la fase y el error en vez de permanecer en “Sincronizando” indefinidamente. El mensaje también queda disponible al pasar el cursor por el estado.
+- El enlace de Penalidades del index.html usa la versión 20261013-sync-diagnostico-2 para actualizar la caché.

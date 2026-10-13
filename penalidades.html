@@ -437,8 +437,8 @@
     }
     function flushCloudSave(){
       if(!cloudMode||!cloudPending||cloudInFlight)return;cloudPending=false;cloudInFlight=true;const snapshot=JSON.parse(JSON.stringify({serverRevision:state.serverRevision,records:state.records||[],groups:state.groups||[],deletedRecords:state.deletedRecords||{}}));
-      google.script.run.withSuccessHandler(result=>{state.serverRevision=Number(result?.revision)||state.serverRevision;$('storageState').textContent='Guardado en Supabase';$('retrySyncBtn').hidden=true;$('retrySyncBtn').disabled=false;if(cloudNotify)notify('Cambios guardados en Supabase.');if(!dirty){$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';}cloudNotify=false;cloudInFlight=false;if(cloudPending)setTimeout(flushCloudSave,0);})
-        .withFailureHandler(error=>{$('storageState').textContent='Error al guardar en Supabase';$('retrySyncBtn').hidden=false;$('retrySyncBtn').disabled=false;notify(`No se pudo sincronizar con Supabase: ${error?.message||error}. Tus cambios siguen en esta pestaña; corrige el problema y pulsa Reintentar sincronización.`,true);cloudNotify=false;cloudInFlight=false;cloudPending=true;})
+      google.script.run.withSuccessHandler(result=>{state.serverRevision=Number(result?.revision)||state.serverRevision;$('storageState').textContent='Guardado en Supabase';$('storageState').title='Última sincronización confirmada por Supabase';$('retrySyncBtn').hidden=true;$('retrySyncBtn').disabled=false;if(cloudNotify)notify('Cambios guardados en Supabase.');if(!dirty){$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';}cloudNotify=false;cloudInFlight=false;if(cloudPending)setTimeout(flushCloudSave,0);})
+        .withFailureHandler(error=>{const detail=error?.message||String(error||'Error sin detalle');$('storageState').textContent='Error al guardar en Supabase';$('storageState').title=detail;$('retrySyncBtn').hidden=false;$('retrySyncBtn').disabled=false;notify(`Supabase no confirmó el guardado: ${detail}. Los cambios siguen en esta pestaña; corrige el problema y pulsa Reintentar sincronización.`,true);cloudNotify=false;cloudInFlight=false;cloudPending=true;})
         .saveAppState(snapshot);
     }
     function notify(message,error=false){const el=$('toast');el.textContent=message;el.style.background=error?'#8b211a':'#203040';el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3500);}
@@ -1185,7 +1185,27 @@
     const syncBatchSize = 500;
     const syncGuideBatchSize = 1000;
     const maxParallelRecordBatches = 2;
+    const SUPABASE_REQUEST_TIMEOUT_MS = 60000;
     let exoV2Activated = false;
+
+    function fetchSupabaseWithTimeout(input, init={}){
+      const upstreamSignal=init?.signal;
+      const controller=new AbortController();
+      let upstreamAbort=null;
+      if(upstreamSignal){
+        upstreamAbort=()=>controller.abort(upstreamSignal.reason);
+        if(upstreamSignal.aborted)upstreamAbort();
+        else upstreamSignal.addEventListener('abort',upstreamAbort,{once:true});
+      }
+      const timer=setTimeout(()=>controller.abort(new DOMException('Supabase no respondió dentro del tiempo límite.','TimeoutError')),SUPABASE_REQUEST_TIMEOUT_MS);
+      return window.fetch(input,{...init,signal:controller.signal}).catch(error=>{
+        if(controller.signal.aborted&&!upstreamSignal?.aborted)throw new Error('La solicitud a Supabase superó 60 segundos y fue cancelada. Revisa la conexión y pulsa Reintentar sincronización.');
+        throw error;
+      }).finally(()=>{
+        clearTimeout(timer);
+        if(upstreamSignal&&upstreamAbort)upstreamSignal.removeEventListener('abort',upstreamAbort);
+      });
+    }
 
     function makeGoogleScriptBridge(){
       const fetchItems=async recordKey=>{
@@ -1264,10 +1284,18 @@
             const groupsChanged=groupSignature(snapshot.groups)!==groupSignature(baseline.groups)||assignmentSignature(snapshot.records)!==assignmentSignature(baseline.records);
             const changedGuideCount=changedByRecord.reduce((total,batch)=>total+batch.changed.length,0)+decisionOnlyChanges.length;
             let syncedGuideCount=0;
+            let syncStage='Preparando cambios';
             const updateSyncProgress=()=>{
               const label=document.getElementById('storageState');
               if(!label)return;
-              label.textContent=changedGuideCount?`Sincronizando guías ${new Intl.NumberFormat('es-PE').format(syncedGuideCount)} de ${new Intl.NumberFormat('es-PE').format(changedGuideCount)}…`:'Finalizando sincronización…';
+              label.textContent=changedGuideCount?`Sincronizando ${syncStage} · ${new Intl.NumberFormat('es-PE').format(syncedGuideCount)} de ${new Intl.NumberFormat('es-PE').format(changedGuideCount)} guías…`:`Sincronizando ${syncStage}…`;
+              label.title=`Fase actual: ${syncStage}. Límite de espera por solicitud: 60 segundos.`;
+            };
+            const saveRpc=async(stage,name,args)=>{
+              syncStage=stage;updateSyncProgress();
+              const {data,error}=await exoSupabaseClient.rpc(name,args);
+              if(error)throw new Error(`${stage}: ${error.message||error.details||error.code||String(error)}`);
+              return data;
             };
             (async()=>{
               updateSyncProgress();
@@ -1276,41 +1304,37 @@
               const saveRecordBatches=async batch=>{
                 for(let i=0;i<batch.changed.length;i+=syncGuideBatchSize){
                   const part=batch.changed.slice(i,i+syncGuideBatchSize);
-                  const {error}=await exoSupabaseClient.rpc('penalidades_upsert_lote',{p_liquidacion:{id:batch.record.id,periodo:batch.record.period,pdv:batch.record.pdv},p_guias:part});
-                  if(error)throw error;
+                  await saveRpc(`datos fuente (${batch.record.pdv}, lote ${Math.floor(i/syncGuideBatchSize)+1})`,'penalidades_upsert_lote',{p_liquidacion:{id:batch.record.id,periodo:batch.record.period,pdv:batch.record.pdv},p_guias:part});
                   syncedGuideCount+=part.length;updateSyncProgress();
                 }
               };
               let syncWorkerError=null;
+              if(queue.length){syncStage='datos fuente';updateSyncProgress();}
               const workers=Array.from({length:Math.min(maxParallelRecordBatches,queue.length)},async()=>{while(queue.length&&!syncWorkerError){const batch=queue.shift();try{await saveRecordBatches(batch);}catch(error){syncWorkerError=error;throw error;}}});
               const workerResults=await Promise.allSettled(workers),workerFailure=workerResults.find(result=>result.status==='rejected');
               if(workerFailure)throw workerFailure.reason;
               for(let i=0;i<decisionOnlyChanges.length;i+=syncGuideBatchSize){
                 const part=decisionOnlyChanges.slice(i,i+syncGuideBatchSize);
-                const {error}=await exoSupabaseClient.rpc('penalidades_actualizar_decisiones',{p_decisiones:part});
-                if(error)throw error;
+                await saveRpc(`exoneraciones, retenciones y motivos (lote ${Math.floor(i/syncGuideBatchSize)+1})`,'penalidades_actualizar_decisiones',{p_decisiones:part});
                 syncedGuideCount+=part.length;updateSyncProgress();
               }
               for(let i=0;i<deletedRecordKeys.length;i+=syncBatchSize){
-                const {error}=await exoSupabaseClient.rpc('penalidades_borrar_liquidaciones',{p_record_keys:deletedRecordKeys.slice(i,i+syncBatchSize)});
-                if(error)throw error;
+                await saveRpc('eliminación de liquidaciones','penalidades_borrar_liquidaciones',{p_record_keys:deletedRecordKeys.slice(i,i+syncBatchSize)});
               }
               for(let i=0;i<changedLiquidations.length;i+=syncBatchSize){
-                const {error}=await exoSupabaseClient.rpc('penalidades_actualizar_estados',{p_estados:changedLiquidations.slice(i,i+syncBatchSize)});
-                if(error)throw error;
+                await saveRpc('estado, monto y tasa de liquidación','penalidades_actualizar_estados',{p_estados:changedLiquidations.slice(i,i+syncBatchSize)});
               }
               for(let i=0;i<deleted.length;i+=syncBatchSize){
-                const {error}=await exoSupabaseClient.rpc('penalidades_borrar_guias',{p_ids:deleted.slice(i,i+syncBatchSize)});
-                if(error)throw error;
+                await saveRpc('eliminación de guías','penalidades_borrar_guias',{p_ids:deleted.slice(i,i+syncBatchSize)});
               }
-              if(deleted.length){const {error}=await exoSupabaseClient.rpc('penalidades_borrar_liquidaciones_vacias');if(error)throw error;}
+              if(deleted.length)await saveRpc('limpieza de liquidaciones vacías','penalidades_borrar_liquidaciones_vacias',undefined);
               if(groupsChanged){
                 const assignments=(snapshot.records||[]).filter(record=>record.groupId).map(record=>({recordKey:record.id,groupId:record.groupId}));
-                const {error:groupError}=await exoSupabaseClient.rpc('penalidades_guardar_grupos',{p_grupos:snapshot.groups||[],p_asignaciones:assignments});
-                if(groupError)throw groupError;
+                await saveRpc('grupos y asignaciones','penalidades_guardar_grupos',{p_grupos:snapshot.groups||[],p_asignaciones:assignments});
               }
-              if(!exoV2Activated){const {error:activateError}=await exoSupabaseClient.rpc('penalidades_activar_v2');if(activateError)throw activateError;exoV2Activated=true;}
+              if(!exoV2Activated){await saveRpc('activación inicial del módulo','penalidades_activar_v2',undefined);exoV2Activated=true;}
               exoV2Baseline=cloneState(snapshot);
+              document.getElementById('storageState').title='Última sincronización confirmada por Supabase';
               successHandler({ok:true,revision:Date.now()});
             })().catch(failureHandler);
             return runner;
@@ -1337,7 +1361,7 @@
     async function initializePenalidadesModule(){
       if(!V16_CONFIG?.url||!V16_CONFIG?.key)throw new Error('No se encontró la configuración del portal. Verifica config.js.');
       if(!window.supabase?.createClient)throw new Error('No se pudo cargar el cliente Supabase. Verifica tu conexión a internet.');
-      exoSupabaseClient=window.supabase.createClient(V16_CONFIG.url,V16_CONFIG.key,{auth:{storageKey:'v16-replica-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+      exoSupabaseClient=window.supabase.createClient(V16_CONFIG.url,V16_CONFIG.key,{auth:{storageKey:'v16-replica-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},global:{fetch:fetchSupabaseWithTimeout}});
       const {data:sessionData,error:sessionError}=await exoSupabaseClient.auth.getSession();
       if(sessionError)throw new Error('No se pudo validar la sesión del portal: '+sessionError.message);
       if(!sessionData.session){showModuleGate('Primero inicia sesión en Revisión de Guías y luego abre Penalidades desde el menú.');return;}

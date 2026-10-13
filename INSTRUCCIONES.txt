@@ -60,7 +60,7 @@ ACTUALIZACION GESTION DE GUIAS V2 (12-10-2026)
 
 
 RETENCION PARA MEJORA (13-10-2026)
-- El porcentaje se aplica a la penalidad original, antes de descontar la exoneración. El monto retenido se muestra en el detalle, los indicadores y la tabla de liquidaciones.
+- El porcentaje se aplica al saldo de la penalidad después de descontar la exoneración. El monto retenido se muestra en el detalle, los indicadores y la tabla de liquidaciones.
 - La retención es condicional y no se resta de la Liq. final.
 - El Excel de detalle conserva sus columnas existentes y termina con RETENCIÓN PARA MEJORA (%) y RETENCIÓN PARA MEJORA (S/).
 - Para conservar la retención entre sesiones y compartirla entre usuarios, ejecuta una sola vez SUPABASE_SQL/supabase_penalidades_retencion_mejora.sql en el mismo proyecto Supabase. El cambio agrega una columna a las decisiones existentes y actualiza tres funciones; no elimina registros.
@@ -90,10 +90,10 @@ CORRECCION DE DESTINO Y ULTIMO ESCANEO (13-10-2026)
 - Al cargar el archivo, el aviso informa cuántas filas incluyen destino, escaneo, firma y fecha completos, además de cuántas penalidades se enlazaron.
 - El enlace de Penalidades del index.html usa la versión 20261013-destino-escaneo-3 para actualizar la caché.
 
-BASE DE RETENCION PARA MEJORA (13-10-2026)
-- El porcentaje de retención se calcula sobre el monto original de la penalidad, sin reducirlo por la exoneración aplicada.
+RETENCION CALCULADA SOBRE EL SALDO (13-10-2026)
+- El porcentaje de retención se calcula sobre el saldo de la penalidad después de aplicar la exoneración.
 - El monto retenido sigue siendo condicional y no se descuenta de la Liquidación final.
-- La base aparece aclarada en el detalle; los resúmenes y el Excel usan el mismo cálculo.
+- La base aparece aclarada en el detalle; los resúmenes, el Excel y Supabase usan el mismo cálculo.
 - Exoneración y saldo se redondean por guía a dos decimales; el saldo es el remanente para que exoneración + saldo coincidan con la penalidad original.
-- Ejecuta una vez SUPABASE_SQL/supabase_penalidades_retencion_base_penalidad.sql para actualizar el resumen que Supabase devuelve al abrir el portal. No modifica ni elimina registros.
-- El enlace de Penalidades del index.html usa la versión 20261013-retencion-base-penalidad-2 para actualizar la caché.
+- Ejecuta una vez SUPABASE_SQL/supabase_penalidades_retencion_sobre_saldo.sql para actualizar el resumen que Supabase devuelve al abrir el portal. No modifica ni elimina registros.
+- El enlace de Penalidades del index.html usa la versión 20261013-retencion-sobre-saldo-1 para actualizar la caché.

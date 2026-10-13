@@ -953,7 +953,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
       if(!window.XlsxResumenV2||typeof window.XlsxResumenV2.generarDesdeTabla!=="function")throw new Error("No se cargó el generador XLSX local. Reemplace también xlsx-resumen.js en el repositorio.");
       const bytes=window.XlsxResumenV2.generarDesdeTabla(tabla),blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),url=URL.createObjectURL(blob),a=document.createElement("a");
       a.href=url;a.download="Resumen_Gestion_Guias_V2_"+new Date().toISOString().replace(/[:.]/g,"-")+".xlsx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
-      mostrarLoading(false);toast("Resumen V2 descargado como XLSX, con grupos, subtotales y estilos de la tabla visible.",true);
+      mostrarLoading(false);toast("Resumen V2 descargado con grupos, subtotales, estilos y comentarios por PDV.",true);
     }catch(e){mostrarLoading(false);toast("No se pudo generar el Excel del resumen: "+(e.message||String(e)),false);}
     finally{if(boton)boton.disabled=false;}
   }
@@ -1496,7 +1496,7 @@ function filaResumen(x,esTotal){
  const pdv=document.createElement('td');pdv.textContent=x.pdv;pdv.className='summary-clickable';pdv.classList.toggle('summary-selected',!esTotal&&celdaResumenSeleccionada(x.pdv,''));pdv.onclick=()=>esTotal?limpiarFiltroResumen(false):aplicarFiltroResumen(x.pdv,'');tr.append(pdv);
  const desp=document.createElement('td');desp.textContent=Number(x.despachosAyer||0)===0?'':num(x.despachosAyer);tr.append(desp);
  for(const k of [...COLUMNAS_V2,'total','totalCritico','guiasUnicas'])tr.append(celdaV2(x[k],x.pdv,k==='total'?'totalCasos':k,esTotal));
- const comentario=document.createElement('td');comentario.className='comment-col';
+ const comentario=document.createElement('td');comentario.className='comment-col';if(!esTotal)comentario.dataset.excelComment=String(x.comentario||'');
  if(!esTotal&&['ADMINISTRADOR','ENCARGADO'].includes(sesion?.rol)&&typeof abrirComentario==='function'){
   const b=document.createElement('button');b.className='btn-comment'+(x.comentario?' has-comment':'');b.textContent='💬';b.title='Comentario del PDV';b.onclick=()=>abrirComentario(x.pdv);comentario.append(b);
  }tr.append(comentario);return tr;
@@ -1521,4 +1521,4 @@ function actualizarClasificacionV2(){
  else{resumen=r.resumen;renderResumen();filtrar();}
 }
 setInterval(actualizarClasificacionV2,60000);
-</script><script src="./brecha-costos.js?v=2"></script><script src="./xlsx-resumen.js?v=20261012-xlsx-local-1"></script></body></html>
+</script><script src="./brecha-costos.js?v=2"></script><script src="./xlsx-resumen.js?v=20261012-comentarios-visibles-1"></script></body></html>

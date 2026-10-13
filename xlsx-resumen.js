@@ -201,7 +201,7 @@
           while ((ocupadasHasta.get(col) || 0) >= r) col++;
           let libre = true;
           for (let c = col; c < col + colspan; c++) {
-            if (c > maxCols) throw new Error("La tabla tiene más columnas de las previstas.");
+            if (c > maxCols) throw new Error(`La tabla excede ${maxCols} columnas en la fila ${r} al colocar “${celda.texto || ""}” (columna ${col}, abarca ${colspan}).`);
             if ((ocupadasHasta.get(c) || 0) >= r) { col = c + 1; libre = false; break; }
           }
           if (libre) break;
@@ -236,7 +236,7 @@
         if (celda.value.type === "number") return `<c r="${ref}"${estilo}><v>${celda.value.value}</v></c>`;
         return `<c r="${ref}"${estilo} t="inlineStr"><is><t xml:space="preserve">${escaparXml(celda.value.value)}</t></is></c>`;
       }).join("");
-      const alto = Math.max(15, Math.min(120, (Number(filas[idx].altoPx) || 24) * 0.75));
+      const alto = Math.max(15, Math.min(409, (Number(filas[idx].altoPx) || 24) * 0.75));
       return `<row r="${r}" ht="${alto.toFixed(2)}" customHeight="1">${celdas}</row>`;
     }).join("");
     const colsXml = anchos.map((w, idx) => `<col min="${idx + 1}" max="${idx + 1}" width="${Math.max(8, Math.min(55, Number(w) || 10)).toFixed(2)}" customWidth="1"/>`).join("");
@@ -266,15 +266,35 @@
       const pct = c ? parseFloat(c.style.width) || 0 : 0;
       return Math.max(8, Math.min(55, (px || anchoTabla * (pct ? pct / 100 : 1 / Math.max(14, columnas.length))) / 7));
     });
-    const filas = Array.from(tabla.rows || []).map(fila => ({
-      altoPx: fila.getBoundingClientRect().height || 24,
-      celdas: Array.from(fila.cells || []).map(celda => ({
+    const htmlFilas = Array.from(tabla.rows || []);
+    const filaCabecera = htmlFilas.find(f => String(f.parentElement?.tagName || "").toUpperCase() === "THEAD") || htmlFilas[0];
+    const celdaCabeceraComentarios = filaCabecera?.cells?.[filaCabecera.cells.length - 1];
+    const estiloComentarios = celdaCabeceraComentarios ? estiloDeCelda(celdaCabeceraComentarios) : {};
+    anchos.push(42);
+    const filas = htmlFilas.map(fila => {
+      const celdas = Array.from(fila.cells || []).map(celda => ({
         texto: String(celda.innerText || celda.textContent || "").replace(/\u00a0/g, " ").trim(),
         colspan: celda.colSpan || 1,
         rowspan: celda.rowSpan || 1,
         estilo: estiloDeCelda(celda)
-      }))
-    }));
+      }));
+      let altoPx = fila.getBoundingClientRect().height || 24;
+      if (fila === filaCabecera) {
+        celdas.push({ texto: "COMENTARIO", colspan: 1, rowspan: 3, estilo: estiloComentarios });
+      } else if (String(fila.parentElement?.tagName || "").toUpperCase() === "THEAD") {
+        // La celda COMENTARIO de la primera fila ya cubre las tres filas del encabezado.
+      } else if (celdas.length === 1 && celdas[0].colspan >= 14) {
+        celdas[0].colspan = 15;
+      } else {
+        const celdaComentario = Array.from(fila.cells || []).find(c => c.classList?.contains("comment-col"));
+        const comentario = String(celdaComentario?.dataset?.excelComment || "").trim();
+        const estilo = celdaComentario ? estiloDeCelda(celdaComentario) : estiloComentarios;
+        estilo.alignment = { ...estilo.alignment, horizontal: "left", vertical: "top", wrapText: true };
+        celdas.push({ texto: fila.classList?.contains("brecha-data-row") ? comentario : "", estilo });
+        if (comentario) altoPx = Math.max(altoPx, Math.min(545, Math.ceil(comentario.length / 58) * 18 + 8));
+      }
+      return { altoPx, celdas };
+    });
     return generarXlsx({ filas, anchos });
   }
 

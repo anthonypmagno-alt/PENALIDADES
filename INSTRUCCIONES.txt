@@ -94,5 +94,6 @@ BASE DE RETENCION PARA MEJORA (13-10-2026)
 - El porcentaje de retención se calcula sobre el monto original de la penalidad, sin reducirlo por la exoneración aplicada.
 - El monto retenido sigue siendo condicional y no se descuenta de la Liquidación final.
 - La base aparece aclarada en el detalle; los resúmenes y el Excel usan el mismo cálculo.
+- Exoneración y saldo se redondean por guía a dos decimales; el saldo es el remanente para que exoneración + saldo coincidan con la penalidad original.
 - Ejecuta una vez SUPABASE_SQL/supabase_penalidades_retencion_base_penalidad.sql para actualizar el resumen que Supabase devuelve al abrir el portal. No modifica ni elimina registros.
-- El enlace de Penalidades del index.html usa la versión 20261013-retencion-base-penalidad-1 para actualizar la caché.
+- El enlace de Penalidades del index.html usa la versión 20261013-retencion-base-penalidad-2 para actualizar la caché.

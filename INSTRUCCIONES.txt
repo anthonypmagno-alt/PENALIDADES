@@ -108,3 +108,11 @@ OPTIMIZACION DE SINCRONIZACION (13-10-2026)
 - Las solicitudes a Supabase tienen un límite de 60 segundos; si alguna queda bloqueada, la pantalla informa la fase y el error en vez de permanecer en “Sincronizando” indefinidamente.
 - El CSV de lints enviado el 13-10-2026 confirma que `public.penalidades_actualizar_decisiones(p_decisiones jsonb)` ya existe en Supabase; no vuelvas a ejecutar ese SQL.
 - El enlace de Penalidades del index.html usa la versión 20261013-sync-directo-3 para actualizar la caché.
+
+AJUSTE DE PENALIDAD TOTAL Y COPIA DE MOTIVO (13-10-2026)
+- En “Registros guardados” se agregó “Ajuste penalidad total”. Si el campo queda vacío, el cálculo usa la penalidad total original. Si se ingresa un monto, ese valor sustituye el total para calcular el saldo de penalidad: saldo = ajuste − monto exonerado. El ajuste no puede ser menor al monto ya exonerado.
+- “Liq. final” conserva la fórmula existente: monto de liquidación − saldo de penalidad. Ejemplo: penalidad original S/ 2,500, ajuste S/ 2,300 y monto exonerado S/ 500 producen saldo S/ 1,800; Liq. final será el monto de liquidación menos S/ 1,800.
+- El ajuste se guarda por periodo y PDV en Supabase. El detalle de cada guía conserva los importes originales del Excel; el ajuste no se distribuye entre guías. El total general del resumen de penalización sí usa la base ajustada.
+- En la columna “Motivo de decisión” del detalle se agregó un botón “Copiar motivo” por guía. Copia el texto visible en el campo, aunque todavía no se haya guardado.
+- En Supabase, ejecuta una sola vez `SUPABASE_SQL/supabase_penalidades_ajuste_penalidad_total.sql`. El script agrega una columna nullable y una función RPC; actualiza la función de resumen para devolver el ajuste. No borra ni reinicia datos.
+- Publica el contenido completo del ZIP en la raíz del repositorio. El enlace de Penalidades del index.html usa la versión `20261013-ajuste-penalidad-copiar-motivo-1`.

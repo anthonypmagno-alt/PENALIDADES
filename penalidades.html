@@ -432,11 +432,11 @@
     function visibleSummaryItems(record){const items=Array.isArray(record?.items)?record.items:[];return onlyNonExempt?items.filter(item=>exemptionPercent(item)===0):items;}
     function readState(){return emptyState();}
     function persist(showMessage=false){
-      if(cloudMode){cloudPending=true;cloudNotify=cloudNotify||showMessage;$('storageState').textContent='Sincronizando con Supabase…';clearTimeout(cloudTimer);cloudTimer=setTimeout(flushCloudSave,showMessage?0:350);return true;}
+      if(cloudMode){cloudPending=true;cloudNotify=cloudNotify||showMessage;$('storageState').textContent='Preparando sincronización…';clearTimeout(cloudTimer);cloudTimer=setTimeout(flushCloudSave,showMessage?0:350);return true;}
       $('storageState').textContent='No hay conexión con el almacenamiento Supabase';if(showMessage)notify('No se pudo guardar en Supabase.',true);return false;
     }
     function flushCloudSave(){
-      if(!cloudMode||!cloudPending||cloudInFlight)return;cloudPending=false;cloudInFlight=true;const snapshot=JSON.parse(JSON.stringify(state));
+      if(!cloudMode||!cloudPending||cloudInFlight)return;cloudPending=false;cloudInFlight=true;const snapshot=JSON.parse(JSON.stringify({serverRevision:state.serverRevision,records:state.records||[],groups:state.groups||[],deletedRecords:state.deletedRecords||{}}));
       google.script.run.withSuccessHandler(result=>{state.serverRevision=Number(result?.revision)||state.serverRevision;$('storageState').textContent='Guardado en Supabase';$('retrySyncBtn').hidden=true;$('retrySyncBtn').disabled=false;if(cloudNotify)notify('Cambios guardados en Supabase.');if(!dirty){$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';}cloudNotify=false;cloudInFlight=false;if(cloudPending)setTimeout(flushCloudSave,0);})
         .withFailureHandler(error=>{$('storageState').textContent='Error al guardar en Supabase';$('retrySyncBtn').hidden=false;$('retrySyncBtn').disabled=false;notify(`No se pudo sincronizar con Supabase: ${error?.message||error}. Tus cambios siguen en esta pestaña; corrige el problema y pulsa Reintentar sincronización.`,true);cloudNotify=false;cloudInFlight=false;cloudPending=true;})
         .saveAppState(snapshot);
@@ -1183,10 +1183,13 @@
     };
     const cloneState = value => JSON.parse(JSON.stringify(value || {}));
     const syncBatchSize = 500;
+    const syncGuideBatchSize = 1000;
+    const maxParallelRecordBatches = 2;
+    let exoV2Activated = false;
 
     function makeGoogleScriptBridge(){
       const fetchItems=async recordKey=>{
-        const items=[],pageSize=500;let offset=0;
+        const items=[],pageSize=1000;let offset=0;
         while(true){
           const {data,error}=await exoSupabaseClient.rpc('penalidades_obtener_items',{p_record_key:recordKey,p_offset:offset,p_limit:pageSize});
           if(error)throw error;
@@ -1211,6 +1214,7 @@
             exoSupabaseClient.rpc('penalidades_obtener_resumen').then(({data,error})=>{
               if(error){failureHandler(error);return;}
               exoV2Baseline=cloneState(data);
+              exoV2Activated=Boolean((data.records||[]).length||(data.groups||[]).length);
               successHandler(data);
             }).catch(failureHandler);
             return runner;
@@ -1233,13 +1237,18 @@
             const deletedRecordKeys=[...baseRecords.keys()].filter(id=>!nextRecords.has(id));
             const deletedRecordSet=new Set(deletedRecordKeys);
             const baseItems=new Map();
-            for(const record of (baseline.records||[]))for(const item of(record.items||[])){const id=dbItemId(record,item);baseItems.set(id,JSON.stringify({...item,id}));}
-            const nextItems=new Map(), changedByRecord=[];
+            const baseItemValues=new Map();
+            for(const record of (baseline.records||[]))for(const item of(record.items||[])){const id=dbItemId(record,item);baseItems.set(id,JSON.stringify({...item,id}));baseItemValues.set(id,item);}
+            const decisionFields=new Set(['exemptionPercent','exonerated','retentionPercent','reason','modifiedAt']);
+            const nextItems=new Map(), changedByRecord=[], decisionOnlyChanges=[];
             for(const record of(snapshot.records||[])){
               const changed=[];
               for(const item of(record.items||[])){
                 const id=dbItemId(record,item),packed=JSON.stringify({...item,id});nextItems.set(id,packed);
                 if(baseItems.get(id)===packed)continue;
+                const previous=baseItemValues.get(id),keys=new Set([...Object.keys(previous||{}),...Object.keys(item)]);
+                const onlyDecisionFieldsChanged=!!previous&&[...keys].every(key=>decisionFields.has(key)||JSON.stringify(previous[key])===JSON.stringify(item[key]));
+                if(onlyDecisionFieldsChanged){decisionOnlyChanges.push({id,porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:retentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||''});continue;}
                 changed.push({id,tracking:item.tracking||'',tracking_key:keyNorm(item.tracking),pdv_key:keyNorm(item.pdv||record.pdv),penalizacion:item.penalty||'',brecha:item.breach||'',sla:item.sla||'',brecha_liquidacion:item.liquidationBreach||'',sla_liquidacion:item.liquidationSla||'',costo:Number(item.cost)||0,fecha:item.dateRaw||'',motivo_origen:item.motive||'',observaciones:item.observations||'',distrito:item.district||'',provincia:item.province||'',departamento:item.department||'',tipo_operacion_reciente:item.latestOperation||'',operacion_brecha:item.breachOperation||'',brecha_horas:item.breachWaitHours||'',brecha_ultima_actualizacion:item.breachLastUpdate||'',tipo_escaneo_reciente:item.scanType||'',estatus_firma:item.signature||'',fecha_hora_ultimo_escaneo:item.scanTime||'',tipo_zona:item.zoneType||'',zona:item.zoneName||'',sla_asignado_dias:String(item.slaDays??''),coincidencia_zona:!!item.zoneMatched,origen_archivo:item.sourceFile||'',porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:retentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||'',zona_manual:item.manualZone||null});
               }
               if(changed.length)changedByRecord.push({record,changed});
@@ -1250,11 +1259,37 @@
             const normalizedRate=value=>{if(value==null||String(value).trim()==='')return null;const rate=Number(value);return Number.isFinite(rate)?Math.round(Math.max(0,Math.min(100,rate))*100)/100:null;};
             const normalizedAmount=value=>{if(value==null||String(value).trim()==='')return null;const amount=Number(String(value).replace(',','.'));return Number.isFinite(amount)&&amount>=0&&amount<=999999999999.99?Math.round(amount*100)/100:null;};
             const changedLiquidations=(snapshot.records||[]).filter(record=>{const before=baseRecords.get(record.id);return normalizeStatus(before?.status)!==normalizeStatus(record.status)||normalizedRate(before?.signatureRate)!==normalizedRate(record.signatureRate)||normalizedAmount(before?.liquidationAmount)!==normalizedAmount(record.liquidationAmount);}).map(record=>({recordKey:record.id,estado:normalizeStatus(record.status),tasaFirma:normalizedRate(record.signatureRate),montoLiquidacion:normalizedAmount(record.liquidationAmount)}));
+            const groupSignature=groups=>JSON.stringify((groups||[]).map(group=>({id:String(group.id||''),name:String(group.name||'')})).sort((a,b)=>a.id.localeCompare(b.id)));
+            const assignmentSignature=records=>JSON.stringify((records||[]).filter(record=>record.groupId).map(record=>({recordKey:String(record.id),groupId:String(record.groupId)})).sort((a,b)=>a.recordKey.localeCompare(b.recordKey)));
+            const groupsChanged=groupSignature(snapshot.groups)!==groupSignature(baseline.groups)||assignmentSignature(snapshot.records)!==assignmentSignature(baseline.records);
+            const changedGuideCount=changedByRecord.reduce((total,batch)=>total+batch.changed.length,0)+decisionOnlyChanges.length;
+            let syncedGuideCount=0;
+            const updateSyncProgress=()=>{
+              const label=document.getElementById('storageState');
+              if(!label)return;
+              label.textContent=changedGuideCount?`Sincronizando guías ${new Intl.NumberFormat('es-PE').format(syncedGuideCount)} de ${new Intl.NumberFormat('es-PE').format(changedGuideCount)}…`:'Finalizando sincronización…';
+            };
             (async()=>{
-              // Serializa todos los lotes para que dos guardados no compitan entre sí.
-              for(const batch of changedByRecord)for(let i=0;i<batch.changed.length;i+=syncBatchSize){
-                const {error}=await exoSupabaseClient.rpc('penalidades_upsert_lote',{p_liquidacion:{id:batch.record.id,periodo:batch.record.period,pdv:batch.record.pdv},p_guias:batch.changed.slice(i,i+syncBatchSize)});
+              updateSyncProgress();
+              // Cada liquidación conserva el orden de sus lotes; se procesan hasta dos liquidaciones independientes a la vez.
+              const queue=[...changedByRecord];
+              const saveRecordBatches=async batch=>{
+                for(let i=0;i<batch.changed.length;i+=syncGuideBatchSize){
+                  const part=batch.changed.slice(i,i+syncGuideBatchSize);
+                  const {error}=await exoSupabaseClient.rpc('penalidades_upsert_lote',{p_liquidacion:{id:batch.record.id,periodo:batch.record.period,pdv:batch.record.pdv},p_guias:part});
+                  if(error)throw error;
+                  syncedGuideCount+=part.length;updateSyncProgress();
+                }
+              };
+              let syncWorkerError=null;
+              const workers=Array.from({length:Math.min(maxParallelRecordBatches,queue.length)},async()=>{while(queue.length&&!syncWorkerError){const batch=queue.shift();try{await saveRecordBatches(batch);}catch(error){syncWorkerError=error;throw error;}}});
+              const workerResults=await Promise.allSettled(workers),workerFailure=workerResults.find(result=>result.status==='rejected');
+              if(workerFailure)throw workerFailure.reason;
+              for(let i=0;i<decisionOnlyChanges.length;i+=syncGuideBatchSize){
+                const part=decisionOnlyChanges.slice(i,i+syncGuideBatchSize);
+                const {error}=await exoSupabaseClient.rpc('penalidades_actualizar_decisiones',{p_decisiones:part});
                 if(error)throw error;
+                syncedGuideCount+=part.length;updateSyncProgress();
               }
               for(let i=0;i<deletedRecordKeys.length;i+=syncBatchSize){
                 const {error}=await exoSupabaseClient.rpc('penalidades_borrar_liquidaciones',{p_record_keys:deletedRecordKeys.slice(i,i+syncBatchSize)});
@@ -1269,11 +1304,12 @@
                 if(error)throw error;
               }
               if(deleted.length){const {error}=await exoSupabaseClient.rpc('penalidades_borrar_liquidaciones_vacias');if(error)throw error;}
-              const assignments=(snapshot.records||[]).filter(record=>record.groupId).map(record=>({recordKey:record.id,groupId:record.groupId}));
-              const {error:groupError}=await exoSupabaseClient.rpc('penalidades_guardar_grupos',{p_grupos:snapshot.groups||[],p_asignaciones:assignments});
-              if(groupError)throw groupError;
-              const {error:activateError}=await exoSupabaseClient.rpc('penalidades_activar_v2');
-              if(activateError)throw activateError;
+              if(groupsChanged){
+                const assignments=(snapshot.records||[]).filter(record=>record.groupId).map(record=>({recordKey:record.id,groupId:record.groupId}));
+                const {error:groupError}=await exoSupabaseClient.rpc('penalidades_guardar_grupos',{p_grupos:snapshot.groups||[],p_asignaciones:assignments});
+                if(groupError)throw groupError;
+              }
+              if(!exoV2Activated){const {error:activateError}=await exoSupabaseClient.rpc('penalidades_activar_v2');if(activateError)throw activateError;exoV2Activated=true;}
               exoV2Baseline=cloneState(snapshot);
               successHandler({ok:true,revision:Date.now()});
             })().catch(failureHandler);

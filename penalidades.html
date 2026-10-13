@@ -440,6 +440,12 @@
     }
     function notify(message,error=false){const el=$('toast');el.textContent=message;el.style.background=error?'#8b211a':'#203040';el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3500);}
     function asString(value){if(value instanceof Date)return value.toISOString().replace('T',' ').slice(0,19);return txt(value);}
+    function asDateTimeString(value){
+      let date=value instanceof Date?value:null;
+      if(!date&&typeof value==='number'&&Number.isFinite(value)&&value>1)date=new Date(Date.UTC(1899,11,30)+value*86400000);
+      if(date&&!isNaN(date)){const pad=n=>String(n).padStart(2,'0');return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;}
+      return asString(value);
+    }
     function parseDate(value){
       if(value instanceof Date&&!isNaN(value))return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`;
       if(typeof value==='number'&&Number.isFinite(value)&&value>1000){const d=new Date(Date.UTC(1899,11,30)+value*86400000);return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;}
@@ -466,7 +472,17 @@
           const sheet=wb.Sheets[sheetName];if(!sheet)throw new Error('No se pudo abrir la hoja seleccionada.');
           // Corrige hojas que declaran A1 como dimensión aunque tengan celdas en filas posteriores.
           const cells=Object.keys(sheet).filter(k=>/^[A-Z]+\d+$/.test(k));if(cells.length){let mr=0,mc=0;for(const address of cells){const p=XLSX.utils.decode_cell(address);mr=Math.max(mr,p.r);mc=Math.max(mc,p.c);}sheet['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:mr,c:mc}});}
-          const rows=XLSX.utils.sheet_to_json(sheet,{defval:'',raw:true});if(!rows.length)throw new Error(`La hoja “${sheetName}” no contiene registros debajo de los encabezados.`);resolve(rows);
+          // Conserva también los valores por posición de columna. Así las columnas H, I y L
+          // de la exportación siguen siendo legibles aunque cambien sus encabezados.
+          const grid=XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:true,blankrows:true});
+          if(!grid.length)throw new Error(`La hoja “${sheetName}” no contiene encabezados.`);
+          const range=XLSX.utils.decode_range(sheet['!ref']),headers=grid[0]||[],rows=[];
+          for(let i=1;i<grid.length;i++){
+            const values=grid[i]||[];if(!values.some(value=>txt(value)!==''))continue;
+            const row={};for(let c=0;c<headers.length;c++){const key=txt(headers[c])||`__EMPTY_${c+range.s.c+1}`;row[key]=values[c]??'';}
+            Object.defineProperties(row,{__excelColumns:{value:values},__excelColumnOffset:{value:range.s.c},__excelRowNumber:{value:range.s.r+i+1}});rows.push(row);
+          }
+          if(!rows.length)throw new Error(`La hoja “${sheetName}” no contiene registros debajo de los encabezados.`);resolve(rows);
         }catch(e){reject(e);}};
         reader.readAsArrayBuffer(file);
       });
@@ -476,6 +492,11 @@
       for(const alias of aliases){const a=norm(alias);const match=keys.find(k=>norm(k).includes(a));if(match!==undefined)return row[match];}
       return '';
     }
+    function getExcelColumnValue(row,columnNumber){
+      if(Array.isArray(row?.__excelColumns)){const index=columnNumber-1-(Number(row.__excelColumnOffset)||0);return index>=0?row.__excelColumns[index]??'':'';}
+      const keys=Object.keys(row||{}).filter(key=>!key.startsWith('__'));return keys[columnNumber-1]===undefined?'':row[keys[columnNumber-1]];
+    }
+    function getColumnOrHeader(row,columnNumber,aliases){const positional=getExcelColumnValue(row,columnNumber);return txt(positional)!==''?positional:getValue(row,aliases);}
     function readAssignedSlaDays(row){
       return getValue(row,['SLA ASIGNADO (DIAS)','SLA ASIGNADO (DÍAS)','SLA asignado (días)','SLA asignado dias','DÍAS SLA ASIGNADO','SLA (días)']);
     }
@@ -490,11 +511,12 @@
         return {sourceRow:i+2,dateRaw:asString(dateValue),dateISO:parseDate(dateValue),period:periodFromDate(periodValue),sourcePeriodRaw:asString(periodValue),pdv:pdvName(lastOperationPoint),lastOperationPoint,tracking:txt(getValue(r,['Número de Guía','Numero de Guia','Tracking Number','Número de guía','Guía'])),breach:txt(getValue(r,['Brecha máxima por guía y PDV','Brecha mayor','Brecha máxima','Clasificación de brecha','Penalidad de brecha mayor','Brecha','Tipo de tiempo de espera'])),sla:txt(getValue(r,['SLA máximo','SLA','Cola larga'])),operation:txt(getValue(r,['Tipo de operación más reciente','Tipo de operación mas reciente','Último tipo de operación','Ultimo tipo de operacion','Operación más reciente','Última operación','Tipo de operación reciente','Tipo de escaneo más reciente'])),waitHours:asString(getValue(r,['Duración del tiempo de espera','Horas sin actualización','Horas de brecha','Duración (horas)'])),lastUpdate:asString(getValue(r,['Último tiempo de funcionamiento','Última actualización','Fecha de última actualización','Último escaneo']))};
       }).filter(x=>x.tracking&&x.pdv);
       if(slot==='guides')return rawRows.map((r,i)=>{
+        // Mapeo de Exportación de guía: Colonia = distrito, Ciudad = provincia, Provincia de destino = departamento.
         const district=txt(getValue(r,['Colonia de destino','Distrito','Distrito de destino','District']));
         const province=txt(getValue(r,['Ciudad de destino','Ciudad de Destino','Provincia','Provincia destino','Provincia (geográfica)','Provincia real','Province']));
         const department=txt(getValue(r,['Provincia de destino','Departamento','Departamento de destino','Department']));
         const updatedAt=asString(getValue(r,['Última actualización','Ultima actualizacion','Fecha de exportación','Fecha de reporte']));
-        return {sourceRow:i+2,tracking:txt(getValue(r,['Número de Guía','Numero de Guia','Tracking Number','Guía'])),pdv:pdvName(getValue(r,['PDV','PDV asignado a cliente','PDV de recolección','Punto de entrega'])),scanType:txt(getValue(r,['Tipo de escaneo más reciente','Tipo de escaneo mas reciente','Último tipo de escaneo'])),signature:txt(getValue(r,['Estatus de firma','Estado de firma'])),scanTime:asString(getValue(r,['Tiempo del escaneo más reciente','Tiempo del escaneo mas reciente','Último escaneo'])),updatedAt,district,province,department};
+        return {sourceRow:Number(r.__excelRowNumber)||i+2,tracking:txt(getValue(r,['Número de Guía','Numero de Guia','Tracking Number','Guía'])),pdv:pdvName(getValue(r,['PDV','PDV asignado a cliente','PDV de recolección','Punto de entrega'])),scanType:txt(getColumnOrHeader(r,9,['Tipo de escaneo más reciente','Tipo de escaneo mas reciente','Tipo del escaneo más reciente','Último tipo de escaneo'])),signature:txt(getColumnOrHeader(r,12,['Estatus de firma','Estado de firma','Status de firma'])),scanTime:asDateTimeString(getColumnOrHeader(r,8,['Tiempo del escaneo más reciente','Tiempo del escaneo mas reciente','Fecha y hora del último escaneo','Fecha y hora del escaneo más reciente','Tiempo del último escaneo','Último escaneo'])),updatedAt,district,province,department};
       }).filter(x=>x.tracking);
       return rawRows.map((r,i)=>({sourceRow:i+2,zone:txt(getValue(r,['Zona','Nombre de zona'])),ubigeo:txt(getValue(r,['UBIGEO','Ubigeo'])),district:txt(getValue(r,['Distrito','District'])),province:txt(getValue(r,['Provincia','Province'])),department:txt(getValue(r,['Departamento','Department'])),slaDays:readAssignedSlaDays(r),type:txt(getValue(r,['Tipo de zona','Tipo zona','Tipo'])).toUpperCase()})).filter(x=>x.district||x.province||x.department);
     }
@@ -527,10 +549,10 @@
         if(slot==='zones'&&batch.length)state.sources.zones={...state.sources.zones,filename:batch[0].file.name,importedAt,rows:batch[0].rows,files:[{filename:batch[0].file.name,importedAt,rowCount:batch[0].rows.length}]};
         let recordSummary={created:0,refreshed:0,groups:0};
         if(slot==='penalties'){setDefaultPeriodAndPdvs();recordSummary=await createRecordsFromPenaltySources();}
-        else{if(cloudMode&&!state.records.every(record=>Array.isArray(record.items)))await ensureAllStoredRecordItemsLoaded();refreshRecordsFromSources();}
+        else{if(cloudMode&&!state.records.every(record=>Array.isArray(record.items)))await ensureAllStoredRecordItemsLoaded();recordSummary.refreshed=refreshRecordsFromSources();}
         hydratePenaltySourceFromRecords();const slaBackfilled=backfillMissingSla();persist();updateSourceDiag();renderSummary();if(currentRecord())renderDetail();
-        const importedCount=batch.reduce((sum,item)=>sum+item.rows.length,0),zoneSlaCount=slot==='zones'?batch[0].rows.filter(row=>txt(row.slaDays)!=='').length:null;
-        const importedMessage=slot==='zones'?`${slotLabels[slot]} importada: ${fmtCount(importedCount)} filas; ${fmtCount(zoneSlaCount)} con “SLA ASIGNADO (DIAS)”.`:slot==='penalties'?`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas; ${fmtCount(recordSummary.created)} liquidaciones creadas y ${fmtCount(recordSummary.refreshed)} actualizadas.`:`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas.`;
+        const importedCount=batch.reduce((sum,item)=>sum+item.rows.length,0),zoneSlaCount=slot==='zones'?batch[0].rows.filter(row=>txt(row.slaDays)!=='').length:null,guideDataCount=slot==='guides'?batch.reduce((sum,entry)=>sum+entry.rows.filter(row=>row.district&&row.province&&row.department&&row.scanType&&row.signature&&row.scanTime).length,0):0,linkedGuideCount=slot==='guides'?state.records.reduce((sum,record)=>sum+(record.items||[]).filter(item=>item.guideMatched).length,0):0;
+        const importedMessage=slot==='zones'?`${slotLabels[slot]} importada: ${fmtCount(importedCount)} filas; ${fmtCount(zoneSlaCount)} con “SLA ASIGNADO (DIAS)”.`:slot==='penalties'?`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas; ${fmtCount(recordSummary.created)} liquidaciones creadas y ${fmtCount(recordSummary.refreshed)} actualizadas.`:slot==='guides'?`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas; ${fmtCount(guideDataCount)} con destino, escaneo, firma y fecha completa; ${fmtCount(linkedGuideCount)} penalidades enlazadas en ${fmtCount(recordSummary.refreshed)} liquidaciones actualizadas.`:`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas.`;
         notify(slaBackfilled?`${importedMessage} Se completó el SLA de ${fmtCount(slaBackfilled)} penalidades.`:importedMessage);
       }catch(err){$(stateBySlot[slot]).textContent='No se pudo importar: '+err.message;notify(err.message,true);}
       e.target.value='';
@@ -1215,7 +1237,7 @@
               for(const item of(record.items||[])){
                 const id=dbItemId(record,item),packed=JSON.stringify({...item,id});nextItems.set(id,packed);
                 if(baseItems.get(id)===packed)continue;
-                changed.push({id,tracking:item.tracking||'',tracking_key:keyNorm(item.tracking),pdv_key:keyNorm(item.pdv||record.pdv),penalizacion:item.penalty||'',brecha:item.breach||'',sla:item.sla||'',brecha_liquidacion:item.liquidationBreach||'',sla_liquidacion:item.liquidationSla||'',costo:Number(item.cost)||0,fecha:item.dateRaw||'',motivo_origen:item.motive||'',observaciones:item.observations||'',distrito:item.district||'',provincia:item.province||'',departamento:item.department||'',tipo_operacion_reciente:item.latestOperation||'',operacion_brecha:item.breachOperation||'',brecha_horas:item.breachWaitHours||'',brecha_ultima_actualizacion:item.breachLastUpdate||'',tipo_escaneo_reciente:item.scanType||'',estatus_firma:item.signature||'',tipo_zona:item.zoneType||'',zona:item.zoneName||'',sla_asignado_dias:String(item.slaDays??''),coincidencia_zona:!!item.zoneMatched,origen_archivo:item.sourceFile||'',porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:retentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||'',zona_manual:item.manualZone||null});
+                changed.push({id,tracking:item.tracking||'',tracking_key:keyNorm(item.tracking),pdv_key:keyNorm(item.pdv||record.pdv),penalizacion:item.penalty||'',brecha:item.breach||'',sla:item.sla||'',brecha_liquidacion:item.liquidationBreach||'',sla_liquidacion:item.liquidationSla||'',costo:Number(item.cost)||0,fecha:item.dateRaw||'',motivo_origen:item.motive||'',observaciones:item.observations||'',distrito:item.district||'',provincia:item.province||'',departamento:item.department||'',tipo_operacion_reciente:item.latestOperation||'',operacion_brecha:item.breachOperation||'',brecha_horas:item.breachWaitHours||'',brecha_ultima_actualizacion:item.breachLastUpdate||'',tipo_escaneo_reciente:item.scanType||'',estatus_firma:item.signature||'',fecha_hora_ultimo_escaneo:item.scanTime||'',tipo_zona:item.zoneType||'',zona:item.zoneName||'',sla_asignado_dias:String(item.slaDays??''),coincidencia_zona:!!item.zoneMatched,origen_archivo:item.sourceFile||'',porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:retentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||'',zona_manual:item.manualZone||null});
               }
               if(changed.length)changedByRecord.push({record,changed});
             }

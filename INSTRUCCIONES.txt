@@ -79,3 +79,13 @@ AJUSTE DE RETENCION Y ANCHO DE TABLAS (13-10-2026)
 - El detalle completo reduce el ancho de sus columnas para mostrar más información a la vez; conserva desplazamiento horizontal cuando la pantalla no alcanza y mantiene fijas las columnas de selección, fecha, PDV y guía.
 - El enlace de Penalidades del index.html usa la versión 20261013-retencion-ancho-tablas-2 para actualizar la caché.
 - Es un ajuste visual y no requiere ejecutar SQL adicional.
+
+
+CORRECCION DE DESTINO Y ULTIMO ESCANEO (13-10-2026)
+- Mapeo geográfico de Exportación de guía: Distrito = Colonia de destino; Provincia = Ciudad de Destino; Departamento = Provincia de destino.
+- Mapeo por columna de Exportación de guía: H = fecha/hora del último escaneo; I = tipo de escaneo más reciente; L = estatus de firma. El importador también reconoce los encabezados si cambian.
+- Detalle completo muestra destino, tipo de escaneo combinado con estatus de firma y fecha/hora del último escaneo. Supabase conserva estos datos junto con las liquidaciones.
+- Ejecuta una vez SUPABASE_SQL/supabase_penalidades_fecha_escaneo.sql. El cambio es incremental y no elimina liquidaciones ni decisiones.
+- Después, vuelve a cargar Exportación de guía en Penalidades. La importación actualiza las liquidaciones existentes y sincroniza los campos recuperados; no borres ni recrees registros. Los valores históricos que no se guardaron se completan al volver a importar la exportación.
+- Al cargar el archivo, el aviso informa cuántas filas incluyen destino, escaneo, firma y fecha completos, además de cuántas penalidades se enlazaron.
+- El enlace de Penalidades del index.html usa la versión 20261013-destino-escaneo-3 para actualizar la caché.

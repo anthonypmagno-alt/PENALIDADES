@@ -116,3 +116,12 @@ AJUSTE DE PENALIDAD TOTAL Y COPIA DE MOTIVO (13-10-2026)
 - En la columna “Motivo de decisión” del detalle se agregó un botón “Copiar motivo” por guía. Copia el texto visible en el campo, aunque todavía no se haya guardado.
 - En Supabase, ejecuta una sola vez `SUPABASE_SQL/supabase_penalidades_ajuste_penalidad_total.sql`. El script agrega una columna nullable y una función RPC; actualiza la función de resumen para devolver el ajuste. No borra ni reinicia datos.
 - Publica el contenido completo del ZIP en la raíz del repositorio. El enlace de Penalidades del index.html usa la versión `20261013-ajuste-penalidad-copiar-motivo-1`.
+
+
+DUPLICAR LIQUIDACIONES PARA SIMULAR (14-10-2026)
+- Cada fila de “Registros guardados” incluye “Duplicar”. La copia se marca SIMULACIÓN y abre un detalle independiente con las decisiones, montos y motivos iniciales copiados.
+- Los cambios guardados en una simulación no modifican las guías, decisiones ni montos del registro real. Las simulaciones tampoco se actualizan al importar de nuevo los Excel; para probar datos fuente nuevos, duplica la liquidación real actualizada.
+- La tabla presenta subtotales separados para registros reales y simulaciones, tanto por grupo como en el total general. El Excel de una simulación lleva el prefijo SIMULACION_.
+- Antes de crear o guardar simulaciones en Supabase, ejecuta una sola vez `SUPABASE_SQL/supabase_penalidades_simulaciones.sql`. Esta migración conserva registros y agrega una marca para distinguir simulaciones; el portal bloquea la duplicación si detecta que la migración no está instalada. Después de ejecutar el SQL, recarga el módulo.
+- Las liquidaciones reales mantienen una sola fila por periodo y PDV. Las copias quedan con claves propias y pueden eliminarse individualmente con el botón “Eliminar”.
+- El enlace de Penalidades usa el identificador `20261014-simulaciones-1` para actualizar la caché.

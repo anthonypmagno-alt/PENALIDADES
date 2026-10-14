@@ -85,6 +85,13 @@
     .records-group th{position:static;z-index:auto;padding:9px 11px;background:#edf2f6;border-top:2px solid #d6e0e8;border-bottom:1px solid #d6e0e8;color:#34485a;text-transform:none;letter-spacing:normal;font-size:11px}
     .records-group-heading{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .records-group-count{background:#e8f1ff;color:#1c5da8}
+    .simulation-badge{background:#fff0d8;color:#8b5a04;border:1px solid #f2d29b}
+    .simulation-record-row td{background:#fffdf7}
+    .simulation-record-row:hover td,.simulation-record-row.active td{background:#fff5dc}
+    .records-simulation-total td{background:#fff4d8!important;color:#704d0a!important;border-top:2px solid #d6b56c}
+    .record-actions{display:flex;gap:5px;align-items:center}
+    .duplicate-record-btn{padding:5px 7px;font-size:10px;white-space:nowrap;color:#76530d;border-color:#ead49d;background:#fffaf0}
+    .duplicate-record-btn:hover{background:#fff1ca;border-color:#d8bd78}
     .records-total-row td,.summary-grand-total td{font-weight:800;background:#eef4f8;border-top:2px solid #9aaebf;color:#263a4b}
     .records-grand-total td,.breakdown-grand-total td{background:#dce8f1;border-top:3px double #647b8d;font-weight:850}
     .records-total-label small{display:block;color:#647789;font-size:10px;font-weight:650}
@@ -308,7 +315,7 @@
 
     <section class="panel" aria-labelledby="historyHeading">
       <div class="panel-head">
-        <div><h2 id="historyHeading"><span class="step">3</span>Registros guardados</h2><p>Selecciona una fila para abrir el detalle. El ajuste opcional reemplaza la penalidad total del periodo y PDV; el saldo resta el monto exonerado.</p></div>
+        <div><h2 id="historyHeading"><span class="step">3</span>Registros guardados</h2><p>Selecciona una fila para abrir el detalle. Usa “Duplicar” para probar cambios en una simulación independiente; sus totales se muestran separados de las liquidaciones reales.</p></div>
         <div class="summary-filters">
           <div class="field"><label>Periodo</label><div class="multi-picker" id="summaryPeriod"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por periodo" aria-haspopup="true" aria-expanded="false" aria-controls="summaryPeriodMenu">Todos</button><div class="multi-picker-menu" id="summaryPeriodMenu" role="group" hidden></div></div></div>
           <div class="field"><label>PDV</label><div class="multi-picker" id="summaryPdv"><button type="button" class="multi-picker-trigger" aria-label="Filtrar por PDV" aria-haspopup="true" aria-expanded="false" aria-controls="summaryPdvMenu">Todos</button><div class="multi-picker-menu" id="summaryPdvMenu" role="group" hidden></div></div></div>
@@ -415,6 +422,7 @@
     let dirty = false;
     let toastTimer = null;
     const cloudMode = typeof google !== 'undefined' && !!(google.script && google.script.run);
+    let simulationPersistenceReady = !cloudMode;
     let cloudPending = false, cloudInFlight = false, cloudTimer = null, cloudNotify = false, appReady = false;
     const pendingDecisionItems = new Map();
     let nonDecisionDirty = false, nonDecisionGeneration = 0, decisionSavePending = false;
@@ -690,7 +698,8 @@
       const guideMatches=penalties.filter(p=>findGuide(guideIndex,p.pdv,p.tracking)).length;
       const breachMatches=penalties.filter(p=>findMaxBreach(breachIndex,p.period||periodFromDate(p.dateISO)||'',p.pdv,p.tracking)).length;
       const zoneMatches=penalties.filter(p=>{const g=findGuide(guideIndex,p.pdv,p.tracking);const z=g&&findZone(g.district,g.province,g.department,zoneIndex);return !!(z&&txt(z.slaDays)!=='');}).length;
-      $('sourceDiag').innerHTML=`<strong>${fmtCount(penalties.length)}</strong> penalidades · <strong>${fmtCount(state.records.length)}</strong> liquidaciones · Brecha máxima <strong>${fmtCount(breachMatches)}/${fmtCount(penalties.length)}</strong> · Exportación <strong>${fmtCount(guideMatches)}/${fmtCount(penalties.length)}</strong> · SLA asignado <strong>${fmtCount(zoneMatches)}/${fmtCount(penalties.length)}</strong> · Fuentes cargadas: brecha <strong>${fmtCount(breaches.length)}</strong>, guías <strong>${fmtCount(guides.length)}</strong>, zonificación <strong>${fmtCount(zones.length)}</strong> filas.`;
+      const realRecordCount=state.records.filter(record=>!record.isSimulation).length,simulationCount=state.records.filter(record=>record.isSimulation).length;
+      $('sourceDiag').innerHTML=`<strong>${fmtCount(penalties.length)}</strong> penalidades · <strong>${fmtCount(realRecordCount)}</strong> liquidaciones reales · <strong>${fmtCount(simulationCount)}</strong> simulaciones · Brecha máxima <strong>${fmtCount(breachMatches)}/${fmtCount(penalties.length)}</strong> · Exportación <strong>${fmtCount(guideMatches)}/${fmtCount(penalties.length)}</strong> · SLA asignado <strong>${fmtCount(zoneMatches)}/${fmtCount(penalties.length)}</strong> · Fuentes cargadas: brecha <strong>${fmtCount(breaches.length)}</strong>, guías <strong>${fmtCount(guides.length)}</strong>, zonificación <strong>${fmtCount(zones.length)}</strong> filas.`;
     }
     function penaltyId(p,occurrence){return [idPart(p.tracking),norm(p.penalty),p.dateISO||norm(p.dateRaw),norm(p.breach),norm(p.sla),String(Number(p.cost)||0),occurrence].join('~');}
     function getRecordItems(period,pdv,indexes=null){
@@ -706,6 +715,7 @@
     function backfillMissingSla(){
       const guides=buildGuideIndex(),breaches=buildBreachIndex(),zones=buildZoneIndex(),hasBreaches=!!state.sources.breaches?.rows?.length,hasZones=Array.isArray(state.sources.zones?.rows);let updated=0;
       for(const record of state.records){
+        if(record.isSimulation)continue;
         for(const item of record.items||[]){
           const guide=findGuide(guides,item.pdv,item.tracking);
           const breach=findMaxBreach(breaches,record.period,item.pdv,item.tracking);
@@ -729,7 +739,7 @@
     }
     function hydratePenaltySourceFromRecords(){
       const source=state.sources.penalties,rows=[...(source?.rows||[])],covered=new Set(rows.map(row=>recordKey(row.period,row.pdv))),stored=[];
-      for(const record of state.records){if(covered.has(record.id)||!Array.isArray(record.items))continue;for(const item of record.items)stored.push({sourceRow:rows.length+stored.length+2,sourceId:'stored',sourceFile:item.sourceFile||'Registros guardados',sourceImportedAt:record.updatedAt||'',period:record.period,pdv:record.pdv,tracking:item.tracking,penalty:item.penalty,breach:item.liquidationBreach||item.breach||'',sla:item.liquidationSla||item.sla||'',dateRaw:item.dateRaw||'',dateISO:item.dateISO||parseDate(item.dateRaw),motive:item.motive||'',costRaw:item.costRaw||'',cost:Number(item.cost)||0,observations:item.observations||'',sourceZone:item.sourceZone||''});}
+      for(const record of state.records){if(record.isSimulation||covered.has(record.id)||!Array.isArray(record.items))continue;for(const item of record.items)stored.push({sourceRow:rows.length+stored.length+2,sourceId:'stored',sourceFile:item.sourceFile||'Registros guardados',sourceImportedAt:record.updatedAt||'',period:record.period,pdv:record.pdv,tracking:item.tracking,penalty:item.penalty,breach:item.liquidationBreach||item.breach||'',sla:item.liquidationSla||item.sla||'',dateRaw:item.dateRaw||'',dateISO:item.dateISO||parseDate(item.dateRaw),motive:item.motive||'',costRaw:item.costRaw||'',cost:Number(item.cost)||0,observations:item.observations||'',sourceZone:item.sourceZone||''});}
       if(!stored.length)return;
       const importedFiles=(source?.files||[]).filter(file=>file.sourceId!=='stored'),now=new Date().toISOString(),storedCount=rows.filter(row=>row.sourceId==='stored').length+stored.length;
       const files=[...importedFiles,{sourceId:'stored',filename:'Registros guardados',importedAt:now,rowCount:storedCount}],allRows=[...rows,...stored];
@@ -748,7 +758,7 @@
     }
     function refreshRecordsFromSources(){
       if(!(state.sources.penalties?.rows||[]).length)return 0;const now=new Date().toISOString(),indexes={guides:buildGuideIndex(),breaches:buildBreachIndex(),zones:buildZoneIndex()};let refreshed=0;
-      for(const record of state.records){const fresh=getRecordItems(record.period,record.pdv,indexes);if(!fresh.length)continue;record.items=preserveDecisions(fresh,record.items);record.sourceFiles=sourceFilesSnapshot();record.updatedAt=now;record.sourceSyncAt=now;refreshed++;}
+      for(const record of state.records){if(record.isSimulation)continue;const fresh=getRecordItems(record.period,record.pdv,indexes);if(!fresh.length)continue;record.items=preserveDecisions(fresh,record.items);record.sourceFiles=sourceFilesSnapshot();record.updatedAt=now;record.sourceSyncAt=now;refreshed++;}
       return refreshed;
     }
     async function createRecordsFromPenaltySources(){
@@ -774,6 +784,18 @@
       const items=getRecordItems(period,pdv);if(!items.length){notify(`No hay penalidades para ${pdv} en ${period}. Verifica la fecha del archivo.`,true);return;}
       record={id,period,pdv,status:'pendiente',signatureRate:null,liquidationAmount:null,penaltyTotalAdjustment:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),sourceFiles:sourceFilesSnapshot(),items};state.records.push(record);persist();renderSummary();showRecord(record.id);notify(`${fmtCount(items.length)} penalidades agregadas al registro.`);
     }
+    async function duplicateRecordForSimulation(id){
+      if(cloudMode&&!simulationPersistenceReady){notify('Para guardar simulaciones, primero ejecuta SUPABASE_SQL/supabase_penalidades_simulaciones.sql y recarga el módulo.',true);return;}
+      const source=state.records.find(record=>record.id===id);if(!source)return;
+      try{
+        if(!Array.isArray(source.items))source.items=await fetchStoredRecordItems(source.id);
+        if(!source.items?.length){notify('No se puede duplicar una liquidación sin penalidades.',true);return;}
+        const now=new Date().toISOString(),suffix=`${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`,simulationId=`${source.id}::SIM::${suffix}`,sourcePrefix=`${source.id}::`;
+        const copy={...JSON.parse(JSON.stringify(source)),id:simulationId,isSimulation:true,simulationSourceId:source.isSimulation?(source.simulationSourceId||source.id):source.id,createdAt:now,updatedAt:now,sourceSyncAt:source.sourceSyncAt||now,items:source.items.map(item=>{const oldId=String(item.id||'');const itemSuffix=oldId.startsWith(sourcePrefix)?oldId.slice(sourcePrefix.length):oldId;return {...JSON.parse(JSON.stringify(item)),id:`${simulationId}::${itemSuffix}`};})};
+        delete copy.summary;
+        state.records.push(copy);persist();renderSummary();showRecord(copy.id);notify(`Se creó la simulación de ${source.pdv}. La liquidación original no se modificó.`);
+      }catch(error){notify(`No se pudo cargar la liquidación para duplicarla: ${error?.message||error||''}`,true);}
+    }
     function fetchStoredRecordItems(recordKey){
       if(!cloudMode)return Promise.resolve([]);
       return new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getRecordItems(recordKey));
@@ -793,7 +815,7 @@
     }
     function deleteSavedRecord(id){
       const record=state.records.find(item=>item.id===id);if(!record)return;
-      const label=`${periodLabel(record.period)} · ${record.pdv}`;
+      const label=`${periodLabel(record.period)} · ${record.pdv}${record.isSimulation?' · SIMULACIÓN':''}`;
       if(!confirm(`¿Eliminar el registro ${label}? Se borrarán sus decisiones y motivos guardados. Esta acción no se puede deshacer.`))return;
       state.deletedRecords=state.deletedRecords||{};state.deletedRecords[id]=new Date().toISOString();state.records=state.records.filter(item=>item.id!==id);
       selectedRecordIds.delete(id);
@@ -824,7 +846,7 @@
       if(cloudMode&&pendingDecisionItems.size&&!nonDecisionDirty){dirty=false;savePendingDecisionItems(true);}else{record.updatedAt=new Date().toISOString();dirty=false;if(!persist(true))return;$('saveState').textContent=cloudMode?'Sincronizando…':'Registro guardado';$('saveBtn').textContent='Guardar cambios';}
     }
     function syncCurrent(){
-      const old=currentRecord();if(!old)return;if(!Array.isArray(old.items)){notify('Espera a que termine de cargar el detalle antes de actualizar.',true);return;}if(!(state.sources.penalties?.rows||[]).length){notify('Carga al menos un Excel de penalidades antes de actualizar.',true);return;}
+      const old=currentRecord();if(!old)return;if(old.isSimulation){notify('La simulación conserva su propia copia. Para actualizar los datos, crea otra simulación desde la liquidación real.',true);return;}if(!Array.isArray(old.items)){notify('Espera a que termine de cargar el detalle antes de actualizar.',true);return;}if(!(state.sources.penalties?.rows||[]).length){notify('Carga al menos un Excel de penalidades antes de actualizar.',true);return;}
       if(!confirm('Se reemplazará la lista de penalidades del periodo y PDV con los archivos cargados. Las decisiones y motivos se conservarán cuando coincida la guía y la penalidad. ¿Continuar?'))return;
       const fresh=getRecordItems(old.period,old.pdv);if(!fresh.length){notify('Los archivos actuales no tienen penalidades para este periodo y PDV.',true);return;}
       const syncTime=new Date().toISOString();old.items=preserveDecisions(fresh,old.items);old.sourceFiles=sourceFilesSnapshot();old.updatedAt=syncTime;old.sourceSyncAt=syncTime;dirty=false;selectedIds.clear();persist();renderDetail();renderSummary();notify('Registro actualizado desde los archivos.');
@@ -885,13 +907,14 @@
       totals.liquidationFinal=totals.amountCount===records.length?totals.liquidationAmount-totals.balance:null;
       return totals;
     }
-    function renderRecordsTotalRow(label,records,grand=false){
+    function renderRecordsTotalRow(label,records,grand=false,simulation=false){
       const totals=aggregateRecordTotals(records),rowClass=grand?'records-total-row records-grand-total':'records-total-row';
       const liquidations=fmtCount(records.length)+' '+(records.length===1?'liquidación':'liquidaciones');
       const amountNote=totals.amountCount<records.length?'<div class="summary-cell-note">'+fmtCount(totals.amountCount)+'/'+fmtCount(records.length)+' con monto</div>':'';
       const amountCell=totals.amountCount?'S/ '+fmtMoney(totals.liquidationAmount)+amountNote:'Pendiente'+amountNote;
       const finalCell=totals.liquidationFinal===null?'Pendiente':'S/ '+fmtMoney(totals.liquidationFinal);
-      return '<tr class="'+rowClass+'" aria-label="'+escapeHtml(label)+'"><td></td><td colspan="2" class="records-total-label">'+escapeHtml(label)+'<small>'+liquidations+' · '+fmtCount(totals.count)+' penalidades</small></td><td class="num">'+fmtCount(totals.count)+'</td><td class="num">'+fmtCount(totals.yes)+'</td><td class="num">'+fmtCount(totals.no)+'</td><td class="num liquidation-amount-cell">'+amountCell+'</td><td class="num">S/ '+fmtMoney(totals.originalTotal)+'</td><td class="num penalty-adjustment-cell">S/ '+fmtMoney(totals.total)+'<span class="penalty-adjustment-meta">Base aplicada</span></td><td class="num">S/ '+fmtMoney(totals.exempt)+'</td><td class="num">S/ '+fmtMoney(totals.balance)+'</td><td class="num liquidation-final-cell">'+finalCell+'</td><td class="num retention-cell">S/ '+fmtMoney(totals.retentionAmount)+'</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
+      const finalClass=simulation?' records-simulation-total':'';
+      return '<tr class="'+rowClass+finalClass+'" aria-label="'+escapeHtml(label)+'"><td></td><td colspan="2" class="records-total-label">'+escapeHtml(label)+'<small>'+liquidations+' · '+fmtCount(totals.count)+' penalidades</small></td><td class="num">'+fmtCount(totals.count)+'</td><td class="num">'+fmtCount(totals.yes)+'</td><td class="num">'+fmtCount(totals.no)+'</td><td class="num liquidation-amount-cell">'+amountCell+'</td><td class="num">S/ '+fmtMoney(totals.originalTotal)+'</td><td class="num penalty-adjustment-cell">S/ '+fmtMoney(totals.total)+'<span class="penalty-adjustment-meta">Base aplicada</span></td><td class="num">S/ '+fmtMoney(totals.exempt)+'</td><td class="num">S/ '+fmtMoney(totals.balance)+'</td><td class="num liquidation-final-cell">'+finalCell+'</td><td class="num retention-cell">S/ '+fmtMoney(totals.retentionAmount)+'</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
     }
     function renderSummary(){
       renderMultiPicker('summaryPeriod',state.records.map(r=>({value:r.period,label:periodLabel(r.period)})),'Todos');renderMultiPicker('summaryPdv',state.records.map(r=>r.pdv),'Todos');renderMultiPicker('summaryGroup',[{value:UNASSIGNED_GROUP,label:'Sin grupo'},...(state.groups||[]).map(group=>({value:group.id,label:group.name}))],'Todos');renderMultiPicker('summaryStatus',LIQUIDATION_STATUSES.map(status=>({value:status.value,label:status.label})),'Todos');updateOnlyNonExemptButton();
@@ -899,18 +922,21 @@
       const filtered=filteredRecords(),groups=new Map();for(const record of filtered){const id=recordGroupId(record),groupName=id===UNASSIGNED_GROUP?'Sin grupo':(state.groups||[]).find(group=>group.id===id)?.name||'Sin grupo';if(!groups.has(id))groups.set(id,{id,name:groupName,records:[]});groups.get(id).records.push(record);}
       const orderedGroups=[...groups.values()].sort((a,b)=>a.id===UNASSIGNED_GROUP?-1:b.id===UNASSIGNED_GROUP?1:a.name.localeCompare(b.name,'es'));
       const groupBlocks=orderedGroups.map(group=>{
-        group.records.sort((a,b)=>b.period.localeCompare(a.period)||a.pdv.localeCompare(b.pdv,'es'));
-        const n=group.records.length,liquidationLabel=`${fmtCount(n)} ${n===1?'liquidación':'liquidaciones'}`;
-      const rows=group.records.map(r=>{const t=recordTotals(r);return `<tr class="click-row ${r.id===currentRecordId?'active':''}" data-record="${escapeHtml(r.id)}"><td class="record-select-cell"><input type="checkbox" class="record-select" data-record-id="${escapeHtml(r.id)}" ${selectedRecordIds.has(r.id)?'checked':''} aria-label="Seleccionar liquidación ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}"></td><td>${escapeHtml(periodLabel(r.period))}</td><td><strong>${escapeHtml(r.pdv)}</strong></td><td class="num">${fmtCount(t.count)}</td><td class="num"><span class="badge yes">${fmtCount(t.yes)}</span></td><td class="num">${fmtCount(t.no)}</td><td class="num liquidation-amount-cell">${renderLiquidationAmount(r)}</td><td class="num">S/ ${fmtMoney(t.originalTotal)}</td><td class="num penalty-adjustment-cell">${renderPenaltyTotalAdjustment(r,t)}</td><td class="num">S/ ${fmtMoney(t.exempt)}</td><td class="num">S/ ${fmtMoney(t.balance)}</td><td class="num liquidation-final-cell">${t.liquidationFinal===null?'Pendiente':'S/ '+fmtMoney(t.liquidationFinal)}</td><td class="num retention-cell">S/ ${fmtMoney(t.retentionAmount)}</td><td>${escapeHtml(dateLabel(r.updatedAt))}</td><td>${renderLiquidationStatus(r)}</td><td>${renderSignatureRate(r)}</td><td><button type="button" class="btn danger delete-record-btn" data-delete-record="${escapeHtml(r.id)}" aria-label="Eliminar registro ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}">Eliminar</button></td></tr>`;}).join('');
-        return `<tr class="records-group"><th colspan="17" scope="rowgroup"><div class="records-group-heading"><span>Grupo: <strong>${escapeHtml(group.name)}</strong></span><span class="badge records-group-count">${liquidationLabel}</span></div></th></tr>${rows}${renderRecordsTotalRow(`Total grupo: ${group.name}`,group.records)}`;
+        group.records.sort((a,b)=>b.period.localeCompare(a.period)||a.pdv.localeCompare(b.pdv,'es')||Number(!!a.isSimulation)-Number(!!b.isSimulation));
+        const realRecords=group.records.filter(record=>!record.isSimulation),simulationRecords=group.records.filter(record=>record.isSimulation);
+        const liquidationLabel=`${fmtCount(realRecords.length)} reales · ${fmtCount(simulationRecords.length)} ${simulationRecords.length===1?'simulación':'simulaciones'}`;
+        const rows=group.records.map(r=>{const t=recordTotals(r),simulation=!!r.isSimulation,periodCell=`${escapeHtml(periodLabel(r.period))}${simulation?' <span class="badge simulation-badge">SIMULACIÓN</span>':''}`,duplicateTitle=simulation?'Duplicar esta simulación':'Duplicar para simular';return `<tr class="click-row ${r.id===currentRecordId?'active':''} ${simulation?'simulation-record-row':''}" data-record="${escapeHtml(r.id)}"><td class="record-select-cell"><input type="checkbox" class="record-select" data-record-id="${escapeHtml(r.id)}" ${selectedRecordIds.has(r.id)?'checked':''} aria-label="Seleccionar ${simulation?'simulación':'liquidación'} ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}"></td><td>${periodCell}</td><td><strong>${escapeHtml(r.pdv)}</strong></td><td class="num">${fmtCount(t.count)}</td><td class="num"><span class="badge yes">${fmtCount(t.yes)}</span></td><td class="num">${fmtCount(t.no)}</td><td class="num liquidation-amount-cell">${renderLiquidationAmount(r)}</td><td class="num">S/ ${fmtMoney(t.originalTotal)}</td><td class="num penalty-adjustment-cell">${renderPenaltyTotalAdjustment(r,t)}</td><td class="num">S/ ${fmtMoney(t.exempt)}</td><td class="num">S/ ${fmtMoney(t.balance)}</td><td class="num liquidation-final-cell">${t.liquidationFinal===null?'Pendiente':'S/ '+fmtMoney(t.liquidationFinal)}</td><td class="num retention-cell">S/ ${fmtMoney(t.retentionAmount)}</td><td>${escapeHtml(dateLabel(r.updatedAt))}</td><td>${renderLiquidationStatus(r)}</td><td>${renderSignatureRate(r)}</td><td><div class="record-actions"><button type="button" class="btn duplicate-record-btn" data-duplicate-record="${escapeHtml(r.id)}" aria-label="${duplicateTitle} ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}" title="${duplicateTitle}">Duplicar</button><button type="button" class="btn danger delete-record-btn" data-delete-record="${escapeHtml(r.id)}" aria-label="Eliminar ${simulation?'simulación':'registro'} ${escapeHtml(periodLabel(r.period))} ${escapeHtml(r.pdv)}">Eliminar</button></div></td></tr>`;}).join('');
+        const totals=[realRecords.length?renderRecordsTotalRow(`Total grupo: ${group.name} · reales`,realRecords):'',simulationRecords.length?renderRecordsTotalRow(`Total grupo: ${group.name} · simulaciones`,simulationRecords,false,true):''].join('');
+        return `<tr class="records-group"><th colspan="17" scope="rowgroup"><div class="records-group-heading"><span>Grupo: <strong>${escapeHtml(group.name)}</strong></span><span class="badge records-group-count">${liquidationLabel}</span></div></th></tr>${rows}${totals}`;
       }).join('');
-      const overall=filtered.length?renderRecordsTotalRow('TOTAL GENERAL',filtered,true):'';
+      const actual=filtered.filter(record=>!record.isSimulation),simulations=filtered.filter(record=>record.isSimulation);
+      const overall=[actual.length?renderRecordsTotalRow('TOTAL GENERAL · LIQUIDACIONES REALES',actual,true):'',simulations.length?renderRecordsTotalRow('TOTAL GENERAL · SIMULACIONES',simulations,true,true):''].join('');
       $('recordsBody').innerHTML=filtered.length?groupBlocks+overall:`<tr><td colspan="17" class="empty">No hay registros con estos filtros. Importa los Excel y crea un registro por periodo y PDV.</td></tr>`;
       updateRecordGroupSelectionControls(filtered);
     }
 
     function renderDetail(){
-      const r=currentRecord();if(!r)return;$('detailHeading').innerHTML=`Detalle de penalidades <span class="badge">${escapeHtml(periodLabel(r.period))}</span> <span class="badge">${escapeHtml(r.pdv)}</span>`;$('detailSubtitle').textContent=`${fmtCount(r.items.length)} penalidades · Fuentes: ${r.sourceFiles?.penalties||'sin referencia'} · El ajuste se aplica al total del PDV; el detalle por guía conserva el importe fuente.`;
+      const r=currentRecord();if(!r)return;$('detailHeading').innerHTML=`Detalle de penalidades <span class="badge">${escapeHtml(periodLabel(r.period))}</span> <span class="badge">${escapeHtml(r.pdv)}</span>${r.isSimulation?' <span class="badge simulation-badge">SIMULACIÓN · NO AFECTA EL REGISTRO REAL</span>':''}`;$('detailSubtitle').textContent=`${fmtCount(r.items.length)} penalidades · Fuentes: ${r.sourceFiles?.penalties||'sin referencia'} · El ajuste se aplica al total del PDV; el detalle por guía conserva el importe fuente.${r.isSimulation?' · Copia independiente para probar cambios; no se actualiza desde los Excel.':''}`;$('syncBtn').disabled=!appReady||!!r.isSimulation;$('syncBtn').title=r.isSimulation?'Las simulaciones conservan una copia de los datos. Duplica de nuevo desde el registro real si necesitas una versión actualizada.':'';
       dirty=false;$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';
       renderMultiPicker('filterPenalty',r.items.map(x=>txt(x.penalty)||'Sin tipo'),'Todas');renderMultiPicker('filterSourceBreach',r.items.map(sourceBrechaLabel),'Todos');renderMultiPicker('filterBreachSla',r.items.map(breachSlaLabel),'Todos');renderMultiPicker('filterOperation',r.items.map(x=>x.latestOperation||'Sin dato'),'Todos');renderMultiPicker('filterReason',r.items.map(x=>txt(x.reason)||'Sin motivo'),'Todos');renderMultiPicker('filterPercent',r.items.map(x=>({value:String(exemptionPercent(x)),label:`${fmtCount(exemptionPercent(x))}%`})),'Todos');renderMultiPicker('filterZone',r.items.map(x=>x.zoneType),'Todos');renderMultiPicker('filterSlaDays',r.items.map(x=>txt(x.slaDays)||'Sin coincidencia'),'Todos');renderMultiPicker('filterExemption',[{value:'yes',label:'Con exoneración'},{value:'no',label:'Sin exoneración'}],'Todas');renderMultiPicker('filterScan',r.items.map(x=>x.scanType),'Todos');renderMultiPicker('filterSignature',r.items.map(x=>x.signature),'Todos');
       renderMetricsAndBreakdown();renderDetailRows();updateBulkState();
@@ -1072,7 +1098,7 @@
       const record=currentRecord();if(!record)return notify('Abre un registro antes de descargar.',true);if(!window.XLSX)return notify('El lector Excel requiere conexión a internet.',true);
       const rows=filteredItems();if(!rows.length)return notify('No hay guías en el detalle filtrado.',true);
       const headers=['GUIA','PENALIDAD','PDV','PORCENTAJE DE EXONERACION','MONTO FINAL (S/)','MOTIVO DE DECISION','MONTO INICIAL DE PENALIDAD (S/)','RETENCIÓN PARA MEJORA (%)','RETENCIÓN PARA MEJORA (S/)'];const exportRows=rows.map(x=>[x.tracking,txt(x.penalty)||'Sin tipo de penalización',x.pdv,exemptionPercent(x),balanceAmount(x),x.reason||'',Number(x.cost)||0,retentionPercent(x),retentionAmount(x)]);const sheet=XLSX.utils.aoa_to_sheet([headers,...exportRows]);sheet['!cols']=[{wch:22},{wch:44},{wch:20},{wch:27},{wch:20},{wch:40},{wch:32},{wch:27},{wch:26}];sheet['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:exportRows.length,c:headers.length-1}})};for(let row=1;row<=exportRows.length;row++){for(const col of [3,7]){const percentCell=sheet[XLSX.utils.encode_cell({r:row,c:col})];if(percentCell)percentCell.z='0.##"%"';}for(const col of [4,6,8]){const amountCell=sheet[XLSX.utils.encode_cell({r:row,c:col})];if(amountCell)amountCell.z='"S/" #,##0.00';}}const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,sheet,'Detalle de guías');
-      const pdv=norm(record.pdv).replace(/\s+/g,'_').replace(/[^A-Z0-9_-]/g,'');XLSX.writeFile(book,`EXONERACIONES_${record.period}_${pdv}_RETENCION_MEJORA.xlsx`);
+      const pdv=norm(record.pdv).replace(/\s+/g,'_').replace(/[^A-Z0-9_-]/g,'');XLSX.writeFile(book,`${record.isSimulation?'SIMULACION_':''}EXONERACIONES_${record.period}_${pdv}_RETENCION_MEJORA.xlsx`);
     }
     function filterFromSummaryCell(event){
       const penaltyExpand=event.target.closest('[data-expand-penalty]');if(penaltyExpand){event.stopPropagation();const key=penaltyExpand.dataset.expandPenalty;if(expandedPenaltyGroups.has(key))expandedPenaltyGroups.delete(key);else expandedPenaltyGroups.add(key);renderMetricsAndBreakdown();return;}
@@ -1133,7 +1159,7 @@
     $('openCreateBtn').addEventListener('click',openCreate);$('saveBtn').addEventListener('click',saveCurrent);$('syncBtn').addEventListener('click',syncCurrent);$('retrySyncBtn').addEventListener('click',()=>{if(cloudInFlight)return;$('retrySyncBtn').disabled=true;$('storageState').textContent='Reintentando sincronización…';if(pendingDecisionItems.size&&!nonDecisionDirty){cloudNotify=true;savePendingDecisionItems(true);return;}cloudPending=true;cloudNotify=true;flushCloudSave();});
     $('exportStateBtn').addEventListener('click',exportStateBackup);
     $('recordsBody').addEventListener('focusin',e=>{if(!e.target.matches('.liquidation-amount-input,.penalty-adjustment-input'))return;const amount=liquidationAmountValue(e.target.value);e.target.value=amount===null?'':amount.toFixed(2);e.target.select();});
-    $('recordsBody').addEventListener('click',e=>{const deleteButton=e.target.closest('[data-delete-record]');if(deleteButton){e.stopPropagation();deleteSavedRecord(deleteButton.dataset.deleteRecord);return;}if(e.target.closest('.record-select,.liquidation-status-select,.signature-rate-editor,.liquidation-amount-input,.penalty-adjustment-input')){e.stopPropagation();return;}const row=e.target.closest('tr[data-record]');if(row)showRecord(row.dataset.record);});
+    $('recordsBody').addEventListener('click',e=>{const duplicateButton=e.target.closest('[data-duplicate-record]');if(duplicateButton){e.stopPropagation();duplicateRecordForSimulation(duplicateButton.dataset.duplicateRecord);return;}const deleteButton=e.target.closest('[data-delete-record]');if(deleteButton){e.stopPropagation();deleteSavedRecord(deleteButton.dataset.deleteRecord);return;}if(e.target.closest('.record-select,.liquidation-status-select,.signature-rate-editor,.liquidation-amount-input,.penalty-adjustment-input')){e.stopPropagation();return;}const row=e.target.closest('tr[data-record]');if(row)showRecord(row.dataset.record);});
     $('recordsBody').addEventListener('change',e=>{
       if(e.target.matches('.penalty-adjustment-input')){
         const record=state.records.find(item=>item.id===e.target.dataset.recordId);if(!record)return;
@@ -1218,11 +1244,11 @@
       if(!window.XLSX)notify('El lector Excel requiere conexión a internet al abrir el HTML.',true);
     }
     function init(){
-      if(!cloudMode){$('storageState').textContent='Modo local: datos disponibles solo en este navegador.';setAvailable(true);initializeView();return;}
+      if(!cloudMode){simulationPersistenceReady=true;$('storageState').textContent='Modo local: datos disponibles solo en este navegador.';setAvailable(true);initializeView();return;}
       $('storageState').textContent='Conectando con Supabase…';setAvailable(false);
       google.script.run.withSuccessHandler(remote=>{
         if(!remote||remote.version!==1||!remote.sources||!Array.isArray(remote.records))throw new Error('El almacenamiento devolvió datos inválidos.');
-        const local=state;if(!stateHasData(remote)&&stateHasData(local)){local.serverRevision=Number(remote.serverRevision)||0;state=local;initializeView();setAvailable(true);persist();notify('Se copiaron los datos de este navegador a Supabase.');return;}
+        simulationPersistenceReady=Number(remote.simulationSupport)===1;const local=state;if(!stateHasData(remote)&&stateHasData(local)){local.serverRevision=Number(remote.serverRevision)||0;state=local;initializeView();setAvailable(true);persist();notify('Se copiaron los datos de este navegador a Supabase.');return;}
         const deletionMerge=mergeLocalDeletionTombstones(remote,local);state=deletionMerge.state;state.groups=Array.isArray(state.groups)?state.groups.filter(group=>group&&group.id&&group.name):[];state.serverRevision=Number(remote.serverRevision)||0;$('storageState').textContent='Conectado a Supabase';setAvailable(true);initializeView();if(deletionMerge.changed)persist();
       }).withFailureHandler(error=>{$('storageState').textContent='No se pudo conectar con Supabase';setAvailable(false);notify(`No se pudo cargar el almacenamiento de Supabase: ${error?.message||error||''}`,true);}).getAppState();
     }
@@ -1247,6 +1273,7 @@
     const maxParallelRecordBatches = 2;
     const SUPABASE_REQUEST_TIMEOUT_MS = 60000;
     let exoV2Activated = false;
+    let exoV2SimulationSupport = false;
 
     function fetchSupabaseWithTimeout(input, init={}){
       const upstreamSignal=init?.signal;
@@ -1294,6 +1321,7 @@
             exoSupabaseClient.rpc('penalidades_obtener_resumen').then(({data,error})=>{
               if(error){failureHandler(error);return;}
               exoV2Baseline=cloneState(data);
+              exoV2SimulationSupport=Number(data?.simulationSupport)===1;
               exoV2BaselineItemsById.clear();
               exoV2Activated=Boolean((data.records||[]).length||(data.groups||[]).length);
               successHandler(data);
@@ -1326,6 +1354,7 @@
             return runner;
           },
           saveAppState(snapshot){
+            if((snapshot.records||[]).some(record=>record.isSimulation)&&!exoV2SimulationSupport){failureHandler(new Error('Supabase todavía no tiene habilitado el guardado de simulaciones. Ejecuta SUPABASE_SQL/supabase_penalidades_simulaciones.sql y recarga el módulo.'));return runner;}
             const keyNorm=value=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9\u3400-\u9FFF]+/g,' ').trim().replace(/\s+/g,' ').replace(/ /g,'');
             const dbItemId=(record,item)=>{const prefix=`${record.id}::`;return String(item.id??'').startsWith(prefix)?String(item.id):prefix+String(item.id??'');};
             const baseline=exoV2Baseline||{records:[],groups:[]};
@@ -1350,7 +1379,7 @@
               }
               if(changed.length)changedByRecord.push({record,changed});
             }
-            const deleted=[...baseItems.keys()].filter(id=>!nextItems.has(id)&&!deletedRecordSet.has(id.split('::',1)[0]));
+            const deleted=[...baseItems.keys()].filter(id=>!nextItems.has(id)&&!deletedRecordKeys.some(recordKey=>id.startsWith(`${recordKey}::`)));
             const validStates=new Set(['pendiente','en_proceso','finalizado','notificado','en_revalidacion']);
             const normalizeStatus=value=>validStates.has(value)?value:'pendiente';
             const normalizedRate=value=>{if(value==null||String(value).trim()==='')return null;const rate=Number(value);return Number.isFinite(rate)?Math.round(Math.max(0,Math.min(100,rate))*100)/100:null;};
@@ -1382,7 +1411,7 @@
               const saveRecordBatches=async batch=>{
                 for(let i=0;i<batch.changed.length;i+=syncGuideBatchSize){
                   const part=batch.changed.slice(i,i+syncGuideBatchSize);
-                  await saveRpc(`datos fuente (${batch.record.pdv}, lote ${Math.floor(i/syncGuideBatchSize)+1})`,'penalidades_upsert_lote',{p_liquidacion:{id:batch.record.id,periodo:batch.record.period,pdv:batch.record.pdv},p_guias:part});
+                  await saveRpc(`datos fuente (${batch.record.pdv}, lote ${Math.floor(i/syncGuideBatchSize)+1})`,'penalidades_upsert_lote',{p_liquidacion:{id:batch.record.id,periodo:batch.record.period,pdv:batch.record.pdv,isSimulation:Boolean(batch.record.isSimulation)},p_guias:part});
                   syncedGuideCount+=part.length;updateSyncProgress();
                 }
               };

@@ -1295,6 +1295,19 @@
     }
 
     function makeGoogleScriptBridge(){
+      const getDecisionCount=data=>{
+        if(typeof data==='number'&&Number.isFinite(data))return data;
+        if(typeof data==='string'&&/^\s*\d+\s*$/.test(data))return Number(data);
+        if(Array.isArray(data))return data.length;
+        if(data&&typeof data==='object'){
+          if(data.ok===false||data.success===false)throw new Error(data.error||data.message||'Supabase rechazó la actualización.');
+          const keys=['decisiones_actualizadas','decisiones_guardadas','filas_actualizadas','actualizadas','actualizados','rows_updated','updated_count','updated','affected_rows','row_count','rowCount','cantidad','count'];
+          for(const key of keys){const value=data[key];if(typeof value==='number'&&Number.isFinite(value))return value;if(typeof value==='string'&&/^\s*\d+\s*$/.test(value))return Number(value);}
+        }
+        // Algunas funciones RPC confirman la operación sin devolver el conteo.
+        // Una respuesta sin error de PostgREST sigue siendo confirmación válida.
+        return null;
+      };
       const fetchItems=async recordKey=>{
         const items=[],pageSize=1000;let offset=0;
         while(true){
@@ -1339,11 +1352,17 @@
           getFullAppState(){fetchFullState().then(successHandler).catch(failureHandler);return runner;},
           saveDecisionChanges(decisions){
             (async()=>{
+              const totalBatches=Math.ceil(decisions.length/syncGuideBatchSize);
               for(let i=0;i<decisions.length;i+=syncGuideBatchSize){
                 const part=decisions.slice(i,i+syncGuideBatchSize);
-                const {data,error}=await exoSupabaseClient.rpc('penalidades_actualizar_decisiones',{p_decisiones:part});
-                if(error)throw new Error(`Exoneraciones, retenciones y motivos: ${error.message||error.details||error.code||String(error)}`);
-                if(Number(data)!==part.length)throw new Error(`Supabase confirmó ${Number(data)||0} de ${part.length} decisiones. No se marcaron como guardadas.`);
+                const batchNumber=Math.floor(i/syncGuideBatchSize)+1,stage=`Exoneraciones, retenciones y motivos (lote ${batchNumber} de ${totalBatches})`;
+                const status=document.getElementById('storageState');if(status){status.textContent=`Guardando decisiones · lote ${batchNumber} de ${totalBatches}…`;status.title=`Fase actual: ${stage}. Límite por solicitud: 60 segundos.`;}
+                let data,error;
+                try{({data,error}=await exoSupabaseClient.rpc('penalidades_actualizar_decisiones',{p_decisiones:part}));}
+                catch(requestError){throw new Error(`${stage}: ${requestError?.message||String(requestError||'Error sin detalle')}`);}
+                if(error)throw new Error(`${stage}: ${error.message||error.details||error.code||String(error)}`);
+                let savedCount;try{savedCount=getDecisionCount(data);}catch(responseError){throw new Error(`${stage}: ${responseError?.message||String(responseError)}`);}
+                if(savedCount!==null&&savedCount!==part.length)throw new Error(`${stage}: Supabase informó ${savedCount} de ${part.length} decisiones. No se marcaron como guardadas.`);
               }
               for(const decision of decisions){
                 const baselineItem=exoV2BaselineItemsById.get(String(decision.id));

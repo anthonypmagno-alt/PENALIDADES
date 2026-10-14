@@ -107,7 +107,8 @@ OPTIMIZACION DE SINCRONIZACION (13-10-2026)
 - Las decisiones de exoneración, retención y motivo se envían directamente por sus IDs modificados. Este guardado no copia ni compara todas las guías cargadas en la pestaña. Los cambios de archivos fuente, grupos y liquidaciones siguen el guardado general.
 - Las solicitudes a Supabase tienen un límite de 60 segundos; si alguna queda bloqueada, la pantalla informa la fase y el error en vez de permanecer en “Sincronizando” indefinidamente.
 - El CSV de lints enviado el 13-10-2026 confirma que `public.penalidades_actualizar_decisiones(p_decisiones jsonb)` ya existe en Supabase; no vuelvas a ejecutar ese SQL.
-- El enlace de Penalidades del index.html usa la versión 20261013-sync-directo-3 para actualizar la caché.
+- El enlace de Penalidades del index.html usa la versión 20261014-sync-rpc-response-1 para actualizar la caché.
+- La confirmación del guardado directo acepta un conteo numérico, un conteo dentro de un objeto JSON o una respuesta exitosa sin conteo. Si Supabase devuelve un error o un conteo menor al lote, conserva los cambios como pendientes e informa la fase/lote. No requiere ejecutar SQL.
 
 AJUSTE DE PENALIDAD TOTAL Y COPIA DE MOTIVO (13-10-2026)
 - En “Registros guardados” se agregó “Ajuste penalidad total”. Si el campo queda vacío, el cálculo usa la penalidad total original. Si se ingresa un monto, ese valor sustituye el total para calcular el saldo de penalidad: saldo = ajuste − monto exonerado. El ajuste no puede ser menor al monto ya exonerado.

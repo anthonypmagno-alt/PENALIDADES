@@ -85,10 +85,10 @@ CORRECCION DE DESTINO Y ULTIMO ESCANEO (13-10-2026)
 - Mapeo geográfico de Exportación de guía: Distrito = Colonia de destino; Provincia = Ciudad de Destino; Departamento = Provincia de destino.
 - Mapeo por columna de Exportación de guía: H = fecha/hora del último escaneo; I = tipo de escaneo más reciente; L = estatus de firma. El importador también reconoce los encabezados si cambian.
 - Detalle completo muestra destino, tipo de escaneo combinado con estatus de firma y fecha/hora del último escaneo. Supabase conserva estos datos junto con las liquidaciones.
-- Ejecuta una vez SUPABASE_SQL/supabase_penalidades_fecha_escaneo.sql. El cambio es incremental y no elimina liquidaciones ni decisiones.
+- Ejecuta una vez SUPABASE_SQL/supabase_penalidades_fecha_escaneo.sql. El cambio es incremental y no elimina liquidaciones ni decisiones; agrega el almacenamiento de la fecha/hora y los RPC para guardar y devolver estos campos.
 - Después, vuelve a cargar Exportación de guía en Penalidades. La importación actualiza las liquidaciones existentes y sincroniza los campos recuperados; no borres ni recrees registros. Los valores históricos que no se guardaron se completan al volver a importar la exportación.
 - Al cargar el archivo, el aviso informa cuántas filas incluyen destino, escaneo, firma y fecha completos, además de cuántas penalidades se enlazaron.
-- El enlace de Penalidades del index.html usa la versión 20261013-destino-escaneo-3 para actualizar la caché.
+- El enlace de Penalidades del index.html usa la versión 20261014-exportacion-persistida-1 para actualizar la caché.
 
 RETENCION CALCULADA SOBRE EL SALDO (13-10-2026)
 - El porcentaje de retención se calcula sobre el saldo de la penalidad después de aplicar la exoneración.
@@ -107,7 +107,7 @@ OPTIMIZACION DE SINCRONIZACION (13-10-2026)
 - Las decisiones de exoneración, retención y motivo se envían directamente por sus IDs modificados. Este guardado no copia ni compara todas las guías cargadas en la pestaña. Los cambios de archivos fuente, grupos y liquidaciones siguen el guardado general.
 - Las solicitudes a Supabase tienen un límite de 60 segundos; si alguna queda bloqueada, la pantalla informa la fase y el error en vez de permanecer en “Sincronizando” indefinidamente.
 - El CSV de lints enviado el 13-10-2026 confirma que `public.penalidades_actualizar_decisiones(p_decisiones jsonb)` ya existe en Supabase; no vuelvas a ejecutar ese SQL.
-- El enlace de Penalidades del index.html usa la versión 20261014-sync-rpc-response-1 para actualizar la caché.
+- El enlace de Penalidades del index.html usa la versión 20261014-exportacion-persistida-1 para actualizar la caché.
 - La confirmación del guardado directo acepta un conteo numérico, un conteo dentro de un objeto JSON o una respuesta exitosa sin conteo. Si Supabase devuelve un error o un conteo menor al lote, conserva los cambios como pendientes e informa la fase/lote. No requiere ejecutar SQL.
 
 AJUSTE DE PENALIDAD TOTAL Y COPIA DE MOTIVO (13-10-2026)

@@ -99,6 +99,7 @@ create table if not exists public.penalidades_guias (
   brecha_ultima_actualizacion text not null default '',
   tipo_escaneo_reciente text not null default '',
   estatus_firma text not null default '',
+  fecha_hora_ultimo_escaneo text not null default '',
   tipo_zona text not null default '',
   zona text not null default '',
   sla_asignado_dias text not null default '',
@@ -115,6 +116,11 @@ create table if not exists public.penalidades_decisiones (
   actualizado_por uuid not null default auth.uid(),
   actualizado_en timestamptz not null default now()
 );
+
+-- Mantiene compatible la instalación si la tabla ya existía antes de guardar
+-- la fecha y hora del último escaneo.
+alter table public.penalidades_guias
+  add column if not exists fecha_hora_ultimo_escaneo text not null default '';
 
 create table if not exists public.penalidades_grupos (
   id text primary key default gen_random_uuid()::text,
@@ -198,17 +204,17 @@ begin
   insert into public.penalidades_guias(
     id,liquidacion_id,tracking,tracking_key,pdv,pdv_key,penalizacion,brecha,sla,brecha_liquidacion,sla_liquidacion,costo,fecha,
     motivo_origen,observaciones,distrito,provincia,departamento,tipo_operacion_reciente,operacion_brecha,brecha_horas,brecha_ultima_actualizacion,
-    tipo_escaneo_reciente,estatus_firma,tipo_zona,zona,sla_asignado_dias,coincidencia_zona,origen_archivo,
+    tipo_escaneo_reciente,estatus_firma,fecha_hora_ultimo_escaneo,tipo_zona,zona,sla_asignado_dias,coincidencia_zona,origen_archivo,
     zona_manual
   )
   select x.id,v_liquidacion_id,x.tracking,x.tracking_key,v_pdv,x.pdv_key,x.penalizacion,x.brecha,x.sla,x.brecha_liquidacion,x.sla_liquidacion,
     x.costo,x.fecha,x.motivo_origen,x.observaciones,x.distrito,x.provincia,x.departamento,
-    x.tipo_operacion_reciente,x.operacion_brecha,x.brecha_horas,x.brecha_ultima_actualizacion,x.tipo_escaneo_reciente,x.estatus_firma,x.tipo_zona,x.zona,
+    x.tipo_operacion_reciente,x.operacion_brecha,x.brecha_horas,x.brecha_ultima_actualizacion,x.tipo_escaneo_reciente,x.estatus_firma,x.fecha_hora_ultimo_escaneo,x.tipo_zona,x.zona,
     x.sla_asignado_dias,x.coincidencia_zona,x.origen_archivo,x.zona_manual
   from jsonb_to_recordset(p_guias) as x(
     id text,tracking text,tracking_key text,pdv_key text,penalizacion text,brecha text,sla text,brecha_liquidacion text,sla_liquidacion text,
     costo numeric,fecha text,motivo_origen text,observaciones text,distrito text,provincia text,
-    departamento text,tipo_operacion_reciente text,operacion_brecha text,brecha_horas text,brecha_ultima_actualizacion text,tipo_escaneo_reciente text,estatus_firma text,
+    departamento text,tipo_operacion_reciente text,operacion_brecha text,brecha_horas text,brecha_ultima_actualizacion text,tipo_escaneo_reciente text,estatus_firma text,fecha_hora_ultimo_escaneo text,
     tipo_zona text,zona text,sla_asignado_dias text,coincidencia_zona boolean,origen_archivo text,
     porcentaje_exoneracion numeric,motivo_decision text,modificado_en text,zona_manual jsonb
   )
@@ -220,7 +226,7 @@ begin
     provincia=excluded.provincia,departamento=excluded.departamento,
     tipo_operacion_reciente=excluded.tipo_operacion_reciente,operacion_brecha=excluded.operacion_brecha,
     brecha_horas=excluded.brecha_horas,brecha_ultima_actualizacion=excluded.brecha_ultima_actualizacion,
-    tipo_escaneo_reciente=excluded.tipo_escaneo_reciente,estatus_firma=excluded.estatus_firma,
+    tipo_escaneo_reciente=excluded.tipo_escaneo_reciente,estatus_firma=excluded.estatus_firma,fecha_hora_ultimo_escaneo=excluded.fecha_hora_ultimo_escaneo,
     tipo_zona=excluded.tipo_zona,zona=excluded.zona,sla_asignado_dias=excluded.sla_asignado_dias,
     coincidencia_zona=excluded.coincidencia_zona,origen_archivo=excluded.origen_archivo,
     zona_manual=excluded.zona_manual,actualizado_en=now();
@@ -230,6 +236,31 @@ begin
     on conflict(guia_id) do update set porcentaje=excluded.porcentaje,motivo=excluded.motivo,actualizado_en=excluded.actualizado_en,actualizado_por=auth.uid();
   get diagnostics v_count = row_count;
   return jsonb_build_object('ok',true,'liquidacion_id',v_liquidacion_id,'guias_afectadas',v_count);
+end $$;
+
+create or replace function public.penalidades_actualizar_datos_exportacion(p_guias jsonb)
+returns integer language plpgsql security definer
+set search_path = pg_catalog, public
+as $$
+declare v_count integer;
+begin
+  if not public.penalidades_usuario_autorizado() then
+    raise exception 'Cuenta no autorizada.' using errcode='42501';
+  end if;
+  if jsonb_typeof(p_guias) is distinct from 'array' or jsonb_array_length(p_guias)>1000 then
+    raise exception 'El lote debe ser un arreglo de hasta 1000 guías.' using errcode='22023';
+  end if;
+  update public.penalidades_guias g
+  set distrito=coalesce(x.distrito,''),provincia=coalesce(x.provincia,''),departamento=coalesce(x.departamento,''),
+      tipo_escaneo_reciente=coalesce(x.tipo_escaneo_reciente,''),estatus_firma=coalesce(x.estatus_firma,''),
+      fecha_hora_ultimo_escaneo=coalesce(x.fecha_hora_ultimo_escaneo,''),actualizado_en=now()
+  from jsonb_to_recordset(p_guias) as x(
+    id text,distrito text,provincia text,departamento text,
+    tipo_escaneo_reciente text,estatus_firma text,fecha_hora_ultimo_escaneo text
+  )
+  where g.id=x.id;
+  get diagnostics v_count=row_count;
+  return v_count;
 end $$;
 
 create or replace function public.penalidades_guardar_decisiones(p_decisiones jsonb)
@@ -383,7 +414,7 @@ begin
           'district',g.distrito,'province',g.provincia,'department',g.departamento,
           'latestOperation',g.tipo_operacion_reciente,'breachOperation',g.operacion_brecha,
           'breachWaitHours',g.brecha_horas,'breachLastUpdate',g.brecha_ultima_actualizacion,
-          'scanType',g.tipo_escaneo_reciente,'signature',g.estatus_firma,
+          'scanType',g.tipo_escaneo_reciente,'signature',g.estatus_firma,'scanTime',g.fecha_hora_ultimo_escaneo,
           'zoneType',g.tipo_zona,'zoneName',g.zona,'slaDays',g.sla_asignado_dias,
           'zoneMatched',g.coincidencia_zona,'sourceFile',g.origen_archivo,
           'exemptionPercent',coalesce(d.porcentaje,0),'exonerated',coalesce(d.porcentaje,0)>0,
@@ -430,7 +461,7 @@ begin
       'observations',g.observaciones,'district',g.distrito,'province',g.provincia,
       'department',g.departamento,'latestOperation',g.tipo_operacion_reciente,
       'breachOperation',g.operacion_brecha,'breachWaitHours',g.brecha_horas,'breachLastUpdate',g.brecha_ultima_actualizacion,'scanType',g.tipo_escaneo_reciente,
-      'signature',g.estatus_firma,'zoneType',g.tipo_zona,'zoneName',g.zona,
+      'signature',g.estatus_firma,'scanTime',g.fecha_hora_ultimo_escaneo,'zoneType',g.tipo_zona,'zoneName',g.zona,
       'slaDays',g.sla_asignado_dias,'zoneMatched',g.coincidencia_zona,
       'sourceFile',g.origen_archivo,'exemptionPercent',coalesce(d.porcentaje,0),
       'exonerated',coalesce(d.porcentaje,0)>0,'reason',coalesce(d.motivo,''),
@@ -556,6 +587,7 @@ end $$;
 
 revoke all on function public.penalidades_usuario_autorizado() from public,anon,authenticated;
 revoke all on function public.penalidades_upsert_lote(jsonb,jsonb) from public,anon,authenticated;
+revoke all on function public.penalidades_actualizar_datos_exportacion(jsonb) from public,anon,authenticated;
 revoke all on function public.penalidades_guardar_decisiones(jsonb) from public,anon,authenticated;
 revoke all on function public.penalidades_listar_liquidaciones() from public,anon,authenticated;
 revoke all on function public.penalidades_actualizar_estados(jsonb) from public,anon,authenticated;
@@ -569,6 +601,7 @@ revoke all on function public.penalidades_borrar_liquidaciones(text[]) from publ
 revoke all on function public.penalidades_guardar_grupos(jsonb,jsonb) from public,anon,authenticated;
 revoke all on function public.penalidades_borrar_liquidaciones_vacias() from public,anon,authenticated;
 grant execute on function public.penalidades_upsert_lote(jsonb,jsonb) to authenticated;
+grant execute on function public.penalidades_actualizar_datos_exportacion(jsonb) to authenticated;
 grant execute on function public.penalidades_guardar_decisiones(jsonb) to authenticated;
 grant execute on function public.penalidades_listar_liquidaciones() to authenticated;
 grant execute on function public.penalidades_actualizar_estados(jsonb) to authenticated;

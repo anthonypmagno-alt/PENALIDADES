@@ -1385,7 +1385,7 @@
             const baseItemValues=new Map();
             for(const record of (baseline.records||[]))for(const item of(record.items||[])){const id=dbItemId(record,item);baseItems.set(id,JSON.stringify({...item,id}));baseItemValues.set(id,item);}
             const decisionFields=new Set(['exemptionPercent','exonerated','retentionPercent','reason','modifiedAt']);
-            const nextItems=new Map(), changedByRecord=[], decisionOnlyChanges=[];
+            const nextItems=new Map(), changedByRecord=[], decisionOnlyChanges=[],exportDataChanges=[];
             for(const record of(snapshot.records||[])){
               const changed=[];
               for(const item of(record.items||[])){
@@ -1394,6 +1394,10 @@
                 const previous=baseItemValues.get(id),keys=new Set([...Object.keys(previous||{}),...Object.keys(item)]);
                 const onlyDecisionFieldsChanged=!!previous&&[...keys].every(key=>decisionFields.has(key)||JSON.stringify(previous[key])===JSON.stringify(item[key]));
                 if(onlyDecisionFieldsChanged){decisionOnlyChanges.push({id,porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:retentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||''});continue;}
+                const exportFields=['district','province','department','scanType','signature','scanTime'];
+                const exportValues=exportFields.map(key=>String(item[key]??''));
+                const exportChanged=previous?exportFields.some(key=>String(previous[key]??'')!==String(item[key]??'')):exportValues.some(value=>value.trim()!=='');
+                if(exportChanged)exportDataChanges.push({id,distrito:item.district||'',provincia:item.province||'',departamento:item.department||'',tipo_escaneo_reciente:item.scanType||'',estatus_firma:item.signature||'',fecha_hora_ultimo_escaneo:item.scanTime||''});
                 changed.push({id,tracking:item.tracking||'',tracking_key:keyNorm(item.tracking),pdv_key:keyNorm(item.pdv||record.pdv),penalizacion:item.penalty||'',brecha:item.breach||'',sla:item.sla||'',brecha_liquidacion:item.liquidationBreach||'',sla_liquidacion:item.liquidationSla||'',costo:Number(item.cost)||0,fecha:item.dateRaw||'',motivo_origen:item.motive||'',observaciones:item.observations||'',distrito:item.district||'',provincia:item.province||'',departamento:item.department||'',tipo_operacion_reciente:item.latestOperation||'',operacion_brecha:item.breachOperation||'',brecha_horas:item.breachWaitHours||'',brecha_ultima_actualizacion:item.breachLastUpdate||'',tipo_escaneo_reciente:item.scanType||'',estatus_firma:item.signature||'',fecha_hora_ultimo_escaneo:item.scanTime||'',tipo_zona:item.zoneType||'',zona:item.zoneName||'',sla_asignado_dias:String(item.slaDays??''),coincidencia_zona:!!item.zoneMatched,origen_archivo:item.sourceFile||'',porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:retentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||'',zona_manual:item.manualZone||null});
               }
               if(changed.length)changedByRecord.push({record,changed});
@@ -1439,6 +1443,12 @@
               const workers=Array.from({length:Math.min(maxParallelRecordBatches,queue.length)},async()=>{while(queue.length&&!syncWorkerError){const batch=queue.shift();try{await saveRecordBatches(batch);}catch(error){syncWorkerError=error;throw error;}}});
               const workerResults=await Promise.allSettled(workers),workerFailure=workerResults.find(result=>result.status==='rejected');
               if(workerFailure)throw workerFailure.reason;
+              for(let i=0;i<exportDataChanges.length;i+=syncGuideBatchSize){
+                const part=exportDataChanges.slice(i,i+syncGuideBatchSize),stage=`destino, escaneo y firma (lote ${Math.floor(i/syncGuideBatchSize)+1})`;
+                const saved=await saveRpc(stage,'penalidades_actualizar_datos_exportacion',{p_guias:part});
+                const savedCount=getDecisionCount(saved);
+                if(savedCount!==null&&savedCount!==part.length)throw new Error(`${stage}: Supabase confirmó ${savedCount} de ${part.length} guías.`);
+              }
               for(let i=0;i<decisionOnlyChanges.length;i+=syncGuideBatchSize){
                 const part=decisionOnlyChanges.slice(i,i+syncGuideBatchSize);
                 await saveRpc(`exoneraciones, retenciones y motivos (lote ${Math.floor(i/syncGuideBatchSize)+1})`,'penalidades_actualizar_decisiones',{p_decisiones:part});

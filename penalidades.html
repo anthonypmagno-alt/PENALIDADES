@@ -460,11 +460,16 @@
       $('storageState').textContent='No hay conexión con el almacenamiento Supabase';if(showMessage)notify('No se pudo guardar en Supabase.',true);return false;
     }
     function flushCloudSave(){
-      if(!cloudMode||!cloudPending||cloudInFlight)return;cloudPending=false;cloudInFlight=true;const generationAtStart=nonDecisionGeneration;const snapshot=JSON.parse(JSON.stringify({serverRevision:state.serverRevision,records:state.records||[],groups:state.groups||[],deletedRecords:state.deletedRecords||{}}));
-      const sentDecisions=new Map();for(const record of snapshot.records||[])for(const item of record.items||[])if(pendingDecisionItems.has(item.id))sentDecisions.set(item.id,item.modifiedAt||'');
-      google.script.run.withSuccessHandler(result=>{state.serverRevision=Number(result?.revision)||state.serverRevision;for(const [id,modifiedAt] of sentDecisions)if(pendingDecisionItems.get(id)?.modifiedAt===modifiedAt)pendingDecisionItems.delete(id);if(nonDecisionGeneration===generationAtStart)nonDecisionDirty=false;$('storageState').textContent='Guardado en Supabase';$('storageState').title='Última sincronización confirmada por Supabase';$('retrySyncBtn').hidden=true;$('retrySyncBtn').disabled=false;if(cloudNotify)notify('Cambios guardados en Supabase.');if(!dirty&&!pendingDecisionItems.size&&!nonDecisionDirty){$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';}cloudNotify=false;cloudInFlight=false;const replayDecision=decisionSavePending;decisionSavePending=false;if(cloudPending)setTimeout(flushCloudSave,0);else if(replayDecision&&pendingDecisionItems.size)setTimeout(()=>savePendingDecisionItems(true),0);})
-        .withFailureHandler(error=>{const detail=error?.message||String(error||'Error sin detalle');$('storageState').textContent='Error al guardar en Supabase';$('storageState').title=detail;$('saveState').textContent='Cambios sin guardar';$('saveBtn').textContent='Guardar cambios';$('saveBtn').disabled=!appReady;$('retrySyncBtn').hidden=false;$('retrySyncBtn').disabled=false;notify(`Supabase no confirmó el guardado: ${detail}. Los cambios siguen en esta pestaña; revisa la fase indicada y pulsa Reintentar sincronización.`,true);cloudNotify=false;cloudInFlight=false;decisionSavePending=false;cloudPending=true;})
-        .saveAppState(snapshot);
+      if(!cloudMode||!cloudPending||cloudInFlight)return;
+      cloudPending=false;cloudInFlight=true;const generationAtStart=nonDecisionGeneration;
+      const handleFailure=error=>{const detail=error?.message||String(error||'Error sin detalle');$('storageState').textContent='Error al guardar en Supabase';$('storageState').title=detail;$('saveState').textContent='Cambios sin guardar';$('saveBtn').textContent='Guardar cambios';$('saveBtn').disabled=!appReady;$('retrySyncBtn').hidden=false;$('retrySyncBtn').disabled=false;notify(`No se pudo completar la sincronización: ${detail}. Los cambios siguen en esta pestaña; revisa la fase indicada y pulsa Reintentar sincronización.`,true);cloudNotify=false;cloudInFlight=false;decisionSavePending=false;cloudPending=true;};
+      try{
+        const snapshot=JSON.parse(JSON.stringify({serverRevision:state.serverRevision,records:state.records||[],groups:state.groups||[],deletedRecords:state.deletedRecords||{}}));
+        const sentDecisions=new Map();for(const record of snapshot.records||[])for(const item of record.items||[])if(pendingDecisionItems.has(item.id))sentDecisions.set(item.id,item.modifiedAt||'');
+        google.script.run.withSuccessHandler(result=>{state.serverRevision=Number(result?.revision)||state.serverRevision;for(const [id,modifiedAt] of sentDecisions)if(pendingDecisionItems.get(id)?.modifiedAt===modifiedAt)pendingDecisionItems.delete(id);if(nonDecisionGeneration===generationAtStart)nonDecisionDirty=false;$('storageState').textContent='Guardado en Supabase';$('storageState').title='Última sincronización confirmada por Supabase';$('retrySyncBtn').hidden=true;$('retrySyncBtn').disabled=false;if(cloudNotify)notify('Cambios guardados en Supabase.');if(!dirty&&!pendingDecisionItems.size&&!nonDecisionDirty){$('saveState').textContent='Registro guardado';$('saveBtn').textContent='Guardar cambios';}cloudNotify=false;cloudInFlight=false;const replayDecision=decisionSavePending;decisionSavePending=false;if(cloudPending)setTimeout(flushCloudSave,0);else if(replayDecision&&pendingDecisionItems.size)setTimeout(()=>savePendingDecisionItems(true),0);})
+          .withFailureHandler(handleFailure)
+          .saveAppState(snapshot);
+      }catch(error){handleFailure(error);}
     }
     function savePendingDecisionItems(showMessage=false){
       if(!cloudMode||!pendingDecisionItems.size)return false;
@@ -1381,22 +1386,29 @@
             const nextRecords=new Map((snapshot.records||[]).map(record=>[record.id,record]));
             const deletedRecordKeys=[...baseRecords.keys()].filter(id=>!nextRecords.has(id));
             const deletedRecordSet=new Set(deletedRecordKeys);
+            // Solo comparar propiedades que las RPC devuelven y guardan. La fila
+            // también trae metadatos del Excel (sourceRow, dateISO, costRaw,
+            // sourceZone) e indicadores derivados que no deben activar un upsert.
+            const persistedItemFields=['id','tracking','pdv','penalty','breach','sla','liquidationBreach','liquidationSla','cost','dateRaw','motive','observations','district','province','department','latestOperation','breachOperation','breachWaitHours','breachLastUpdate','scanType','signature','scanTime','zoneType','zoneName','slaDays','zoneMatched','sourceFile','exemptionPercent','exonerated','retentionPercent','reason','modifiedAt','period','manualZone'];
+            const persistedItem=item=>{const value=Object.fromEntries(persistedItemFields.filter(key=>Object.prototype.hasOwnProperty.call(item||{},key)).map(key=>[key,item[key]]));if(value.sourceFile==='Registros guardados')value.sourceFile='';return value;};
+            const stableValue=value=>Array.isArray(value)?value.map(stableValue):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,stableValue(value[key])])):value;
+            const stableJson=value=>{const normalized=stableValue(value);return normalized===undefined?'__undefined__':JSON.stringify(normalized);};
+            const itemSignature=item=>stableJson(persistedItem(item));
             const baseItems=new Map();
             const baseItemValues=new Map();
-            for(const record of (baseline.records||[]))for(const item of(record.items||[])){const id=dbItemId(record,item);baseItems.set(id,JSON.stringify({...item,id}));baseItemValues.set(id,item);}
+            for(const record of (baseline.records||[]))for(const item of(record.items||[])){const id=dbItemId(record,item),comparable=persistedItem({...item,id});baseItems.set(id,itemSignature({...item,id}));baseItemValues.set(id,comparable);}
             const decisionFields=new Set(['exemptionPercent','exonerated','retentionPercent','reason','modifiedAt']);
             const nextItems=new Map(), changedByRecord=[], decisionOnlyChanges=[],exportDataChanges=[];
             const decisionPayload=item=>({id:item.id,porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:retentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||''});
-            // guideMatched es un indicador derivado del cruce: al importar Exportación
-            // debe seguir la misma ruta ligera aunque no tenga una columna propia en BD.
-            const exportFields=new Set(['district','province','department','scanType','signature','scanTime','zoneType','zoneName','slaDays','zoneMatched','guideMatched']);
+            const exportFields=new Set(['district','province','department','scanType','signature','scanTime','zoneType','zoneName','slaDays','zoneMatched']);
             for(const record of(snapshot.records||[])){
               const changed=[];
               for(const item of(record.items||[])){
-                const id=dbItemId(record,item),packed=JSON.stringify({...item,id});nextItems.set(id,packed);
+                const id=dbItemId(record,item),comparable=persistedItem({...item,id}),packed=itemSignature({...item,id});nextItems.set(id,packed);
                 if(baseItems.get(id)===packed)continue;
-                const previous=baseItemValues.get(id),keys=new Set([...Object.keys(previous||{}),...Object.keys(item)]);
-                const changedKeys=[...keys].filter(key=>JSON.stringify(previous?.[key])!==JSON.stringify(item[key]));
+                const previous=baseItemValues.get(id);
+                const changedKeys=persistedItemFields.filter(key=>stableJson(previous?.[key])!==stableJson(comparable[key]));
+                if(!changedKeys.length)continue;
                 const onlyDecisionFieldsChanged=!!previous&&changedKeys.length>0&&changedKeys.every(key=>decisionFields.has(key));
                 if(onlyDecisionFieldsChanged){decisionOnlyChanges.push(decisionPayload({...item,id}));continue;}
                 const nonDecisionKeys=changedKeys.filter(key=>!decisionFields.has(key));

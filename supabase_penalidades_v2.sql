@@ -253,10 +253,13 @@ begin
   update public.penalidades_guias g
   set distrito=coalesce(x.distrito,''),provincia=coalesce(x.provincia,''),departamento=coalesce(x.departamento,''),
       tipo_escaneo_reciente=coalesce(x.tipo_escaneo_reciente,''),estatus_firma=coalesce(x.estatus_firma,''),
-      fecha_hora_ultimo_escaneo=coalesce(x.fecha_hora_ultimo_escaneo,''),actualizado_en=now()
+      fecha_hora_ultimo_escaneo=coalesce(x.fecha_hora_ultimo_escaneo,''),
+      tipo_zona=coalesce(x.tipo_zona,''),zona=coalesce(x.zona,''),
+      sla_asignado_dias=coalesce(x.sla_asignado_dias,''),coincidencia_zona=coalesce(x.coincidencia_zona,false),actualizado_en=now()
   from jsonb_to_recordset(p_guias) as x(
     id text,distrito text,provincia text,departamento text,
-    tipo_escaneo_reciente text,estatus_firma text,fecha_hora_ultimo_escaneo text
+    tipo_escaneo_reciente text,estatus_firma text,fecha_hora_ultimo_escaneo text,
+    tipo_zona text,zona text,sla_asignado_dias text,coincidencia_zona boolean
   )
   where g.id=x.id;
   get diagnostics v_count=row_count;

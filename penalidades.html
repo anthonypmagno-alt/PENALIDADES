@@ -1385,17 +1385,27 @@
             const baseItemValues=new Map();
             for(const record of (baseline.records||[]))for(const item of(record.items||[])){const id=dbItemId(record,item);baseItems.set(id,JSON.stringify({...item,id}));baseItemValues.set(id,item);}
             const decisionFields=new Set(['exemptionPercent','exonerated','retentionPercent','reason','modifiedAt']);
-            const nextItems=new Map(), changedByRecord=[], decisionOnlyChanges=[];
+            const nextItems=new Map(), changedByRecord=[], decisionOnlyChanges=[],exportDataChanges=[];
+            const decisionPayload=item=>({id:item.id,porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:retentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||''});
+            // guideMatched es un indicador derivado del cruce: al importar Exportación
+            // debe seguir la misma ruta ligera aunque no tenga una columna propia en BD.
+            const exportFields=new Set(['district','province','department','scanType','signature','scanTime','zoneType','zoneName','slaDays','zoneMatched','guideMatched']);
             for(const record of(snapshot.records||[])){
               const changed=[];
               for(const item of(record.items||[])){
                 const id=dbItemId(record,item),packed=JSON.stringify({...item,id});nextItems.set(id,packed);
                 if(baseItems.get(id)===packed)continue;
                 const previous=baseItemValues.get(id),keys=new Set([...Object.keys(previous||{}),...Object.keys(item)]);
-                const onlyDecisionFieldsChanged=!!previous&&[...keys].every(key=>decisionFields.has(key)||JSON.stringify(previous[key])===JSON.stringify(item[key]));
-                if(onlyDecisionFieldsChanged){decisionOnlyChanges.push({id,porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:retentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||''});continue;}
-                // Destino, escaneo, firma y fecha/hora viajan con el mismo lote
-                // que el detalle de la guía; no se duplica la escritura en otro RPC.
+                const changedKeys=[...keys].filter(key=>JSON.stringify(previous?.[key])!==JSON.stringify(item[key]));
+                const onlyDecisionFieldsChanged=!!previous&&changedKeys.length>0&&changedKeys.every(key=>decisionFields.has(key));
+                if(onlyDecisionFieldsChanged){decisionOnlyChanges.push(decisionPayload({...item,id}));continue;}
+                const nonDecisionKeys=changedKeys.filter(key=>!decisionFields.has(key));
+                const onlyExportFieldsChanged=!!previous&&nonDecisionKeys.length>0&&nonDecisionKeys.every(key=>exportFields.has(key));
+                if(onlyExportFieldsChanged){
+                  exportDataChanges.push({id,distrito:item.district||'',provincia:item.province||'',departamento:item.department||'',tipo_escaneo_reciente:item.scanType||'',estatus_firma:item.signature||'',fecha_hora_ultimo_escaneo:item.scanTime||'',tipo_zona:item.zoneType||'',zona:item.zoneName||'',sla_asignado_dias:String(item.slaDays??''),coincidencia_zona:!!item.zoneMatched});
+                  if(changedKeys.some(key=>decisionFields.has(key)))decisionOnlyChanges.push(decisionPayload({...item,id}));
+                  continue;
+                }
                 changed.push({id,tracking:item.tracking||'',tracking_key:keyNorm(item.tracking),pdv_key:keyNorm(item.pdv||record.pdv),penalizacion:item.penalty||'',brecha:item.breach||'',sla:item.sla||'',brecha_liquidacion:item.liquidationBreach||'',sla_liquidacion:item.liquidationSla||'',costo:Number(item.cost)||0,fecha:item.dateRaw||'',motivo_origen:item.motive||'',observaciones:item.observations||'',distrito:item.district||'',provincia:item.province||'',departamento:item.department||'',tipo_operacion_reciente:item.latestOperation||'',operacion_brecha:item.breachOperation||'',brecha_horas:item.breachWaitHours||'',brecha_ultima_actualizacion:item.breachLastUpdate||'',tipo_escaneo_reciente:item.scanType||'',estatus_firma:item.signature||'',fecha_hora_ultimo_escaneo:item.scanTime||'',tipo_zona:item.zoneType||'',zona:item.zoneName||'',sla_asignado_dias:String(item.slaDays??''),coincidencia_zona:!!item.zoneMatched,origen_archivo:item.sourceFile||'',porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:retentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||'',zona_manual:item.manualZone||null});
               }
               if(changed.length)changedByRecord.push({record,changed});
@@ -1410,15 +1420,20 @@
             const groupSignature=groups=>JSON.stringify((groups||[]).map(group=>({id:String(group.id||''),name:String(group.name||'')})).sort((a,b)=>a.id.localeCompare(b.id)));
             const assignmentSignature=records=>JSON.stringify((records||[]).filter(record=>record.groupId).map(record=>({recordKey:String(record.id),groupId:String(record.groupId)})).sort((a,b)=>a.recordKey.localeCompare(b.recordKey)));
             const groupsChanged=groupSignature(snapshot.groups)!==groupSignature(baseline.groups)||assignmentSignature(snapshot.records)!==assignmentSignature(baseline.records);
-            const changedGuideCount=changedByRecord.reduce((total,batch)=>total+batch.changed.length,0)+decisionOnlyChanges.length;
+            const changedGuideIds=new Set([...changedByRecord.flatMap(batch=>batch.changed.map(item=>item.id)),...decisionOnlyChanges.map(item=>item.id),...exportDataChanges.map(item=>item.id)]);
+            const changedGuideCount=changedGuideIds.size,syncedGuideIds=new Set();
             let syncedGuideCount=0;
             let syncStage='Preparando cambios';
             const updateSyncProgress=()=>{
               const label=document.getElementById('storageState');
-              if(!label)return;
-              label.textContent=changedGuideCount?`Sincronizando ${syncStage} · ${new Intl.NumberFormat('es-PE').format(syncedGuideCount)} de ${new Intl.NumberFormat('es-PE').format(changedGuideCount)} guías…`:`Sincronizando ${syncStage}…`;
-              label.title=`Fase actual: ${syncStage}. Límite de espera por solicitud: 60 segundos.`;
+              const saveLabel=document.getElementById('saveState');
+              const progress=changedGuideCount?`${new Intl.NumberFormat('es-PE').format(syncedGuideCount)} de ${new Intl.NumberFormat('es-PE').format(changedGuideCount)} guías`:'';
+              const detail=progress?`Sincronizando ${syncStage} · ${progress}…`:`Sincronizando ${syncStage}…`;
+              const title=`Fase actual: ${syncStage}${progress?` · ${progress}`:''}. Límite de espera: 60 segundos por solicitud a Supabase.`;
+              if(label){label.textContent=detail;label.title=title;}
+              if(saveLabel){saveLabel.textContent=detail;saveLabel.title=title;}
             };
+            const markSynced=items=>{for(const item of items||[])syncedGuideIds.add(String(item.id));syncedGuideCount=syncedGuideIds.size;updateSyncProgress();};
             const saveRpc=async(stage,name,args)=>{
               syncStage=stage;updateSyncProgress();
               const {data,error}=await exoSupabaseClient.rpc(name,args);
@@ -1430,13 +1445,14 @@
               // Cada liquidación conserva el orden de sus lotes; se procesan hasta dos liquidaciones independientes a la vez.
               const queue=[...changedByRecord];
               const saveRecordBatches=async batch=>{
+                const totalBatches=Math.ceil(batch.changed.length/syncGuideBatchSize);
                 for(let i=0;i<batch.changed.length;i+=syncGuideBatchSize){
                   const part=batch.changed.slice(i,i+syncGuideBatchSize);
-                  const stage=`datos fuente (${batch.record.pdv}, lote ${Math.floor(i/syncGuideBatchSize)+1})`;
+                  const stage=`datos fuente (${batch.record.pdv}, lote ${Math.floor(i/syncGuideBatchSize)+1}/${totalBatches})`;
                   const saved=await saveRpc(stage,'penalidades_upsert_lote',{p_liquidacion:{id:batch.record.id,periodo:batch.record.period,pdv:batch.record.pdv,isSimulation:Boolean(batch.record.isSimulation)},p_guias:part});
                   const savedCount=getDecisionCount(saved);
                   if(savedCount!==null&&savedCount!==part.length)throw new Error(`${stage}: Supabase confirmó ${savedCount} de ${part.length} guías. No se marcaron como guardadas.`);
-                  syncedGuideCount+=part.length;updateSyncProgress();
+                  markSynced(part);
                 }
               };
               let syncWorkerError=null;
@@ -1444,10 +1460,21 @@
               const workers=Array.from({length:Math.min(maxParallelRecordBatches,queue.length)},async()=>{while(queue.length&&!syncWorkerError){const batch=queue.shift();try{await saveRecordBatches(batch);}catch(error){syncWorkerError=error;throw error;}}});
               const workerResults=await Promise.allSettled(workers),workerFailure=workerResults.find(result=>result.status==='rejected');
               if(workerFailure)throw workerFailure.reason;
+              const exportBatchCount=Math.ceil(exportDataChanges.length/syncGuideBatchSize);
+              for(let i=0;i<exportDataChanges.length;i+=syncGuideBatchSize){
+                const part=exportDataChanges.slice(i,i+syncGuideBatchSize),stage=`destino, escaneo, firma, zona y SLA (lote ${Math.floor(i/syncGuideBatchSize)+1}/${exportBatchCount})`;
+                const saved=await saveRpc(stage,'penalidades_actualizar_datos_exportacion',{p_guias:part});
+                const savedCount=getDecisionCount(saved);
+                if(savedCount!==null&&savedCount!==part.length)throw new Error(`${stage}: Supabase confirmó ${savedCount} de ${part.length} guías. No se marcaron como guardadas.`);
+                markSynced(part);
+              }
+              const decisionBatchCount=Math.ceil(decisionOnlyChanges.length/syncGuideBatchSize);
               for(let i=0;i<decisionOnlyChanges.length;i+=syncGuideBatchSize){
                 const part=decisionOnlyChanges.slice(i,i+syncGuideBatchSize);
-                await saveRpc(`exoneraciones, retenciones y motivos (lote ${Math.floor(i/syncGuideBatchSize)+1})`,'penalidades_actualizar_decisiones',{p_decisiones:part});
-                syncedGuideCount+=part.length;updateSyncProgress();
+                const stage=`exoneraciones, retenciones y motivos (lote ${Math.floor(i/syncGuideBatchSize)+1}/${decisionBatchCount})`,saved=await saveRpc(stage,'penalidades_actualizar_decisiones',{p_decisiones:part});
+                const savedCount=getDecisionCount(saved);
+                if(savedCount!==null&&savedCount!==part.length)throw new Error(`${stage}: Supabase confirmó ${savedCount} de ${part.length} guías.`);
+                markSynced(part);
               }
               for(let i=0;i<deletedRecordKeys.length;i+=syncBatchSize){
                 await saveRpc('eliminación de liquidaciones','penalidades_borrar_liquidaciones',{p_record_keys:deletedRecordKeys.slice(i,i+syncBatchSize)});

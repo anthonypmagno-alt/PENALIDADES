@@ -85,10 +85,10 @@ CORRECCION DE DESTINO Y ULTIMO ESCANEO (13-10-2026)
 - Mapeo geográfico de Exportación de guía: Distrito = Colonia de destino; Provincia = Ciudad de Destino; Departamento = Provincia de destino.
 - Mapeo por columna de Exportación de guía: H = fecha/hora del último escaneo; I = tipo de escaneo más reciente; L = estatus de firma. El importador también reconoce los encabezados si cambian.
 - Detalle completo muestra destino, tipo de escaneo combinado con estatus de firma y fecha/hora del último escaneo. Supabase conserva estos datos junto con las liquidaciones.
-- Ejecuta una vez SUPABASE_SQL/supabase_penalidades_fecha_escaneo.sql. El cambio es incremental y no elimina liquidaciones ni decisiones; agrega el almacenamiento de la fecha/hora y los RPC para guardar y devolver estos campos.
+- Ejecuta una vez SUPABASE_SQL/supabase_penalidades_fecha_escaneo.sql. Es incremental y no elimina liquidaciones ni decisiones: agrega la fecha/hora, actualiza el guardado del detalle completo y la lectura paginada. El mismo RPC de detalle guarda destino, escaneo, firma y fecha/hora; no requiere una segunda llamada de guardado.
 - Después, vuelve a cargar Exportación de guía en Penalidades. La importación actualiza las liquidaciones existentes y sincroniza los campos recuperados; no borres ni recrees registros. Los valores históricos que no se guardaron se completan al volver a importar la exportación.
 - Al cargar el archivo, el aviso informa cuántas filas incluyen destino, escaneo, firma y fecha completos, además de cuántas penalidades se enlazaron.
-- El enlace de Penalidades del index.html usa la versión 20261014-exportacion-persistida-1 para actualizar la caché.
+- El enlace de Penalidades del index.html usa la versión 20261015-guardado-detalle-exportacion-1 para actualizar la caché.
 
 RETENCION CALCULADA SOBRE EL SALDO (13-10-2026)
 - El porcentaje de retención se calcula sobre el saldo de la penalidad después de aplicar la exoneración.
@@ -105,10 +105,10 @@ OPTIMIZACION DE SINCRONIZACION (13-10-2026)
 - Los grupos solo se envían cuando cambian, y la activación de Penalidades se ejecuta una sola vez por sesión.
 - El indicador superior informa el avance de guías sincronizadas.
 - Las decisiones de exoneración, retención y motivo se envían directamente por sus IDs modificados. Este guardado no copia ni compara todas las guías cargadas en la pestaña. Los cambios de archivos fuente, grupos y liquidaciones siguen el guardado general.
-- Las solicitudes a Supabase tienen un límite de 60 segundos; si alguna queda bloqueada, la pantalla informa la fase y el error en vez de permanecer en “Sincronizando” indefinidamente.
+- Las solicitudes a Supabase tienen un límite de 60 segundos; si alguna falla, la pantalla muestra “Cambios sin guardar”, habilita Reintentar y detalla la fase/lote en el aviso y en el estado de almacenamiento.
 - El CSV de lints enviado el 13-10-2026 confirma que `public.penalidades_actualizar_decisiones(p_decisiones jsonb)` ya existe en Supabase; no vuelvas a ejecutar ese SQL.
-- El enlace de Penalidades del index.html usa la versión 20261014-exportacion-persistida-1 para actualizar la caché.
-- La confirmación del guardado directo acepta un conteo numérico, un conteo dentro de un objeto JSON o una respuesta exitosa sin conteo. Si Supabase devuelve un error o un conteo menor al lote, conserva los cambios como pendientes e informa la fase/lote. No requiere ejecutar SQL.
+- El enlace de Penalidades del index.html usa la versión 20261015-guardado-detalle-exportacion-1 para actualizar la caché.
+- El guardado del detalle verifica, cuando Supabase devuelve el conteo, que coincida con las guías del lote. Si Supabase devuelve un error o menos filas, conserva los cambios como pendientes e informa la fase/lote.
 
 AJUSTE DE PENALIDAD TOTAL Y COPIA DE MOTIVO (13-10-2026)
 - En “Registros guardados” se agregó “Ajuste penalidad total”. Si el campo queda vacío, el cálculo usa la penalidad total original. Si se ingresa un monto, ese valor sustituye el total para calcular el saldo de penalidad: saldo = ajuste − monto exonerado. El ajuste no puede ser menor al monto ya exonerado.

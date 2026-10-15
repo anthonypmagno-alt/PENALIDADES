@@ -350,7 +350,7 @@
       </div>
       <div class="metrics" id="metrics"></div>
       <section class="sla-rate-panel" id="slaRatePanel" aria-labelledby="slaRateHeading">
-        <div class="sla-rate-head"><div><h3 id="slaRateHeading">Resumen adicional: montos de penalidades “Excede el SLA”</h3><p id="slaRateDescription">Agrupa los montos fuente distintos de la columna Costo para el PDV y periodo seleccionados. Define al lado el nuevo monto por guía; si lo dejas vacío, se conserva el monto fuente. El cambio recalcula penalidades, exoneraciones y saldos de este PDV.</p><div id="slaRateStatus" class="sla-rate-status" role="status">Los montos redefinidos se comparten para este PDV.</div></div><span class="sla-rate-period" id="slaRatePeriod"></span></div>
+        <div class="sla-rate-head"><div><h3 id="slaRateHeading">Resumen adicional: montos de penalidades “Excede el SLA”</h3><p id="slaRateDescription">Agrupa los montos fuente distintos de la columna Costo para el PDV y periodo seleccionados. Define al lado el nuevo monto por guía; si lo dejas vacío, se conserva el monto fuente. Admite hasta 9 decimales y muestra al menos 4. Los importes de penalidad se redondean a 2 decimales por guía.</p><div id="slaRateStatus" class="sla-rate-status" role="status">Los montos redefinidos se comparten para este PDV.</div></div><span class="sla-rate-period" id="slaRatePeriod"></span></div>
         <div class="table-wrap"><table class="data-table sla-rate-table"><thead><tr><th>Subtipo / monto fuente (S/)</th><th class="num">Guías de este PDV</th><th>Monto redefinido por guía (S/)</th><th class="num">Total recalculado (S/)</th></tr></thead><tbody id="slaRateBody"><tr><td colspan="4" class="empty">Selecciona una liquidación para revisar los montos SLA.</td></tr></tbody></table></div>
         <div class="sla-rate-footer"><button type="button" class="btn primary" id="saveSlaRatesBtn">Guardar montos SLA del PDV</button></div>
       </section>
@@ -442,6 +442,8 @@
     let nonDecisionDirty = false, nonDecisionGeneration = 0, decisionSavePending = false;
     const $ = id => document.getElementById(id);
     const fmtMoney = n => new Intl.NumberFormat('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n)||0);
+    const fmtSlaRateInput = n => new Intl.NumberFormat('es-PE',{minimumFractionDigits:4,maximumFractionDigits:9}).format(Number(n)||0);
+    const fmtSlaRateNote = n => new Intl.NumberFormat('es-PE',{minimumFractionDigits:2,maximumFractionDigits:9}).format(Number(n)||0);
     const fmtCount = n => new Intl.NumberFormat('es-PE',{maximumFractionDigits:0}).format(Number(n)||0);
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
     const norm = value => String(value ?? '').normalize('NFKD').replace(/[\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f]/g,'').toUpperCase().replace(/[^A-Z0-9\u3400-\u9FFF]+/g,' ').trim().replace(/\s+/g,' ');
@@ -450,6 +452,7 @@
     function renderLiquidationStatus(record){const current=liquidationStatusValue(record.status);return `<select class="liquidation-status-select" data-record-id="${escapeHtml(record.id)}" aria-label="Estado de liquidación ${escapeHtml(periodLabel(record.period))} ${escapeHtml(record.pdv)}">${LIQUIDATION_STATUSES.map(status=>`<option value="${status.value}" ${current===status.value?'selected':''}>${status.label}</option>`).join('')}</select>`;}
     function signatureRateValue(value){return value==null||txt(value)===''?null:Math.round(clampPercent(value)*100)/100;}
     function liquidationAmountValue(value){if(value==null||txt(value)==='')return null;let raw=typeof value==='number'?String(value):String(value).trim().replace(/S\//gi,'').replace(/\s/g,'').replace(/[^\d,.-]/g,'');if(!raw)return null;if(typeof value!=='number'){if(raw.includes(',')&&raw.includes('.'))raw=raw.lastIndexOf(',')>raw.lastIndexOf('.')?raw.replace(/\./g,'').replace(',','.'):raw.replace(/,/g,'');else if(raw.includes(','))raw=raw.replace(',','.');}const amount=Number(raw);return Number.isFinite(amount)&&amount>=0&&amount<=999999999999.99?Math.round(amount*100)/100:null;}
+    function slaRateAmountValue(value){if(value==null||txt(value)==='')return null;let raw=typeof value==='number'?String(value):String(value).trim().replace(/S\//gi,'').replace(/\s/g,'').replace(/[^\d,.-]/g,'');if(!raw)return null;if(typeof value!=='number'){if(raw.includes(',')&&raw.includes('.'))raw=raw.lastIndexOf(',')>raw.lastIndexOf('.')?raw.replace(/\./g,'').replace(',','.'):raw.replace(/,/g,'');else if(raw.includes(','))raw=raw.replace(',','.');}if((raw.split('.')[1]||'').length>9)return null;const amount=Number(raw);return Number.isFinite(amount)&&amount>=0&&amount<=999999999999.99?Number(amount.toFixed(9)):null;}
     function penaltyTotalAdjustmentValue(value){return value==null||txt(value)===''?null:liquidationAmountValue(value);}
     function renderLiquidationAmount(record){const amount=liquidationAmountValue(record.liquidationAmount),label='Monto de liquidación para '+periodLabel(record.period)+' '+record.pdv;return '<div class="liquidation-money-input"><span class="currency-prefix" aria-hidden="true">S/</span><input class="liquidation-amount-input" type="text" inputmode="decimal" maxlength="18" data-record-id="'+escapeHtml(record.id)+'" value="'+(amount===null?'':escapeHtml(fmtMoney(amount)))+'" placeholder="0.00" aria-label="'+escapeHtml(label)+'" title="Monto de liquidación en soles. Se muestra con dos decimales."></div>';}
     function renderPenaltyTotalAdjustment(record,totals){const amount=penaltyTotalAdjustmentValue(record.penaltyTotalAdjustment),label='Ajuste de penalidad total para '+periodLabel(record.period)+' '+record.pdv,metaLabel=onlyNonExempt?'Base de guías visibles':'Base aplicada',metaType=onlyNonExempt?' · bases aplicadas':(amount===null?' · suma base aplicada':' · ajustada');return '<div class="penalty-adjustment-money"><span class="currency-prefix" aria-hidden="true">S/</span><input class="penalty-adjustment-input" type="text" inputmode="decimal" maxlength="18" data-record-id="'+escapeHtml(record.id)+'" value="'+(amount===null?'':escapeHtml(fmtMoney(amount)))+'" placeholder="'+escapeHtml(fmtMoney(totals.originalTotal))+'" aria-label="'+escapeHtml(label)+'" title="Opcional. Si lo dejas vacío, se usa la suma de las bases aplicadas por guía."></div><span class="penalty-adjustment-meta">'+metaLabel+': S/ '+fmtMoney(totals.total)+metaType+'</span>';}
@@ -465,9 +468,9 @@
     function isSlaRateItem(item){const penalty=norm(item?.penalty);return penalty.includes('EXCEDE')&&penalty.includes('SLA');}
     function slaSubtypeKey(value){const amount=liquidationAmountValue(value);return amount===null?'0.00':amount.toFixed(2);}
     function slaPdvKey(value){return txt(value).toUpperCase();}
-    function configuredSlaRate(item){if(!isSlaRateItem(item))return null;const key=slaSubtypeKey(item?.cost),pdv=slaPdvKey(item?.pdv),value=state.slaRates?.[item.period]?.[pdv]?.[key];return value==null||txt(value)===''?null:liquidationAmountValue(value);}
+    function configuredSlaRate(item){if(!isSlaRateItem(item))return null;const key=slaSubtypeKey(item?.cost),pdv=slaPdvKey(item?.pdv),value=state.slaRates?.[item.period]?.[pdv]?.[key];return value==null||txt(value)===''?null:slaRateAmountValue(value);}
     function penaltyAmount(item){const rate=configuredSlaRate(item);return roundMoney(rate==null?(Number(item?.cost)||0):rate);}
-    function penaltyRateNote(item){if(!isSlaRateItem(item))return '';const rate=configuredSlaRate(item);return rate==null?'':`Monto redefinido S/ ${fmtMoney(rate)} por guía · monto fuente S/ ${fmtMoney(item.cost)}`;}
+    function penaltyRateNote(item){if(!isSlaRateItem(item))return '';const rate=configuredSlaRate(item);return rate==null?'':`Monto redefinido S/ ${fmtSlaRateNote(rate)} por guía · monto fuente S/ ${fmtMoney(item.cost)}`;}
     function sumMoney(items,amountForItem){return roundMoney(items.reduce((sum,item)=>sum+amountForItem(item),0));}
     function exemptionAmount(item){return roundMoney(penaltyAmount(item)*exemptionPercent(item)/100);}
     function balanceAmount(item){return penaltyAmount(item)-exemptionAmount(item);}
@@ -926,8 +929,8 @@
       const count=selectedRecordIds.size;$('recordSelectionCount').textContent=`${fmtCount(count)} ${count===1?'liquidación seleccionada':'liquidaciones seleccionadas'}`;$('assignGroupBtn').disabled=!appReady||count===0;$('clearRecordSelectionBtn').disabled=!appReady||count===0;
       const allSelected=visibleRecords.length>0&&visibleRecords.every(record=>selectedRecordIds.has(record.id));$('selectAllVisibleRecords').checked=allSelected;$('selectAllVisibleRecords').indeterminate=!allSelected&&visibleRecords.some(record=>selectedRecordIds.has(record.id));
     }
-    function slaRateMapValue(map,period,pdv,key){const value=map?.[period]?.[slaPdvKey(pdv)]?.[key];return value==null||txt(value)===''?null:liquidationAmountValue(value);}
-    function sameSlaRate(a,b){return a===b||(a!==null&&b!==null&&Math.abs(a-b)<0.000001);}
+    function slaRateMapValue(map,period,pdv,key){const value=map?.[period]?.[slaPdvKey(pdv)]?.[key];return value==null||txt(value)===''?null:slaRateAmountValue(value);}
+    function sameSlaRate(a,b){return a===b||(a!==null&&b!==null&&Math.abs(a-b)<0.0000000005);}
     function slaRateSubtypeRows(period,pdv){
       const pdvKey=slaPdvKey(pdv),remote=state.slaRateSubtypes?.[period]?.[pdvKey];if(Array.isArray(remote)&&remote.length)return remote;
       const grouped=new Map();for(const record of state.records||[]){if(record.period!==period||slaPdvKey(record.pdv)!==pdvKey||record.isSimulation)continue;for(const item of record.items||[]){if(!isSlaRateItem(item))continue;const key=slaSubtypeKey(item.cost),amount=Number(key)||0;grouped.set(key,{key,amount,count:(grouped.get(key)?.count||0)+1});}}
@@ -947,7 +950,7 @@
       else $('slaRateStatus').textContent=changed?'Hay montos redefinidos sin guardar.':`Los montos SLA de ${record.pdv} · ${periodLabel(record.period)} están guardados y compartidos.`;
       for(const input of $('slaRateBody').querySelectorAll('.sla-rate-input')){
         const key=input.dataset.slaSubtypeKey,row=rows.find(entry=>entry.key===key);if(!row)continue;
-        const rate=slaRateMapValue(state.slaRates,record.period,record.pdv,key),applied=rate===null?row.amount:rate,total=roundMoney(applied*row.count),cell=[...$('slaRateBody').querySelectorAll('[data-sla-rate-total]')].find(entry=>entry.dataset.slaRateTotal===key);
+        const rate=slaRateMapValue(state.slaRates,record.period,record.pdv,key),applied=rate===null?row.amount:rate,total=roundMoney(roundMoney(applied)*row.count),cell=[...$('slaRateBody').querySelectorAll('[data-sla-rate-total]')].find(entry=>entry.dataset.slaRateTotal===key);
         if(cell)cell.textContent='S/ '+fmtMoney(total);
       }
     }
@@ -955,7 +958,7 @@
       const record=currentRecord();if(!record){$('slaRatePanel').hidden=true;return;}
       $('slaRatePanel').hidden=false;$('slaRatePeriod').textContent=`${periodLabel(record.period)} · PDV ${record.pdv} · compartido con sus usuarios`;
       const canEdit=state.slaRatesSupported===true&&window.EXO_PENALIDADES_ROLE==='ADMINISTRADOR',rows=slaRateSubtypeRows(record.period,record.pdv);
-      $('slaRateBody').innerHTML=rows.length?rows.map(row=>{const rate=slaRateMapValue(state.slaRates,record.period,record.pdv,row.key),applied=rate===null?row.amount:rate,total=roundMoney(applied*row.count),disabledReason=!state.slaRatesSupported?'Ejecuta la migración SLA indicada arriba para habilitar edición.':window.EXO_PENALIDADES_ROLE!=='ADMINISTRADOR'?'Solo el rol ADMINISTRADOR puede editar este monto.':'';return `<tr><td><strong>S/ ${fmtMoney(row.amount)}</strong></td><td class="num">${fmtCount(row.count)}</td><td><div class="sla-rate-input-wrap"><span>S/</span><input class="sla-rate-input" type="text" inputmode="decimal" data-sla-subtype-key="${escapeHtml(row.key)}" value="${rate===null?'':escapeHtml(fmtMoney(rate))}" placeholder="Usar monto fuente" autocomplete="off" aria-label="Monto redefinido por guía para monto fuente S/ ${fmtMoney(row.amount)}" title="${escapeHtml(disabledReason)}" ${canEdit?'':'disabled'}></div></td><td class="num" data-sla-rate-total="${escapeHtml(row.key)}">S/ ${fmtMoney(total)}</td></tr>`;}).join(''):'<tr><td colspan="4" class="empty">No hay guías “Excede el SLA” con monto fuente registrado para este PDV y periodo.</td></tr>';
+      $('slaRateBody').innerHTML=rows.length?rows.map(row=>{const rate=slaRateMapValue(state.slaRates,record.period,record.pdv,row.key),applied=rate===null?row.amount:rate,total=roundMoney(roundMoney(applied)*row.count),disabledReason=!state.slaRatesSupported?'Ejecuta la migración SLA indicada arriba para habilitar edición.':window.EXO_PENALIDADES_ROLE!=='ADMINISTRADOR'?'Solo el rol ADMINISTRADOR puede editar este monto.':'Admite hasta nueve decimales; el cálculo final se redondea a dos decimales por guía.';return `<tr><td><strong>S/ ${fmtMoney(row.amount)}</strong></td><td class="num">${fmtCount(row.count)}</td><td><div class="sla-rate-input-wrap"><span>S/</span><input class="sla-rate-input" type="text" inputmode="decimal" data-sla-subtype-key="${escapeHtml(row.key)}" value="${rate===null?'':escapeHtml(fmtSlaRateInput(rate))}" placeholder="Usar monto fuente" autocomplete="off" aria-label="Monto redefinido por guía para monto fuente S/ ${fmtMoney(row.amount)}" title="${escapeHtml(disabledReason)}" ${canEdit?'':'disabled'}></div></td><td class="num" data-sla-rate-total="${escapeHtml(row.key)}">S/ ${fmtMoney(total)}</td></tr>`;}).join(''):'<tr><td colspan="4" class="empty">No hay guías “Excede el SLA” con monto fuente registrado para este PDV y periodo.</td></tr>';
       $('saveSlaRatesBtn').hidden=window.EXO_PENALIDADES_ROLE!=='ADMINISTRADOR';updateSlaRatePanelState();
     }
     function saveSlaRates(){
@@ -1248,10 +1251,10 @@
     $('breachMatrixBody').addEventListener('click',filterMatrixCell);$('slaMatrixBody').addEventListener('click',filterMatrixCell);
     $('filterSearch').addEventListener('input',renderDetailRows);
     $('clearMatrixGuideFilterBtn').addEventListener('click',()=>{matrixGuideSelection=null;renderDetailRows();});
-    $('slaRatePanel').addEventListener('focusin',e=>{if(!e.target.matches('.sla-rate-input'))return;const amount=liquidationAmountValue(e.target.value);e.target.value=amount===null?'':amount.toFixed(2);e.target.select();});
+    $('slaRatePanel').addEventListener('focusin',e=>{if(!e.target.matches('.sla-rate-input'))return;const amount=slaRateAmountValue(e.target.value);e.target.value=amount===null?'':fmtSlaRateInput(amount);e.target.select();});
     $('slaRatePanel').addEventListener('input',e=>{
       if(!e.target.matches('.sla-rate-input'))return;const record=currentRecord();if(!record||window.EXO_PENALIDADES_ROLE!=='ADMINISTRADOR'||state.slaRatesSupported!==true)return;
-      const raw=e.target.value.trim(),amount=raw===''?null:liquidationAmountValue(raw);if(raw&&amount===null){$('slaRateStatus').textContent='Ingresa un monto válido, mayor o igual a cero y con hasta dos decimales.';return;}
+      const raw=e.target.value.trim(),amount=raw===''?null:slaRateAmountValue(raw);if(raw&&amount===null){$('slaRateStatus').textContent='Ingresa un monto válido, mayor o igual a cero y con hasta nueve decimales.';return;}
       const pdv=slaPdvKey(record.pdv);state.slaRates=state.slaRates||{};state.slaRates[record.period]=state.slaRates[record.period]||{};state.slaRates[record.period][pdv]=state.slaRates[record.period][pdv]||{};state.slaRates[record.period][pdv][e.target.dataset.slaSubtypeKey]=amount;
       updateSlaRatePanelState();renderSummary();renderMetricsAndBreakdown();renderDetailRows();
     });

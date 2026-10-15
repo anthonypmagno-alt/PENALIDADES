@@ -961,6 +961,11 @@
       $('slaRateBody').innerHTML=rows.length?rows.map(row=>{const rate=slaRateMapValue(state.slaRates,record.period,record.pdv,row.key),applied=rate===null?row.amount:rate,total=roundMoney(applied*row.count),disabledReason=!state.slaRatesSupported?'Ejecuta la migración SLA indicada arriba para habilitar edición.':window.EXO_PENALIDADES_ROLE!=='ADMINISTRADOR'?'Solo el rol ADMINISTRADOR puede editar este monto.':'Admite hasta nueve decimales; el total se redondea a dos decimales después de multiplicar por las guías.';return `<tr><td><strong>S/ ${fmtMoney(row.amount)}</strong></td><td class="num">${fmtCount(row.count)}</td><td><div class="sla-rate-input-wrap"><span>S/</span><input class="sla-rate-input" type="text" inputmode="decimal" data-sla-subtype-key="${escapeHtml(row.key)}" value="${rate===null?'':escapeHtml(fmtSlaRateInput(rate))}" placeholder="Usar monto fuente" autocomplete="off" aria-label="Monto redefinido por guía para monto fuente S/ ${fmtMoney(row.amount)}" title="${escapeHtml(disabledReason)}" ${canEdit?'':'disabled'}></div></td><td class="num" data-sla-rate-total="${escapeHtml(row.key)}">S/ ${fmtMoney(total)}</td></tr>`;}).join(''):'<tr><td colspan="4" class="empty">No hay guías “Excede el SLA” con monto fuente registrado para este PDV y periodo.</td></tr>';
       $('saveSlaRatesBtn').hidden=window.EXO_PENALIDADES_ROLE!=='ADMINISTRADOR';updateSlaRatePanelState();
     }
+    function slaRateSaveErrorText(error){
+      const message=String(error?.message||error||'error sin detalle');
+      if(/Could not find the function.*penalidades_guardar_multiplicadores_sla/i.test(message))return `${message}. Verifica que publicaste index.html y penalidades.html de la versión actual y ejecutaste SUPABASE_SQL/supabase_penalidades_tarifas_sla.sql. Si el error enumera solo (p_pdv, p_periodo), esta pestaña está cargando el HTML anterior; vuelve a entrar con la versión 7.`;
+      return message;
+    }
     function saveSlaRates(){
       const record=currentRecord();if(!record||window.EXO_PENALIDADES_ROLE!=='ADMINISTRADOR'||state.slaRatesSupported!==true||!slaRateDraftChanged(record.period,record.pdv))return;
       const rates=slaRateSubtypeRows(record.period,record.pdv).map(row=>({monto_subtipo:row.amount,multiplicador:slaRateMapValue(state.slaRates,record.period,record.pdv,row.key)}));
@@ -970,7 +975,7 @@
         const refreshed=new Map((remote.records||[]).map(item=>[item.id,item]));
         for(const existing of state.records){const latest=refreshed.get(existing.id);if(latest){existing.summary=latest.summary||existing.summary;existing.status=latest.status||existing.status;existing.signatureRate=latest.signatureRate??existing.signatureRate;existing.liquidationAmount=latest.liquidationAmount??existing.liquidationAmount;existing.penaltyTotalAdjustment=latest.penaltyTotalAdjustment??existing.penaltyTotalAdjustment;}}
         renderSummary();renderMetricsAndBreakdown();renderDetailRows();renderSlaRatePanel();notify(`Montos SLA de ${record.pdv} · ${periodLabel(record.period)} guardados y aplicados.`);
-      }).withFailureHandler(error=>{slaRatesSaving=false;updateSlaRatePanelState();notify(`No se guardaron los montos SLA: ${error?.message||error||'error sin detalle'}. Los valores siguen en esta pestaña.`,true);}).saveSlaRates(record.period,record.pdv,rates);
+      }).withFailureHandler(error=>{slaRatesSaving=false;updateSlaRatePanelState();notify(`No se guardaron los montos SLA: ${slaRateSaveErrorText(error)}. Los valores siguen en esta pestaña.`,true);}).saveSlaRates(record.period,record.pdv,rates);
     }
     function aggregateRecordTotals(records){
       const totals=records.reduce((sum,record)=>{const current=recordTotals(record);sum.count+=current.count;sum.yes+=current.yes;sum.no+=current.no;sum.originalTotal+=current.originalTotal;sum.total+=current.total;sum.exempt+=current.exempt;sum.balance+=current.balance;sum.retentionAmount+=current.retentionAmount;if(current.liquidationAmount!==null){sum.liquidationAmount+=current.liquidationAmount;sum.amountCount++;}return sum;},{count:0,yes:0,no:0,originalTotal:0,total:0,exempt:0,balance:0,retentionAmount:0,liquidationAmount:0,amountCount:0});

@@ -88,7 +88,7 @@ CORRECCION DE DESTINO Y ULTIMO ESCANEO (13-10-2026)
 - Ejecuta una vez SUPABASE_SQL/supabase_penalidades_fecha_escaneo.sql. Es incremental y no elimina liquidaciones ni decisiones: agrega la fecha/hora, actualiza el guardado del detalle y la lectura paginada. También incluye un RPC pequeño para guardar destino, escaneo, firma, zona y SLA en lotes, sin reescribir todas las columnas de cada guía.
 - Después, vuelve a cargar Exportación de guía en Penalidades. La importación actualiza las liquidaciones existentes y sincroniza los campos recuperados; no borres ni recrees registros. Los valores históricos que no se guardaron se completan al volver a importar la exportación.
 - Al cargar el archivo, el aviso informa cuántas filas incluyen destino, escaneo, firma y fecha completos, además de cuántas penalidades se enlazaron.
-- El enlace de Penalidades del index.html usa la versión 20261015-retention-scope-fix-1 para actualizar la caché.
+- El enlace de Penalidades del index.html usa la versión 20261015-tarifas-sla-2 para actualizar la caché.
 
 RETENCION CALCULADA SOBRE EL SALDO (13-10-2026)
 - El porcentaje de retención se calcula sobre el saldo de la penalidad después de aplicar la exoneración.
@@ -107,7 +107,7 @@ OPTIMIZACION DE SINCRONIZACION (13-10-2026)
 - Las decisiones de exoneración, retención y motivo se envían directamente por sus IDs modificados. Este guardado no copia ni compara todas las guías cargadas en la pestaña. Los cambios de archivos fuente, grupos y liquidaciones siguen el guardado general.
 - Las solicitudes a Supabase tienen un límite de 60 segundos; si alguna falla, la pantalla muestra “Cambios sin guardar”, habilita Reintentar y detalla la fase/lote en el aviso y en el estado de almacenamiento.
 - El CSV de lints enviado el 13-10-2026 confirma que `public.penalidades_actualizar_decisiones(p_decisiones jsonb)` ya existe en Supabase; no vuelvas a ejecutar ese SQL.
-- El enlace de Penalidades del index.html usa la versión 20261015-retention-scope-fix-1 para actualizar la caché.
+- El enlace de Penalidades del index.html usa la versión 20261015-tarifas-sla-2 para actualizar la caché.
 - Los cambios de Exportación/Zonificación se envían por un RPC específico en lotes de hasta 1,000 filas; los cambios de penalidad siguen su ruta de guardado actual. La pantalla muestra la fase y el avance; valida el conteo recibido y conserva los cambios como pendientes si Supabase devuelve un error o menos filas.
 
 AJUSTE DE PENALIDAD TOTAL Y COPIA DE MOTIVO (13-10-2026)
@@ -132,18 +132,34 @@ CORRECCION DEL GUARDADO DE EXPORTACION (15-10-2026)
 - Distrito, provincia, departamento, tipo de escaneo, estado de firma, fecha/hora del escaneo, tipo de zona y SLA se almacenan juntos en `public.penalidades_guias`. Zona y SLA ya estaban contemplados en el guardado previo; los campos de exportación agregados después dependen de que el SQL de Supabase y el HTML publiquen la misma versión. Si se usa HTML nuevo con funciones SQL anteriores, pueden verse los datos en pantalla sin que queden guardados.
 - La nueva versión envía estos cambios por `penalidades_actualizar_datos_exportacion`, en lotes de hasta 1,000 IDs, y comprueba cuántas filas actualizó Supabase. El indicador de la tabla detalle ahora también muestra la fase y el avance; cada solicitud tiene un límite de 60 segundos y el error indica el lote que falló.
 - Para actualizar: reemplaza `index.html` y `penalidades.html` con los de este ZIP; en el mismo proyecto Supabase ejecuta `SUPABASE_SQL/supabase_penalidades_fecha_escaneo.sql` si aún no se ejecutó esta versión de la migración. Es una actualización incremental: no borra liquidaciones, guías ni decisiones.
-- Tras publicar, entra por el inicio de sesión del portal y confirma que Penalidades abra con `v=20261015-retention-scope-fix-1`. Luego carga Exportación de guía, pulsa “Actualizar desde archivos” y finalmente “Guardar cambios”. Al recargar, destino, escaneo, firma y fecha deben seguir visibles.
+- Tras publicar, entra por el inicio de sesión del portal y confirma que Penalidades abra con `v=20261015-tarifas-sla-2`. Luego carga Exportación de guía, pulsa “Actualizar desde archivos” y finalmente “Guardar cambios”. Al recargar, destino, escaneo, firma y fecha deben seguir visibles.
 
 
 CORRECCION DEL COMPARADOR DE GUARDADO (15-10-2026)
 - El ZIP anterior comparaba también metadatos locales del Excel como `sourceRow`, `dateISO`, `costRaw` y `sourceZone`, además de indicadores derivados y el orden de las propiedades JSON. Esos valores no representan cambios persistentes. Al importar Exportación, el comparador podía clasificar miles de guías como cambios de datos fuente y volver a enviarlas completas; por eso el lote específico de Exportación no se llegaba a usar.
 - La corrección compara una lista explícita de campos persistidos con valores JSON normalizados, ignora metadatos transitorios y envía destino, escaneo, firma, zona y SLA por `penalidades_actualizar_datos_exportacion`. Si una fila no cambió en columnas guardadas, se omite.
 - No cambia tablas ni requiere un SQL nuevo si ya ejecutaste `SUPABASE_SQL/supabase_penalidades_fecha_escaneo.sql` del ZIP anterior. Mantén el SQL disponible por si aún no se instaló ese RPC; volver a ejecutar esa migración es incremental y no elimina datos.
-- Reemplaza en el repositorio `index.html` y `penalidades.html` de este ZIP y publica. El enlace de Penalidades debe mostrar `v=20261015-retention-scope-fix-1`. Después importa Exportación, pulsa “Actualizar desde archivos” y guarda. El avance indica la fase y lote actual; si falla, comparte el texto de error que aparezca.
+- Reemplaza en el repositorio `index.html` y `penalidades.html` de este ZIP y publica. El enlace de Penalidades debe mostrar `v=20261015-tarifas-sla-2`. Después importa Exportación, pulsa “Actualizar desde archivos” y guarda. El avance indica la fase y lote actual; si falla, comparte el texto de error que aparezca.
 
 
 CORRECCION DEL ERROR AL GUARDAR (15-10-2026)
 - Se corrigió el error `retentionPercentValue is not defined`: el puente de guardado de Supabase corre fuera del ámbito de la lógica de pantalla, así que ahora tiene su propia normalización del porcentaje de retención.
 - La falla ocurría al preparar guías modificadas después de importar archivos, antes de enviar el lote a Supabase.
 - No requiere ejecutar SQL ni modifica los datos existentes.
-- Reemplaza `index.html` y `penalidades.html` por los incluidos en este ZIP y publica. El enlace actualizado usa `v=20261015-retention-scope-fix-1`; vuelve a cargar los archivos fuente y pulsa Guardar cambios.
+- Reemplaza `index.html` y `penalidades.html` por los incluidos en este ZIP y publica. El enlace actualizado usa `v=20261015-tarifas-sla-2`; vuelve a cargar los archivos fuente y pulsa Guardar cambios.
+
+
+TARIFA POR GUIA PARA EXCEDE EL SLA (15-10-2026)
+- En el detalle de una liquidación, el administrador puede configurar una tarifa para el periodo seleccionado: una para los subtipos SLA mayores de 120 h y hasta 240 h, y otra para los mayores de 240 h.
+- La tarifa reemplaza el costo del Excel por cada guía del rango. Por ejemplo, una tarifa de S/ 1.74 con 10 guías calcula S/ 17.40. Se aplica a la penalidad base, exoneración, saldo, retención y resúmenes; también aparece en el detalle y en el Excel descargado.
+- Si el campo se deja vacío, cada guía conserva el costo de la columna actual del Excel. Las tarifas se comparten entre usuarios y se guardan por periodo; solo ADMINISTRADOR puede cambiarlas.
+- Para habilitar la lectura y el guardado compartido, ejecuta una sola vez `SUPABASE_SQL/supabase_penalidades_tarifas_sla.sql` en el mismo proyecto Supabase. La migración es incremental y no elimina liquidaciones ni guías.
+- Tras ejecutar el SQL, reemplaza el contenido del repositorio por el de este ZIP y publica. Entra al portal, selecciona un registro del periodo, ingresa los importes y pulsa “Guardar tarifas del periodo”. El enlace de Penalidades usa `v=20261015-tarifas-sla-2`.
+
+
+TARIFAS DE PENALIDAD POR EXCEDER EL SLA (15-10-2026)
+- En el detalle se muestran dos tarifas por guía para cada periodo: más de 120 h y hasta 240 h; más de 240 h. Solo se aplican a filas cuya penalización sea “Excede el SLA” y el rango se identifica con la columna SLA del Excel de penalidades.
+- La tarifa configurada sustituye el costo del Excel para cada guía de ese rango. Si se deja vacía, se conserva el costo del Excel. Exoneración, saldo y retención se recalculan usando la base aplicada. El Excel de detalle también exporta el monto inicial aplicado.
+- Las tarifas se guardan por periodo, se comparten con todos los usuarios y solo el rol ADMINISTRADOR puede editarlas. La pantalla muestra el conteo y el importe estimado para el PDV abierto.
+- Ejecuta una vez `SUPABASE_SQL/supabase_penalidades_tarifas_sla.sql` en el mismo proyecto Supabase. La migración agrega la tabla de tarifas, los RPC de lectura/guardado y adapta el resumen inicial para usar los importes calculados. No borra registros ni requiere volver a cargar las liquidaciones.
+- Después de publicar el ZIP y ejecutar el SQL, abre el módulo desde el portal. Entra a una liquidación del periodo que vas a configurar, completa una o ambas tarifas y pulsa “Guardar tarifas del periodo”. El enlace de Penalidades usa `v=20261015-tarifas-sla-2`.

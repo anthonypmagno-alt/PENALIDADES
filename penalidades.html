@@ -1279,6 +1279,9 @@
     const SUPABASE_REQUEST_TIMEOUT_MS = 60000;
     let exoV2Activated = false;
     let exoV2SimulationSupport = false;
+    // appLogic se ejecuta en un IIFE separado; el bridge de Supabase no puede
+    // acceder a sus helpers. Mantener aquí la normalización usada por el RPC.
+    const exoRetentionPercentValue=value=>value==null||String(value).trim()===''?0:(Number.isFinite(Number(value))?Math.round(Math.max(0,Math.min(100,Number(value)))*100)/100:0);
 
     function fetchSupabaseWithTimeout(input, init={}){
       const upstreamSignal=init?.signal;
@@ -1399,7 +1402,7 @@
             for(const record of (baseline.records||[]))for(const item of(record.items||[])){const id=dbItemId(record,item),comparable=persistedItem({...item,id});baseItems.set(id,itemSignature({...item,id}));baseItemValues.set(id,comparable);}
             const decisionFields=new Set(['exemptionPercent','exonerated','retentionPercent','reason','modifiedAt']);
             const nextItems=new Map(), changedByRecord=[], decisionOnlyChanges=[],exportDataChanges=[];
-            const decisionPayload=item=>({id:item.id,porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:retentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||''});
+            const decisionPayload=item=>({id:item.id,porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:exoRetentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||''});
             const exportFields=new Set(['district','province','department','scanType','signature','scanTime','zoneType','zoneName','slaDays','zoneMatched']);
             for(const record of(snapshot.records||[])){
               const changed=[];
@@ -1418,7 +1421,7 @@
                   if(changedKeys.some(key=>decisionFields.has(key)))decisionOnlyChanges.push(decisionPayload({...item,id}));
                   continue;
                 }
-                changed.push({id,tracking:item.tracking||'',tracking_key:keyNorm(item.tracking),pdv_key:keyNorm(item.pdv||record.pdv),penalizacion:item.penalty||'',brecha:item.breach||'',sla:item.sla||'',brecha_liquidacion:item.liquidationBreach||'',sla_liquidacion:item.liquidationSla||'',costo:Number(item.cost)||0,fecha:item.dateRaw||'',motivo_origen:item.motive||'',observaciones:item.observations||'',distrito:item.district||'',provincia:item.province||'',departamento:item.department||'',tipo_operacion_reciente:item.latestOperation||'',operacion_brecha:item.breachOperation||'',brecha_horas:item.breachWaitHours||'',brecha_ultima_actualizacion:item.breachLastUpdate||'',tipo_escaneo_reciente:item.scanType||'',estatus_firma:item.signature||'',fecha_hora_ultimo_escaneo:item.scanTime||'',tipo_zona:item.zoneType||'',zona:item.zoneName||'',sla_asignado_dias:String(item.slaDays??''),coincidencia_zona:!!item.zoneMatched,origen_archivo:item.sourceFile||'',porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:retentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||'',zona_manual:item.manualZone||null});
+                changed.push({id,tracking:item.tracking||'',tracking_key:keyNorm(item.tracking),pdv_key:keyNorm(item.pdv||record.pdv),penalizacion:item.penalty||'',brecha:item.breach||'',sla:item.sla||'',brecha_liquidacion:item.liquidationBreach||'',sla_liquidacion:item.liquidationSla||'',costo:Number(item.cost)||0,fecha:item.dateRaw||'',motivo_origen:item.motive||'',observaciones:item.observations||'',distrito:item.district||'',provincia:item.province||'',departamento:item.department||'',tipo_operacion_reciente:item.latestOperation||'',operacion_brecha:item.breachOperation||'',brecha_horas:item.breachWaitHours||'',brecha_ultima_actualizacion:item.breachLastUpdate||'',tipo_escaneo_reciente:item.scanType||'',estatus_firma:item.signature||'',fecha_hora_ultimo_escaneo:item.scanTime||'',tipo_zona:item.zoneType||'',zona:item.zoneName||'',sla_asignado_dias:String(item.slaDays??''),coincidencia_zona:!!item.zoneMatched,origen_archivo:item.sourceFile||'',porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:exoRetentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||'',zona_manual:item.manualZone||null});
               }
               if(changed.length)changedByRecord.push({record,changed});
             }

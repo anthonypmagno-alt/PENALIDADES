@@ -1,0 +1,52 @@
+CONFIGURAR POLITICAS DE IMAGENES EN SUPABASE
+
+El SQL de la migracion crea el bucket privado, la tabla de metadatos y las funciones de seguridad. No modifica storage.objects porque Supabase puede negar cambios de politicas desde el SQL Editor con el error 42501.
+
+En Supabase Dashboard:
+1. Abre Storage > Policies.
+2. En la tabla OBJECTS, pulsa Add Policies.
+3. Crea estas tres politicas. En las tres, el rol destino es authenticated.
+4. Conserva privado el bucket v16-gestion-v2-resumen.
+
+POLITICA 1: v16_gestion_resumen_storage_select
+Operacion: SELECT
+Roles destino: authenticated
+USING expression:
+
+bucket_id = 'v16-gestion-v2-resumen'
+and (
+  (
+    split_part(name, '/', 1) = auth.uid()::text
+    and public.v16_gestion_v2_rol_imagenes_autorizado()
+  )
+  or exists (
+    select 1
+    from public.v16_gestion_resumen_imagenes i
+    where i.object_path = name
+      and public.v16_gestion_v2_alcance_imagenes(i.pdv, i.area, i.region)
+  )
+)
+
+POLITICA 2: v16_gestion_resumen_storage_insert
+Operacion: INSERT
+Roles destino: authenticated
+WITH CHECK expression:
+
+bucket_id = 'v16-gestion-v2-resumen'
+and split_part(name, '/', 1) = auth.uid()::text
+and public.v16_gestion_v2_rol_imagenes_autorizado()
+
+POLITICA 3: v16_gestion_resumen_storage_delete
+Operacion: DELETE
+Roles destino: authenticated
+USING expression:
+
+bucket_id = 'v16-gestion-v2-resumen'
+and split_part(name, '/', 1) = auth.uid()::text
+and not exists (
+  select 1
+  from public.v16_gestion_resumen_imagenes i
+  where i.object_path = name
+)
+
+La politica SELECT incluye la carpeta propia del usuario para que la carga inicial pueda completar su respuesta antes de insertar los metadatos; la otra rama permite ver imagenes solo para PDV autorizados. No agregues politicas abiertas a anon ni acceso publico.

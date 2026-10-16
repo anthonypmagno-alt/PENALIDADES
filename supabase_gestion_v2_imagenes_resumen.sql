@@ -107,38 +107,8 @@ create policy v16_gestion_resumen_imagenes_insert
     and public.v16_gestion_v2_alcance_imagenes(pdv,area,region)
   );
 
-alter table storage.objects enable row level security;
-drop policy if exists v16_gestion_resumen_storage_select on storage.objects;
-create policy v16_gestion_resumen_storage_select
-  on storage.objects for select to authenticated
-  using (
-    bucket_id='v16-gestion-v2-resumen'
-    and exists (
-      select 1 from public.v16_gestion_resumen_imagenes i
-      where i.object_path=name
-        and public.v16_gestion_v2_alcance_imagenes(i.pdv,i.area,i.region)
-    )
-  );
-
-drop policy if exists v16_gestion_resumen_storage_insert on storage.objects;
-create policy v16_gestion_resumen_storage_insert
-  on storage.objects for insert to authenticated
-  with check (
-    bucket_id='v16-gestion-v2-resumen'
-    and split_part(name,'/',1)=auth.uid()::text
-    and public.v16_gestion_v2_rol_imagenes_autorizado()
-  );
-
-drop policy if exists v16_gestion_resumen_storage_delete on storage.objects;
-create policy v16_gestion_resumen_storage_delete
-  on storage.objects for delete to authenticated
-  using (
-    bucket_id='v16-gestion-v2-resumen'
-    and split_part(name,'/',1)=auth.uid()::text
-    and (
-      not exists (select 1 from public.v16_gestion_resumen_imagenes i where i.object_path=name)
-    )
-  );
+-- Las políticas de almacenamiento se configuran desde el Dashboard;
+-- consulta las expresiones incluidas en POLITICAS_STORAGE_IMAGENES.txt.
 
 revoke all on function public.v16_gestion_v2_rol_imagenes_autorizado() from public,anon,authenticated;
 revoke all on function public.v16_gestion_v2_alcance_imagenes(text,text,text) from public,anon,authenticated;

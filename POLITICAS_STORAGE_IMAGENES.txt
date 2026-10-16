@@ -50,3 +50,5 @@ and not exists (
 )
 
 La politica SELECT incluye la carpeta propia del usuario para que la carga inicial pueda completar su respuesta antes de insertar los metadatos; la otra rama permite ver imagenes solo para PDV autorizados. No agregues politicas abiertas a anon ni acceso publico.
+
+La politica DELETE permite eliminar el archivo despues de que la app retire primero su fila de metadatos. Conserva su condicion de carpeta propia y de no existir metadatos; no la reemplaces por una politica de borrado abierta. La app solo ofrece el boton a la cuenta que subio la imagen.

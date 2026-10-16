@@ -90,7 +90,7 @@ $$;
 
 alter table public.v16_gestion_resumen_imagenes enable row level security;
 revoke all on table public.v16_gestion_resumen_imagenes from public,anon,authenticated;
-grant select,insert on table public.v16_gestion_resumen_imagenes to authenticated;
+grant select,insert,delete on table public.v16_gestion_resumen_imagenes to authenticated;
 
 drop policy if exists v16_gestion_resumen_imagenes_select on public.v16_gestion_resumen_imagenes;
 create policy v16_gestion_resumen_imagenes_select
@@ -103,6 +103,15 @@ create policy v16_gestion_resumen_imagenes_insert
   with check (
     subido_por=auth.uid()
     and object_path like auth.uid()::text||'/%'
+    and public.v16_gestion_v2_rol_imagenes_autorizado()
+    and public.v16_gestion_v2_alcance_imagenes(pdv,area,region)
+  );
+
+drop policy if exists v16_gestion_resumen_imagenes_delete on public.v16_gestion_resumen_imagenes;
+create policy v16_gestion_resumen_imagenes_delete
+  on public.v16_gestion_resumen_imagenes for delete to authenticated
+  using (
+    subido_por=auth.uid()
     and public.v16_gestion_v2_rol_imagenes_autorizado()
     and public.v16_gestion_v2_alcance_imagenes(pdv,area,region)
   );

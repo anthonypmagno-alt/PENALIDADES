@@ -182,9 +182,14 @@ GESTIÓN DE GUÍAS V2 · IMÁGENES Y RANGOS DE COLA LARGA (15-10-2026)
 - Para activar el almacenamiento de imágenes, ejecuta una sola vez `supabase_gestion_v2_imagenes_resumen.sql` en el editor SQL del mismo proyecto Supabase de Gestión de Guías. El script crea el bucket privado y la tabla de metadatos con acceso por rol y asignación del perfil.
 - Las políticas de `storage.objects` se configuran desde Storage > Policies en el Dashboard, no desde el SQL Editor. Sigue los nombres y expresiones de `POLITICAS_STORAGE_IMAGENES.txt`; mantén el bucket privado.
 - La antigüedad se calcula con la hora actual menos `Tiempo de entrada` de Exportación de guías (columna B; también reconoce el encabezado `Tiempo de entrada 录入时间`). Los casos tipo 120/168 H entran al primer rango al alcanzar el umbral indicado por su tipo; desde 600 horas (25 días) pasan al rango `≥600 H`. El resumen se recalcula cada minuto. Si no hay una fecha válida, el caso no se clasifica en Cola Larga.
-- Publica juntos `gestion-v2.html`, `bridge.js`, `process-worker.js`, `index.html`, `xlsx-resumen.js` y el nuevo SQL. El enlace V2 incluye el identificador `20261016-comentario-encargado-grupos-1` para actualizar caché.
+- Publica juntos `gestion-v2.html`, `bridge.js`, `process-worker.js`, `index.html`, `xlsx-resumen.js` y el nuevo SQL. El enlace V2 incluye el identificador `20261016-eliminar-imagenes-1` para actualizar caché.
 
 
 AGRUPACIÓN DEL DETALLE POR COMENTARIO ENCARGADO (16-10-2026)
 - Al seleccionar una celda del resumen, el detalle se agrupa por el texto de Comentario encargado. Cada grupo empieza contraído y muestra el recuento de guías únicas; puede expandirse individualmente o con los controles Expandir todos y Contraer todos.
 - El subresumen respeta la celda seleccionada y los filtros activos. Al limpiar la selección del resumen, el detalle vuelve a mostrarse en filas individuales.
+
+ELIMINAR IMÁGENES DEL RESUMEN (16-10-2026)
+- En el resumen, pulsa el botón de imágenes del PDV y luego `Eliminar imagen` debajo de la imagen que quieras quitar. Solo aparece para las imágenes que subió el usuario con su cuenta.
+- Para activar el permiso, ejecuta una vez `supabase_gestion_v2_imagenes_eliminar.sql` en SQL Editor del mismo proyecto. Solo modifica la tabla pública de metadatos; no toca `storage.objects` ni requiere cambiar las políticas existentes del bucket.
+- La eliminación quita el registro y el archivo del bucket privado. Si falla la eliminación del archivo, la app restaura la referencia para evitar dejar la imagen listada como borrada.

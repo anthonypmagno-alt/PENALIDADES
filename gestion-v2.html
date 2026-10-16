@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261016-comentario-encargado-grupos-1"></script>
+<script src="./bridge.js?v=20261016-eliminar-imagenes-1"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -192,6 +192,10 @@
 .summary-image-item img{display:block;width:100%;height:min(58vh,520px);object-fit:contain;background:#fff;border-radius:6px;cursor:zoom-in}
 .summary-image-item a{color:#1d4ed8;font-size:12px;font-weight:700;overflow-wrap:anywhere}
 .summary-image-name{font-size:12px;color:#334155;margin:8px 0;overflow-wrap:anywhere}
+.summary-image-delete{display:block;margin-top:8px;border:1px solid #fecaca;border-radius:7px;background:#fff1f2;color:#b91c1c;padding:7px 10px;font-size:11px;font-weight:800;cursor:pointer}
+.summary-image-delete:hover{background:#ffe4e6}
+.summary-image-delete:disabled{opacity:.5;cursor:not-allowed}
+.summary-image-delete-hint{margin:7px 0 12px;color:#64748b;font-size:11px}
 @media(max-width:560px){.summary-image-modal{width:96vw;padding:14px}.summary-image-grid{grid-template-columns:1fr}}
 </style>
 <style>
@@ -332,7 +336,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
   <div id="toast" class="toast"></div>
   <div id="qrModal" class="modal" onclick="if(event.target===this)cerrarQR()"><div class="modal-card"><h3>CÓDIGO QR</h3><div id="qr"></div><div id="qrNumero" class="guide" style="margin-top:12px"></div><p id="qrDistrito" class="qr-district-label" hidden=""></p><button class="secondary" onclick="cerrarQR()">Cerrar</button></div></div>
   <div id="commentModal" class="modal" onclick="if(event.target===this)cerrarComentario()"><div class="modal-card modal-comment"><h3 id="commentTitle">COMENTARIO DEL CASO</h3><textarea id="commentText" maxlength="2000" placeholder="Escriba un comentario sobre los casos del PDV..."></textarea><div id="commentMeta" class="comment-meta"></div><div class="modal-actions"><button class="secondary" onclick="cerrarComentario()">Cancelar</button><button id="btnSaveComment" class="small" onclick="guardarComentario()">Guardar comentario</button></div></div></div>
-  <input id="resumenImagenInput" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden onchange="procesarSeleccionImagenResumen(this)"><div id="imagenesResumenModal" class="modal" onclick="if(event.target===this)cerrarVistaImagenesResumen()"><div class="modal-card summary-image-modal"><div class="summary-image-head"><h3 id="imagenesResumenTitulo">Imágenes del PDV</h3><button type="button" class="secondary" onclick="cerrarVistaImagenesResumen()">Cerrar</button></div><div id="imagenesResumenContenido"></div></div></div><div id="bulkModal" class="modal" onclick="if(event.target===this)cerrarGestionMasiva()"><div class="modal-card modal-bulk"><h3>GESTIÓN MASIVA</h3><div id="bulkModalCount" class="bulk-note"></div><div class="bulk-form"><label>COMENTARIO PARA TODAS LAS GUÍAS</label><textarea id="bulkComment" maxlength="2000" placeholder="Ingrese el comentario que se registrará en todas las guías seleccionadas..."></textarea><label>CIERRE DEL CASO</label><select id="bulkCierre"><option value="">Seleccione una opción</option><option value="SI">SI — Finalizar casos</option><option value="NO">NO — Mantener en proceso</option></select><label>NOTIFICACIÓN AL PDV</label><select id="bulkNotificacion"><option value="">Seleccione una opción</option><option value="SI">SI — Mostrar el comentario al PDV</option><option value="NO">NO — Mantener el comentario oculto</option></select></div><div class="modal-actions" style="margin-top:18px"><button class="secondary" onclick="cerrarGestionMasiva()">Cancelar</button><button id="btnSaveBulk" class="small" onclick="guardarGestionMasiva()">Aplicar a seleccionadas</button></div></div></div>
+  <input id="resumenImagenInput" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden onchange="procesarSeleccionImagenResumen(this)"><div id="imagenesResumenModal" class="modal" onclick="if(event.target===this)cerrarVistaImagenesResumen()"><div class="modal-card summary-image-modal"><div class="summary-image-head"><h3 id="imagenesResumenTitulo">Imágenes del PDV</h3><button type="button" class="secondary" onclick="cerrarVistaImagenesResumen()">Cerrar</button></div><p class="summary-image-delete-hint">La opción para eliminar aparece en las imágenes que subiste con tu usuario.</p><div id="imagenesResumenContenido"></div></div></div><div id="bulkModal" class="modal" onclick="if(event.target===this)cerrarGestionMasiva()"><div class="modal-card modal-bulk"><h3>GESTIÓN MASIVA</h3><div id="bulkModalCount" class="bulk-note"></div><div class="bulk-form"><label>COMENTARIO PARA TODAS LAS GUÍAS</label><textarea id="bulkComment" maxlength="2000" placeholder="Ingrese el comentario que se registrará en todas las guías seleccionadas..."></textarea><label>CIERRE DEL CASO</label><select id="bulkCierre"><option value="">Seleccione una opción</option><option value="SI">SI — Finalizar casos</option><option value="NO">NO — Mantener en proceso</option></select><label>NOTIFICACIÓN AL PDV</label><select id="bulkNotificacion"><option value="">Seleccione una opción</option><option value="SI">SI — Mostrar el comentario al PDV</option><option value="NO">NO — Mantener el comentario oculto</option></select></div><div class="modal-actions" style="margin-top:18px"><button class="secondary" onclick="cerrarGestionMasiva()">Cancelar</button><button id="btnSaveBulk" class="small" onclick="guardarGestionMasiva()">Aplicar a seleccionadas</button></div></div></div>
 
 <script>
   const APP_URL = new URL('./gestion-v2.html',location.href).href;
@@ -1622,6 +1626,17 @@ function procesarSeleccionImagenResumen(input){
  mostrarLoading(true,'Guardando imágenes del PDV…');
  google.script.run.withSuccessHandler(r=>{mostrarLoading(false);input.value='';if(!r?.ok){toast(r?.mensaje||'No se pudieron guardar las imágenes.',false);cargarImagenesResumen();return;}toast((r.cantidad||archivos.length)+' imagen'+((r.cantidad||archivos.length)===1?'':'es')+' guardada(s) para '+pdv+'.',true);cargarImagenesResumen();}).withFailureHandler(e=>{mostrarLoading(false);input.value='';toast(errorTexto(e),false);cargarImagenesResumen();}).guardarImagenesResumen(token,{pdv,area,region,files:archivos});
 }
+async function eliminarImagenResumen(imagen,pdv){
+ if(!imagen?.id||!imagen.puede_eliminar)return;
+ const nombre=imagen.nombre_original||'esta imagen';
+ if(!confirm('¿Eliminar permanentemente “'+nombre+'” del resumen de '+pdv+'?'))return;
+ mostrarLoading(true,'Eliminando imagen…');
+ google.script.run.withSuccessHandler(r=>{
+  mostrarLoading(false);
+  if(!r?.ok){toast(r?.mensaje||'No se pudo eliminar la imagen.',false);return;}
+  resumenImagenesV2=resumenImagenesV2.filter(x=>String(x.id)!==String(imagen.id));renderResumen();toast('Imagen eliminada de '+pdv+'.',true);abrirVistaImagenesResumen(pdv);
+ }).withFailureHandler(e=>{mostrarLoading(false);toast(errorTexto(e),false);}).eliminarImagenResumen(token,{id:imagen.id});
+}
 function cerrarVistaImagenesResumen(){document.getElementById('imagenesResumenModal').style.display='none';}
 function abrirVistaImagenesResumen(pdv){
  const modal=document.getElementById('imagenesResumenModal'),contenido=document.getElementById('imagenesResumenContenido');
@@ -1631,8 +1646,8 @@ function abrirVistaImagenesResumen(pdv){
   const imgs=Array.isArray(r.imagenes)?r.imagenes:[];resumenImagenesV2=resumenImagenesV2.filter(x=>normalizarLocal(x.pdv)!==normalizarLocal(pdv)).concat(imgs);renderResumen();contenido.replaceChildren();
   if(!imgs.length){contenido.textContent='Este PDV no tiene imágenes guardadas.';return;}
   const grid=document.createElement('div');grid.className='summary-image-grid';
-  imgs.forEach(x=>{const card=document.createElement('div');card.className='summary-image-item';const nombre=document.createElement('div');nombre.className='summary-image-name';nombre.textContent=x.nombre_original||'Imagen';const link=document.createElement('a');link.href=x.url;link.target='_blank';link.rel='noopener noreferrer';link.title='Abrir imagen en tamaño completo';const img=document.createElement('img');img.src=x.url;img.alt=x.nombre_original||('Imagen de '+pdv);img.loading='lazy';link.append(img);card.append(nombre,link);grid.append(card);});contenido.append(grid);
+  imgs.forEach(x=>{const card=document.createElement('div');card.className='summary-image-item';const nombre=document.createElement('div');nombre.className='summary-image-name';nombre.textContent=x.nombre_original||'Imagen';const link=document.createElement('a');link.href=x.url;link.target='_blank';link.rel='noopener noreferrer';link.title='Abrir imagen en tamaño completo';const img=document.createElement('img');img.src=x.url;img.alt=x.nombre_original||('Imagen de '+pdv);img.loading='lazy';link.append(img);card.append(nombre,link);if(x.puede_eliminar){const borrar=document.createElement('button');borrar.type='button';borrar.className='summary-image-delete';borrar.textContent='🗑 Eliminar imagen';borrar.addEventListener('click',()=>eliminarImagenResumen(x,pdv));card.append(borrar)}grid.append(card);});contenido.append(grid);
  }).withFailureHandler(e=>{contenido.textContent='No se pudieron cargar las imágenes: '+errorTexto(e);}).obtenerImagenesResumen(token,{pdv});
 }
 setInterval(actualizarClasificacionV2,60000);
-</script><script src="./brecha-costos.js?v=2"></script><script src="./xlsx-resumen.js?v=20261016-comentario-encargado-grupos-1"></script></body></html>
+</script><script src="./brecha-costos.js?v=2"></script><script src="./xlsx-resumen.js?v=20261016-eliminar-imagenes-1"></script></body></html>

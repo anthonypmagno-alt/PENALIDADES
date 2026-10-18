@@ -13,6 +13,12 @@
   let cargaEnCurso = null;
   let cambiosPendientes = false;
   let consultaSeleccionada = [];
+  let estadisticasRegistros = [];
+  const filtrosEstadisticas = { pdv: new Set(), operacion: new Set(), problema: new Set(), interrupcion: new Set() };
+  const simulacionSeleccionada = new Set();
+  const paginasSimulacion = new Map();
+  const SIMULACION_PAGINA = 100;
+  let firmaOpcionesEstadisticas = '';
 
   const normalizar = value => String(value == null ? '' : value)
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -233,6 +239,53 @@
       .brecha-pdv-subtable th{background:#f1f5f9}
       .brecha-pdv-subtable .brecha-num{text-align:right;white-space:nowrap}
       .brecha-pdv-total{font-weight:800;color:#153e67}
+      .brecha-stats-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:10px;margin:12px 0}
+      .brecha-stats-filter{position:relative;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
+      .brecha-stats-filter>summary{cursor:pointer;list-style:none;padding:9px 11px;display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:700;color:#1e3a5f}
+      .brecha-stats-filter>summary::-webkit-details-marker{display:none}
+      .brecha-stats-filter>summary span{color:#64748b;font-weight:600;white-space:nowrap}
+      .brecha-stats-filter-menu{position:absolute;z-index:5;top:calc(100% + 3px);left:0;right:0;max-height:320px;overflow:auto;padding:9px;background:white;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 8px 22px #0f172a24}
+      .brecha-stats-filter-actions{display:flex;gap:8px;margin-bottom:8px}
+      .brecha-stats-filter-actions button,.brecha-sim-actions button,.brecha-sim-pager button{border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#1e3a5f;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer}
+      .brecha-stats-filter-search,.brecha-sim-search{box-sizing:border-box;width:100%;margin:0 0 7px;padding:7px 8px;border:1px solid #cbd5e1;border-radius:6px}
+      .brecha-stats-filter-options{display:grid;gap:3px;max-height:220px;overflow:auto}
+      .brecha-stats-filter-options label{display:flex;align-items:flex-start;gap:6px;padding:4px;border-radius:4px;font-size:11px;line-height:1.35;cursor:pointer}
+      .brecha-stats-filter-options label:hover{background:#f1f5f9}
+      .brecha-stats-filter-options input{margin:1px 0 0;flex:0 0 auto}
+      .brecha-stats-filter-empty{color:#64748b;padding:8px;font-size:11px}
+      .brecha-stats-reset{margin:0 0 10px;border:1px solid #cbd5e1;border-radius:7px;padding:7px 10px;background:#f8fafc;color:#334155;font-weight:700;cursor:pointer}
+      .brecha-stats-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin:10px 0 14px}
+      .brecha-stats-chart{min-width:0;border:1px solid #e2e8f0;border-radius:9px;background:#fff;padding:12px}
+      .brecha-stats-chart h4{margin:0 0 10px;color:#1e3a5f;font-size:12px}
+      .brecha-stats-bars{display:grid;gap:8px}
+      .brecha-stats-bar{display:grid;grid-template-columns:minmax(85px,42%) minmax(50px,1fr) auto;align-items:center;gap:7px;font-size:10px}
+      .brecha-stats-bar-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#334155}
+      .brecha-stats-bar-track{height:10px;border-radius:99px;background:#f1f5f9;overflow:hidden}
+      .brecha-stats-bar-fill{display:block;height:100%;min-width:2px;border-radius:99px;background:#3b82f6}
+      .brecha-stats-chart:nth-child(2) .brecha-stats-bar-fill{background:#f59e0b}
+      .brecha-stats-chart:nth-child(3) .brecha-stats-bar-fill{background:#0f766e}
+      .brecha-stats-bar-value{white-space:nowrap;font-weight:700;color:#1e293b}
+      .brecha-sim-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin:10px 0 13px}
+      .brecha-sim-card{padding:10px 12px;border:1px solid #dbe3ed;border-radius:8px;background:#f8fafc}
+      .brecha-sim-card span{display:block;color:#64748b;font-size:10px;font-weight:700}
+      .brecha-sim-card b{display:block;margin-top:4px;color:#153e67;font-size:16px;font-variant-numeric:tabular-nums}
+      .brecha-sim-card.exonerado b{color:#15803d}
+      .brecha-sim-note{margin:2px 0 10px;color:#64748b;font-size:11px;line-height:1.45}
+      .brecha-sim-note .brecha-stats-reset{margin:5px 0 0;padding:5px 8px;font-size:10px}
+      .brecha-sim-box{margin-top:12px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;padding:9px}
+      .brecha-sim-box>summary{cursor:pointer;color:#1e3a5f;font-size:12px;font-weight:800}
+      .brecha-sim-tools{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:8px;align-items:center;margin:9px 0}
+      .brecha-sim-actions{display:flex;flex-wrap:wrap;gap:6px}
+      .brecha-sim-table-wrap{overflow:auto}
+      .brecha-sim-table{width:100%;min-width:720px;border-collapse:collapse;background:#fff}
+      .brecha-sim-table th,.brecha-sim-table td{border:1px solid #dbe3ed;padding:6px 7px;text-align:left;font-size:10px;vertical-align:top}
+      .brecha-sim-table th{background:#e2e8f0;color:#1e293b;position:sticky;top:0}
+      .brecha-sim-table td:first-child,.brecha-sim-table th:first-child{text-align:center;width:38px}
+      .brecha-sim-table .brecha-num{white-space:nowrap}
+      .brecha-sim-preventiva{color:#15803d;font-weight:700}
+      .brecha-sim-pager{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px;color:#64748b;font-size:11px}
+      .brecha-sim-pager button:disabled{opacity:.45;cursor:default}
+      @media(max-width:640px){.brecha-sim-tools{grid-template-columns:1fr}.brecha-stats-bar{grid-template-columns:minmax(70px,38%) minmax(40px,1fr) auto}}
       @media print{.brecha-avoided{color:#15803d!important;background:#dcfce7!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}.brecha-preventive-row td{background:#f0fdf4!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}}
     `;
     document.head.appendChild(style);
@@ -268,9 +321,182 @@
     panel.className = 'brecha-pdv-stats';
     panel.open = true;
     panel.innerHTML = '<summary>Estadísticas de interrupciones y multa por PDV</summary>' +
-      '<p class="brecha-pdv-stats-note">Se recalcula con los filtros activos. Cuenta cada guía una vez dentro de cada PDV; una guía repetida en PDV distintos se cuenta en cada uno. La brecha recurrente usa «Último tipo de problema». La multa acumulada suma el costo configurado por «Tipo de tiempo de espera»; los rangos preventivos se muestran aparte como costo evitado.</p>' +
-      '<div class="brecha-pdv-stats-wrap"><table class="brecha-pdv-stats-table"><thead><tr><th>PDV</th><th>Interrupciones<br><small>guías únicas</small></th><th>Operación más reciente<br><small>más frecuente</small></th><th>Brecha / problema<br><small>más recurrente</small></th><th>Multa acumulada</th><th>Costo evitado</th><th>Desglose</th></tr></thead><tbody id="excelInterruptionStatsBody"></tbody><tfoot id="excelInterruptionStatsFoot"></tfoot></table></div>';
+      '<p class="brecha-pdv-stats-note">Cuenta cada guía una vez dentro de cada PDV; una guía repetida en PDV distintos se cuenta en cada uno. La brecha recurrente usa «Último tipo de problema». La multa acumulada suma el costo configurado por «Tipo de tiempo de espera»; los rangos preventivos se muestran aparte como costo evitado. Usa los filtros de abajo para acotar este análisis.</p>' +
+      '<div class="brecha-stats-filters" id="brechaStatsFilters"></div><button type="button" id="brechaStatsClearFilters" class="brecha-stats-reset">Limpiar filtros de estadísticas</button>' +
+      '<div class="brecha-sim-summary" id="brechaSimulationSummary"></div><p class="brecha-sim-note">Simulación temporal: marca las guías penalizables para estimar una exoneración del 100%. No modifica decisiones reales ni guarda cambios. Las guías preventivas no se pueden marcar porque no generan multa. <button type="button" id="brechaSimulationClear" class="brecha-stats-reset">Limpiar selección simulada</button></p>' +
+      '<div class="brecha-stats-charts" id="excelInterruptionCharts"></div>' +
+      '<div class="brecha-pdv-stats-wrap"><table class="brecha-pdv-stats-table"><thead><tr><th>PDV</th><th>Interrupciones<br><small>guías únicas</small></th><th>Operación más reciente<br><small>más frecuente</small></th><th>Brecha / problema<br><small>más recurrente</small></th><th>Multa acumulada</th><th>Costo evitado</th><th>Desglose y simulación</th></tr></thead><tbody id="excelInterruptionStatsBody"></tbody><tfoot id="excelInterruptionStatsFoot"></tfoot></table></div>';
     summary.insertAdjacentElement('afterend', panel);
+    enlazarControlesEstadisticas();
+  }
+
+  function valorEstadistica(registro, campo) {
+    if (campo === 'pdv') return String(registro && (registro.pdv || registro.ultimoPunto) || '').trim() || 'Sin PDV';
+    if (campo === 'operacion') return String(registro && registro.tipoOperacion || '').trim() || 'Sin tipo de operación';
+    if (campo === 'problema') return String(registro && registro.ultimoProblema || '').trim() || 'Sin tipo de problema registrado';
+    return String(registro && registro.tipoEspera || '').trim() || 'Sin tipo de interrupción';
+  }
+
+  function unicosActualizadosPorPdv(registros) {
+    const recientes = new Map();
+    (registros || []).forEach(registro => {
+      const key = claveGuiaPdv(registro);
+      if (!key || !key.split('|')[0]) return;
+      const actual = recientes.get(key);
+      const fechaNueva = fecha(registro && registro.fechaUltimaActualizacion)?.getTime() || 0;
+      const fechaActual = fecha(actual && actual.fechaUltimaActualizacion)?.getTime() || 0;
+      if (!actual || fechaNueva >= fechaActual) recientes.set(key, registro);
+    });
+    return [...recientes.values()];
+  }
+
+  function enlazarControlesEstadisticas() {
+    const root = document.getElementById('brechaStatsFilters');
+    if (root && !root.dataset.bound) {
+      root.dataset.bound = '1';
+      root.addEventListener('change', event => {
+        const checkbox = event.target.closest('input[data-stat-option]');
+        if (!checkbox) return;
+        const details = checkbox.closest('[data-stat-filter]');
+        const field = details && details.dataset.statFilter;
+        if (!field || !filtrosEstadisticas[field]) return;
+        filtrosEstadisticas[field] = new Set([...details.querySelectorAll('input[data-stat-option]:checked')].map(input => input.value));
+        actualizarEtiquetaFiltroEstadistica(details, field);
+        renderizarEstadisticasInterrupciones(estadisticasRegistros);
+      });
+      root.addEventListener('input', event => {
+        const input = event.target.closest('input[data-stat-search]');
+        if (!input) return;
+        const query = normalizar(input.value);
+        input.closest('.brecha-stats-filter-menu').querySelectorAll('.brecha-stats-filter-options label').forEach(label => {
+          label.hidden = query && !normalizar(label.textContent).includes(query);
+        });
+      });
+      root.addEventListener('click', event => {
+        const button = event.target.closest('button[data-stat-action]');
+        if (!button) return;
+        const details = button.closest('[data-stat-filter]');
+        const field = details && details.dataset.statFilter;
+        if (!field || !filtrosEstadisticas[field]) return;
+        if (button.dataset.statAction === 'all') {
+          filtrosEstadisticas[field] = new Set([...details.querySelectorAll('input[data-stat-option]')].map(input => input.value));
+        } else filtrosEstadisticas[field].clear();
+        details.querySelectorAll('input[data-stat-option]').forEach(input => { input.checked = filtrosEstadisticas[field].has(input.value); });
+        actualizarEtiquetaFiltroEstadistica(details, field);
+        renderizarEstadisticasInterrupciones(estadisticasRegistros);
+      });
+    }
+    const clear = document.getElementById('brechaStatsClearFilters');
+    if (clear && !clear.dataset.bound) {
+      clear.dataset.bound = '1';
+      clear.addEventListener('click', () => {
+        Object.values(filtrosEstadisticas).forEach(set => set.clear());
+        document.querySelectorAll('#brechaStatsFilters [data-stat-filter]').forEach(details => {
+          details.querySelectorAll('input[data-stat-option]').forEach(input => { input.checked = false; });
+          actualizarEtiquetaFiltroEstadistica(details, details.dataset.statFilter);
+        });
+        renderizarEstadisticasInterrupciones(estadisticasRegistros);
+      });
+    }
+    const clearSimulation = document.getElementById('brechaSimulationClear');
+    if (clearSimulation && !clearSimulation.dataset.bound) {
+      clearSimulation.dataset.bound = '1';
+      clearSimulation.addEventListener('click', () => {
+        simulacionSeleccionada.clear();
+        document.querySelectorAll('input[data-sim-check]:checked').forEach(input => { input.checked = false; });
+        renderizarResumenSimulacion();
+      });
+    }
+  }
+
+  function actualizarEtiquetaFiltroEstadistica(details, field) {
+    if (!details) return;
+    const selected = filtrosEstadisticas[field] || new Set();
+    const available = details.querySelectorAll('input[data-stat-option]').length;
+    const label = details.querySelector('[data-stat-count]');
+    if (label) label.textContent = !selected.size || selected.size >= available ? 'Todos' : selected.size + ' seleccionados';
+  }
+
+  function actualizarOpcionesFiltrosEstadisticas(registros) {
+    const root = document.getElementById('brechaStatsFilters');
+    if (!root) return;
+    const fields = [
+      ['pdv', 'PDV'], ['operacion', 'Operación más reciente'],
+      ['problema', 'Tipo de problema / brecha'], ['interrupcion', 'Tipo de interrupción']
+    ];
+    const options = {};
+    fields.forEach(([field]) => {
+      const values = new Map();
+      (registros || []).forEach(registro => {
+        const label = valorEstadistica(registro, field);
+        values.set(normalizar(label), label);
+      });
+      options[field] = [...values.entries()].sort((a,b) => a[1].localeCompare(b[1], 'es', {numeric:true, sensitivity:'base'}));
+    });
+    const signature = JSON.stringify(options);
+    if (signature === firmaOpcionesEstadisticas) return;
+    firmaOpcionesEstadisticas = signature;
+    root.innerHTML = fields.map(([field, title]) => {
+      const all = options[field];
+      const selected = filtrosEstadisticas[field];
+      for (const value of [...selected]) if (!all.some(([key]) => key === value)) selected.delete(value);
+      const rows = all.map(([key, label]) => '<label><input type="checkbox" data-stat-option value="' + escapar(key) + '" ' + (selected.has(key) ? 'checked' : '') + '><span>' + escapar(label) + '</span></label>').join('');
+      return '<details class="brecha-stats-filter" data-stat-filter="' + field + '"><summary>' + escapar(title) + '<span data-stat-count></span></summary><div class="brecha-stats-filter-menu"><div class="brecha-stats-filter-actions"><button type="button" data-stat-action="all">Seleccionar todos</button><button type="button" data-stat-action="clear">Limpiar</button></div><input class="brecha-stats-filter-search" type="search" data-stat-search placeholder="Buscar ' + escapar(title.toLowerCase()) + '"><div class="brecha-stats-filter-options">' + (rows || '<span class="brecha-stats-filter-empty">Sin opciones</span>') + '</div></div></details>';
+    }).join('');
+    fields.forEach(([field]) => actualizarEtiquetaFiltroEstadistica(root.querySelector('[data-stat-filter="' + field + '"]'), field));
+    enlazarControlesEstadisticas();
+  }
+
+  function filtrarEstadisticas(registros) {
+    return unicosActualizadosPorPdv(registros).filter(registro => Object.entries(filtrosEstadisticas).every(([field, selected]) => {
+      if (!selected.size) return true;
+      return selected.has(normalizar(valorEstadistica(registro, field)));
+    }));
+  }
+
+  function renderizarResumenSimulacion(registros = estadisticasRegistros) {
+    const root = document.getElementById('brechaSimulationSummary');
+    if (!root) return;
+    const unicos = filtrarEstadisticas(registros);
+    let multaActual = 0;
+    let multaMarcada = 0;
+    let guiasMarcadas = 0;
+    unicos.forEach(registro => {
+      if (preventiva(registro)) return;
+      const tipo = String(registro.tipoEspera || '').trim();
+      const monto = tarifa(tipo ? claveTipo(tipo) : 'SIN_TIPO');
+      multaActual += monto;
+      if (simulacionSeleccionada.has(claveGuiaPdv(registro))) { multaMarcada += monto; guiasMarcadas++; }
+    });
+    const restante = Math.max(0, multaActual - multaMarcada);
+    root.innerHTML = '<div class="brecha-sim-card"><span>Guías marcadas</span><b>' + numero(guiasMarcadas) + '</b></div>' +
+      '<div class="brecha-sim-card"><span>Multa actual de la consulta</span><b>' + dinero(multaActual) + '</b></div>' +
+      '<div class="brecha-sim-card exonerado"><span>Monto simulado a exonerar</span><b>' + dinero(multaMarcada) + '</b></div>' +
+      '<div class="brecha-sim-card"><span>Multa restante simulada</span><b>' + dinero(restante) + '</b></div>';
+  }
+
+  function graficoBarras(titulo, datos, formato, aria) {
+    const top = datos.filter(item => Number(item[1]) > 0).sort((a,b) => b[1]-a[1] || String(a[0]).localeCompare(String(b[0]), 'es', {numeric:true, sensitivity:'base'})).slice(0,8);
+    const max = top.length ? Math.max(...top.map(item => Number(item[1]) || 0)) : 0;
+    const bars = top.map(([label, value]) => {
+      const width = max ? Math.max(2, Number(value) / max * 100) : 0;
+      return '<div class="brecha-stats-bar" title="' + escapar(label + ': ' + formato(value)) + '"><span class="brecha-stats-bar-label">' + escapar(label) + '</span><span class="brecha-stats-bar-track"><i class="brecha-stats-bar-fill" style="width:' + width.toFixed(1) + '%"></i></span><span class="brecha-stats-bar-value">' + escapar(formato(value)) + '</span></div>';
+    }).join('') || '<div class="brecha-stats-filter-empty">Sin datos para los filtros seleccionados.</div>';
+    return '<section class="brecha-stats-chart" role="img" aria-label="' + escapar(aria) + '"><h4>' + escapar(titulo) + '</h4><div class="brecha-stats-bars">' + bars + '</div></section>';
+  }
+
+  function renderizarGraficosEstadisticas(filas) {
+    const root = document.getElementById('excelInterruptionCharts');
+    if (!root) return;
+    const operaciones = new Map();
+    const problemas = new Map();
+    filas.forEach(item => {
+      item.operaciones.forEach((count, label) => operaciones.set(label, (operaciones.get(label) || 0) + count));
+      item.problemas.forEach((count, label) => problemas.set(label, (problemas.get(label) || 0) + count));
+    });
+    root.innerHTML = graficoBarras('Interrupciones por operación más reciente', [...operaciones], numero, 'Guías por tipo de operación más reciente') +
+      graficoBarras('Brechas o problemas más recurrentes', [...problemas].filter(([label]) => label !== 'Sin tipo de problema registrado'), numero, 'Guías por problema más recurrente') +
+      graficoBarras('Multa acumulada por PDV (S/)', filas.map(item => [item.pdv, item.multa]), dinero, 'Monto estimado de multa por PDV');
   }
 
   function entradasOrdenadas(map) {
@@ -289,23 +515,13 @@
   }
 
   function resumirPorPdv(registros, ahora = Date.now()) {
-    const recientes = new Map();
-    (registros || []).forEach(registro => {
-      const guia = claveGuia(registro && registro.guia);
-      const pdv = String(registro && (registro.pdv || registro.ultimoPunto) || '').trim();
-      if (!guia || !pdv) return;
-      const key = normalizar(pdv) + '|' + guia;
-      const actual = recientes.get(key);
-      const fechaNueva = fecha(registro.fechaUltimaActualizacion)?.getTime() || 0;
-      const fechaActual = fecha(actual && actual.fechaUltimaActualizacion)?.getTime() || 0;
-      if (!actual || fechaNueva >= fechaActual) recientes.set(key, registro);
-    });
     const pdvs = new Map();
-    recientes.forEach(registro => {
+    unicosActualizadosPorPdv(registros).forEach(registro => {
       const pdv = String(registro.pdv || registro.ultimoPunto || '').trim() || 'SIN PDV';
       const key = normalizar(pdv);
-      if (!pdvs.has(key)) pdvs.set(key, {pdv, guias:0, operaciones:new Map(), problemas:new Map(), montos:new Map(), multa:0, evitado:0});
+      if (!pdvs.has(key)) pdvs.set(key, {pdv, guias:0, operaciones:new Map(), problemas:new Map(), montos:new Map(), multa:0, evitado:0, registros:[]});
       const item = pdvs.get(key);
+      item.registros.push(registro);
       item.guias++;
       const operacion = String(registro.tipoOperacion || '').trim() || 'Sin tipo de operación';
       item.operaciones.set(operacion, (item.operaciones.get(operacion) || 0) + 1);
@@ -340,18 +556,94 @@
       tablaEstadistica('Cantidad por tipo de operación más reciente', operaciones, ['Tipo de operación', 'Guías']) +
       tablaEstadistica('Recurrencia por último tipo de problema / brecha', problemas, ['Tipo de problema', 'Guías']) +
       tablaEstadistica('Monto de multa por tipo de interrupción', filasMonto, ['Tipo de tiempo de espera', 'Guías', 'Costo unitario', 'Subtotal', 'Multa acumulada']) +
-      '<p class="brecha-pdv-total">Multa acumulada: ' + dinero(item.multa) + ' · Costo evitado: ' + dinero(item.evitado) + '</p></div>';
+      '<p class="brecha-pdv-total">Multa acumulada: ' + dinero(item.multa) + ' · Costo evitado: ' + dinero(item.evitado) + '</p>' +
+      '<details class="brecha-sim-box"><summary>Simular exoneración · ' + numero(item.guias) + ' guías en este PDV</summary>' +
+      '<p class="brecha-sim-note">Marca las guías penalizables para simular la exoneración total de su importe. Este cálculo no modifica el sistema.</p>' +
+      '<div class="brecha-sim-tools"><input type="search" class="brecha-sim-search" data-sim-search placeholder="Buscar guía, operación o problema"><div class="brecha-sim-actions"><button type="button" data-sim-action="select">Marcar visibles</button><button type="button" data-sim-action="clear-visible">Desmarcar visibles</button></div></div>' +
+      '<div data-sim-body></div><div data-sim-pager class="brecha-sim-pager"></div></details></div>';
+  }
+
+  function enlazarSimulacion(detallePdv, item) {
+    const detail = detallePdv.querySelector('.brecha-sim-box');
+    if (!detail || detail.dataset.bound) return;
+    detail.dataset.bound = '1';
+    detail.addEventListener('toggle', () => { if (detail.open) renderizarListaSimulacion(detail, item); });
+    detail.addEventListener('change', event => {
+      const checkbox = event.target.closest('input[data-sim-check]');
+      if (!checkbox) return;
+      if (checkbox.checked) simulacionSeleccionada.add(checkbox.value);
+      else simulacionSeleccionada.delete(checkbox.value);
+      renderizarResumenSimulacion();
+    });
+    detail.addEventListener('input', event => {
+      if (!event.target.matches('[data-sim-search]')) return;
+      paginasSimulacion.set(normalizar(item.pdv), 1);
+      renderizarListaSimulacion(detail, item);
+    });
+    detail.addEventListener('click', event => {
+      const pageButton = event.target.closest('button[data-sim-page]');
+      if (pageButton) {
+        const key = normalizar(item.pdv);
+        paginasSimulacion.set(key, Math.max(1, (paginasSimulacion.get(key) || 1) + Number(pageButton.dataset.simPage)));
+        renderizarListaSimulacion(detail, item);
+        return;
+      }
+      const action = event.target.closest('button[data-sim-action]');
+      if (!action) return;
+      detail.querySelectorAll('input[data-sim-check]:not(:disabled)').forEach(checkbox => {
+        if (action.dataset.simAction === 'select') {
+          checkbox.checked = true;
+          simulacionSeleccionada.add(checkbox.value);
+        } else {
+          checkbox.checked = false;
+          simulacionSeleccionada.delete(checkbox.value);
+        }
+      });
+      renderizarResumenSimulacion();
+    });
+  }
+
+  function renderizarListaSimulacion(detail, item) {
+    const body = detail.querySelector('[data-sim-body]');
+    const pager = detail.querySelector('[data-sim-pager]');
+    if (!body || !pager) return;
+    const query = normalizar(detail.querySelector('[data-sim-search]')?.value || '');
+    const rows = [...item.registros].sort((a,b) => String(a.guia || '').localeCompare(String(b.guia || ''), 'es', {numeric:true, sensitivity:'base'})).filter(registro => {
+      if (!query) return true;
+      return normalizar([registro.guia, registro.tipoOperacion, registro.ultimoProblema, registro.tipoEspera].join(' ')).includes(query);
+    });
+    const pageCount = Math.max(1, Math.ceil(rows.length / SIMULACION_PAGINA));
+    const pageKey = normalizar(item.pdv);
+    const page = Math.min(pageCount, Math.max(1, paginasSimulacion.get(pageKey) || 1));
+    paginasSimulacion.set(pageKey, page);
+    const visible = rows.slice((page - 1) * SIMULACION_PAGINA, page * SIMULACION_PAGINA);
+    const content = visible.map(registro => {
+      const key = claveGuiaPdv(registro);
+      const preventivaActual = preventiva(registro);
+      const tipo = String(registro.tipoEspera || '').trim() || 'Sin tipo de interrupción';
+      const costo = preventivaActual ? 0 : tarifa(registro.tipoEspera ? claveTipo(registro.tipoEspera) : 'SIN_TIPO');
+      return '<tr><td><input type="checkbox" data-sim-check value="' + escapar(key) + '" aria-label="Simular exoneración de guía ' + escapar(registro.guia) + '" ' + (preventivaActual ? 'disabled title="Guía preventiva; no genera multa"' : '') + (simulacionSeleccionada.has(key) ? ' checked' : '') + '></td>' +
+        '<td>' + escapar(registro.guia || 'Sin guía') + '</td><td>' + escapar(String(registro.tipoOperacion || '').trim() || 'Sin operación') + '</td><td>' + escapar(tipo) + '</td><td>' + escapar(String(registro.ultimoProblema || '').trim() || 'Sin dato') + '</td>' +
+        '<td class="brecha-num ' + (preventivaActual ? 'brecha-sim-preventiva' : '') + '">' + (preventivaActual ? 'Preventiva' : dinero(costo)) + '</td></tr>';
+    }).join('');
+    body.innerHTML = '<div class="brecha-sim-table-wrap"><table class="brecha-sim-table"><thead><tr><th>✓</th><th>Guía</th><th>Operación más reciente</th><th>Tipo de interrupción</th><th>Problema / brecha</th><th>Multa estimada</th></tr></thead><tbody>' + (content || '<tr><td colspan="6">No hay guías para esta búsqueda.</td></tr>') + '</tbody></table></div>';
+    pager.innerHTML = '<button type="button" data-sim-page="-1" ' + (page <= 1 ? 'disabled' : '') + '>Anterior</button><span>Página ' + page + ' de ' + pageCount + ' · ' + numero(rows.length) + ' guías</span><button type="button" data-sim-page="1" ' + (page >= pageCount ? 'disabled' : '') + '>Siguiente</button>';
   }
 
   function renderizarEstadisticasInterrupciones(registros = registrosActuales()) {
     ensureStatsPanel();
+    enlazarControlesEstadisticas();
+    estadisticasRegistros = Array.isArray(registros) ? registros : registrosActuales();
+    actualizarOpcionesFiltrosEstadisticas(registrosActuales().length ? registrosActuales() : estadisticasRegistros);
     const body = document.getElementById('excelInterruptionStatsBody');
     const foot = document.getElementById('excelInterruptionStatsFoot');
     if (!body || !foot) return;
-    const filas = resumirPorPdv(registros);
+    const filas = resumirPorPdv(filtrarEstadisticas(estadisticasRegistros));
+    renderizarGraficosEstadisticas(filas);
+    renderizarResumenSimulacion(estadisticasRegistros);
     body.replaceChildren(); foot.replaceChildren();
     if (!filas.length) {
-      body.innerHTML = '<tr><td colspan="7">Carga una consulta para ver estadísticas por PDV.</td></tr>';
+      body.innerHTML = '<tr><td colspan="7">No hay datos que coincidan con los filtros de estadísticas.</td></tr>';
       return;
     }
     const totalGuias = filas.reduce((sum,x) => sum + x.guias, 0);
@@ -377,6 +669,7 @@
       const summary = document.createElement('summary'); summary.textContent = 'Ver desglose';
       detail.appendChild(summary);
       const content = document.createElement('div'); content.innerHTML = htmlDetallePdv(item); detail.appendChild(content);
+      enlazarSimulacion(content, item);
       detailCell.appendChild(detail); row.appendChild(detailCell); body.appendChild(row);
     });
     const totalOperations = new Set();
@@ -441,6 +734,7 @@
           cambiosPendientes = true;
           if (status) status.textContent = 'Hay cambios pendientes. Pulsa «Guardar valores para todos» para publicarlos.';
           actualizarResumenActivo();
+          renderizarEstadisticasInterrupciones(estadisticasRegistros);
         });
         amount.appendChild(input);
       } else {
@@ -561,7 +855,13 @@
       const original = window.recibirConsulta;
       const wrapped = function (...args) {
         const result = original.apply(this, args);
+        estadisticasRegistros = registrosActuales();
+        Object.values(filtrosEstadisticas).forEach(set => set.clear());
+        simulacionSeleccionada.clear();
+        paginasSimulacion.clear();
+        firmaOpcionesEstadisticas = '';
         renderizarCostosBrecha();
+        renderizarEstadisticasInterrupciones(estadisticasRegistros);
         cargarCostosCompartidos().catch(() => {});
         return result;
       };

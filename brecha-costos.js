@@ -15,8 +15,9 @@
   let consultaSeleccionada = [];
   let estadisticasRegistros = [];
   const filtrosEstadisticas = { pdv: new Set(), operacion: new Set(), problema: new Set(), interrupcion: new Set() };
-  const simulacionSeleccionada = new Set();
+  const simulacionSeleccionada = new Map();
   const paginasSimulacion = new Map();
+  const busquedasSimulacion = new Map();
   const SIMULACION_PAGINA = 100;
   let firmaOpcionesEstadisticas = '';
 
@@ -41,6 +42,7 @@
   const dinero = value => new Intl.NumberFormat('es-PE', {
     style: 'currency', currency: 'PEN', minimumFractionDigits: 2, maximumFractionDigits: 2
   }).format(Number(value) || 0);
+  const redondear2 = value => Math.round(((Number(value) || 0) + Number.EPSILON) * 100) / 100;
   const numero = value => Number(value || 0).toLocaleString('es-PE');
   const escapar = value => String(value == null ? '' : value).replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -276,6 +278,10 @@
       .brecha-sim-box>summary{cursor:pointer;color:#1e3a5f;font-size:12px;font-weight:800}
       .brecha-sim-tools{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:8px;align-items:center;margin:9px 0}
       .brecha-sim-actions{display:flex;flex-wrap:wrap;gap:6px}
+      .brecha-sim-bulk{display:flex;align-items:end;gap:8px;flex-wrap:wrap;margin:0 0 9px}
+      .brecha-sim-bulk label{display:grid;gap:4px;color:#475569;font-size:10px;font-weight:700}
+      .brecha-sim-bulk input{width:130px;padding:6px 8px;border:1px solid #cbd5e1;border-radius:6px}
+      .brecha-sim-bulk button{border:1px solid #bfdbfe;border-radius:6px;padding:6px 9px;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;cursor:pointer}
       .brecha-sim-table-wrap{overflow:auto}
       .brecha-sim-table{width:100%;min-width:720px;border-collapse:collapse;background:#fff}
       .brecha-sim-table th,.brecha-sim-table td{border:1px solid #dbe3ed;padding:6px 7px;text-align:left;font-size:10px;vertical-align:top}
@@ -323,9 +329,9 @@
     panel.innerHTML = '<summary>Estadísticas de interrupciones y multa por PDV</summary>' +
       '<p class="brecha-pdv-stats-note">Cuenta cada guía una vez dentro de cada PDV; una guía repetida en PDV distintos se cuenta en cada uno. La brecha recurrente usa «Último tipo de problema». La multa acumulada suma el costo configurado por «Tipo de tiempo de espera»; los rangos preventivos se muestran aparte como costo evitado. Usa los filtros de abajo para acotar este análisis.</p>' +
       '<div class="brecha-stats-filters" id="brechaStatsFilters"></div><button type="button" id="brechaStatsClearFilters" class="brecha-stats-reset">Limpiar filtros de estadísticas</button>' +
-      '<div class="brecha-sim-summary" id="brechaSimulationSummary"></div><p class="brecha-sim-note">Simulación temporal: marca las guías penalizables para estimar una exoneración del 100%. No modifica decisiones reales ni guarda cambios. Las guías preventivas no se pueden marcar porque no generan multa. <button type="button" id="brechaSimulationClear" class="brecha-stats-reset">Limpiar selección simulada</button></p>' +
+      '<div class="brecha-sim-summary" id="brechaSimulationSummary"></div><p class="brecha-sim-note">Simulación temporal: marca las guías penalizables y define el porcentaje de exoneración por guía. No modifica decisiones reales ni guarda cambios. Las guías preventivas no se pueden marcar porque no generan multa. <button type="button" id="brechaSimulationClear" class="brecha-stats-reset">Limpiar selección simulada</button></p>' +
       '<div class="brecha-stats-charts" id="excelInterruptionCharts"></div>' +
-      '<div class="brecha-pdv-stats-wrap"><table class="brecha-pdv-stats-table"><thead><tr><th>PDV</th><th>Interrupciones<br><small>guías únicas</small></th><th>Operación más reciente<br><small>más frecuente</small></th><th>Brecha / problema<br><small>más recurrente</small></th><th>Multa acumulada</th><th>Costo evitado</th><th>Desglose y simulación</th></tr></thead><tbody id="excelInterruptionStatsBody"></tbody><tfoot id="excelInterruptionStatsFoot"></tfoot></table></div>';
+      '<div class="brecha-pdv-stats-wrap"><table class="brecha-pdv-stats-table"><thead><tr><th>PDV</th><th>Interrupciones<br><small>guías únicas</small></th><th>Multa acumulada</th><th>Costo evitado</th><th>Desglose y simulación</th></tr></thead><tbody id="excelInterruptionStatsBody"></tbody><tfoot id="excelInterruptionStatsFoot"></tfoot></table></div>';
     summary.insertAdjacentElement('afterend', panel);
     enlazarControlesEstadisticas();
   }
@@ -403,8 +409,7 @@
       clearSimulation.dataset.bound = '1';
       clearSimulation.addEventListener('click', () => {
         simulacionSeleccionada.clear();
-        document.querySelectorAll('input[data-sim-check]:checked').forEach(input => { input.checked = false; });
-        renderizarResumenSimulacion();
+        renderizarEstadisticasInterrupciones(estadisticasRegistros);
       });
     }
   }
@@ -466,7 +471,11 @@
       const tipo = String(registro.tipoEspera || '').trim();
       const monto = tarifa(tipo ? claveTipo(tipo) : 'SIN_TIPO');
       multaActual += monto;
-      if (simulacionSeleccionada.has(claveGuiaPdv(registro))) { multaMarcada += monto; guiasMarcadas++; }
+      const key = claveGuiaPdv(registro);
+      if (simulacionSeleccionada.has(key)) {
+        multaMarcada += redondear2(monto * Math.max(0, Math.min(100, Number(simulacionSeleccionada.get(key)) || 0)) / 100);
+        guiasMarcadas++;
+      }
     });
     const restante = Math.max(0, multaActual - multaMarcada);
     root.innerHTML = '<div class="brecha-sim-card"><span>Guías marcadas</span><b>' + numero(guiasMarcadas) + '</b></div>' +
@@ -519,7 +528,7 @@
     unicosActualizadosPorPdv(registros).forEach(registro => {
       const pdv = String(registro.pdv || registro.ultimoPunto || '').trim() || 'SIN PDV';
       const key = normalizar(pdv);
-      if (!pdvs.has(key)) pdvs.set(key, {pdv, guias:0, operaciones:new Map(), problemas:new Map(), montos:new Map(), multa:0, evitado:0, registros:[]});
+      if (!pdvs.has(key)) pdvs.set(key, {pdv, guias:0, operaciones:new Map(), problemas:new Map(), montos:new Map(), multa:0, evitado:0, exonerado:0, multaRestante:0, registros:[]});
       const item = pdvs.get(key);
       item.registros.push(registro);
       item.guias++;
@@ -537,8 +546,17 @@
       monto.cantidad++;
       monto.subtotal += tarifa(clave);
       if (preventivaActual) item.evitado += tarifa(clave);
-      else item.multa += tarifa(clave);
+      else {
+        item.multa += tarifa(clave);
+        const selectedPercent = simulacionSeleccionada.get(claveGuiaPdv(registro));
+        if (selectedPercent != null) {
+          const exonerado = redondear2(tarifa(clave) * Math.max(0, Math.min(100, Number(selectedPercent) || 0)) / 100);
+          monto.exonerado = (monto.exonerado || 0) + exonerado;
+          item.exonerado += exonerado;
+        }
+      }
     });
+    pdvs.forEach(item => { item.multaRestante = Math.max(0, item.multa - item.exonerado); });
     return [...pdvs.values()].sort((a,b) => a.pdv.localeCompare(b.pdv, 'es', {numeric:true, sensitivity:'base'}));
   }
 
@@ -549,17 +567,20 @@
     let acumulado = 0;
     const filasMonto = montos.map(monto => {
       const esPreventiva = monto.preventiva;
+      const exonerado = Number(monto.exonerado || 0);
+      const saldoSimulado = esPreventiva ? 0 : Math.max(0, monto.subtotal - exonerado);
       if (!esPreventiva) acumulado += monto.subtotal;
-      return [escapar((esPreventiva ? 'Preventiva · ' : '') + monto.tipo), monto.cantidad, dinero(monto.tarifa), dinero(monto.subtotal), esPreventiva ? 'Costo evitado' : dinero(acumulado)];
+      return [escapar((esPreventiva ? 'Preventiva · ' : '') + monto.tipo), monto.cantidad, dinero(monto.tarifa), dinero(monto.subtotal), esPreventiva ? dinero(0) : dinero(exonerado), esPreventiva ? 'Costo evitado' : dinero(saldoSimulado), esPreventiva ? 'Costo evitado' : dinero(acumulado)];
     });
     return '<div class="brecha-pdv-detail-body">' +
       tablaEstadistica('Cantidad por tipo de operación más reciente', operaciones, ['Tipo de operación', 'Guías']) +
       tablaEstadistica('Recurrencia por último tipo de problema / brecha', problemas, ['Tipo de problema', 'Guías']) +
-      tablaEstadistica('Monto de multa por tipo de interrupción', filasMonto, ['Tipo de tiempo de espera', 'Guías', 'Costo unitario', 'Subtotal', 'Multa acumulada']) +
-      '<p class="brecha-pdv-total">Multa acumulada: ' + dinero(item.multa) + ' · Costo evitado: ' + dinero(item.evitado) + '</p>' +
+      tablaEstadistica('Monto de multa por tipo de interrupción', filasMonto, ['Tipo de tiempo de espera', 'Guías', 'Costo unitario', 'Subtotal', 'Monto exonerado', 'Saldo simulado', 'Multa acumulada']) +
+      '<p class="brecha-pdv-total">Multa actual: ' + dinero(item.multa) + ' · Monto exonerado simulado: ' + dinero(item.exonerado) + ' · Multa restante: ' + dinero(item.multaRestante) + ' · Costo evitado: ' + dinero(item.evitado) + '</p>' +
       '<details class="brecha-sim-box"><summary>Simular exoneración · ' + numero(item.guias) + ' guías en este PDV</summary>' +
-      '<p class="brecha-sim-note">Marca las guías penalizables para simular la exoneración total de su importe. Este cálculo no modifica el sistema.</p>' +
-      '<div class="brecha-sim-tools"><input type="search" class="brecha-sim-search" data-sim-search placeholder="Buscar guía, operación o problema"><div class="brecha-sim-actions"><button type="button" data-sim-action="select">Marcar visibles</button><button type="button" data-sim-action="clear-visible">Desmarcar visibles</button></div></div>' +
+      '<p class="brecha-sim-note">Marca guías penalizables y asigna a cada una un porcentaje de exoneración. El monto exonerado se reflejará en el desglose por tipo de interrupción; el cálculo no modifica el sistema.</p>' +
+      '<div class="brecha-sim-tools"><input type="search" class="brecha-sim-search" data-sim-search value="' + escapar(busquedasSimulacion.get(normalizar(item.pdv)) || '') + '" placeholder="Buscar guía, operación o problema"><div class="brecha-sim-actions"><button type="button" data-sim-action="select">Marcar visibles</button><button type="button" data-sim-action="clear-visible">Desmarcar visibles</button></div></div>' +
+      '<div class="brecha-sim-bulk"><label>Porcentaje para las guías marcadas visibles <input type="number" min="0" max="100" step="0.01" value="100" data-sim-bulk-percent></label><button type="button" data-sim-action="apply-percent">Aplicar porcentaje</button></div>' +
       '<div data-sim-body></div><div data-sim-pager class="brecha-sim-pager"></div></details></div>';
   }
 
@@ -570,14 +591,28 @@
     detail.addEventListener('toggle', () => { if (detail.open) renderizarListaSimulacion(detail, item); });
     detail.addEventListener('change', event => {
       const checkbox = event.target.closest('input[data-sim-check]');
-      if (!checkbox) return;
-      if (checkbox.checked) simulacionSeleccionada.add(checkbox.value);
-      else simulacionSeleccionada.delete(checkbox.value);
-      renderizarResumenSimulacion();
+      if (checkbox) {
+        const percent = checkbox.closest('tr').querySelector('[data-sim-percent]');
+        if (checkbox.checked) simulacionSeleccionada.set(checkbox.value, Number(percent && percent.value || 100));
+        else simulacionSeleccionada.delete(checkbox.value);
+        renderizarEstadisticasInterrupciones(estadisticasRegistros);
+        return;
+      }
+      const percentInput = event.target.closest('input[data-sim-percent]');
+      if (!percentInput) return;
+      const row = percentInput.closest('tr');
+      const selected = row && row.querySelector('input[data-sim-check]');
+      if (selected && selected.checked) {
+        const value = Math.max(0, Math.min(100, Number(percentInput.value) || 0));
+        simulacionSeleccionada.set(selected.value, value);
+        renderizarEstadisticasInterrupciones(estadisticasRegistros);
+      }
     });
     detail.addEventListener('input', event => {
       if (!event.target.matches('[data-sim-search]')) return;
-      paginasSimulacion.set(normalizar(item.pdv), 1);
+      const key = normalizar(item.pdv);
+      busquedasSimulacion.set(key, event.target.value);
+      paginasSimulacion.set(key, 1);
       renderizarListaSimulacion(detail, item);
     });
     detail.addEventListener('click', event => {
@@ -590,16 +625,23 @@
       }
       const action = event.target.closest('button[data-sim-action]');
       if (!action) return;
+      if (action.dataset.simAction === 'apply-percent') {
+        const value = Math.max(0, Math.min(100, Number(detail.querySelector('[data-sim-bulk-percent]')?.value) || 0));
+        detail.querySelectorAll('input[data-sim-check]:checked:not(:disabled)').forEach(checkbox => simulacionSeleccionada.set(checkbox.value, value));
+        renderizarEstadisticasInterrupciones(estadisticasRegistros);
+        return;
+      }
       detail.querySelectorAll('input[data-sim-check]:not(:disabled)').forEach(checkbox => {
         if (action.dataset.simAction === 'select') {
           checkbox.checked = true;
-          simulacionSeleccionada.add(checkbox.value);
+          const percent = checkbox.closest('tr').querySelector('[data-sim-percent]');
+          simulacionSeleccionada.set(checkbox.value, simulacionSeleccionada.has(checkbox.value) ? simulacionSeleccionada.get(checkbox.value) : Number(percent && percent.value || 100));
         } else {
           checkbox.checked = false;
           simulacionSeleccionada.delete(checkbox.value);
         }
       });
-      renderizarResumenSimulacion();
+      renderizarEstadisticasInterrupciones(estadisticasRegistros);
     });
   }
 
@@ -607,7 +649,7 @@
     const body = detail.querySelector('[data-sim-body]');
     const pager = detail.querySelector('[data-sim-pager]');
     if (!body || !pager) return;
-    const query = normalizar(detail.querySelector('[data-sim-search]')?.value || '');
+    const query = normalizar(busquedasSimulacion.get(normalizar(item.pdv)) ?? detail.querySelector('[data-sim-search]')?.value ?? '');
     const rows = [...item.registros].sort((a,b) => String(a.guia || '').localeCompare(String(b.guia || ''), 'es', {numeric:true, sensitivity:'base'})).filter(registro => {
       if (!query) return true;
       return normalizar([registro.guia, registro.tipoOperacion, registro.ultimoProblema, registro.tipoEspera].join(' ')).includes(query);
@@ -622,11 +664,15 @@
       const preventivaActual = preventiva(registro);
       const tipo = String(registro.tipoEspera || '').trim() || 'Sin tipo de interrupción';
       const costo = preventivaActual ? 0 : tarifa(registro.tipoEspera ? claveTipo(registro.tipoEspera) : 'SIN_TIPO');
-      return '<tr><td><input type="checkbox" data-sim-check value="' + escapar(key) + '" aria-label="Simular exoneración de guía ' + escapar(registro.guia) + '" ' + (preventivaActual ? 'disabled title="Guía preventiva; no genera multa"' : '') + (simulacionSeleccionada.has(key) ? ' checked' : '') + '></td>' +
+      const checked = simulacionSeleccionada.has(key);
+      const percent = checked ? Math.max(0, Math.min(100, Number(simulacionSeleccionada.get(key)) || 0)) : 100;
+      return '<tr><td><input type="checkbox" data-sim-check value="' + escapar(key) + '" aria-label="Simular exoneración de guía ' + escapar(registro.guia) + '" ' + (preventivaActual ? 'disabled title="Guía preventiva; no genera multa"' : '') + (checked ? ' checked' : '') + '></td>' +
         '<td>' + escapar(registro.guia || 'Sin guía') + '</td><td>' + escapar(String(registro.tipoOperacion || '').trim() || 'Sin operación') + '</td><td>' + escapar(tipo) + '</td><td>' + escapar(String(registro.ultimoProblema || '').trim() || 'Sin dato') + '</td>' +
-        '<td class="brecha-num ' + (preventivaActual ? 'brecha-sim-preventiva' : '') + '">' + (preventivaActual ? 'Preventiva' : dinero(costo)) + '</td></tr>';
+        '<td class="brecha-num ' + (preventivaActual ? 'brecha-sim-preventiva' : '') + '">' + (preventivaActual ? 'Preventiva' : dinero(costo)) + '</td>' +
+        '<td><input type="number" min="0" max="100" step="0.01" value="' + percent + '" data-sim-percent aria-label="Porcentaje de exoneración simulado para guía ' + escapar(registro.guia) + '" ' + (!checked || preventivaActual ? 'disabled' : '') + '></td>' +
+        '<td class="brecha-num brecha-sim-preventiva">' + (preventivaActual ? '—' : dinero(costo * (checked ? percent : 0) / 100)) + '</td></tr>';
     }).join('');
-    body.innerHTML = '<div class="brecha-sim-table-wrap"><table class="brecha-sim-table"><thead><tr><th>✓</th><th>Guía</th><th>Operación más reciente</th><th>Tipo de interrupción</th><th>Problema / brecha</th><th>Multa estimada</th></tr></thead><tbody>' + (content || '<tr><td colspan="6">No hay guías para esta búsqueda.</td></tr>') + '</tbody></table></div>';
+    body.innerHTML = '<div class="brecha-sim-table-wrap"><table class="brecha-sim-table"><thead><tr><th>✓</th><th>Guía</th><th>Operación más reciente</th><th>Tipo de interrupción</th><th>Problema / brecha</th><th>Multa actual</th><th>Exoneración %</th><th>Monto exonerado</th></tr></thead><tbody>' + (content || '<tr><td colspan="8">No hay guías para esta búsqueda.</td></tr>') + '</tbody></table></div>';
     pager.innerHTML = '<button type="button" data-sim-page="-1" ' + (page <= 1 ? 'disabled' : '') + '>Anterior</button><span>Página ' + page + ' de ' + pageCount + ' · ' + numero(rows.length) + ' guías</span><button type="button" data-sim-page="1" ' + (page >= pageCount ? 'disabled' : '') + '>Siguiente</button>';
   }
 
@@ -638,12 +684,14 @@
     const body = document.getElementById('excelInterruptionStatsBody');
     const foot = document.getElementById('excelInterruptionStatsFoot');
     if (!body || !foot) return;
+    const abiertosPdv = new Set([...body.querySelectorAll('.brecha-pdv-detail[open]')].map(detail => detail.dataset.pdvKey));
+    const abiertosSim = new Set([...body.querySelectorAll('.brecha-sim-box[open]')].map(detail => detail.dataset.simPdv));
     const filas = resumirPorPdv(filtrarEstadisticas(estadisticasRegistros));
     renderizarGraficosEstadisticas(filas);
     renderizarResumenSimulacion(estadisticasRegistros);
     body.replaceChildren(); foot.replaceChildren();
     if (!filas.length) {
-      body.innerHTML = '<tr><td colspan="7">No hay datos que coincidan con los filtros de estadísticas.</td></tr>';
+      body.innerHTML = '<tr><td colspan="5">No hay datos que coincidan con los filtros de estadísticas.</td></tr>';
       return;
     }
     const totalGuias = filas.reduce((sum,x) => sum + x.guias, 0);
@@ -651,9 +699,7 @@
     const totalEvitado = filas.reduce((sum,x) => sum + x.evitado, 0);
     filas.forEach(item => {
       const row = document.createElement('tr');
-      const operation = entradasOrdenadas(item.operaciones)[0];
-      const problem = entradasOrdenadas(new Map([...item.problemas].filter(([key]) => key !== 'Sin tipo de problema registrado')))[0];
-      const cells = [item.pdv, numero(item.guias), operation ? operation[0] + ' · ' + numero(operation[1]) : 'Sin dato', problem ? problem[0] + ' · ' + numero(problem[1]) : 'Sin problema informado', dinero(item.multa), dinero(item.evitado)];
+      const cells = [item.pdv, numero(item.guias), dinero(item.multa), dinero(item.evitado)];
       cells.forEach((value, index) => {
         const cell = document.createElement('td');
         if (index === 0 && typeof window.seleccionarCeldaResumenExcel === 'function') {
@@ -661,22 +707,24 @@
           filter.addEventListener('click', () => window.seleccionarCeldaResumenExcel(item.pdv, ''));
           cell.appendChild(filter);
         } else cell.textContent = value;
-        if (index === 1 || index === 4 || index === 5) cell.className = 'brecha-num';
+        if (index === 1 || index === 2 || index === 3) cell.className = 'brecha-num';
         row.appendChild(cell);
       });
       const detailCell = document.createElement('td');
       const detail = document.createElement('details'); detail.className = 'brecha-pdv-detail';
+      detail.dataset.pdvKey = normalizar(item.pdv);
       const summary = document.createElement('summary'); summary.textContent = 'Ver desglose';
       detail.appendChild(summary);
       const content = document.createElement('div'); content.innerHTML = htmlDetallePdv(item); detail.appendChild(content);
       enlazarSimulacion(content, item);
+      const sim = content.querySelector('.brecha-sim-box');
+      if (sim) sim.dataset.simPdv = normalizar(item.pdv);
+      if (abiertosPdv.has(detail.dataset.pdvKey)) detail.open = true;
+      if (sim && abiertosSim.has(normalizar(item.pdv))) { sim.open = true; renderizarListaSimulacion(sim, item); }
       detailCell.appendChild(detail); row.appendChild(detailCell); body.appendChild(row);
     });
-    const totalOperations = new Set();
-    const totalProblems = new Set();
-    filas.forEach(x => { x.operaciones.forEach((_,key) => totalOperations.add(key)); x.problemas.forEach((_,key) => totalProblems.add(key)); });
     const row = document.createElement('tr');
-    ['TOTAL', numero(totalGuias), totalOperations.size + ' tipos de operación', totalProblems.size + ' tipos de problema', dinero(totalMulta), dinero(totalEvitado), ''].forEach((value,index) => { const cell = document.createElement('td'); cell.textContent = value; if (index === 1 || index === 4 || index === 5) cell.className='brecha-num'; row.appendChild(cell); });
+    ['TOTAL', numero(totalGuias), dinero(totalMulta), dinero(totalEvitado), ''].forEach((value,index) => { const cell = document.createElement('td'); cell.textContent = value; if (index === 1 || index === 2 || index === 3) cell.className='brecha-num'; row.appendChild(cell); });
     foot.appendChild(row);
   }
 
@@ -859,6 +907,7 @@
         Object.values(filtrosEstadisticas).forEach(set => set.clear());
         simulacionSeleccionada.clear();
         paginasSimulacion.clear();
+        busquedasSimulacion.clear();
         firmaOpcionesEstadisticas = '';
         renderizarCostosBrecha();
         renderizarEstadisticasInterrupciones(estadisticasRegistros);

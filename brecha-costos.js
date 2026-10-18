@@ -14,7 +14,7 @@
   let cambiosPendientes = false;
   let consultaSeleccionada = [];
   let estadisticasRegistros = [];
-  const filtrosEstadisticas = { pdv: new Set(), operacion: new Set(), problema: new Set(), interrupcion: new Set() };
+  const filtrosEstadisticas = { encargado: new Set(), zona: new Set(), pdv: new Set(), operacion: new Set(), problema: new Set(), interrupcion: new Set() };
   const simulacionSeleccionada = new Map();
   const paginasSimulacion = new Map();
   const busquedasSimulacion = new Map();
@@ -226,11 +226,29 @@
       .brecha-pdv-stats>summary{cursor:pointer;font-size:14px;font-weight:800;color:#1e3a5f}
       .brecha-pdv-stats-note{margin:9px 0;color:#475569;font-size:12px;line-height:1.5}
       .brecha-pdv-stats-wrap{overflow:auto}
-      .brecha-pdv-stats-table{width:100%;min-width:980px;border-collapse:collapse}
+      .brecha-pdv-stats-table{width:100%;min-width:1260px;border-collapse:collapse}
       .brecha-pdv-stats-table th,.brecha-pdv-stats-table td{border:1px solid #cbd5e1;padding:7px 8px;font-size:12px;vertical-align:top}
       .brecha-pdv-stats-table th{background:#e2e8f0;text-align:left}
       .brecha-pdv-stats-table tfoot td{background:#dbeafe;font-weight:800}
       .brecha-pdv-stats-table .brecha-num{text-align:right;white-space:nowrap}
+      .brecha-stats-manager-row>td{padding:9px!important;background:#f8fafc}
+      .brecha-group-manager,.brecha-group-zone{border:1px solid #dbe3ed;border-radius:8px;background:#fff;overflow:hidden}
+      .brecha-group-manager{border-color:#bfdbfe}
+      .brecha-group-manager>summary,.brecha-group-zone>summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;cursor:pointer;list-style:none;padding:10px 12px;color:#1e3a5f}
+      .brecha-group-manager>summary::-webkit-details-marker,.brecha-group-zone>summary::-webkit-details-marker{display:none}
+      .brecha-group-manager>summary{background:#eff6ff;font-size:12px}
+      .brecha-group-manager>summary .brecha-group-title{font-size:13px;font-weight:800}
+      .brecha-group-zone{margin:8px 10px;border-color:#e2e8f0}
+      .brecha-group-zone>summary{background:#f8fafc;font-size:11px}
+      .brecha-group-zone>summary .brecha-group-title{font-weight:800}
+      .brecha-group-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border:1px solid #dbe3ed;border-radius:999px;background:#fff;color:#475569;font-size:10px;font-weight:700;white-space:nowrap}
+      .brecha-group-content{padding:0 10px 10px}
+      .brecha-group-zone-content{padding:0 8px 8px;overflow:auto}
+      .brecha-group-pdv-table{width:100%;min-width:1180px;border-collapse:collapse}
+      .brecha-group-pdv-table th,.brecha-group-pdv-table td{border:1px solid #dbe3ed;padding:6px 7px;font-size:11px;vertical-align:top}
+      .brecha-group-pdv-table th{background:#f1f5f9;text-align:left}
+      .brecha-group-pdv-table .brecha-num{text-align:right;white-space:nowrap}
+      .brecha-group-pdv-table .brecha-pdv-detail-body{min-width:600px}
       .brecha-pdv-filter{border:0;background:transparent;padding:0;color:#1d4ed8;font:inherit;font-weight:800;text-align:left;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
       .brecha-pdv-filter:hover{color:#1e3a5f}
       .brecha-pdv-detail summary{cursor:pointer;color:#1d4ed8;font-weight:700;white-space:nowrap}
@@ -338,18 +356,20 @@
     panel.className = 'brecha-pdv-stats';
     panel.open = true;
     panel.innerHTML = '<summary>Estadísticas de interrupciones y multa por PDV</summary>' +
-      '<p class="brecha-pdv-stats-note">Cuenta cada guía una vez dentro de cada PDV; una guía repetida en PDV distintos se cuenta en cada uno. La brecha recurrente usa «Último tipo de problema». La multa acumulada suma el costo configurado por «Tipo de tiempo de espera»; los rangos preventivos se muestran aparte como costo evitado. Usa los filtros de abajo para acotar este análisis.</p>' +
+      '<p class="brecha-pdv-stats-note">Cuenta cada guía una vez dentro de cada PDV; una guía repetida en PDV distintos se cuenta en cada uno. Los PDV se agrupan por encargado y zona: se usa «Zona» si existe; de lo contrario, el área asignada del catálogo y, como último recurso, la región. La brecha recurrente usa «Último tipo de problema». La multa acumulada suma el costo configurado por «Tipo de tiempo de espera»; los rangos preventivos se muestran aparte como costo evitado. Usa los filtros de abajo para acotar este análisis.</p>' +
       '<div class="brecha-stats-filters" id="brechaStatsFilters"></div><button type="button" id="brechaStatsClearFilters" class="brecha-stats-reset">Limpiar filtros de estadísticas</button>' +
       '<div class="brecha-sim-summary" id="brechaSimulationSummary"></div><p class="brecha-sim-note">Simulación temporal: marca las guías penalizables y define el porcentaje de exoneración por guía. No modifica decisiones reales ni guarda cambios. Las guías preventivas no se pueden marcar porque no generan multa. <button type="button" id="brechaSimulationClear" class="brecha-stats-reset">Limpiar selección simulada</button></p>' +
       '<section class="brecha-operation-simulation"><h4>Simular exoneración por operación más reciente</h4><p>Marca una operación y aplica un porcentaje a todas sus guías penalizables dentro de los filtros actuales. Puedes ajustar las guías individualmente desde el desglose de cada PDV.</p><div class="brecha-operation-simulation-wrap"><table class="brecha-operation-simulation-table"><thead><tr><th>Operación más reciente</th><th>Guías penalizables</th><th>Multa actual</th><th>Monto exonerado</th><th>% exoneración</th><th>Simular</th></tr></thead><tbody id="excelOperationSimulationBody"></tbody><tfoot id="excelOperationSimulationFoot"></tfoot></table></div></section>' +
       '<div class="brecha-stats-charts" id="excelInterruptionCharts"></div>' +
-      '<div class="brecha-pdv-stats-wrap"><table class="brecha-pdv-stats-table"><thead><tr><th>PDV</th><th>Interrupciones<br><small>guías únicas</small></th><th>Multa acumulada</th><th>Costo evitado</th><th>Desglose y simulación</th></tr></thead><tbody id="excelInterruptionStatsBody"></tbody><tfoot id="excelInterruptionStatsFoot"></tfoot></table></div>';
+      '<div class="brecha-pdv-stats-wrap"><table class="brecha-pdv-stats-table"><thead><tr><th>Encargado · zona · PDV</th><th>Interrupciones<br><small>guías únicas</small></th><th>Multa acumulada</th><th>Monto exonerado<br><small>simulado</small></th><th>Saldo<br><small>simulado</small></th><th>Costo evitado</th><th>Desglose y simulación</th></tr></thead><tbody id="excelInterruptionStatsBody"></tbody><tfoot id="excelInterruptionStatsFoot"></tfoot></table></div>';
     summary.insertAdjacentElement('afterend', panel);
     enlazarControlesEstadisticas();
   }
 
   function valorEstadistica(registro, campo) {
     if (campo === 'pdv') return String(registro && (registro.pdv || registro.ultimoPunto) || '').trim() || 'Sin PDV';
+    if (campo === 'encargado') return String(registro && registro.encargado || '').trim() || 'Sin encargado';
+    if (campo === 'zona') return String(registro && (registro.zona || registro.area || registro.region) || '').trim() || 'Sin zona asignada';
     if (campo === 'operacion') return String(registro && registro.tipoOperacion || '').trim() || 'Sin tipo de operación';
     if (campo === 'problema') return String(registro && registro.ultimoProblema || '').trim() || 'Sin tipo de problema registrado';
     return String(registro && registro.tipoEspera || '').trim() || 'Sin tipo de interrupción';
@@ -460,7 +480,7 @@
     const root = document.getElementById('brechaStatsFilters');
     if (!root) return;
     const fields = [
-      ['pdv', 'PDV'], ['operacion', 'Operación más reciente'],
+      ['encargado', 'Encargado'], ['zona', 'Zona / área asignada'], ['pdv', 'PDV'], ['operacion', 'Operación más reciente'],
       ['problema', 'Tipo de problema / brecha'], ['interrupcion', 'Tipo de interrupción']
     ];
     const options = {};
@@ -612,9 +632,13 @@
     unicosActualizadosPorPdv(registros).forEach(registro => {
       const pdv = String(registro.pdv || registro.ultimoPunto || '').trim() || 'SIN PDV';
       const key = normalizar(pdv);
-      if (!pdvs.has(key)) pdvs.set(key, {pdv, guias:0, operaciones:new Map(), problemas:new Map(), montos:new Map(), multa:0, evitado:0, exonerado:0, multaRestante:0, registros:[]});
+      if (!pdvs.has(key)) pdvs.set(key, {pdv, guias:0, operaciones:new Map(), problemas:new Map(), montos:new Map(), multa:0, evitado:0, exonerado:0, multaRestante:0, registros:[], _encargados:new Map(), _zonas:new Map()});
       const item = pdvs.get(key);
       item.registros.push(registro);
+      const encargadoRegistro = valorEstadistica(registro, 'encargado');
+      const zonaRegistro = valorEstadistica(registro, 'zona');
+      item._encargados.set(normalizar(encargadoRegistro), encargadoRegistro);
+      item._zonas.set(normalizar(zonaRegistro), zonaRegistro);
       item.guias++;
       const operacion = String(registro.tipoOperacion || '').trim() || 'Sin tipo de operación';
       item.operaciones.set(operacion, (item.operaciones.get(operacion) || 0) + 1);
@@ -640,8 +664,42 @@
         }
       }
     });
-    pdvs.forEach(item => { item.multaRestante = Math.max(0, item.multa - item.exonerado); });
+    pdvs.forEach(item => {
+      item.multaRestante = Math.max(0, item.multa - item.exonerado);
+      item.encargado = item._encargados.size === 1 ? [...item._encargados.values()][0] : item._encargados.size ? 'Varios encargados' : 'Sin encargado';
+      item.zona = item._zonas.size === 1 ? [...item._zonas.values()][0] : item._zonas.size ? 'Varias zonas' : 'Sin zona asignada';
+      delete item._encargados; delete item._zonas;
+    });
     return [...pdvs.values()].sort((a,b) => a.pdv.localeCompare(b.pdv, 'es', {numeric:true, sensitivity:'base'}));
+  }
+
+  function acumularTotalesGrupo(grupo, pdv) {
+    grupo.pdvs.push(pdv);
+    grupo.guias += pdv.guias;
+    grupo.multa += pdv.multa;
+    grupo.exonerado += pdv.exonerado;
+    grupo.saldo += pdv.multaRestante;
+    grupo.evitado += pdv.evitado;
+  }
+
+  function agruparEstadisticasPorEncargadoZona(filas) {
+    const encargados = new Map();
+    (filas || []).forEach(pdv => {
+      const encargado = pdv.encargado || 'Sin encargado';
+      const zona = pdv.zona || 'Sin zona asignada';
+      const encargadoKey = normalizar(encargado) || 'SIN ENCARGADO';
+      const zonaKey = normalizar(zona) || 'SIN ZONA ASIGNADA';
+      if (!encargados.has(encargadoKey)) encargados.set(encargadoKey, {key:encargadoKey, nombre:encargado, zonas:new Map(), pdvs:[], guias:0, multa:0, exonerado:0, saldo:0, evitado:0});
+      const encargadoGroup = encargados.get(encargadoKey);
+      if (!encargadoGroup.zonas.has(zonaKey)) encargadoGroup.zonas.set(zonaKey, {key:zonaKey, nombre:zona, pdvs:[], guias:0, multa:0, exonerado:0, saldo:0, evitado:0});
+      acumularTotalesGrupo(encargadoGroup, pdv);
+      acumularTotalesGrupo(encargadoGroup.zonas.get(zonaKey), pdv);
+    });
+    const ordenar = (a,b) => a.nombre.localeCompare(b.nombre, 'es', {numeric:true, sensitivity:'base'});
+    return [...encargados.values()].sort(ordenar).map(encargado => ({
+      ...encargado,
+      zonas:[...encargado.zonas.values()].sort(ordenar).map(zona => ({...zona, pdvs:zona.pdvs.sort((a,b) => a.pdv.localeCompare(b.pdv, 'es', {numeric:true, sensitivity:'base'}))}))
+    }));
   }
 
   function htmlDetallePdv(item) {
@@ -760,6 +818,54 @@
     pager.innerHTML = '<button type="button" data-sim-page="-1" ' + (page <= 1 ? 'disabled' : '') + '>Anterior</button><span>Página ' + page + ' de ' + pageCount + ' · ' + numero(rows.length) + ' guías</span><button type="button" data-sim-page="1" ' + (page >= pageCount ? 'disabled' : '') + '>Siguiente</button>';
   }
 
+  function crearFilaEstadisticaPdv(item, abiertosPdv, abiertosSim) {
+    const row = document.createElement('tr');
+    const filterCell = document.createElement('td');
+    if (typeof window.seleccionarCeldaResumenExcel === 'function') {
+      const filter = document.createElement('button');
+      filter.type = 'button'; filter.className = 'brecha-pdv-filter'; filter.textContent = item.pdv;
+      filter.title = 'Filtrar detalle para ' + item.pdv;
+      filter.addEventListener('click', () => window.seleccionarCeldaResumenExcel(item.pdv, ''));
+      filterCell.appendChild(filter);
+    } else filterCell.textContent = item.pdv;
+    row.appendChild(filterCell);
+
+    [numero(item.guias), dinero(item.multa), dinero(item.exonerado), dinero(item.multaRestante), dinero(item.evitado)].forEach(value => {
+      const cell = document.createElement('td'); cell.className = 'brecha-num'; cell.textContent = value; row.appendChild(cell);
+    });
+    const detailCell = document.createElement('td');
+    const detail = document.createElement('details'); detail.className = 'brecha-pdv-detail';
+    detail.dataset.pdvKey = normalizar(item.pdv);
+    const summary = document.createElement('summary'); summary.textContent = 'Ver desglose';
+    detail.appendChild(summary);
+    const content = document.createElement('div'); content.innerHTML = htmlDetallePdv(item); detail.appendChild(content);
+    enlazarSimulacion(content, item);
+    const sim = content.querySelector('.brecha-sim-box');
+    if (sim) sim.dataset.simPdv = normalizar(item.pdv);
+    if (abiertosPdv.has(detail.dataset.pdvKey)) detail.open = true;
+    if (sim && abiertosSim.has(normalizar(item.pdv))) { sim.open = true; renderizarListaSimulacion(sim, item); }
+    detailCell.appendChild(detail); row.appendChild(detailCell);
+    return row;
+  }
+
+  function agregarChipsGrupo(summary, pares) {
+    pares.forEach(([label, value]) => {
+      const chip = document.createElement('span');
+      chip.className = 'brecha-group-chip';
+      chip.textContent = label + ': ' + value;
+      summary.appendChild(chip);
+    });
+  }
+
+  function tablaPdvDeZona(zona, abiertosPdv, abiertosSim) {
+    const table = document.createElement('table');
+    table.className = 'brecha-group-pdv-table';
+    table.innerHTML = '<thead><tr><th>PDV</th><th>Interrupciones<br><small>guías únicas</small></th><th>Multa acumulada</th><th>Monto exonerado<br><small>simulado</small></th><th>Saldo<br><small>simulado</small></th><th>Costo evitado</th><th>Desglose y simulación</th></tr></thead><tbody></tbody>';
+    const body = table.querySelector('tbody');
+    zona.pdvs.forEach(item => body.appendChild(crearFilaEstadisticaPdv(item, abiertosPdv, abiertosSim)));
+    return table;
+  }
+
   function renderizarEstadisticasInterrupciones(registros = registrosActuales()) {
     ensureStatsPanel();
     enlazarControlesEstadisticas();
@@ -770,6 +876,10 @@
     if (!body || !foot) return;
     const abiertosPdv = new Set([...body.querySelectorAll('.brecha-pdv-detail[open]')].map(detail => detail.dataset.pdvKey));
     const abiertosSim = new Set([...body.querySelectorAll('.brecha-sim-box[open]')].map(detail => detail.dataset.simPdv));
+    const managersPrevios = new Set([...body.querySelectorAll('.brecha-group-manager')].map(group => group.dataset.groupKey));
+    const managersAbiertos = new Set([...body.querySelectorAll('.brecha-group-manager[open]')].map(group => group.dataset.groupKey));
+    const zonasPrevias = new Set([...body.querySelectorAll('.brecha-group-zone')].map(group => group.dataset.groupKey));
+    const zonasAbiertas = new Set([...body.querySelectorAll('.brecha-group-zone[open]')].map(group => group.dataset.groupKey));
     const registrosVisibles = filtrarEstadisticas(estadisticasRegistros);
     const filas = resumirPorPdv(registrosVisibles);
     renderizarGraficosEstadisticas(filas);
@@ -777,40 +887,57 @@
     renderizarResumenSimulacion(estadisticasRegistros);
     body.replaceChildren(); foot.replaceChildren();
     if (!filas.length) {
-      body.innerHTML = '<tr><td colspan="5">No hay datos que coincidan con los filtros de estadísticas.</td></tr>';
+      body.innerHTML = '<tr><td colspan="7">No hay datos que coincidan con los filtros de estadísticas.</td></tr>';
       return;
     }
+
+    const grupos = agruparEstadisticasPorEncargadoZona(filas);
+    grupos.forEach(encargado => {
+      const groupRow = document.createElement('tr'); groupRow.className = 'brecha-stats-manager-row';
+      const cell = document.createElement('td'); cell.colSpan = 7;
+      const managerDetails = document.createElement('details');
+      managerDetails.className = 'brecha-group-manager'; managerDetails.dataset.groupKey = encargado.key;
+      managerDetails.open = managersPrevios.has(encargado.key) ? managersAbiertos.has(encargado.key) : true;
+      const managerSummary = document.createElement('summary');
+      const managerTitle = document.createElement('span'); managerTitle.className = 'brecha-group-title';
+      managerTitle.textContent = 'Encargado · ' + encargado.nombre; managerSummary.appendChild(managerTitle);
+      agregarChipsGrupo(managerSummary, [
+        ['Zonas', numero(encargado.zonas.length)], ['PDV', numero(encargado.pdvs.length)], ['Guías', numero(encargado.guias)],
+        ['Multa', dinero(encargado.multa)], ['Exonerado simulado', dinero(encargado.exonerado)], ['Saldo simulado', dinero(encargado.saldo)], ['Costo evitado', dinero(encargado.evitado)]
+      ]);
+      managerDetails.appendChild(managerSummary);
+      const managerContent = document.createElement('div'); managerContent.className = 'brecha-group-content';
+
+      encargado.zonas.forEach(zona => {
+        const zoneDetails = document.createElement('details'); zoneDetails.className = 'brecha-group-zone';
+        zoneDetails.dataset.groupKey = encargado.key + '::' + zona.key;
+        zoneDetails.open = zonasPrevias.has(zoneDetails.dataset.groupKey) ? zonasAbiertas.has(zoneDetails.dataset.groupKey) : false;
+        const zoneSummary = document.createElement('summary');
+        const zoneTitle = document.createElement('span'); zoneTitle.className = 'brecha-group-title';
+        zoneTitle.textContent = 'Zona · ' + zona.nombre; zoneSummary.appendChild(zoneTitle);
+        agregarChipsGrupo(zoneSummary, [
+          ['PDV', numero(zona.pdvs.length)], ['Guías', numero(zona.guias)], ['Multa', dinero(zona.multa)],
+          ['Exonerado simulado', dinero(zona.exonerado)], ['Saldo simulado', dinero(zona.saldo)], ['Costo evitado', dinero(zona.evitado)]
+        ]);
+        zoneDetails.appendChild(zoneSummary);
+        const zoneContent = document.createElement('div'); zoneContent.className = 'brecha-group-zone-content';
+        zoneContent.appendChild(tablaPdvDeZona(zona, abiertosPdv, abiertosSim));
+        zoneDetails.appendChild(zoneContent); managerContent.appendChild(zoneDetails);
+      });
+      managerDetails.appendChild(managerContent); cell.appendChild(managerDetails); groupRow.appendChild(cell); body.appendChild(groupRow);
+    });
+
     const totalGuias = filas.reduce((sum,x) => sum + x.guias, 0);
     const totalMulta = filas.reduce((sum,x) => sum + x.multa, 0);
+    const totalExonerado = filas.reduce((sum,x) => sum + x.exonerado, 0);
+    const totalSaldo = filas.reduce((sum,x) => sum + x.multaRestante, 0);
     const totalEvitado = filas.reduce((sum,x) => sum + x.evitado, 0);
-    filas.forEach(item => {
-      const row = document.createElement('tr');
-      const cells = [item.pdv, numero(item.guias), dinero(item.multa), dinero(item.evitado)];
-      cells.forEach((value, index) => {
-        const cell = document.createElement('td');
-        if (index === 0 && typeof window.seleccionarCeldaResumenExcel === 'function') {
-          const filter = document.createElement('button'); filter.type = 'button'; filter.className = 'brecha-pdv-filter'; filter.textContent = value; filter.title = 'Filtrar detalle para ' + value;
-          filter.addEventListener('click', () => window.seleccionarCeldaResumenExcel(item.pdv, ''));
-          cell.appendChild(filter);
-        } else cell.textContent = value;
-        if (index === 1 || index === 2 || index === 3) cell.className = 'brecha-num';
-        row.appendChild(cell);
-      });
-      const detailCell = document.createElement('td');
-      const detail = document.createElement('details'); detail.className = 'brecha-pdv-detail';
-      detail.dataset.pdvKey = normalizar(item.pdv);
-      const summary = document.createElement('summary'); summary.textContent = 'Ver desglose';
-      detail.appendChild(summary);
-      const content = document.createElement('div'); content.innerHTML = htmlDetallePdv(item); detail.appendChild(content);
-      enlazarSimulacion(content, item);
-      const sim = content.querySelector('.brecha-sim-box');
-      if (sim) sim.dataset.simPdv = normalizar(item.pdv);
-      if (abiertosPdv.has(detail.dataset.pdvKey)) detail.open = true;
-      if (sim && abiertosSim.has(normalizar(item.pdv))) { sim.open = true; renderizarListaSimulacion(sim, item); }
-      detailCell.appendChild(detail); row.appendChild(detailCell); body.appendChild(row);
-    });
     const row = document.createElement('tr');
-    ['TOTAL', numero(totalGuias), dinero(totalMulta), dinero(totalEvitado), ''].forEach((value,index) => { const cell = document.createElement('td'); cell.textContent = value; if (index === 1 || index === 2 || index === 3) cell.className='brecha-num'; row.appendChild(cell); });
+    ['TOTAL · suma por PDV', numero(totalGuias), dinero(totalMulta), dinero(totalExonerado), dinero(totalSaldo), dinero(totalEvitado), ''].forEach((value,index) => {
+      const cell = document.createElement('td'); cell.textContent = value;
+      if (index > 0 && index < 6) cell.className = 'brecha-num';
+      row.appendChild(cell);
+    });
     foot.appendChild(row);
   }
 

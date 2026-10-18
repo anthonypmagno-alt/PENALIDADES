@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=brecha-costos-1"></script>
+<script src="./bridge.js?v=20261018-excel-estadisticas-1200-1"></script>
   <base target="_top">
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Gestión de guías V2</title>
@@ -293,7 +293,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     try{
       await new Promise(resolver=>setTimeout(resolver,30));
       const filas=await leerFilasArchivoExcel(archivo);
-      procesarFilasExcel(filas,archivo.name);
+      await procesarFilasExcel(filas,archivo.name);
       elegirRegionesTrackExcel();
     }catch(error){excelRegistros=[];excelFiltrados=[];document.getElementById("excelResults").classList.add("hidden");mostrarMensajeExcel("No se pudo leer el archivo: "+errorTexto(error),false)}finally{mostrarLoading(false)}
   }
@@ -337,34 +337,46 @@ async function leerFilasArchivoExcel(archivo,usarFormatoVisible,tipo){
     if(maxFila>=0&&maxCol>=0)hoja["!ref"]=XLSX.utils.encode_range({s:{r:minFila,c:minCol},e:{r:maxFila,c:maxCol}})
   }
 
-  function procesarFilasExcel(filas,nombreArchivo){limpiarSeleccionExcel();
-    if(!Array.isArray(filas)||filas.length<2)throw new Error("El archivo no contiene registros para consultar.");
-    const encabezados=filas[0],indices={
-      guia:buscarColumnaExcel(encabezados,["Número de Guía","Numero de Guia","Guía","Guia"]),
-      punto:buscarColumnaExcel(encabezados,["Último punto de operación","Ultimo punto de operacion"]),
-      operacion:buscarColumnaExcel(encabezados,["Tipo de operación más reciente","Tipo de operacion mas reciente"]),
-      escaner:buscarColumnaExcel(encabezados,["Escaner","Escáner","Scanner"]),
-      problema:buscarColumnaExcel(encabezados,["Último tipo de problema","Ultimo tipo de problema"]),
-      fecha:buscarColumnaExcel(encabezados,["Último tiempo de funcionamiento","Ultimo tiempo de funcionamiento","Fecha y hora de última actualización","Fecha y hora de ultima actualizacion","Último tiempo de actualización","Ultimo tiempo de actualizacion"]),
-      tipoEspera:buscarColumnaExcel(encabezados,["Tipo de tiempo de espera"]),
-      duracion:buscarColumnaExcel(encabezados,["Duración del tiempo de espera","Duracion del tiempo de espera"]),
-      pdv:buscarColumnaExcel(encabezados,["Último punto de operación","Ultimo punto de operacion"]),siguienteParada:buscarColumnaExcel(encabezados,["Nombre de la siguiente parada"])
-    },faltantes=[];
-    if(indices.guia<0)faltantes.push("Número de Guía");if(indices.punto<0)faltantes.push("Último punto de operación");if(indices.fecha<0)faltantes.push("Último tiempo de funcionamiento");if(indices.problema<0)faltantes.push("Último tipo de problema");
-    if(faltantes.length)throw new Error("Faltan columnas requeridas: "+faltantes.join(", ")+".");
-    const pdvSesion=limpiarPdvExcel(sesion.usuario);if(indices.pdv<0)throw new Error("El archivo debe incluir la columna Último punto de operación para limitar la consulta al PDV conectado.");
-    let omitidasPDV=0;excelRegistros=[];
-    filas.slice(1).forEach((fila,posicion)=>{
-      const guia=textoExcel(valorExcel(fila,indices.guia));if(!guia)return;
-      const pdv=textoExcel(valorExcel(fila,indices.pdv));if(limpiarPdvExcel(pdv)!==pdvSesion){omitidasPDV++;return}
-      const fecha=parsearFechaExcel(valorExcel(fila,indices.fecha));
-      excelRegistros.push({fila:posicion+2,guia:guia,pdv:pdv,siguienteParada:textoExcel(valorExcel(fila,indices.siguienteParada)),ultimoPunto:textoExcel(valorExcel(fila,indices.punto)),tipoOperacion:textoExcel(valorExcel(fila,indices.operacion)),escaner:textoExcel(valorExcel(fila,indices.escaner)),ultimoProblema:textoExcel(valorExcel(fila,indices.problema)),fechaUltimaActualizacion:fecha,tipoEspera:textoExcel(valorExcel(fila,indices.tipoEspera)),duracionEspera:valorExcel(fila,indices.duracion),plazo:fecha?new Date(fecha.getTime()+48*60*60*1000):null});
-    });
-    if(!excelRegistros.length)throw new Error("El archivo no contiene guías disponibles para esta consulta.");
-    excelRegistros.sort((a,b)=>a.plazo&&b.plazo?a.plazo-b.plazo:a.plazo?-1:b.plazo?1:a.fila-b.fila);excelTrackNombre=nombreArchivo;document.getElementById("excelEnvioUpload").classList.remove("hidden");
-    const detalle=" Se muestran únicamente las "+num(excelRegistros.length)+" filas asignadas a "+sesion.usuario+(omitidasPDV?"; se omitieron "+num(omitidasPDV)+" de otros PDV.":".");
-    mostrarMensajeExcel("Track Break leído: "+nombreArchivo+" · "+num(excelRegistros.length)+" guías."+detalle+" Puede actualizar Exportación de forma independiente.",true);
+  async function procesarFilasExcel(filas,nombreArchivo){
+ limpiarSeleccionExcel();
+ if(!Array.isArray(filas)||filas.length<2)throw new Error("El archivo no contiene registros para consultar.");
+ const encabezados=filas[0],indices={
+  guia:buscarColumnaExcel(encabezados,["Número de Guía","Numero de Guia","Guía","Guia"]),
+  punto:buscarColumnaExcel(encabezados,["Último punto de operación","Ultimo punto de operacion"]),
+  operacion:buscarColumnaExcel(encabezados,["Tipo de operación más reciente","Tipo de operacion mas reciente"]),
+  escaner:buscarColumnaExcel(encabezados,["Escaner","Escáner","Scanner"]),
+  problema:buscarColumnaExcel(encabezados,["Último tipo de problema","Ultimo tipo de problema"]),
+  fecha:buscarColumnaExcel(encabezados,["Último tiempo de funcionamiento","Ultimo tiempo de funcionamiento","Fecha y hora de última actualización","Fecha y hora de ultima actualizacion","Último tiempo de actualización","Ultimo tiempo de actualizacion"]),
+  tipoEspera:buscarColumnaExcel(encabezados,["Tipo de tiempo de espera"]),
+  duracion:buscarColumnaExcel(encabezados,["Duración del tiempo de espera","Duracion del tiempo de espera"]),
+  pdv:buscarColumnaExcel(encabezados,["Último punto de operación","Ultimo punto de operacion"]),
+  siguienteParada:buscarColumnaExcel(encabezados,["Nombre de la siguiente parada"])
+ },faltantes=[];
+ if(indices.guia<0)faltantes.push("Número de Guía");
+ if(indices.punto<0)faltantes.push("Último punto de operación");
+ if(indices.fecha<0)faltantes.push("Último tiempo de funcionamiento");
+ if(indices.problema<0)faltantes.push("Último tipo de problema");
+ if(faltantes.length)throw new Error("Faltan columnas requeridas: "+faltantes.join(", ")+".");
+ const esPDV=sesion&&sesion.rol==="PDV",pdvSesion=esPDV?limpiarPdvExcel(sesion.usuario):"";
+ if(esPDV&&indices.pdv<0)throw new Error("El archivo debe incluir la columna Último punto de operación para limitar la consulta al PDV conectado.");
+ let omitidasPDV=0;excelRegistros=[];
+ const total=filas.length-1,bloque=500;
+ for(let inicio=1;inicio<filas.length;inicio+=bloque){
+  const fin=Math.min(filas.length,inicio+bloque);
+  for(let indice=inicio;indice<fin;indice++){
+   const fila=filas[indice],guia=textoExcel(valorExcel(fila,indices.guia));if(!guia)continue;
+   const pdv=textoExcel(valorExcel(fila,indices.pdv));if(esPDV&&limpiarPdvExcel(pdv)!==pdvSesion){omitidasPDV++;continue;}
+   const fecha=parsearFechaExcel(valorExcel(fila,indices.fecha));
+   excelRegistros.push({fila:indice+1,guia:guia,pdv:pdv,siguienteParada:textoExcel(valorExcel(fila,indices.siguienteParada)),ultimoPunto:textoExcel(valorExcel(fila,indices.punto)),tipoOperacion:textoExcel(valorExcel(fila,indices.operacion)),escaner:textoExcel(valorExcel(fila,indices.escaner)),ultimoProblema:textoExcel(valorExcel(fila,indices.problema)),fechaUltimaActualizacion:fecha,tipoEspera:textoExcel(valorExcel(fila,indices.tipoEspera)),duracionEspera:valorExcel(fila,indices.duracion),plazo:fecha?new Date(fecha.getTime()+48*60*60*1000):null});
   }
+  if(fin<filas.length){mostrarLoading(true,"Procesando filas "+num(fin-1)+" de "+num(total)+"...");await new Promise(resolver=>setTimeout(resolver,0));}
+ }
+ if(!excelRegistros.length)throw new Error("El archivo no contiene guías disponibles para esta consulta.");
+ excelRegistros.sort((a,b)=>a.plazo&&b.plazo?a.plazo-b.plazo:a.plazo?-1:b.plazo?1:a.fila-b.fila);
+ excelTrackNombre=nombreArchivo;document.getElementById("excelEnvioUpload").classList.remove("hidden");
+ const detalle=esPDV?" Se muestran únicamente las "+num(excelRegistros.length)+" filas asignadas a "+sesion.usuario+(omitidasPDV?"; se omitieron "+num(omitidasPDV)+" de otros PDV.":"."):"";
+ mostrarMensajeExcel("Track Break leído: "+nombreArchivo+" · "+num(excelRegistros.length)+" filas válidas de "+num(total)+"."+detalle+" Puede actualizar Exportación de forma independiente.",true);
+}
 
   function procesarFilasGuiasEnvio(filas){
  if(!Array.isArray(filas)||filas.length<2)throw new Error('El archivo no contiene registros para cruzar.');
@@ -414,7 +426,7 @@ async function leerFilasArchivoExcel(archivo,usarFormatoVisible,tipo){
 }
 
   function formatearDestinoExcel(x){return `<div class="excel-destination"><div><b>DPTO:</b> ${esc(x.dpto||"")}</div><div><b>PROV:</b> ${esc(x.prov||"")}</div><div><b>DSTO:</b> ${esc(x.dsto||"")}</div></div>`}
-  function actualizarResumenExcel(){renderResumenPdvExcel();const estados=excelFiltrados.map(estadoPlazoExcel);document.getElementById("excelTotal").textContent=num(excelFiltrados.length);document.getElementById("excelVencidas").textContent=num(estados.filter(x=>x==="VENCIDO").length);document.getElementById("excelProximas").textContent=num(estados.filter(x=>x==="POR VENCER").length);document.getElementById("excelVigentes").textContent=num(estados.filter(x=>x==="VIGENTE").length)}
+  function actualizarResumenExcel(){renderResumenPdvExcel();if(typeof renderizarEstadisticasInterrupciones==='function')renderizarEstadisticasInterrupciones(excelFiltrados);const estados=excelFiltrados.map(estadoPlazoExcel);document.getElementById("excelTotal").textContent=num(excelFiltrados.length);document.getElementById("excelVencidas").textContent=num(estados.filter(x=>x==="VENCIDO").length);document.getElementById("excelProximas").textContent=num(estados.filter(x=>x==="POR VENCER").length);document.getElementById("excelVigentes").textContent=num(estados.filter(x=>x==="VIGENTE").length)}
   function renderExcel(){actualizarEstadoListaGuias('excel');
     const body=document.getElementById("excelBody"),totalPaginas=Math.max(1,Math.ceil(excelFiltrados.length/EXCEL_PAGE_SIZE));if(excelPagina>totalPaginas)excelPagina=totalPaginas;const inicio=(excelPagina-1)*EXCEL_PAGE_SIZE,visibles=excelFiltrados.slice(inicio,inicio+EXCEL_PAGE_SIZE);body.innerHTML="";
     if(!visibles.length)body.innerHTML='<tr><td colspan="8" style="padding:34px;text-align:center;color:#64748b">No hay guías que coincidan con la búsqueda o el filtro.</td></tr>';
@@ -1026,4 +1038,4 @@ function actualizarClasificacionV2(){
  else{resumen=r.resumen;renderResumen();filtrar();}
 }
 setInterval(actualizarClasificacionV2,60000);
-</script><script src="./brecha-costos.js?v=2"></script></body></html>
+</script><script src="./brecha-costos.js?v=20261018-excel-estadisticas-1200-1"></script></body></html>

@@ -18,10 +18,11 @@
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, ' ').trim().toUpperCase();
   const claveGuia = value => normalizar(value).replace(/\s+/g, '');
+  const claveGuiaPdv = registro => claveGuia(registro && registro.guia) + '|' + normalizar(registro && (registro.pdv || registro.ultimoPunto));
   const unicosPorGuia = registros => {
     const vistos = new Set();
     return (registros || []).filter(registro => {
-      const key = claveGuia(registro && registro.guia);
+      const key = claveGuiaPdv(registro);
       if (!key || vistos.has(key)) return false;
       vistos.add(key);
       return true;
@@ -90,7 +91,7 @@
     const conteos = new Map();
     const vistos = new Set();
     registros.forEach(registro => {
-      const guia = claveGuia(registro.guia);
+      const guia = claveGuiaPdv(registro);
       if (!guia || vistos.has(guia)) return;
       vistos.add(guia);
       const prev = preventiva(registro);
@@ -133,7 +134,7 @@
     const unicos = [];
     const vistos = new Set();
     (registros || []).forEach(registro => {
-      const key = claveGuia(registro.guia);
+      const key = claveGuiaPdv(registro);
       if (!key || vistos.has(key)) return;
       vistos.add(key);
       unicos.push(registro);
@@ -213,6 +214,25 @@
       .brecha-summary-print p{font-size:9pt;margin:2mm 0 4mm}
       .brecha-summary-print .brecha-summary-table{width:100%;min-width:0;table-layout:auto;margin:0 0 5mm;border-collapse:collapse!important;border:1px solid #1f2937!important}
       .brecha-summary-print .brecha-summary-table th,.brecha-summary-print .brecha-summary-table td{font-size:9pt;padding:2mm;border:1px solid #1f2937!important;border-style:solid!important;}
+      .brecha-pdv-stats{margin:14px 0 18px;padding:14px 16px;border:1px solid #cbd5e1;border-radius:10px;background:#fff}
+      .brecha-pdv-stats>summary{cursor:pointer;font-size:14px;font-weight:800;color:#1e3a5f}
+      .brecha-pdv-stats-note{margin:9px 0;color:#475569;font-size:12px;line-height:1.5}
+      .brecha-pdv-stats-wrap{overflow:auto}
+      .brecha-pdv-stats-table{width:100%;min-width:980px;border-collapse:collapse}
+      .brecha-pdv-stats-table th,.brecha-pdv-stats-table td{border:1px solid #cbd5e1;padding:7px 8px;font-size:12px;vertical-align:top}
+      .brecha-pdv-stats-table th{background:#e2e8f0;text-align:left}
+      .brecha-pdv-stats-table tfoot td{background:#dbeafe;font-weight:800}
+      .brecha-pdv-stats-table .brecha-num{text-align:right;white-space:nowrap}
+      .brecha-pdv-filter{border:0;background:transparent;padding:0;color:#1d4ed8;font:inherit;font-weight:800;text-align:left;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+      .brecha-pdv-filter:hover{color:#1e3a5f}
+      .brecha-pdv-detail summary{cursor:pointer;color:#1d4ed8;font-weight:700;white-space:nowrap}
+      .brecha-pdv-detail-body{min-width:600px;padding:10px 0}
+      .brecha-pdv-detail-body h5{margin:9px 0 5px;color:#1e3a5f}
+      .brecha-pdv-subtable{width:100%;border-collapse:collapse;margin:4px 0 10px}
+      .brecha-pdv-subtable th,.brecha-pdv-subtable td{border:1px solid #dbe3ed;padding:5px 7px;font-size:11px}
+      .brecha-pdv-subtable th{background:#f1f5f9}
+      .brecha-pdv-subtable .brecha-num{text-align:right;white-space:nowrap}
+      .brecha-pdv-total{font-weight:800;color:#153e67}
       @media print{.brecha-avoided{color:#15803d!important;background:#dcfce7!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}.brecha-preventive-row td{background:#f0fdf4!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}}
     `;
     document.head.appendChild(style);
@@ -235,7 +255,136 @@
       <div class="table-wrap"><table class="brecha-shared-table"><thead><tr><th>Tipo de interrupción / preventiva</th><th>Guías cargadas</th><th>Costo unitario o evitado (S/)</th></tr></thead><tbody id="brechaCostBody"></tbody></table></div>
       <div id="brechaCostActions" class="brecha-cost-actions"><button type="button" class="small" onclick="guardarCostosBrechaCompartidos()">Guardar valores para todos</button><span class="brecha-shared-status" id="brechaCostRoleNote"></span></div>
     `;
+    const stats = document.getElementById('excelInterruptionStats');
+    (stats || summary).insertAdjacentElement('afterend', panel);
+  }
+
+  function ensureStatsPanel() {
+    if (document.getElementById('excelInterruptionStats')) return;
+    const summary = document.getElementById('excelPdvSummary');
+    if (!summary) return;
+    const panel = document.createElement('details');
+    panel.id = 'excelInterruptionStats';
+    panel.className = 'brecha-pdv-stats';
+    panel.open = true;
+    panel.innerHTML = '<summary>Estadísticas de interrupciones y multa por PDV</summary>' +
+      '<p class="brecha-pdv-stats-note">Se recalcula con los filtros activos. Cuenta cada guía una vez dentro de cada PDV; una guía repetida en PDV distintos se cuenta en cada uno. La brecha recurrente usa «Último tipo de problema». La multa acumulada suma el costo configurado por «Tipo de tiempo de espera»; los rangos preventivos se muestran aparte como costo evitado.</p>' +
+      '<div class="brecha-pdv-stats-wrap"><table class="brecha-pdv-stats-table"><thead><tr><th>PDV</th><th>Interrupciones<br><small>guías únicas</small></th><th>Operación más reciente<br><small>más frecuente</small></th><th>Brecha / problema<br><small>más recurrente</small></th><th>Multa acumulada</th><th>Costo evitado</th><th>Desglose</th></tr></thead><tbody id="excelInterruptionStatsBody"></tbody><tfoot id="excelInterruptionStatsFoot"></tfoot></table></div>';
     summary.insertAdjacentElement('afterend', panel);
+  }
+
+  function entradasOrdenadas(map) {
+    return [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es', {numeric:true, sensitivity:'base'}));
+  }
+
+  function celdaFrecuente(map, vacio) {
+    const top = entradasOrdenadas(map)[0];
+    return top ? escapar(top[0]) + ' · ' + numero(top[1]) : escapar(vacio);
+  }
+
+  function tablaEstadistica(titulo, rows, columnas) {
+    const head = columnas.map(x => '<th>' + x + '</th>').join('');
+    const body = rows.length ? rows.map(row => '<tr>' + row.map((value, index) => '<td' + (index > 0 && typeof value === 'number' ? ' class="brecha-num"' : '') + '>' + (typeof value === 'string' ? value : escapar(numero(value))) + '</td>').join('') + '</tr>').join('') : '<tr><td colspan="' + columnas.length + '">Sin datos en este filtro.</td></tr>';
+    return '<h5>' + escapar(titulo) + '</h5><table class="brecha-pdv-subtable"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
+  }
+
+  function resumirPorPdv(registros, ahora = Date.now()) {
+    const recientes = new Map();
+    (registros || []).forEach(registro => {
+      const guia = claveGuia(registro && registro.guia);
+      const pdv = String(registro && (registro.pdv || registro.ultimoPunto) || '').trim();
+      if (!guia || !pdv) return;
+      const key = normalizar(pdv) + '|' + guia;
+      const actual = recientes.get(key);
+      const fechaNueva = fecha(registro.fechaUltimaActualizacion)?.getTime() || 0;
+      const fechaActual = fecha(actual && actual.fechaUltimaActualizacion)?.getTime() || 0;
+      if (!actual || fechaNueva >= fechaActual) recientes.set(key, registro);
+    });
+    const pdvs = new Map();
+    recientes.forEach(registro => {
+      const pdv = String(registro.pdv || registro.ultimoPunto || '').trim() || 'SIN PDV';
+      const key = normalizar(pdv);
+      if (!pdvs.has(key)) pdvs.set(key, {pdv, guias:0, operaciones:new Map(), problemas:new Map(), montos:new Map(), multa:0, evitado:0});
+      const item = pdvs.get(key);
+      item.guias++;
+      const operacion = String(registro.tipoOperacion || '').trim() || 'Sin tipo de operación';
+      item.operaciones.set(operacion, (item.operaciones.get(operacion) || 0) + 1);
+      const problema = String(registro.ultimoProblema || '').trim() || 'Sin tipo de problema registrado';
+      item.problemas.set(problema, (item.problemas.get(problema) || 0) + 1);
+      const preventivaActual = preventiva(registro, ahora);
+      const tipo = String(registro.tipoEspera || '').trim() || 'Sin tipo de interrupción';
+      const clave = tipo === 'Sin tipo de interrupción' ? 'SIN_TIPO' : claveTipo(tipo);
+      const preventivaKey = preventivaActual ? 'PREVENTIVA' : 'PENALIZABLE';
+      const montoKey = clave + '|' + preventivaKey;
+      if (!item.montos.has(montoKey)) item.montos.set(montoKey, {tipo, cantidad:0, tarifa:tarifa(clave), preventiva:Boolean(preventivaActual), subtotal:0});
+      const monto = item.montos.get(montoKey);
+      monto.cantidad++;
+      monto.subtotal += tarifa(clave);
+      if (preventivaActual) item.evitado += tarifa(clave);
+      else item.multa += tarifa(clave);
+    });
+    return [...pdvs.values()].sort((a,b) => a.pdv.localeCompare(b.pdv, 'es', {numeric:true, sensitivity:'base'}));
+  }
+
+  function htmlDetallePdv(item) {
+    const operaciones = entradasOrdenadas(item.operaciones).map(([tipo,cantidad]) => [escapar(tipo), cantidad]);
+    const problemas = entradasOrdenadas(item.problemas).map(([tipo,cantidad]) => [escapar(tipo), cantidad]);
+    const montos = [...item.montos.values()].sort((a,b) => b.subtotal-a.subtotal || a.tipo.localeCompare(b.tipo, 'es', {numeric:true, sensitivity:'base'}));
+    let acumulado = 0;
+    const filasMonto = montos.map(monto => {
+      const esPreventiva = monto.preventiva;
+      if (!esPreventiva) acumulado += monto.subtotal;
+      return [escapar((esPreventiva ? 'Preventiva · ' : '') + monto.tipo), monto.cantidad, dinero(monto.tarifa), dinero(monto.subtotal), esPreventiva ? 'Costo evitado' : dinero(acumulado)];
+    });
+    return '<div class="brecha-pdv-detail-body">' +
+      tablaEstadistica('Cantidad por tipo de operación más reciente', operaciones, ['Tipo de operación', 'Guías']) +
+      tablaEstadistica('Recurrencia por último tipo de problema / brecha', problemas, ['Tipo de problema', 'Guías']) +
+      tablaEstadistica('Monto de multa por tipo de interrupción', filasMonto, ['Tipo de tiempo de espera', 'Guías', 'Costo unitario', 'Subtotal', 'Multa acumulada']) +
+      '<p class="brecha-pdv-total">Multa acumulada: ' + dinero(item.multa) + ' · Costo evitado: ' + dinero(item.evitado) + '</p></div>';
+  }
+
+  function renderizarEstadisticasInterrupciones(registros = registrosActuales()) {
+    ensureStatsPanel();
+    const body = document.getElementById('excelInterruptionStatsBody');
+    const foot = document.getElementById('excelInterruptionStatsFoot');
+    if (!body || !foot) return;
+    const filas = resumirPorPdv(registros);
+    body.replaceChildren(); foot.replaceChildren();
+    if (!filas.length) {
+      body.innerHTML = '<tr><td colspan="7">Carga una consulta para ver estadísticas por PDV.</td></tr>';
+      return;
+    }
+    const totalGuias = filas.reduce((sum,x) => sum + x.guias, 0);
+    const totalMulta = filas.reduce((sum,x) => sum + x.multa, 0);
+    const totalEvitado = filas.reduce((sum,x) => sum + x.evitado, 0);
+    filas.forEach(item => {
+      const row = document.createElement('tr');
+      const operation = entradasOrdenadas(item.operaciones)[0];
+      const problem = entradasOrdenadas(new Map([...item.problemas].filter(([key]) => key !== 'Sin tipo de problema registrado')))[0];
+      const cells = [item.pdv, numero(item.guias), operation ? operation[0] + ' · ' + numero(operation[1]) : 'Sin dato', problem ? problem[0] + ' · ' + numero(problem[1]) : 'Sin problema informado', dinero(item.multa), dinero(item.evitado)];
+      cells.forEach((value, index) => {
+        const cell = document.createElement('td');
+        if (index === 0 && typeof window.seleccionarCeldaResumenExcel === 'function') {
+          const filter = document.createElement('button'); filter.type = 'button'; filter.className = 'brecha-pdv-filter'; filter.textContent = value; filter.title = 'Filtrar detalle para ' + value;
+          filter.addEventListener('click', () => window.seleccionarCeldaResumenExcel(item.pdv, ''));
+          cell.appendChild(filter);
+        } else cell.textContent = value;
+        if (index === 1 || index === 4 || index === 5) cell.className = 'brecha-num';
+        row.appendChild(cell);
+      });
+      const detailCell = document.createElement('td');
+      const detail = document.createElement('details'); detail.className = 'brecha-pdv-detail';
+      const summary = document.createElement('summary'); summary.textContent = 'Ver desglose';
+      detail.appendChild(summary);
+      const content = document.createElement('div'); content.innerHTML = htmlDetallePdv(item); detail.appendChild(content);
+      detailCell.appendChild(detail); row.appendChild(detailCell); body.appendChild(row);
+    });
+    const totalOperations = new Set();
+    const totalProblems = new Set();
+    filas.forEach(x => { x.operaciones.forEach((_,key) => totalOperations.add(key)); x.problemas.forEach((_,key) => totalProblems.add(key)); });
+    const row = document.createElement('tr');
+    ['TOTAL', numero(totalGuias), totalOperations.size + ' tipos de operación', totalProblems.size + ' tipos de problema', dinero(totalMulta), dinero(totalEvitado), ''].forEach((value,index) => { const cell = document.createElement('td'); cell.textContent = value; if (index === 1 || index === 4 || index === 5) cell.className='brecha-num'; row.appendChild(cell); });
+    foot.appendChild(row);
   }
 
   function ensureModalSummary() {
@@ -301,6 +450,7 @@
       body.appendChild(row);
     });
     if (status && costosCargados && !cambiosPendientes) status.textContent = 'Configuración compartida cargada desde Supabase.';
+    renderizarEstadisticasInterrupciones();
   }
 
   function reemplazarCostos(response) {
@@ -397,6 +547,7 @@
 
   function enlazarFunciones() {
     window.renderizarCostosBrecha = renderizarCostosBrecha;
+    window.renderizarEstadisticasInterrupciones = renderizarEstadisticasInterrupciones;
     window.generarResumenCostosBrecha = resumir;
     window.htmlResumenCostosBrecha = htmlResumenCostosBrecha;
     window.prepararResumenCostosModal = prepararResumenCostosModal;
@@ -448,10 +599,12 @@
 
   function inicializar() {
     ensureStyles();
-    ensureCostPanel();
     ensureModalSummary();
+    ensureStatsPanel();
+    ensureCostPanel();
     enlazarFunciones();
     renderizarCostosBrecha();
+    renderizarEstadisticasInterrupciones();
     if (typeof window.recibirConsulta !== 'function') {
       document.addEventListener('DOMContentLoaded', () => enlazarFunciones(), { once: true });
     }
@@ -463,7 +616,7 @@
 
   window.BrechaCostosCompartidos = {
     preventiva, resumir, obtenerTiposConfigurables, claveTipo,
-    cargarCostosCompartidos, renderizarCostosBrecha
+    cargarCostosCompartidos, renderizarCostosBrecha, resumirPorPdv, renderizarEstadisticasInterrupciones
   };
   inicializar();
 })();

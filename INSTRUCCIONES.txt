@@ -2,6 +2,13 @@ PORTAL COMPLETO: REVISION DE GUIAS + PENALIDADES
 
 Este paquete integra Penalidades dentro del portal principal. El index.html conserva el inicio de sesión de Revisión de Guías. penalidades.html valida y reutiliza la sesión del portal; no tiene un formulario de login propio.
 
+ACTUALIZACIÓN DE CONSULTA DESDE EXCEL (18-10-2026)
+- La lectura de Track Break procesa las filas por bloques y muestra el avance; la interfaz no corta la hoja en 1,200 filas.
+- Se conserva una guía por PDV y se selecciona la actualización más reciente cuando el archivo repite la misma guía dentro del mismo PDV.
+- Se agrega un resumen por PDV con recuento por tipo de operación más reciente, tipo de problema/brecha más recurrente y multa acumulada por tipo de tiempo de espera. Los rangos preventivos aparecen como costo evitado.
+- La multa usa los costos compartidos configurados por el administrador. Si no se definieron costos, el importe se mostrará en cero hasta que se configuren.
+- No requiere SQL adicional. Para actualizar manualmente, reemplaza gestion-v2.html, pdv-v2.html, bridge.js y brecha-costos.js; al reemplazar todo el portal, carga el contenido completo del ZIP en la raíz del repositorio.
+
 PUBLICAR EN GITHUB PAGES
 1. Descomprime el ZIP.
 2. En el repositorio que publicarás con GitHub Pages, carga el CONTENIDO de esta carpeta en la raíz (donde quedará index.html). No subas la carpeta contenedora como un nivel adicional.

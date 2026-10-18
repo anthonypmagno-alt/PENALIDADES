@@ -1,0 +1,17 @@
+ACTUALIZACION: ETIQUETA DE VENCIDO EN PDF
+
+Paquete base: PENALIDADES-SLA-PDV-v7-20261015.zip
+
+Cambio aplicado:
+- Los PDF descargables muestran la palabra VENCIDO en rojo y en tamaño discreto encima del QR, solo cuando la guía ya superó su plazo de actualización de 48 horas.
+- El QR conserva su diseño original, negro sobre fondo blanco.
+- La consulta recuperada desde Supabase vuelve a calcular el plazo como última actualización + 48 horas cuando el plazo no viene guardado.
+- No requiere ejecutar SQL ni cambiar Codigo.gs.
+
+Archivos actualizados:
+- index.html
+- gestion-v2.html
+- pdv-v2.html
+- pdf-pdv.js
+
+El ZIP incluye el proyecto completo para reemplazar los archivos actuales en GitHub Pages.

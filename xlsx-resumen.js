@@ -259,7 +259,7 @@
 
   function generarDesdeTabla(tabla) {
     if (typeof getComputedStyle !== "function") throw new Error("Este navegador no permite leer el formato de la tabla.");
-    const columnas = Array.from(tabla.querySelectorAll("colgroup col")).filter(c => !c.classList?.contains("image-col"));
+    const columnas = Array.from(tabla.querySelectorAll("colgroup col"));
     const anchoTabla = tabla.getBoundingClientRect().width || 1320;
     const anchos = Array.from({ length: Math.max(14, columnas.length) }, (_, i) => {
       const c = columnas[i], px = c ? c.getBoundingClientRect().width || 0 : 0;
@@ -268,11 +268,11 @@
     });
     const htmlFilas = Array.from(tabla.rows || []);
     const filaCabecera = htmlFilas.find(f => String(f.parentElement?.tagName || "").toUpperCase() === "THEAD") || htmlFilas[0];
-    const celdaCabeceraComentarios = Array.from(filaCabecera?.cells || []).find(c => c.classList?.contains("comment-col")) || filaCabecera?.cells?.[filaCabecera.cells.length - 1];
+    const celdaCabeceraComentarios = filaCabecera?.cells?.[filaCabecera.cells.length - 1];
     const estiloComentarios = celdaCabeceraComentarios ? estiloDeCelda(celdaCabeceraComentarios) : {};
     anchos.push(42);
     const filas = htmlFilas.map(fila => {
-      const celdas = Array.from(fila.cells || []).filter(celda => !celda.classList?.contains("image-col")).map(celda => ({
+      const celdas = Array.from(fila.cells || []).map(celda => ({
         texto: String(celda.innerText || celda.textContent || "").replace(/\u00a0/g, " ").trim(),
         colspan: celda.colSpan || 1,
         rowspan: celda.rowSpan || 1,

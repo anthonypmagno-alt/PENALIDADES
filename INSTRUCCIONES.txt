@@ -2,17 +2,6 @@ PORTAL COMPLETO: REVISION DE GUIAS + PENALIDADES
 
 Este paquete integra Penalidades dentro del portal principal. El index.html conserva el inicio de sesión de Revisión de Guías. penalidades.html valida y reutiliza la sesión del portal; no tiene un formulario de login propio.
 
-ACTUALIZACIÓN DE CONSULTA DESDE EXCEL (18-10-2026)
-- La lectura de Track Break procesa las filas por bloques y muestra el avance; la interfaz no corta la hoja en 1,200 filas.
-- Se conserva una guía por PDV y se selecciona la actualización más reciente cuando el archivo repite la misma guía dentro del mismo PDV.
-- Se agrega un resumen por PDV con recuento por tipo de operación más reciente, tipo de problema/brecha más recurrente y multa acumulada por tipo de tiempo de espera. Los rangos preventivos aparecen como costo evitado.
-- Las estadísticas agrupan los PDV por encargado y zona/área asignada; incluyen filtros múltiples por encargado, zona, PDV, operación reciente, problema/brecha y tipo de interrupción, además de gráficos de frecuencia y multa acumulada.
-- El resumen principal por PDV oculta las columnas de operación y problema marcadas para retirar; esos datos siguen disponibles al abrir el desglose. Cada encargado y zona se puede expandir o contraer para ver sus PDV y subtotales.
-- Se puede simular la exoneración por operación reciente desde una tabla fuera del desglose; el porcentaje se aplica a todas sus guías penalizables dentro de los filtros actuales.
-- En “Monto de multa por tipo de interrupción” se muestra el monto exonerado simulado y el saldo restante. En el detalle se puede marcar cada guía y definir su porcentaje, o aplicar un porcentaje a las guías marcadas visibles. Es una simulación temporal y no guarda decisiones reales.
-- La multa usa los costos compartidos configurados por el administrador. Si no se definieron costos, el importe se mostrará en cero hasta que se configuren.
-- No requiere SQL adicional. Para actualizar manualmente, reemplaza gestion-v2.html, pdv-v2.html, bridge.js y brecha-costos.js; al reemplazar todo el portal, carga el contenido completo del ZIP en la raíz del repositorio.
-
 PUBLICAR EN GITHUB PAGES
 1. Descomprime el ZIP.
 2. En el repositorio que publicarás con GitHub Pages, carga el CONTENIDO de esta carpeta en la raíz (donde quedará index.html). No subas la carpeta contenedora como un nivel adicional.
@@ -188,19 +177,3 @@ CORRECCION DEL RPC DE MONTO SLA (15-10-2026)
 - El mensaje de error `Could not find the function ... (p_pdv, p_periodo)` indica que el navegador envió solo PDV y periodo. La función de guardado requiere tres datos: `p_periodo`, `p_pdv` y la lista `p_multiplicadores`.
 - El HTML actualizado envía los tres parámetros; la migración SQL crea la función con esa misma firma y solicita recargar el esquema de PostgREST.
 - Publica `index.html` y `penalidades.html` de este ZIP en la raíz del repositorio y entra de nuevo por el portal. Verifica que el enlace abra `penalidades.html?v=20261015-sla-resumen-montos-7`. Ejecuta nuevamente el SQL SLA del ZIP si aún no lo hiciste. No hace falta volver a importar Excel.
-GESTIÓN DE GUÍAS V2 · IMÁGENES Y RANGOS DE COLA LARGA (15-10-2026)
-- El resumen por PDV tiene controles para adjuntar JPG, PNG y WEBP (máximo 8 MB cada una) y abrir las imágenes guardadas. Se almacenan en un bucket privado de Supabase.
-- Para activar el almacenamiento de imágenes, ejecuta una sola vez `supabase_gestion_v2_imagenes_resumen.sql` en el editor SQL del mismo proyecto Supabase de Gestión de Guías. El script crea el bucket privado y la tabla de metadatos con acceso por rol y asignación del perfil.
-- Las políticas de `storage.objects` se configuran desde Storage > Policies en el Dashboard, no desde el SQL Editor. Sigue los nombres y expresiones de `POLITICAS_STORAGE_IMAGENES.txt`; mantén el bucket privado.
-- La antigüedad se calcula con la hora actual menos `Tiempo de entrada` de Exportación de guías (columna B; también reconoce el encabezado `Tiempo de entrada 录入时间`). Los casos tipo 120/168 H entran al primer rango al alcanzar el umbral indicado por su tipo; desde 600 horas (25 días) pasan al rango `≥600 H`. El resumen se recalcula cada minuto. Si no hay una fecha válida, el caso no se clasifica en Cola Larga.
-- Publica juntos `gestion-v2.html`, `bridge.js`, `process-worker.js`, `index.html`, `xlsx-resumen.js` y el nuevo SQL. El enlace V2 incluye el identificador `20261016-eliminar-imagenes-1` para actualizar caché.
-
-
-AGRUPACIÓN DEL DETALLE POR COMENTARIO ENCARGADO (16-10-2026)
-- Al seleccionar una celda del resumen, el detalle se agrupa por el texto de Comentario encargado. Cada grupo empieza contraído y muestra el recuento de guías únicas; puede expandirse individualmente o con los controles Expandir todos y Contraer todos.
-- El subresumen respeta la celda seleccionada y los filtros activos. Al limpiar la selección del resumen, el detalle vuelve a mostrarse en filas individuales.
-
-ELIMINAR IMÁGENES DEL RESUMEN (16-10-2026)
-- En el resumen, pulsa el botón de imágenes del PDV y luego `Eliminar imagen` debajo de la imagen que quieras quitar. Solo aparece para las imágenes que subió el usuario con su cuenta.
-- Para activar el permiso, ejecuta una vez `supabase_gestion_v2_imagenes_eliminar.sql` en SQL Editor del mismo proyecto. Solo modifica la tabla pública de metadatos; no toca `storage.objects` ni requiere cambiar las políticas existentes del bucket.
-- La eliminación quita el registro y el archivo del bucket privado. Si falla la eliminación del archivo, la app restaura la referencia para evitar dejar la imagen listada como borrada.

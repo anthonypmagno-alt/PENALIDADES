@@ -46,7 +46,7 @@
 @media(max-width:650px){.qr-selected-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:400px){.qr-selected-grid{grid-template-columns:1fr}}
 
-.qr-guide-label{font-weight:800;margin:8px 0 4px}.qr-rider-label{font-size:12px;margin:4px 0;color:#334155}
+.qr-vencido-label{margin:0 0 3px!important;color:#b42318!important;font-size:10px!important;font-weight:800!important;line-height:1.1}.qr-guide-label{font-weight:800;margin:8px 0 4px}.qr-rider-label{font-size:12px;margin:4px 0;color:#334155}
 @media print{
  @page{size:A4 landscape;margin:10mm}
  body.imprimiendo-qr{margin:0!important;background:white!important;overflow:visible!important}
@@ -143,7 +143,7 @@
     </div></header>
 
     <main>
-      <div class="view-tabs"><button id="tabGestion" class="view-tab active" onclick="mostrarVista('gestion')">📋 Gestión de guías</button><button id="tabExcel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><a data-modulo-v2="true" href="./gestion-v2.html?v=20261016-eliminar-imagenes-1" class="view-tab">Gestión de guías V2</a><a data-modulo-penalidades="true" href="./penalidades.html?v=20261015-sla-resumen-montos-7" class="view-tab">💰 Penalidades</a></div>
+      <div class="view-tabs"><button id="tabGestion" class="view-tab active" onclick="mostrarVista('gestion')">📋 Gestión de guías</button><button id="tabExcel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><a data-modulo-v2="true" href="./gestion-v2.html?v=20261012-resumen-comentarios-xlsx-5" class="view-tab">Gestión de guías V2</a><a data-modulo-penalidades="true" href="./penalidades.html?v=20261015-sla-resumen-montos-7" class="view-tab">💰 Penalidades</a></div>
       <div id="viewGestion" class="app-view">
       <section id="sourceUploadPanel" class="panel hidden">
         <div class="panel-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Carga de información operativa <span class="readonly-note">SOLO ADMINISTRADOR</span><button type="button" id="sourceUploadToggle" class="secondary" style="margin-left:auto" aria-expanded="true" aria-controls="sourceUploadContent" onclick="toggleCargaOperativa()">Ocultar carga</button></div>
@@ -275,7 +275,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
  if(!vistos.size){toast('Seleccione al menos una guía.',false);return;}
  if(typeof QRCode==='undefined'){toast('No se pudo cargar el generador QR.',false);return;}
  const cont=document.getElementById('excelQrGroups');cont.replaceChildren();
- grupos.forEach((filas,empleado)=>{const titulo=document.createElement('h4');titulo.className="qr-employee-heading";titulo.textContent=empleado+' ('+filas.length+')';cont.appendChild(titulo);const grid=document.createElement('div');grid.className='qr-selected-grid';cont.appendChild(grid);filas.forEach(x=>{const card=document.createElement('div');card.className='qr-selected-card';const qr=document.createElement('div'),label=document.createElement('p');label.textContent=x.guia;label.className="qr-guide-label";const rider=document.createElement("p");rider.className="qr-rider-label";rider.textContent="Repartidor: "+empleado;const estado=document.createElement("p");estado.className="qr-status-label";estado.textContent="Último estado: "+String(x.tipoEscaneoExportacion||"").trim();const distrito=document.createElement("p");distrito.className="qr-district-label";distrito.textContent="Distrito: "+String(x.dsto||"").trim();card.append(qr,label,rider,estado,distrito);grid.appendChild(card);new QRCode(qr,{text:String(x.guia),width:220,height:220,correctLevel:QRCode.CorrectLevel.H});});});
+ grupos.forEach((filas,empleado)=>{const titulo=document.createElement('h4');titulo.className="qr-employee-heading";titulo.textContent=empleado+' ('+filas.length+')';cont.appendChild(titulo);const grid=document.createElement('div');grid.className='qr-selected-grid';cont.appendChild(grid);filas.forEach(x=>{const card=document.createElement('div');card.className='qr-selected-card';const qr=document.createElement('div'),label=document.createElement('p');if(estadoPlazoExcel(x)==='VENCIDO'){const vencido=document.createElement('p');vencido.className='qr-vencido-label';vencido.textContent='VENCIDO';card.appendChild(vencido);}label.textContent=x.guia;label.className="qr-guide-label";const rider=document.createElement("p");rider.className="qr-rider-label";rider.textContent="Repartidor: "+empleado;const estado=document.createElement("p");estado.className="qr-status-label";estado.textContent="Último estado: "+String(x.tipoEscaneoExportacion||"").trim();const distrito=document.createElement("p");distrito.className="qr-district-label";distrito.textContent="Distrito: "+String(x.dsto||"").trim();card.append(qr,label,rider,estado,distrito);grid.appendChild(card);new QRCode(qr,{text:String(x.guia),width:220,height:220,correctLevel:QRCode.CorrectLevel.H});});});
  document.querySelector('#excelQrModal h3').textContent=origen+' · '+vistos.size+' guías seleccionadas';
  actualizarControlesPortada();
  document.getElementById('excelQrModal').style.display='flex';
@@ -918,7 +918,7 @@ function estadoConsulta(t){const el=document.getElementById('consultaEstado');if
 function iniciarCargaLocalConsulta(){consultaVersion++;limpiarSeleccionExcel();estadoConsulta('Actualizando el archivo seleccionado...');}
 function recibirConsulta(r,compartida){filtroPdvPlazoExcel=null;
  document.getElementById('excelEnvioUpload').classList.remove('hidden');
- excelRegistros=(r.registros||[]).map(x=>({...x,fechaUltimaActualizacion:x.fechaUltimaActualizacion?new Date(x.fechaUltimaActualizacion):null,plazo:x.plazo?new Date(x.plazo):null}));
+ excelRegistros=(r.registros||[]).map(x=>{const fecha=x.fechaUltimaActualizacion?new Date(x.fechaUltimaActualizacion):null;const plazo=x.plazo?new Date(x.plazo):(fecha&&!isNaN(fecha.getTime())?new Date(fecha.getTime()+48*60*60*1000):null);return{...x,fechaUltimaActualizacion:fecha,plazo};});
  limpiarSeleccionExcel();excelPagina=1;
  for(const [id,campo,titulo] of [['excelUltimoEstado','tipoEscaneoExportacion','Todos los últimos estados (Exportación)'],['excelSiguienteParada','siguienteParada','Todas las siguientes paradas'],['excelOperacion','tipoOperacion','Todos los tipos de operación más reciente'],['excelUltimoPunto','ultimoPunto','Todos los últimos puntos de operación'],['excelArea','area','Todas las áreas'],['excelEncargado','encargado','Todos los encargados']]){
   llenarFiltroExcelMultiple(id,excelRegistros.map(x=>x[campo]),titulo);
@@ -1023,11 +1023,12 @@ function crearContenidoImpresionQr(grupos){
   cards.forEach((card,i)=>{
    if(i%6===0)partes.push('<tr>');
    const imagen=obtenerImagenQrImpresion(card);
-   partes.push('<td><img width="220" height="220" src="'+esc(imagen)+'" alt="QR"><p class="guide">'+esc(card.querySelector('.qr-guide-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-rider-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-status-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-district-label')?.textContent||'')+'</p></td>');
+   const vencido=card.querySelector('.qr-vencido-label')?.textContent||'';
+   partes.push('<td>'+(vencido?'<p class="qr-vencido-print">'+esc(vencido)+'</p>':'')+'<img width="220" height="220" src="'+esc(imagen)+'" alt="QR"><p class="guide">'+esc(card.querySelector('.qr-guide-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-rider-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-status-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-district-label')?.textContent||'')+'</p></td>');
    if(i%6===5||i===cards.length-1){for(let n=(i%6)+1;n<6;n++)partes.push('<td></td>');partes.push('</tr>');}
   });partes.push('</tbody></table>');
  }
- return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Guías seleccionadas · QR</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#111;font-family:Arial,sans-serif}h2{font-size:12pt;background:#dbeafe;color:#153e67;padding:3mm;margin:4mm 0;break-after:avoid;page-break-after:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}table{width:100%;table-layout:fixed;border-collapse:collapse}tr{break-inside:avoid;page-break-inside:avoid}td{width:16.666%;text-align:center;vertical-align:top;padding:2mm 2mm 12.7mm}img{display:block;width:34mm;height:34mm;margin:0 auto}p{font-size:8pt;margin:1mm 0;overflow-wrap:anywhere}.guide{font-size:9pt;font-weight:bold}</style></head><body>'+partes.join('')+'</body></html>';
+ return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Guías seleccionadas · QR</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#111;font-family:Arial,sans-serif}h2{font-size:12pt;background:#dbeafe;color:#153e67;padding:3mm;margin:4mm 0;break-after:avoid;page-break-after:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}table{width:100%;table-layout:fixed;border-collapse:collapse}tr{break-inside:avoid;page-break-inside:avoid}td{width:16.666%;text-align:center;vertical-align:top;padding:2mm 2mm 12.7mm}img{display:block;width:34mm;height:34mm;margin:0 auto}p{font-size:8pt;margin:1mm 0;overflow-wrap:anywhere}.qr-vencido-print{color:#b42318;font-size:7pt;font-weight:bold;line-height:1;margin:0 0 1mm;print-color-adjust:exact;-webkit-print-color-adjust:exact}.guide{font-size:9pt;font-weight:bold}</style></head><body>'+partes.join('')+'</body></html>';
 }
 
 let preparandoDetalleGestion=false;
@@ -1362,7 +1363,7 @@ async function exportarPdfPdvFiltrados(){
  exportacionPdvControl=new AbortController();btn.disabled=true;cancel.hidden=false;link.hidden=true;status.textContent='Preparando PDF de las guías filtradas…';
  try{
   const portada=leerPortadaPdf()?.imagen||null;
-  const {generarZipPdf}=await import('./pdf-pdv.js?v=2');
+  const {generarZipPdf}=await import('./pdf-pdv.js?v=3');
   const resumirPenalidades=window.BrechaCostosCompartidos?.resumir;if(typeof resumirPenalidades!=='function')throw new Error('No se pudo preparar el cuadro resumen de penalidades. Recarga la página e inténtalo nuevamente.');
   const gruposPdv=new Map();for(const fila of filas){const pdv=String(fila.pdv||'Sin PDV').trim()||'Sin PDV';if(!gruposPdv.has(pdv))gruposPdv.set(pdv,[]);gruposPdv.get(pdv).push(fila);}
   const resumenesPorPdv=[...gruposPdv].map(([pdv,registros])=>({pdv,resumen:resumirPenalidades(registros)}));

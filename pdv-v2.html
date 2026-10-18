@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261018-excel-estadisticas-1200-1"></script>
+<script src="./bridge.js?v=brecha-costos-1"></script>
   <base target="_top">
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Gestión de guías V2</title>
@@ -30,7 +30,7 @@
 @media(max-width:650px){.qr-selected-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:400px){.qr-selected-grid{grid-template-columns:1fr}}
 
-.qr-guide-label{font-weight:800;margin:8px 0 4px}.qr-rider-label{font-size:12px;margin:4px 0;color:#334155}
+.qr-vencido-label{margin:0 0 3px!important;color:#b42318!important;font-size:10px!important;font-weight:800!important;line-height:1.1}.qr-guide-label{font-weight:800;margin:8px 0 4px}.qr-rider-label{font-size:12px;margin:4px 0;color:#334155}
 @media print{
  @page{size:A4 landscape;margin:10mm}
  body.imprimiendo-qr{margin:0!important;background:white!important;overflow:visible!important}
@@ -254,7 +254,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
  if(!vistos.size){toast('Seleccione al menos una guía.',false);return;}
  if(typeof QRCode==='undefined'){toast('No se pudo cargar el generador QR.',false);return;}
  const cont=document.getElementById('excelQrGroups');cont.replaceChildren();
- grupos.forEach((filas,empleado)=>{const titulo=document.createElement('h4');titulo.className="qr-employee-heading";titulo.textContent=empleado+' ('+filas.length+')';cont.appendChild(titulo);const grid=document.createElement('div');grid.className='qr-selected-grid';cont.appendChild(grid);filas.forEach(x=>{const card=document.createElement('div');card.className='qr-selected-card';const qr=document.createElement('div'),label=document.createElement('p');label.textContent=x.guia;label.className="qr-guide-label";const rider=document.createElement("p");rider.className="qr-rider-label";rider.textContent="Repartidor: "+empleado;const estado=document.createElement("p");estado.className="qr-status-label";estado.textContent="Último estado: "+String(x.tipoEscaneoExportacion||"").trim();const distrito=document.createElement("p");distrito.className="qr-district-label";distrito.textContent="Distrito: "+String(x.dsto||"").trim();card.append(qr,label,rider,estado,distrito);grid.appendChild(card);new QRCode(qr,{text:String(x.guia),width:220,height:220,correctLevel:QRCode.CorrectLevel.H});});});
+ grupos.forEach((filas,empleado)=>{const titulo=document.createElement('h4');titulo.className="qr-employee-heading";titulo.textContent=empleado+' ('+filas.length+')';cont.appendChild(titulo);const grid=document.createElement('div');grid.className='qr-selected-grid';cont.appendChild(grid);filas.forEach(x=>{const card=document.createElement('div');card.className='qr-selected-card';const qr=document.createElement('div'),label=document.createElement('p');if(estadoPlazoExcel(x)==='VENCIDO'){const vencido=document.createElement('p');vencido.className='qr-vencido-label';vencido.textContent='VENCIDO';card.appendChild(vencido);}label.textContent=x.guia;label.className="qr-guide-label";const rider=document.createElement("p");rider.className="qr-rider-label";rider.textContent="Repartidor: "+empleado;const estado=document.createElement("p");estado.className="qr-status-label";estado.textContent="Último estado: "+String(x.tipoEscaneoExportacion||"").trim();const distrito=document.createElement("p");distrito.className="qr-district-label";distrito.textContent="Distrito: "+String(x.dsto||"").trim();card.append(qr,label,rider,estado,distrito);grid.appendChild(card);new QRCode(qr,{text:String(x.guia),width:220,height:220,correctLevel:QRCode.CorrectLevel.H});});});
  document.querySelector('#excelQrModal h3').textContent=origen+' · '+vistos.size+' guías seleccionadas';
  prepararResumenCostosModal([...vistos].map(k=>registros.find(x=>claveGuiaExcel(x.guia)===k)).filter(Boolean),String(origen).includes('Consulta desde Excel'));
  actualizarControlesPortada();
@@ -293,7 +293,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     try{
       await new Promise(resolver=>setTimeout(resolver,30));
       const filas=await leerFilasArchivoExcel(archivo);
-      await procesarFilasExcel(filas,archivo.name);
+      procesarFilasExcel(filas,archivo.name);
       elegirRegionesTrackExcel();
     }catch(error){excelRegistros=[];excelFiltrados=[];document.getElementById("excelResults").classList.add("hidden");mostrarMensajeExcel("No se pudo leer el archivo: "+errorTexto(error),false)}finally{mostrarLoading(false)}
   }
@@ -337,46 +337,34 @@ async function leerFilasArchivoExcel(archivo,usarFormatoVisible,tipo){
     if(maxFila>=0&&maxCol>=0)hoja["!ref"]=XLSX.utils.encode_range({s:{r:minFila,c:minCol},e:{r:maxFila,c:maxCol}})
   }
 
-  async function procesarFilasExcel(filas,nombreArchivo){
- limpiarSeleccionExcel();
- if(!Array.isArray(filas)||filas.length<2)throw new Error("El archivo no contiene registros para consultar.");
- const encabezados=filas[0],indices={
-  guia:buscarColumnaExcel(encabezados,["Número de Guía","Numero de Guia","Guía","Guia"]),
-  punto:buscarColumnaExcel(encabezados,["Último punto de operación","Ultimo punto de operacion"]),
-  operacion:buscarColumnaExcel(encabezados,["Tipo de operación más reciente","Tipo de operacion mas reciente"]),
-  escaner:buscarColumnaExcel(encabezados,["Escaner","Escáner","Scanner"]),
-  problema:buscarColumnaExcel(encabezados,["Último tipo de problema","Ultimo tipo de problema"]),
-  fecha:buscarColumnaExcel(encabezados,["Último tiempo de funcionamiento","Ultimo tiempo de funcionamiento","Fecha y hora de última actualización","Fecha y hora de ultima actualizacion","Último tiempo de actualización","Ultimo tiempo de actualizacion"]),
-  tipoEspera:buscarColumnaExcel(encabezados,["Tipo de tiempo de espera"]),
-  duracion:buscarColumnaExcel(encabezados,["Duración del tiempo de espera","Duracion del tiempo de espera"]),
-  pdv:buscarColumnaExcel(encabezados,["Último punto de operación","Ultimo punto de operacion"]),
-  siguienteParada:buscarColumnaExcel(encabezados,["Nombre de la siguiente parada"])
- },faltantes=[];
- if(indices.guia<0)faltantes.push("Número de Guía");
- if(indices.punto<0)faltantes.push("Último punto de operación");
- if(indices.fecha<0)faltantes.push("Último tiempo de funcionamiento");
- if(indices.problema<0)faltantes.push("Último tipo de problema");
- if(faltantes.length)throw new Error("Faltan columnas requeridas: "+faltantes.join(", ")+".");
- const esPDV=sesion&&sesion.rol==="PDV",pdvSesion=esPDV?limpiarPdvExcel(sesion.usuario):"";
- if(esPDV&&indices.pdv<0)throw new Error("El archivo debe incluir la columna Último punto de operación para limitar la consulta al PDV conectado.");
- let omitidasPDV=0;excelRegistros=[];
- const total=filas.length-1,bloque=500;
- for(let inicio=1;inicio<filas.length;inicio+=bloque){
-  const fin=Math.min(filas.length,inicio+bloque);
-  for(let indice=inicio;indice<fin;indice++){
-   const fila=filas[indice],guia=textoExcel(valorExcel(fila,indices.guia));if(!guia)continue;
-   const pdv=textoExcel(valorExcel(fila,indices.pdv));if(esPDV&&limpiarPdvExcel(pdv)!==pdvSesion){omitidasPDV++;continue;}
-   const fecha=parsearFechaExcel(valorExcel(fila,indices.fecha));
-   excelRegistros.push({fila:indice+1,guia:guia,pdv:pdv,siguienteParada:textoExcel(valorExcel(fila,indices.siguienteParada)),ultimoPunto:textoExcel(valorExcel(fila,indices.punto)),tipoOperacion:textoExcel(valorExcel(fila,indices.operacion)),escaner:textoExcel(valorExcel(fila,indices.escaner)),ultimoProblema:textoExcel(valorExcel(fila,indices.problema)),fechaUltimaActualizacion:fecha,tipoEspera:textoExcel(valorExcel(fila,indices.tipoEspera)),duracionEspera:valorExcel(fila,indices.duracion),plazo:fecha?new Date(fecha.getTime()+48*60*60*1000):null});
+  function procesarFilasExcel(filas,nombreArchivo){limpiarSeleccionExcel();
+    if(!Array.isArray(filas)||filas.length<2)throw new Error("El archivo no contiene registros para consultar.");
+    const encabezados=filas[0],indices={
+      guia:buscarColumnaExcel(encabezados,["Número de Guía","Numero de Guia","Guía","Guia"]),
+      punto:buscarColumnaExcel(encabezados,["Último punto de operación","Ultimo punto de operacion"]),
+      operacion:buscarColumnaExcel(encabezados,["Tipo de operación más reciente","Tipo de operacion mas reciente"]),
+      escaner:buscarColumnaExcel(encabezados,["Escaner","Escáner","Scanner"]),
+      problema:buscarColumnaExcel(encabezados,["Último tipo de problema","Ultimo tipo de problema"]),
+      fecha:buscarColumnaExcel(encabezados,["Último tiempo de funcionamiento","Ultimo tiempo de funcionamiento","Fecha y hora de última actualización","Fecha y hora de ultima actualizacion","Último tiempo de actualización","Ultimo tiempo de actualizacion"]),
+      tipoEspera:buscarColumnaExcel(encabezados,["Tipo de tiempo de espera"]),
+      duracion:buscarColumnaExcel(encabezados,["Duración del tiempo de espera","Duracion del tiempo de espera"]),
+      pdv:buscarColumnaExcel(encabezados,["Último punto de operación","Ultimo punto de operacion"]),siguienteParada:buscarColumnaExcel(encabezados,["Nombre de la siguiente parada"])
+    },faltantes=[];
+    if(indices.guia<0)faltantes.push("Número de Guía");if(indices.punto<0)faltantes.push("Último punto de operación");if(indices.fecha<0)faltantes.push("Último tiempo de funcionamiento");if(indices.problema<0)faltantes.push("Último tipo de problema");
+    if(faltantes.length)throw new Error("Faltan columnas requeridas: "+faltantes.join(", ")+".");
+    const pdvSesion=limpiarPdvExcel(sesion.usuario);if(indices.pdv<0)throw new Error("El archivo debe incluir la columna Último punto de operación para limitar la consulta al PDV conectado.");
+    let omitidasPDV=0;excelRegistros=[];
+    filas.slice(1).forEach((fila,posicion)=>{
+      const guia=textoExcel(valorExcel(fila,indices.guia));if(!guia)return;
+      const pdv=textoExcel(valorExcel(fila,indices.pdv));if(limpiarPdvExcel(pdv)!==pdvSesion){omitidasPDV++;return}
+      const fecha=parsearFechaExcel(valorExcel(fila,indices.fecha));
+      excelRegistros.push({fila:posicion+2,guia:guia,pdv:pdv,siguienteParada:textoExcel(valorExcel(fila,indices.siguienteParada)),ultimoPunto:textoExcel(valorExcel(fila,indices.punto)),tipoOperacion:textoExcel(valorExcel(fila,indices.operacion)),escaner:textoExcel(valorExcel(fila,indices.escaner)),ultimoProblema:textoExcel(valorExcel(fila,indices.problema)),fechaUltimaActualizacion:fecha,tipoEspera:textoExcel(valorExcel(fila,indices.tipoEspera)),duracionEspera:valorExcel(fila,indices.duracion),plazo:fecha?new Date(fecha.getTime()+48*60*60*1000):null});
+    });
+    if(!excelRegistros.length)throw new Error("El archivo no contiene guías disponibles para esta consulta.");
+    excelRegistros.sort((a,b)=>a.plazo&&b.plazo?a.plazo-b.plazo:a.plazo?-1:b.plazo?1:a.fila-b.fila);excelTrackNombre=nombreArchivo;document.getElementById("excelEnvioUpload").classList.remove("hidden");
+    const detalle=" Se muestran únicamente las "+num(excelRegistros.length)+" filas asignadas a "+sesion.usuario+(omitidasPDV?"; se omitieron "+num(omitidasPDV)+" de otros PDV.":".");
+    mostrarMensajeExcel("Track Break leído: "+nombreArchivo+" · "+num(excelRegistros.length)+" guías."+detalle+" Puede actualizar Exportación de forma independiente.",true);
   }
-  if(fin<filas.length){mostrarLoading(true,"Procesando filas "+num(fin-1)+" de "+num(total)+"...");await new Promise(resolver=>setTimeout(resolver,0));}
- }
- if(!excelRegistros.length)throw new Error("El archivo no contiene guías disponibles para esta consulta.");
- excelRegistros.sort((a,b)=>a.plazo&&b.plazo?a.plazo-b.plazo:a.plazo?-1:b.plazo?1:a.fila-b.fila);
- excelTrackNombre=nombreArchivo;document.getElementById("excelEnvioUpload").classList.remove("hidden");
- const detalle=esPDV?" Se muestran únicamente las "+num(excelRegistros.length)+" filas asignadas a "+sesion.usuario+(omitidasPDV?"; se omitieron "+num(omitidasPDV)+" de otros PDV.":"."):"";
- mostrarMensajeExcel("Track Break leído: "+nombreArchivo+" · "+num(excelRegistros.length)+" filas válidas de "+num(total)+"."+detalle+" Puede actualizar Exportación de forma independiente.",true);
-}
 
   function procesarFilasGuiasEnvio(filas){
  if(!Array.isArray(filas)||filas.length<2)throw new Error('El archivo no contiene registros para cruzar.');
@@ -426,7 +414,7 @@ async function leerFilasArchivoExcel(archivo,usarFormatoVisible,tipo){
 }
 
   function formatearDestinoExcel(x){return `<div class="excel-destination"><div><b>DPTO:</b> ${esc(x.dpto||"")}</div><div><b>PROV:</b> ${esc(x.prov||"")}</div><div><b>DSTO:</b> ${esc(x.dsto||"")}</div></div>`}
-  function actualizarResumenExcel(){renderResumenPdvExcel();if(typeof renderizarEstadisticasInterrupciones==='function')renderizarEstadisticasInterrupciones(excelFiltrados);const estados=excelFiltrados.map(estadoPlazoExcel);document.getElementById("excelTotal").textContent=num(excelFiltrados.length);document.getElementById("excelVencidas").textContent=num(estados.filter(x=>x==="VENCIDO").length);document.getElementById("excelProximas").textContent=num(estados.filter(x=>x==="POR VENCER").length);document.getElementById("excelVigentes").textContent=num(estados.filter(x=>x==="VIGENTE").length)}
+  function actualizarResumenExcel(){renderResumenPdvExcel();const estados=excelFiltrados.map(estadoPlazoExcel);document.getElementById("excelTotal").textContent=num(excelFiltrados.length);document.getElementById("excelVencidas").textContent=num(estados.filter(x=>x==="VENCIDO").length);document.getElementById("excelProximas").textContent=num(estados.filter(x=>x==="POR VENCER").length);document.getElementById("excelVigentes").textContent=num(estados.filter(x=>x==="VIGENTE").length)}
   function renderExcel(){actualizarEstadoListaGuias('excel');
     const body=document.getElementById("excelBody"),totalPaginas=Math.max(1,Math.ceil(excelFiltrados.length/EXCEL_PAGE_SIZE));if(excelPagina>totalPaginas)excelPagina=totalPaginas;const inicio=(excelPagina-1)*EXCEL_PAGE_SIZE,visibles=excelFiltrados.slice(inicio,inicio+EXCEL_PAGE_SIZE);body.innerHTML="";
     if(!visibles.length)body.innerHTML='<tr><td colspan="8" style="padding:34px;text-align:center;color:#64748b">No hay guías que coincidan con la búsqueda o el filtro.</td></tr>';
@@ -524,7 +512,7 @@ function estadoConsulta(t){const el=document.getElementById('consultaEstado');if
 function iniciarCargaLocalConsulta(){consultaVersion++;limpiarSeleccionExcel();estadoConsulta('Actualizando el archivo seleccionado...');}
 function recibirConsulta(r,compartida){filtroPdvPlazoExcel=null;
  document.getElementById('excelEnvioUpload').classList.remove('hidden');
- excelRegistros=(r.registros||[]).map(x=>({...x,fechaUltimaActualizacion:x.fechaUltimaActualizacion?new Date(x.fechaUltimaActualizacion):null,plazo:x.plazo?new Date(x.plazo):null}));
+ excelRegistros=(r.registros||[]).map(x=>{const fecha=x.fechaUltimaActualizacion?new Date(x.fechaUltimaActualizacion):null;const plazo=x.plazo?new Date(x.plazo):(fecha&&!isNaN(fecha.getTime())?new Date(fecha.getTime()+48*60*60*1000):null);return{...x,fechaUltimaActualizacion:fecha,plazo};});
  renderizarCostosBrecha();
  limpiarSeleccionExcel();excelPagina=1;
  for(const [id,campo,titulo] of [['excelUltimoEstado','tipoEscaneoExportacion','Todos los últimos estados (Exportación)'],['excelSiguienteParada','siguienteParada','Todas las siguientes paradas'],['excelOperacion','tipoOperacion','Todos los tipos de operación más reciente'],['excelUltimoPunto','ultimoPunto','Todos los últimos puntos de operación'],['excelArea','area','Todas las áreas'],['excelEncargado','encargado','Todos los encargados']]){
@@ -632,11 +620,12 @@ function crearContenidoImpresionQr(grupos){
   cards.forEach((card,i)=>{
    if(i%6===0)partes.push('<tr>');
    const imagen=obtenerImagenQrImpresion(card);
-   partes.push('<td><img width="220" height="220" src="'+esc(imagen)+'" alt="QR"><p class="guide">'+esc(card.querySelector('.qr-guide-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-rider-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-status-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-district-label')?.textContent||'')+'</p></td>');
+   const vencido=card.querySelector('.qr-vencido-label')?.textContent||'';
+   partes.push('<td>'+(vencido?'<p class="qr-vencido-print">'+esc(vencido)+'</p>':'')+'<img width="220" height="220" src="'+esc(imagen)+'" alt="QR"><p class="guide">'+esc(card.querySelector('.qr-guide-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-rider-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-status-label')?.textContent||'')+'</p><p>'+esc(card.querySelector('.qr-district-label')?.textContent||'')+'</p></td>');
    if(i%6===5||i===cards.length-1){for(let n=(i%6)+1;n<6;n++)partes.push('<td></td>');partes.push('</tr>');}
   });partes.push('</tbody></table>');
  }
- return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Resumen de brechas y guías seleccionadas · QR</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#111;font-family:Arial,sans-serif}h2{font-size:12pt;background:#dbeafe;color:#153e67;padding:3mm;margin:4mm 0;break-after:avoid;page-break-after:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}.brecha-summary-print{margin:0 0 8mm;break-after:avoid;page-break-after:avoid}.brecha-summary-print h4{font-size:14pt;margin:0 0 3mm;color:#153e67}.brecha-summary-print p{font-size:9pt;margin:2mm 0 4mm}.brecha-summary-print table{width:100%;min-width:0;table-layout:auto;border-collapse:collapse!important;border:1px solid #1f2937!important;margin:0 0 5mm}.brecha-summary-print th,.brecha-summary-print td{width:auto!important;border:1px solid #1f2937!important;border-style:solid!important;padding:2mm;text-align:left;font-size:9pt}.brecha-summary-print th{background:#e2e8f0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.brecha-summary-print td.num{text-align:right;font-variant-numeric:tabular-nums}.brecha-summary-print tfoot td{background:#dbeafe;font-weight:bold;print-color-adjust:exact;-webkit-print-color-adjust:exact}table.qr-print-table{width:100%;table-layout:fixed;border-collapse:collapse}tr{break-inside:avoid;page-break-inside:avoid}td{width:16.666%;text-align:center;vertical-align:top;padding:2mm 2mm 12.7mm}img{display:block;width:34mm;height:34mm;margin:0 auto}p{font-size:8pt;margin:1mm 0;overflow-wrap:anywhere}.guide{font-size:9pt;font-weight:bold}</style></head><body>'+partes.join('')+'</body></html>';
+ return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Resumen de brechas y guías seleccionadas · QR</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#111;font-family:Arial,sans-serif}h2{font-size:12pt;background:#dbeafe;color:#153e67;padding:3mm;margin:4mm 0;break-after:avoid;page-break-after:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}.brecha-summary-print{margin:0 0 8mm;break-after:avoid;page-break-after:avoid}.brecha-summary-print h4{font-size:14pt;margin:0 0 3mm;color:#153e67}.brecha-summary-print p{font-size:9pt;margin:2mm 0 4mm}.brecha-summary-print table{width:100%;min-width:0;table-layout:auto;border-collapse:collapse!important;border:1px solid #1f2937!important;margin:0 0 5mm}.brecha-summary-print th,.brecha-summary-print td{width:auto!important;border:1px solid #1f2937!important;border-style:solid!important;padding:2mm;text-align:left;font-size:9pt}.brecha-summary-print th{background:#e2e8f0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.brecha-summary-print td.num{text-align:right;font-variant-numeric:tabular-nums}.brecha-summary-print tfoot td{background:#dbeafe;font-weight:bold;print-color-adjust:exact;-webkit-print-color-adjust:exact}table.qr-print-table{width:100%;table-layout:fixed;border-collapse:collapse}tr{break-inside:avoid;page-break-inside:avoid}td{width:16.666%;text-align:center;vertical-align:top;padding:2mm 2mm 12.7mm}img{display:block;width:34mm;height:34mm;margin:0 auto}p{font-size:8pt;margin:1mm 0;overflow-wrap:anywhere}.qr-vencido-print{color:#b42318;font-size:7pt;font-weight:bold;line-height:1;margin:0 0 1mm;print-color-adjust:exact;-webkit-print-color-adjust:exact}.guide{font-size:9pt;font-weight:bold}</style></head><body>'+partes.join('')+'</body></html>';
 }
 
 let preparandoDetalleGestion=false;
@@ -946,7 +935,7 @@ async function exportarPdfPdvFiltrados(){
  exportacionPdvControl=new AbortController();btn.disabled=true;cancel.hidden=false;link.hidden=true;status.textContent='Preparando PDF de las guías filtradas…';
  try{
   const portada=leerPortadaPdf()?.imagen||null;
-  const {generarZipPdf}=await import('./pdf-pdv.js?v=2');
+  const {generarZipPdf}=await import('./pdf-pdv.js?v=3');
   const resumirPenalidades=window.BrechaCostosCompartidos?.resumir;if(typeof resumirPenalidades!=='function')throw new Error('No se pudo preparar el cuadro resumen de penalidades. Recarga la página e inténtalo nuevamente.');
   const gruposPdv=new Map();for(const fila of filas){const pdv=String(fila.pdv||'Sin PDV').trim()||'Sin PDV';if(!gruposPdv.has(pdv))gruposPdv.set(pdv,[]);gruposPdv.get(pdv).push(fila);}
   const resumenesPorPdv=[...gruposPdv].map(([pdv,registros])=>({pdv,resumen:resumirPenalidades(registros)}));
@@ -1038,4 +1027,4 @@ function actualizarClasificacionV2(){
  else{resumen=r.resumen;renderResumen();filtrar();}
 }
 setInterval(actualizarClasificacionV2,60000);
-</script><script src="./brecha-costos.js?v=20261018-excel-interrupciones-simulacion-4"></script></body></html>
+</script><script src="./brecha-costos.js?v=2"></script></body></html>

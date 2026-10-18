@@ -8,7 +8,8 @@ ACTUALIZACIÓN DE CONSULTA DESDE EXCEL (18-10-2026)
 - Se agrega un resumen por PDV con recuento por tipo de operación más reciente, tipo de problema/brecha más recurrente y multa acumulada por tipo de tiempo de espera. Los rangos preventivos aparecen como costo evitado.
 - Las estadísticas incluyen filtros múltiples por PDV, operación reciente, problema/brecha y tipo de interrupción, además de gráficos de frecuencia y multa acumulada.
 - El resumen principal por PDV oculta las columnas de operación y problema marcadas para retirar; esos datos siguen disponibles al abrir el desglose.
-- En “Monto de multa por tipo de interrupción” se muestra el monto exonerado simulado y el saldo restante. En el detalle se puede marcar cada guía y definir su porcentaje de exoneración, o aplicar un porcentaje a las guías marcadas visibles. Es una simulación temporal y no guarda decisiones reales.
+- Se puede simular la exoneración por operación reciente desde una tabla fuera del desglose; el porcentaje se aplica a todas sus guías penalizables dentro de los filtros actuales.
+- En “Monto de multa por tipo de interrupción” se muestra el monto exonerado simulado y el saldo restante. En el detalle se puede marcar cada guía y definir su porcentaje, o aplicar un porcentaje a las guías marcadas visibles. Es una simulación temporal y no guarda decisiones reales.
 - La multa usa los costos compartidos configurados por el administrador. Si no se definieron costos, el importe se mostrará en cero hasta que se configuren.
 - No requiere SQL adicional. Para actualizar manualmente, reemplaza gestion-v2.html, pdv-v2.html, bridge.js y brecha-costos.js; al reemplazar todo el portal, carga el contenido completo del ZIP en la raíz del repositorio.
 

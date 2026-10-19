@@ -184,6 +184,7 @@
   .comment-group-line{display:flex;align-items:stretch;gap:8px;padding:6px 10px}
   .comment-group-toggle{display:flex;flex:1;min-width:0;align-items:center;gap:10px;border:0;border-radius:7px;background:transparent;color:#16427e;padding:5px 6px;text-align:left;font-weight:800;cursor:pointer}
   .comment-group-toggle:hover{background:#dbeafe}
+  .comment-group-check{flex:0 0 auto;width:18px;height:18px;margin:0 3px;accent-color:#1769e0;cursor:pointer}
   .comment-group-arrow{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#dbeafe;color:#1452a8;flex:0 0 auto}
   .comment-group-name{flex:1;overflow-wrap:anywhere}
   .comment-group-count{padding:4px 9px;border-radius:999px;background:#fff;color:#1452a8;font-size:11px;white-space:nowrap}
@@ -279,7 +280,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
           <div class="bulk-actions"><button class="secondary" onclick="seleccionarVisibles()">Seleccionar visibles</button><button class="secondary" onclick="copiarGuiasSeleccionadas('gestion')">Copiar guías seleccionadas</button><button class="secondary" onclick="limpiarSeleccion()">Limpiar selección</button><button id="btnPrintDetalleGestion" class="secondary" disabled="" onclick="verDetalleSeleccionadoGestion()">Imprimir detalle seleccionado</button><button id="btnPrintGestion" class="secondary" disabled="" onclick="verGuiasSeleccionadasGestion()">Imprimir guías seleccionadas</button><button id="btnBulkManage" class="small" disabled="" onclick="abrirGestionMasiva()">Gestionar seleccionadas</button></div>
         </div>
         <div id="detalleComentarioToolbar" class="comment-group-toolbar hidden" aria-live="polite">
-          <div class="comment-group-summary"><span id="detalleComentarioResumen"></span><small>Guías agrupadas por comentario del encargado dentro de la selección de la tabla resumen.</small></div>
+          <div class="comment-group-summary"><span id="detalleComentarioResumen"></span><small>Guías agrupadas por comentario del encargado. Usa la casilla junto al comentario para seleccionar todo el grupo.</small></div>
           <div class="comment-group-actions"><button type="button" class="secondary" onclick="expandirGruposComentarioDetalle()">Expandir todos</button><button type="button" class="secondary" onclick="contraerGruposComentarioDetalle()">Contraer todos</button></div>
         </div>
         <div class="table-wrap"><table id="tablaDetalle" class="detail-table">
@@ -944,17 +945,20 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
       const grupos=gruposPorComentarioDetalle(filtradas),totalGuias=new Set(filtradas.map(x=>String(x.guia||"").trim().toLocaleUpperCase("es")).filter(Boolean)).size;
       resumenComentarios.textContent=grupos.length+" comentarios · "+totalGuias+" guías";
       grupos.forEach(g=>{
-        const abierto=gruposComentarioDetalleAbiertos.has(g.clave),tr=document.createElement("tr"),td=document.createElement("td"),linea=document.createElement("div"),boton=document.createElement("button"),flecha=document.createElement("span"),nombre=document.createElement("span"),cantidad=document.createElement("span"),copiar=document.createElement("button");
+        const abierto=gruposComentarioDetalleAbiertos.has(g.clave),tr=document.createElement("tr"),td=document.createElement("td"),linea=document.createElement("div"),seleccionar=document.createElement("input"),boton=document.createElement("button"),flecha=document.createElement("span"),nombre=document.createElement("span"),cantidad=document.createElement("span"),copiar=document.createElement("button");
         tr.className="comment-group-row";td.colSpan=12;linea.className="comment-group-line";boton.type="button";boton.className="comment-group-toggle";boton.setAttribute("aria-expanded",String(abierto));
+        const seleccionadasGrupo=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;seleccionar.type="checkbox";seleccionar.className="comment-group-check";seleccionar.dataset.groupKey=g.clave;seleccionar.checked=seleccionadasGrupo===g.filas.length&&g.filas.length>0;seleccionar.indeterminate=seleccionadasGrupo>0&&seleccionadasGrupo<g.filas.length;seleccionar.setAttribute("aria-checked",seleccionadasGrupo===0?"false":seleccionadasGrupo===g.filas.length?"true":"mixed");seleccionar.setAttribute("aria-label","Seleccionar todas las guías del comentario: "+g.etiqueta);seleccionar.title="Seleccionar o quitar todas las guías de este comentario";seleccionar.addEventListener("change",()=>toggleSeleccionGrupoComentario(g.clave,seleccionar.checked));
         flecha.className="comment-group-arrow";flecha.textContent=abierto?"▾":"▸";nombre.className="comment-group-name";nombre.textContent=g.etiqueta;cantidad.className="comment-group-count";cantidad.textContent=g.cantidadGuias+" guía"+(g.cantidadGuias===1?"":"s");
         boton.append(flecha,nombre,cantidad);boton.addEventListener("click",()=>alternarGrupoComentarioDetalle(g.clave));
         copiar.type="button";copiar.className="comment-group-copy";copiar.textContent="📋 Copiar";copiar.title="Copiar comentario del encargado";copiar.disabled=!g.comentario;copiar.addEventListener("click",()=>copiarComentarioGrupo(g.comentario));
-        linea.append(boton,copiar);td.appendChild(linea);tr.appendChild(td);body.appendChild(tr);
+        linea.append(seleccionar,boton,copiar);td.appendChild(linea);tr.appendChild(td);body.appendChild(tr);
         if(abierto)g.filas.forEach(x=>body.appendChild(crearFilaGuia(x)));
       });
     }
     actualizarBarraSeleccion();
   }
+  function sincronizarCasillasGruposComentario(){const grupos=new Map(gruposPorComentarioDetalle(filtradas).map(g=>[g.clave,g]));document.querySelectorAll("#guiasBody .comment-group-check").forEach(casilla=>{const g=grupos.get(casilla.dataset.groupKey);if(!g){casilla.checked=false;casilla.indeterminate=false;return;}const marcadas=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;casilla.checked=marcadas===g.filas.length&&g.filas.length>0;casilla.indeterminate=marcadas>0&&marcadas<g.filas.length;casilla.setAttribute("aria-checked",marcadas===0?"false":marcadas===g.filas.length?"true":"mixed");});}
+  function toggleSeleccionGrupoComentario(clave,marcada){const grupo=gruposPorComentarioDetalle(filtradas).find(g=>g.clave===clave);if(!grupo)return;grupo.filas.forEach(x=>{const fila=Number(x.fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
   function alternarGrupoComentarioDetalle(clave){if(gruposComentarioDetalleAbiertos.has(clave))gruposComentarioDetalleAbiertos.delete(clave);else gruposComentarioDetalleAbiertos.add(clave);renderGuias();}
   function expandirGruposComentarioDetalle(){gruposPorComentarioDetalle(filtradas).forEach(g=>gruposComentarioDetalleAbiertos.add(g.clave));renderGuias();}
   function contraerGruposComentarioDetalle(){gruposComentarioDetalleAbiertos.clear();renderGuias();}
@@ -964,10 +968,10 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     catch(e){toast("No se pudo copiar el comentario. Seleccione y copie el texto manualmente.",false);}
   }
 
-  function toggleSeleccionFila(fila,marcada){fila=Number(fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);const tr=document.getElementById("row-"+fila);if(tr)tr.classList.toggle("row-selected",marcada);actualizarBarraSeleccion();}
-  function toggleSeleccionVisibles(marcadas){filtradas.forEach(x=>{const fila=Number(x.fila);if(marcadas)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();actualizarBarraSeleccion();}
-  function seleccionarVisibles(){filtradas.forEach(x=>seleccionadas.add(Number(x.fila)));sincronizarCasillasSeleccion();actualizarBarraSeleccion();}
-  function limpiarSeleccion(){seleccionadas.clear();sincronizarCasillasSeleccion();actualizarBarraSeleccion();}
+  function toggleSeleccionFila(fila,marcada){fila=Number(fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);const tr=document.getElementById("row-"+fila);if(tr)tr.classList.toggle("row-selected",marcada);sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
+  function toggleSeleccionVisibles(marcadas){filtradas.forEach(x=>{const fila=Number(x.fila);if(marcadas)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
+  function seleccionarVisibles(){filtradas.forEach(x=>seleccionadas.add(Number(x.fila)));sincronizarCasillasSeleccion();sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
+  function limpiarSeleccion(){seleccionadas.clear();sincronizarCasillasSeleccion();sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
   function sincronizarCasillasSeleccion(){document.querySelectorAll("#guiasBody .row-check").forEach(casilla=>{const fila=Number(casilla.dataset.fila),marcada=seleccionadas.has(fila);casilla.checked=marcada;const tr=document.getElementById("row-"+fila);if(tr)tr.classList.toggle("row-selected",marcada);});}
   function seleccionActual(){return guias.filter(x=>seleccionadas.has(Number(x.fila))).map(x=>({fila:Number(x.fila),guia:String(x.guia||"")}));}
   function actualizarBarraSeleccion(){

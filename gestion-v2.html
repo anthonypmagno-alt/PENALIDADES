@@ -174,6 +174,23 @@
 #tablaResumen .btn-comment,#tablaResumenV2 .btn-comment{max-width:100%;padding:4px 3px}
 .resumen-imagen-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px auto;max-width:1100px}
 .resumen-imagen-toolbar small,.resumen-imagen-toolbar [role=status]{font-size:12px;color:#475569}
+</style>
+<style>
+  .comment-group-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+  .comment-group-summary{font-size:12px;color:#334155;font-weight:700}
+  .comment-group-summary small{display:block;margin-top:3px;color:#64748b;font-weight:400}
+  .comment-group-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .comment-group-row td{padding:0!important;background:#eaf2ff;border-top:1px solid #bfdbfe;border-bottom:1px solid #bfdbfe;text-align:left}
+  .comment-group-line{display:flex;align-items:stretch;gap:8px;padding:6px 10px}
+  .comment-group-toggle{display:flex;flex:1;min-width:0;align-items:center;gap:10px;border:0;border-radius:7px;background:transparent;color:#16427e;padding:5px 6px;text-align:left;font-weight:800;cursor:pointer}
+  .comment-group-toggle:hover{background:#dbeafe}
+  .comment-group-arrow{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#dbeafe;color:#1452a8;flex:0 0 auto}
+  .comment-group-name{flex:1;overflow-wrap:anywhere}
+  .comment-group-count{padding:4px 9px;border-radius:999px;background:#fff;color:#1452a8;font-size:11px;white-space:nowrap}
+  .comment-group-copy{align-self:center;flex:0 0 auto;border:1px solid #bfdbfe;border-radius:7px;background:#fff;color:#1452a8;padding:7px 10px;font-size:11px;font-weight:800;cursor:pointer}
+  .comment-group-copy:hover:not(:disabled){background:#dbeafe}
+  .comment-group-copy:disabled{opacity:.5;cursor:not-allowed}
+  @media(max-width:560px){.comment-group-toolbar{padding:10px}.comment-group-actions{width:100%}.comment-group-actions button{flex:1}.comment-group-line{gap:4px;padding:5px}.comment-group-copy{padding:7px 6px}}
 </style></head>
 <body>
   <section id="login" class="login">
@@ -190,7 +207,7 @@
   <div id="app" class="hidden">
     <header><div class="header-inner">
       <div><div class="title">📋 Revisión de Guías · V16</div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
-      <div class="actions"><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button class="success" onclick="descargarExcel()">📥 Excel detalle</button><button class="success" onclick="descargarExcelResumen()">📊 Excel resumen</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
+      <div class="actions"><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel resumen + detalle</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
     <main>
@@ -261,6 +278,10 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
           <div class="bulk-info"><b id="bulkCount">0 guías seleccionadas</b><br><span>La gestión masiva aplica comentario, cierre y notificación al PDV.</span></div>
           <div class="bulk-actions"><button class="secondary" onclick="seleccionarVisibles()">Seleccionar visibles</button><button class="secondary" onclick="copiarGuiasSeleccionadas('gestion')">Copiar guías seleccionadas</button><button class="secondary" onclick="limpiarSeleccion()">Limpiar selección</button><button id="btnPrintDetalleGestion" class="secondary" disabled="" onclick="verDetalleSeleccionadoGestion()">Imprimir detalle seleccionado</button><button id="btnPrintGestion" class="secondary" disabled="" onclick="verGuiasSeleccionadasGestion()">Imprimir guías seleccionadas</button><button id="btnBulkManage" class="small" disabled="" onclick="abrirGestionMasiva()">Gestionar seleccionadas</button></div>
         </div>
+        <div id="detalleComentarioToolbar" class="comment-group-toolbar hidden" aria-live="polite">
+          <div class="comment-group-summary"><span id="detalleComentarioResumen"></span><small>Guías agrupadas por comentario del encargado dentro de la selección de la tabla resumen.</small></div>
+          <div class="comment-group-actions"><button type="button" class="secondary" onclick="expandirGruposComentarioDetalle()">Expandir todos</button><button type="button" class="secondary" onclick="contraerGruposComentarioDetalle()">Contraer todos</button></div>
+        </div>
         <div class="table-wrap"><table id="tablaDetalle" class="detail-table">
           <colgroup><col class="col-select"><col class="col-guide"><col class="col-manager"><col class="col-pdv"><col class="col-destination"><col class="col-area"><col class="col-state"><col class="col-type"><col class="col-update"><col class="col-comment"><col class="col-observation"><col class="col-action"></colgroup>
           <thead><tr><th class="check-cell"><input id="checkAllVisible" class="check-all" type="checkbox" title="Seleccionar todas las guías visibles" onclick="toggleSeleccionVisibles(this.checked)"></th><th>GUÍA</th><th>ENCARGADO</th><th>PDV</th><th>DESTINO<br><small>Departamento · Provincia · Distrito</small></th><th>ÁREA</th><th>ESTADO</th><th>TIPO</th><th>ÚLTIMA ACTUALIZACIÓN Y ESCANEO MÁS RECIENTE</th><th>COMENTARIO ENCARGADO</th><th>OBSERVACIÓN PDV</th><th>ACCIÓN</th></tr></thead>
@@ -304,6 +325,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
   let excelRegistros = [], excelFiltrados = [], excelPagina = 1, excelTrackNombre = "", excelEnvioNombre = "";
   const EXCEL_PAGE_SIZE = 100, EXCEL_MAX_BYTES = 30 * 1024 * 1024;
   const seleccionadas = new Set();
+  const gruposComentarioDetalleAbiertos = new Set();
   const ETIQUETAS_RESUMEN={h120o168:"Cola Larga · 120 o 168H",h360NoDevuelto:"Cola Larga · 360H · No Devuelto",h360PorDevolver:"Cola Larga · 360H · Por Devolver",h720NoDevuelto:"Cola Larga · 720H · No Devuelto",h720PorDevolver:"Cola Larga · 720H · Por Devolver",brecha48NoLlegado:"Brecha · 48 a 120H · No llegados al PDV",brecha120NoLlegado:"Brecha · 120 a 144H · No llegados al PDV",brecha48a120:"Brecha · 48 a 120H",brecha120a144:"Brecha · 120 a 144H",mayor144EnPDV:"Brecha · >144H · En el PDV",mayor144NoLlegado:"Brecha · >144H · No llegado al PDV",totalCasos:"Total de casos",totalCritico:"Total crítico",guiasUnicas:"Guías únicas"};
 
   document.addEventListener("DOMContentLoaded", restaurarSesion);
@@ -696,7 +718,7 @@ function olvidarRegionesGestion(){try{sessionStorage.removeItem(claveRegionesGes
     mostrarLoading(true,"Cargando información...");
     google.script.run.withSuccessHandler(r=>{
       if(version!==versionCargaPortal||actualToken!==token)return;
-      mostrarLoading(false);mostrarEstadoV2(r.v2);sesion=r.sesion;guias=Array.isArray(r.guias)?r.guias:[];resumenBase=r.resumen||{filas:[],total:{}};seleccionadas.clear();renderEstadoFuentes(r.fuentes);mostrarGuardadoFuentes(r.ultimoGuardado);
+      mostrarLoading(false);mostrarEstadoV2(r.v2);sesion=r.sesion;guias=Array.isArray(r.guias)?r.guias:[];resumenBase=r.resumen||{filas:[],total:{}};seleccionadas.clear();gruposComentarioDetalleAbiertos.clear();renderEstadoFuentes(r.fuentes);mostrarGuardadoFuentes(r.ultimoGuardado);
       cargarFiltros();cargarFiltrosResumen();if(Array.isArray(regionesImportadas))enfocarResumenImportado(regionesImportadas);else restaurarRegionesGestion();aplicarFiltrosResumen();
     }).withFailureHandler(manejarError).obtenerDatosPortal(token,forzar===true);
   }
@@ -735,7 +757,7 @@ function olvidarRegionesGestion(){try{sessionStorage.removeItem(claveRegionesGes
   function aplicarFiltrosResumen(conservarSeleccion){
     const resumenCalculado=construirResumenGuiasCliente(guias.filter(cumpleFiltrosGuiaResumen));
     resumen=soloCriticos?recalcularResumenVisible(resumenCalculado.filas.filter(x=>Number(x.totalCritico||0)>0)):resumenCalculado;
-    if(!conservarSeleccion){filtroResumenActivo=null;actualizarChipResumen();}
+    if(!conservarSeleccion){filtroResumenActivo=null;gruposComentarioDetalleAbiertos.clear();actualizarChipResumen();}
     renderResumen();actualizarEstadoFiltrosResumen();filtrar();
   }
 
@@ -840,10 +862,11 @@ function aplicarFiltroResumen(pdv,categoria){
  const actuales=seleccionesResumen();
  const nuevas=celdaResumenSeleccionada(pdv,categoria)?actuales.filter(s=>s.pdv!==pdv||s.categoria!==categoria):[...actuales,{pdv,categoria}];
  filtroResumenActivo=nuevas.length?nuevas:null;
+ gruposComentarioDetalleAbiertos.clear();
  actualizarChipResumen();renderResumen();filtrar();
 }
 function limpiarFiltroResumen(desplazar){
- filtroResumenActivo=null;actualizarChipResumen();renderResumen();filtrar();
+ filtroResumenActivo=null;gruposComentarioDetalleAbiertos.clear();actualizarChipResumen();renderResumen();filtrar();
  if(desplazar)document.getElementById('detalleGuiasPanel').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function actualizarChipResumen(){
@@ -895,25 +918,57 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function formatearUltimaActualizacion(x){const fechaLeida=fechaEscaneoValida(x.ultimaOperacion),fecha=fechaLeida?formatearFechaExcel(fechaLeida):String(x.ultimaOperacion||"").trim(),escaneo=String(x.tipoEscaneoReciente||"").trim(),repartidor=empleadoEntregaVisible(x,"repartidor");return `${fecha?`<div class="update-date">${esc(fecha)}</div>`:'<div class="update-empty">Sin fecha de actualización</div>'}${escaneo?`<span class="update-scan">${esc(escaneo)}</span>`:'<span class="update-scan update-empty">Sin tipo de escaneo</span>'}<span class="update-driver"><b>Repartidor:</b> ${esc(estadoSinEmpleadoEntrega(x.tipoEscaneoExportacion)?"":(repartidor||"Sin dato"))}</span>${bloqueEscaneoExportacion(x)}`;}
 
   function formatearDestinoGestion(x){return `<div><b>Departamento:</b> ${esc(x.dpto||"")}</div><div><b>Provincia:</b> ${esc(x.prov||"")}</div><div><b>Distrito:</b> ${esc(x.dsto||"")}</div>`;}
-  function renderGuias(){actualizarEstadoListaGuias('gestion');
-    const body=document.getElementById("guiasBody");body.innerHTML="";
-    if(!filtradas.length){body.innerHTML='<tr><td colspan="12" style="padding:35px;color:#64748b">No se encontraron registros.</td></tr>';actualizarBarraSeleccion();return;}
-    filtradas.forEach(x=>{const tr=document.createElement("tr"),fila=Number(x.fila),marcada=seleccionadas.has(fila);tr.id="row-"+fila;if(marcada)tr.classList.add("row-selected");tr.innerHTML=`
-      <td class="check-cell"><input class="row-check" type="checkbox" ${marcada?"checked":""} aria-label="Seleccionar guía ${esc(x.guia)}" onchange="toggleSeleccionFila(${fila},this.checked)"></td>
+  function claveComentarioDetalle(comentario){return String(comentario||"").normalize("NFC").trim().replace(/\s+/g," ").toLocaleLowerCase("es");}
+  function gruposPorComentarioDetalle(filas){
+    const mapa=new Map();
+    filas.forEach(x=>{const comentario=String(x.comentario||"").normalize("NFC").trim().replace(/\s+/g," "),clave=claveComentarioDetalle(comentario)||"__sin_comentario_encargado__";if(!mapa.has(clave))mapa.set(clave,{clave,comentario,filas:[]});mapa.get(clave).filas.push(x);});
+    return [...mapa.values()].map(g=>({...g,etiqueta:g.comentario||"Sin comentario del encargado",cantidadGuias:new Set(g.filas.map(x=>String(x.guia||"").trim().toLocaleUpperCase("es")).filter(Boolean)).size})).sort((a,b)=>b.cantidadGuias-a.cantidadGuias||a.etiqueta.localeCompare(b.etiqueta,"es"));
+  }
+  function crearFilaGuia(x){
+    const tr=document.createElement("tr"),fila=Number(x.fila),marcada=seleccionadas.has(fila);tr.id="row-"+fila;if(marcada)tr.classList.add("row-selected");tr.innerHTML=`
+      <td class="check-cell"><input class="row-check" data-fila="${fila}" type="checkbox" ${marcada?"checked":""} aria-label="Seleccionar guía ${esc(x.guia)}" onchange="toggleSeleccionFila(${fila},this.checked)"></td>
       <td><span class="guide">${esc(x.guia)}</span><button type="button" class="qr" onclick="mostrarQR('${escJs(x.guia)}')">QR</button><button type="button" class="copy-guide" title="Copiar número de guía" onclick="copiarGuia('${escJs(x.guia)}')">📋 Copiar</button></td>
       <td>${esc(x.encargado)}</td><td>${esc(x.pdv)}</td><td class="gestion-destination">${formatearDestinoGestion(x)}</td><td>${esc(x.area)}</td>
       <td><span class="state ${claseEstado(x.estado)}">${esc(x.estado)}</span>${bloqueTiempoEntrada(x)}<div class="date">${esc(x.fecha||"")}</div></td><td class="type-cell">${formatearTipo(x.tipo)}</td><td class="update-cell">${formatearUltimaActualizacion(x)}</td>
       <td class="edit"><textarea id="comentario-${x.fila}" placeholder="Comentario del encargado">${esc(x.comentario||"")}</textarea><select id="cierre-${x.fila}"><option value="">¿Cerrar caso?</option><option value="SI" ${String(x.cerro).toUpperCase()==="SI"?"selected":""}>SI</option><option value="NO" ${String(x.cerro).toUpperCase()==="NO"?"selected":""}>NO</option></select><label class="share-pdv"><input id="visible-pdv-${x.fila}" type="checkbox" ${x.comentarioVisiblePDV?"checked":""}><span>Notificar / mostrar al PDV</span></label></td>
       <td class="obs">${esc(x.observacionPDV||"Sin observación")}<div class="date">${esc(x.fechaPDV||"")}</div></td>
-      <td class="action-cell"><button id="guardar-${x.fila}" class="small" onclick="guardarRevision(${Number(x.fila)})">Guardar</button></td>`;body.appendChild(tr);});
+      <td class="action-cell"><button id="guardar-${x.fila}" class="small" onclick="guardarRevision(${Number(x.fila)})">Guardar</button></td>`;
+    return tr;
+  }
+  function renderGuias(){actualizarEstadoListaGuias('gestion');
+    const body=document.getElementById("guiasBody"),toolbar=document.getElementById("detalleComentarioToolbar"),resumenComentarios=document.getElementById("detalleComentarioResumen"),agrupar=seleccionesResumen().length>0;body.replaceChildren();
+    toolbar.classList.toggle("hidden",!agrupar);
+    if(!filtradas.length){if(agrupar)resumenComentarios.textContent="0 comentarios · 0 guías";body.innerHTML='<tr><td colspan="12" style="padding:35px;color:#64748b">No se encontraron registros.</td></tr>';actualizarBarraSeleccion();return;}
+    if(!agrupar){filtradas.forEach(x=>body.appendChild(crearFilaGuia(x)));}
+    else{
+      const grupos=gruposPorComentarioDetalle(filtradas),totalGuias=new Set(filtradas.map(x=>String(x.guia||"").trim().toLocaleUpperCase("es")).filter(Boolean)).size;
+      resumenComentarios.textContent=grupos.length+" comentarios · "+totalGuias+" guías";
+      grupos.forEach(g=>{
+        const abierto=gruposComentarioDetalleAbiertos.has(g.clave),tr=document.createElement("tr"),td=document.createElement("td"),linea=document.createElement("div"),boton=document.createElement("button"),flecha=document.createElement("span"),nombre=document.createElement("span"),cantidad=document.createElement("span"),copiar=document.createElement("button");
+        tr.className="comment-group-row";td.colSpan=12;linea.className="comment-group-line";boton.type="button";boton.className="comment-group-toggle";boton.setAttribute("aria-expanded",String(abierto));
+        flecha.className="comment-group-arrow";flecha.textContent=abierto?"▾":"▸";nombre.className="comment-group-name";nombre.textContent=g.etiqueta;cantidad.className="comment-group-count";cantidad.textContent=g.cantidadGuias+" guía"+(g.cantidadGuias===1?"":"s");
+        boton.append(flecha,nombre,cantidad);boton.addEventListener("click",()=>alternarGrupoComentarioDetalle(g.clave));
+        copiar.type="button";copiar.className="comment-group-copy";copiar.textContent="📋 Copiar";copiar.title="Copiar comentario del encargado";copiar.disabled=!g.comentario;copiar.addEventListener("click",()=>copiarComentarioGrupo(g.comentario));
+        linea.append(boton,copiar);td.appendChild(linea);tr.appendChild(td);body.appendChild(tr);
+        if(abierto)g.filas.forEach(x=>body.appendChild(crearFilaGuia(x)));
+      });
+    }
     actualizarBarraSeleccion();
+  }
+  function alternarGrupoComentarioDetalle(clave){if(gruposComentarioDetalleAbiertos.has(clave))gruposComentarioDetalleAbiertos.delete(clave);else gruposComentarioDetalleAbiertos.add(clave);renderGuias();}
+  function expandirGruposComentarioDetalle(){gruposPorComentarioDetalle(filtradas).forEach(g=>gruposComentarioDetalleAbiertos.add(g.clave));renderGuias();}
+  function contraerGruposComentarioDetalle(){gruposComentarioDetalleAbiertos.clear();renderGuias();}
+  async function copiarComentarioGrupo(comentario){
+    const texto=String(comentario||"").trim();if(!texto){toast("Este grupo no tiene comentario para copiar.",false);return;}
+    try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(texto);}else{const auxiliar=document.createElement("textarea");auxiliar.value=texto;auxiliar.style.position="fixed";auxiliar.style.opacity="0";document.body.appendChild(auxiliar);auxiliar.select();const copiado=document.execCommand("copy");auxiliar.remove();if(!copiado)throw new Error("No se pudo copiar el comentario.");}toast("Comentario copiado.",true);}
+    catch(e){toast("No se pudo copiar el comentario. Seleccione y copie el texto manualmente.",false);}
   }
 
   function toggleSeleccionFila(fila,marcada){fila=Number(fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);const tr=document.getElementById("row-"+fila);if(tr)tr.classList.toggle("row-selected",marcada);actualizarBarraSeleccion();}
   function toggleSeleccionVisibles(marcadas){filtradas.forEach(x=>{const fila=Number(x.fila);if(marcadas)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();actualizarBarraSeleccion();}
   function seleccionarVisibles(){filtradas.forEach(x=>seleccionadas.add(Number(x.fila)));sincronizarCasillasSeleccion();actualizarBarraSeleccion();}
   function limpiarSeleccion(){seleccionadas.clear();sincronizarCasillasSeleccion();actualizarBarraSeleccion();}
-  function sincronizarCasillasSeleccion(){document.querySelectorAll("#guiasBody .row-check").forEach((casilla,i)=>{const x=filtradas[i],marcada=Boolean(x&&seleccionadas.has(Number(x.fila)));casilla.checked=marcada;const tr=x?document.getElementById("row-"+Number(x.fila)):null;if(tr)tr.classList.toggle("row-selected",marcada);});}
+  function sincronizarCasillasSeleccion(){document.querySelectorAll("#guiasBody .row-check").forEach(casilla=>{const fila=Number(casilla.dataset.fila),marcada=seleccionadas.has(fila);casilla.checked=marcada;const tr=document.getElementById("row-"+fila);if(tr)tr.classList.toggle("row-selected",marcada);});}
   function seleccionActual(){return guias.filter(x=>seleccionadas.has(Number(x.fila))).map(x=>({fila:Number(x.fila),guia:String(x.guia||"")}));}
   function actualizarBarraSeleccion(){
     const seleccion=seleccionActual(),visibles=filtradas.filter(x=>seleccionadas.has(Number(x.fila))).length,totalVisibles=filtradas.length;
@@ -943,21 +998,24 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     google.script.run.withSuccessHandler(r=>{b.disabled=false;toast(r.comentarioVisiblePDV?"Revisión guardada y comentario visible para el PDV.":"Revisión guardada.",true);const x=guias.find(g=>Number(g.fila)===Number(fila));if(x){x.comentario=comentario;x.cerro=cierre;x.estado=r.estado;x.fecha=r.fecha;x.comentarioVisiblePDV=Boolean(r.comentarioVisiblePDV)}aplicarFiltrosResumen(true);}).withFailureHandler(e=>{b.disabled=false;toast(errorTexto(e),false);}).actualizarRevision(token,{fila,guia:guias.find(x=>Number(x.fila)===Number(fila))?.guia,comentario,cierre,comentarioVisiblePDV});
   }
 
-  function descargarExcel(){if(!filtradas.length){toast("No existen guías para exportar.",false);return;}mostrarLoading(true,"Generando Excel...");google.script.run.withSuccessHandler(r=>{mostrarLoading(false);if(r&&r.descargado){toast(`${r.cantidad} registros exportados.`,true);}else if(r&&r.url){const a=document.createElement("a");a.href=r.url;a.target="_blank";a.click();toast(`${r.cantidad} guías exportadas.`,true)}}).withFailureHandler(manejarError).generarExcelGuias(token,filtradas.map(x=>x.fila));}
-  function descargarExcelResumen(){
-    if(!(resumen.filas||[]).length){toast("No existen PDV visibles para exportar.",false);return;}
-    const tabla=document.getElementById("tablaResumenV2");if(!tabla){toast("No se encontró la tabla resumen de Gestión V2.",false);return;}
-    const boton=document.querySelector('button[onclick="descargarExcelResumen()"]');if(boton?.disabled)return;if(boton)boton.disabled=true;
-    mostrarLoading(true,"Generando archivo .xlsx del resumen visible...");
+  function descargarExcelCompleto(){
+    const tabla=document.getElementById("tablaResumenV2"),boton=document.getElementById("btnDescargarExcelCompleto");
+    if(!tabla){toast("No se encontró la tabla resumen de Gestión V2.",false);return;}
+    if(!filtradas.length&&!(resumen.filas||[]).length){toast("No hay resumen ni guías visibles para exportar.",false);return;}
+    if(boton?.disabled)return;if(boton)boton.disabled=true;
+    mostrarLoading(true,"Generando Excel con resumen y detalle...");
     try{
-      if(!window.XlsxResumenV2||typeof window.XlsxResumenV2.generarDesdeTabla!=="function")throw new Error("No se cargó el generador XLSX local. Reemplace también xlsx-resumen.js en el repositorio.");
-      const bytes=window.XlsxResumenV2.generarDesdeTabla(tabla),blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),url=URL.createObjectURL(blob),a=document.createElement("a");
-      a.href=url;a.download="Resumen_Gestion_Guias_V2_"+new Date().toISOString().replace(/[:.]/g,"-")+".xlsx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
-      mostrarLoading(false);toast("Resumen V2 descargado con grupos, subtotales, estilos y comentarios por PDV.",true);
-    }catch(e){mostrarLoading(false);toast("No se pudo generar el Excel del resumen: "+(e.message||String(e)),false);}
+      if(!window.XlsxResumenV2||typeof window.XlsxResumenV2.generarLibroDesdeTabla!=="function")throw new Error("No se cargó el generador XLSX actualizado. Reemplace también xlsx-resumen.js en el repositorio.");
+      const encabezados=["GUIAS A REVISAR","ENCARGADO","PDV","DEPARTAMENTO","PROVINCIA","DISTRITO","AREA ASIGNADA","FECHA Y HORA DE REVISIÓN","ESTADO DE REVISIÓN","TIPO DE REVISIÓN","COMENTARIO","SE CERRO EL CASO?","ÚLTIMA FECHA Y HORA DE OPERACIÓN","TIPO DE ESCANEO MÁS RECIENTE","OBSERVACIÓN PDV","FECHA Y HORA DE REVISIÓN PDV"];
+      const filas=filtradas.map(x=>[x.guia,x.encargado,x.pdv,x.dpto,x.prov,x.dsto,x.area,x.fecha,x.estado,x.tipo,x.comentario,x.cerro,x.ultimaOperacion,x.tipoEscaneoReciente,x.observacionPDV,x.fechaPDV]);
+      const anchos=[22,24,16,22,22,22,20,23,20,30,44,20,26,34,44,25];
+      const bytes=window.XlsxResumenV2.generarLibroDesdeTabla(tabla,{encabezados,filas,anchos}),blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+      a.href=url;a.download="Gestion_Guias_V2_"+new Date().toISOString().replace(/[:.]/g,"-")+".xlsx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+      mostrarLoading(false);toast("Excel generado: Resumen V2 en la primera pestaña y Detalle en la segunda.",true);
+    }catch(e){mostrarLoading(false);toast("No se pudo generar el Excel combinado: "+(e.message||String(e)),false);}
     finally{if(boton)boton.disabled=false;}
   }
-  function limpiarFiltros(){limpiarListaGuias('gestion',false);limpiarEntradaExportacion('fEntrada',false);limpiarFechaExportacion('fFechaExportacion',false);limpiarFiltroExcelMultiple('fEscaneoExportacion');limpiarFiltroExcelMultiple('fActualizacion');document.querySelectorAll("#fEscaneoMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fEscaneo");document.querySelectorAll("#fRegionMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fRegion");document.getElementById("buscar").value="";["fArea","fEncargado","fPdv","fEstado","fComentario","fTipo"].forEach(id=>{document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti(id);});filtroResumenActivo=null;actualizarChipResumen();renderResumen();cerrarMultis();filtrar();}
+  function limpiarFiltros(){limpiarListaGuias('gestion',false);limpiarEntradaExportacion('fEntrada',false);limpiarFechaExportacion('fFechaExportacion',false);limpiarFiltroExcelMultiple('fEscaneoExportacion');limpiarFiltroExcelMultiple('fActualizacion');document.querySelectorAll("#fEscaneoMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fEscaneo");document.querySelectorAll("#fRegionMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fRegion");document.getElementById("buscar").value="";["fArea","fEncargado","fPdv","fEstado","fComentario","fTipo"].forEach(id=>{document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti(id);});filtroResumenActivo=null;gruposComentarioDetalleAbiertos.clear();actualizarChipResumen();renderResumen();cerrarMultis();filtrar();}
   function actualizarTarjetas(){document.getElementById("totalGuias").textContent=filtradas.length;document.getElementById("pendientes").textContent=filtradas.filter(x=>estado(x)==="PENDIENTE").length;document.getElementById("proceso").textContent=filtradas.filter(x=>estado(x)==="EN PROCESO").length;document.getElementById("finalizados").textContent=filtradas.filter(x=>estado(x)==="FINALIZADO").length;}
   function estado(x){return String(x.estado||"PENDIENTE").trim().toUpperCase()}
   function claseEstado(v){v=String(v||"").toUpperCase();return v==="FINALIZADO"?"finalizado":v==="EN PROCESO"?"proceso":"pendiente";}
@@ -1522,4 +1580,4 @@ function actualizarClasificacionV2(){
  else{resumen=r.resumen;renderResumen();filtrar();}
 }
 setInterval(actualizarClasificacionV2,60000);
-</script><script src="./brecha-costos.js?v=2"></script><script src="./xlsx-resumen.js?v=20261012-comentarios-visibles-1"></script></body></html>
+</script><script src="./brecha-costos.js?v=2"></script><script src="./xlsx-resumen.js?v=20261019-v2-excel-combinado-1"></script></body></html>

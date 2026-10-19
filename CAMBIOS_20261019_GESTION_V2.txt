@@ -1,0 +1,6 @@
+Actualización 2026-10-19
+
+- Gestión de Guías V2: detalle agrupado y contraíble por Comentario encargado, con recuento de guías y botón para copiar el comentario.
+- Gestión de Guías V2: un solo botón de Excel, con Resumen V2 en la primera hoja y Detalle en la segunda.
+- Consulta desde Excel: se reincorpora el panel de estadísticas y simulación de penalidades, agrupado por encargado, zona y PDV.
+- La simulación permite filtrar, ver gráficos, marcar guías u operaciones y estimar porcentajes y montos exonerados. Es temporal y no guarda decisiones reales.

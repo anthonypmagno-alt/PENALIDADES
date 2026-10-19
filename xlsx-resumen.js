@@ -298,5 +298,50 @@
     return generarXlsx({ filas, anchos });
   }
 
-  return { generarXlsx, generarDesdeTabla };
+  function leerZipXlsx(bytes) {
+    const archivos = new Map(), vista = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), decoder = new TextDecoder();
+    let offset = 0;
+    while (offset + 30 <= bytes.length && vista.getUint32(offset, true) === 0x04034b50) {
+      const comprimido = vista.getUint32(offset + 18, true), largoNombre = vista.getUint16(offset + 26, true), largoExtra = vista.getUint16(offset + 28, true);
+      const inicioNombre = offset + 30, inicioDatos = inicioNombre + largoNombre + largoExtra;
+      const nombre = decoder.decode(bytes.subarray(inicioNombre, inicioNombre + largoNombre));
+      archivos.set(nombre, decoder.decode(bytes.subarray(inicioDatos, inicioDatos + comprimido)));
+      offset = inicioDatos + comprimido;
+    }
+    if (!archivos.has("xl/worksheets/sheet1.xml") || !archivos.has("xl/styles.xml")) throw new Error("No se pudo preparar una de las pestañas del Excel.");
+    return archivos;
+  }
+
+  function generarLibroDesdeTabla(tablaResumen, detalle) {
+    const encabezados = detalle?.encabezados || [], registros = detalle?.filas || [];
+    if (!encabezados.length) throw new Error("No se definieron las columnas del detalle.");
+    const resumen = leerZipXlsx(generarDesdeTabla(tablaResumen));
+    const filasDetalle = [{ altoPx: 34, celdas: encabezados.map(texto => ({ texto: String(texto ?? "") })) }];
+    registros.forEach(registro => filasDetalle.push({ altoPx: 30, celdas: registro.map(texto => ({ texto: String(texto ?? "") })) }));
+    const anchosDetalle = detalle.anchos || encabezados.map(() => 22);
+    const detalleLibro = leerZipXlsx(generarXlsx({ filas: filasDetalle, anchos: anchosDetalle }));
+    let detalleXml = detalleLibro.get("xl/worksheets/sheet1.xml").replace(/\s+s="\d+"/g, "");
+    detalleXml = detalleXml.replace('<pane ySplit="3" topLeftCell="A4" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A4" sqref="A4"/>', '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/>');
+
+    const contenido = resumen.get("[Content_Types].xml").replace(
+      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>',
+      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+    );
+    const libro = resumen.get("xl/workbook.xml").replace(
+      '<sheets><sheet name="Resumen V2" sheetId="1" r:id="rId1"/></sheets>',
+      '<sheets><sheet name="Resumen V2" sheetId="1" r:id="rId1"/><sheet name="Detalle" sheetId="2" r:id="rId2"/></sheets>'
+    );
+    const relaciones = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+    return zipSinCompresion([
+      { nombre: "[Content_Types].xml", contenido },
+      { nombre: "_rels/.rels", contenido: resumen.get("_rels/.rels") },
+      { nombre: "xl/workbook.xml", contenido: libro },
+      { nombre: "xl/_rels/workbook.xml.rels", contenido: relaciones },
+      { nombre: "xl/styles.xml", contenido: resumen.get("xl/styles.xml") },
+      { nombre: "xl/worksheets/sheet1.xml", contenido: resumen.get("xl/worksheets/sheet1.xml") },
+      { nombre: "xl/worksheets/sheet2.xml", contenido: detalleXml }
+    ]);
+  }
+
+  return { generarXlsx, generarDesdeTabla, generarLibroDesdeTabla };
 });

@@ -330,8 +330,8 @@
     const oldPanel = document.querySelector('.excel-brecha-cost-panel');
     if (oldPanel) oldPanel.remove();
     if (document.getElementById('brechaCostPanel')) return;
-    const summary = document.getElementById('excelPdvSummary');
-    if (!summary) return;
+    const mount = document.getElementById('statsModuleMount');
+    if (!mount) return;
     const panel = document.createElement('details');
     panel.id = 'brechaCostPanel';
     panel.className = 'brecha-shared-panel';
@@ -344,25 +344,26 @@
       <div id="brechaCostActions" class="brecha-cost-actions"><button type="button" class="small" onclick="guardarCostosBrechaCompartidos()">Guardar valores para todos</button><span class="brecha-shared-status" id="brechaCostRoleNote"></span></div>
     `;
     const stats = document.getElementById('excelInterruptionStats');
-    (stats || summary).insertAdjacentElement('afterend', panel);
+    if (stats && stats.parentElement === mount) stats.insertAdjacentElement('afterend', panel);
+    else mount.appendChild(panel);
   }
 
   function ensureStatsPanel() {
     if (document.getElementById('excelInterruptionStats')) return;
-    const summary = document.getElementById('excelPdvSummary');
-    if (!summary) return;
+    const mount = document.getElementById('statsModuleMount');
+    if (!mount) return;
     const panel = document.createElement('details');
     panel.id = 'excelInterruptionStats';
     panel.className = 'brecha-pdv-stats';
     panel.open = true;
     panel.innerHTML = '<summary>Estadísticas de interrupciones y multa por PDV</summary>' +
-      '<p class="brecha-pdv-stats-note">Cuenta cada guía una vez dentro de cada PDV; una guía repetida en PDV distintos se cuenta en cada uno. Los PDV se agrupan por encargado y zona: se usa «Zona» si existe; de lo contrario, el área asignada del catálogo y, como último recurso, la región. La brecha recurrente usa «Último tipo de problema». La multa acumulada suma el costo configurado por «Tipo de tiempo de espera»; los rangos preventivos se muestran aparte como costo evitado. Usa los filtros de abajo para acotar este análisis.</p>' +
+      '<p class="brecha-pdv-stats-note">Cuenta cada guía una vez dentro de cada PDV; una guía repetida en PDV distintos se cuenta en cada uno. Los PDV se agrupan por encargado y zona: se usa «Zona» si existe; de lo contrario, el área asignada del catálogo y, como último recurso, la región. La brecha recurrente usa «Último tipo de problema». La multa acumulada suma el costo configurado por «Tipo de tiempo de espera»; los rangos preventivos se muestran aparte como costo evitado. Esta vista es independiente de Consulta desde Excel y Penalidades, y analiza la última consulta compartida. Usa los filtros de abajo para acotar este análisis.</p>' +
       '<div class="brecha-stats-filters" id="brechaStatsFilters"></div><button type="button" id="brechaStatsClearFilters" class="brecha-stats-reset">Limpiar filtros de estadísticas</button>' +
       '<div class="brecha-sim-summary" id="brechaSimulationSummary"></div><p class="brecha-sim-note">Simulación temporal: marca las guías penalizables y define el porcentaje de exoneración por guía. No modifica decisiones reales ni guarda cambios. Las guías preventivas no se pueden marcar porque no generan multa. <button type="button" id="brechaSimulationClear" class="brecha-stats-reset">Limpiar selección simulada</button></p>' +
       '<section class="brecha-operation-simulation"><h4>Simular exoneración por operación más reciente</h4><p>Marca una operación y aplica un porcentaje a todas sus guías penalizables dentro de los filtros actuales. Puedes ajustar las guías individualmente desde el desglose de cada PDV.</p><div class="brecha-operation-simulation-wrap"><table class="brecha-operation-simulation-table"><thead><tr><th>Operación más reciente</th><th>Guías penalizables</th><th>Multa actual</th><th>Monto exonerado</th><th>% exoneración</th><th>Simular</th></tr></thead><tbody id="excelOperationSimulationBody"></tbody><tfoot id="excelOperationSimulationFoot"></tfoot></table></div></section>' +
       '<div class="brecha-stats-charts" id="excelInterruptionCharts"></div>' +
       '<div class="brecha-pdv-stats-wrap"><table class="brecha-pdv-stats-table"><thead><tr><th>Encargado · zona · PDV</th><th>Interrupciones<br><small>guías únicas</small></th><th>Multa acumulada</th><th>Monto exonerado<br><small>simulado</small></th><th>Saldo<br><small>simulado</small></th><th>Costo evitado</th><th>Desglose y simulación</th></tr></thead><tbody id="excelInterruptionStatsBody"></tbody><tfoot id="excelInterruptionStatsFoot"></tfoot></table></div>';
-    summary.insertAdjacentElement('afterend', panel);
+    mount.appendChild(panel);
     enlazarControlesEstadisticas();
   }
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=brecha-costos-1"></script>
+<script src="./bridge.js?v=20261019-comentarios-modulo-estadisticas-1"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -192,7 +192,25 @@
   .comment-group-copy:hover:not(:disabled){background:#dbeafe}
   .comment-group-copy:disabled{opacity:.5;cursor:not-allowed}
   @media(max-width:560px){.comment-group-toolbar{padding:10px}.comment-group-actions{width:100%}.comment-group-actions button{flex:1}.comment-group-line{gap:4px;padding:5px}.comment-group-copy{padding:7px 6px}}
-</style></head>
+</style><style>
+.view-tabs{flex-wrap:wrap;overflow-x:auto;width:100%}
+.comment-catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:14px;margin-top:14px}
+.comment-catalog-card{padding:16px;border:1px solid #dbe2ea;border-radius:12px;background:#f8fafc;min-width:0}
+.comment-catalog-card h3{margin:0 0 12px;color:#153e67;font-size:14px}
+.comment-catalog-card select,.comment-catalog-card input{width:100%;min-height:38px;border:1px solid #cbd5e1;border-radius:8px;padding:8px;background:#fff}
+.comment-catalog-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin:7px 0}
+.comment-catalog-row button,.comment-taxonomy-remove{border:1px solid #fecaca;border-radius:7px;background:#fff;color:#b91c1c;padding:7px 9px;font-weight:700;cursor:pointer}
+.comment-catalog-add{display:flex;gap:8px;margin-top:10px}
+.comment-catalog-add input{flex:1;min-width:0}
+.comment-catalog-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}
+.comment-catalog-actions span{color:#64748b;font-size:11px}
+.comment-taxonomy{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px}
+.comment-taxonomy select{width:100%;margin:0!important;padding:6px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;font-size:11px}
+.comment-taxonomy textarea{margin-top:0}
+.comment-taxonomy select:disabled{background:#f1f5f9;color:#94a3b8}
+@media(max-width:700px){.comment-catalog-grid{grid-template-columns:1fr}.view-tabs{gap:5px}.view-tab{white-space:nowrap}}
+</style>
+</head>
 <body>
   <section id="login" class="login">
     <div class="login-card">
@@ -212,7 +230,7 @@
     </div></header>
 
     <main>
-      <div class="view-tabs"><button id="tabGestion" class="view-tab active" onclick="mostrarVista('gestion')">Gestión de guías V2</button><button id="tabExcel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><a data-modulo-v2="true" href="./index.html" class="view-tab">Volver a Gestión actual</a></div>
+      <div class="view-tabs"><button id="tabGestion" data-view-tab="gestion" class="view-tab active" onclick="mostrarVista('gestion')">Gestión de guías V2</button><button id="tabExcel" data-view-tab="excel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabEstadisticas" data-view-tab="estadisticas" class="view-tab" onclick="mostrarVista('estadisticas')">📊 Estadísticas por PDV</button><button id="tabComentariosConfig" data-view-tab="comentarios" class="view-tab" onclick="mostrarVista('comentarios')">⚙️ Catálogo de comentarios</button><a data-modulo-v2="true" href="./index.html" class="view-tab">Volver a Gestión actual</a><a data-modulo-penalidades="true" href="./penalidades.html?v=20261015-sla-resumen-montos-7" class="view-tab">💰 Penalidades</a></div>
       <div id="viewGestion" class="app-view">
       <section id="sourceUploadPanel" class="panel hidden">
         <div class="panel-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Carga de información operativa <span class="readonly-note">SOLO ADMINISTRADOR</span><button type="button" id="sourceUploadToggle" class="secondary" style="margin-left:auto" aria-expanded="true" aria-controls="sourceUploadContent" onclick="toggleCargaOperativa()">Ocultar carga</button></div>
@@ -310,14 +328,32 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
           </div>
         </section>
       </div>
-    </main>
+          <div id="viewEstadisticas" class="app-view hidden">
+        <p class="source-note">Módulo independiente de Consulta desde Excel y Penalidades. Analiza la última consulta compartida; para cargar o actualizar guías, usa Consulta desde Excel.</p>
+        <div id="statsModuleMount"></div>
+      </div>
+      <div id="viewComentariosConfig" class="app-view hidden">
+        <section class="panel">
+          <div class="panel-title">Configuración de comentarios de encargado</div>
+          <div class="panel-body">
+            <p class="source-note">Configura las opciones compartidas de Subcampo 1 y las opciones dependientes de Subcampo 2. Los cambios se aplican a todos los usuarios.</p>
+            <div id="comentarioCatalogoStatus" class="source-note" role="status" aria-live="polite">Cargando el catálogo compartido…</div>
+            <div id="comentarioCatalogoEditor" class="comment-catalog-grid hidden">
+              <section class="comment-catalog-card"><h3>Subcampo 1</h3><div id="comentarioSubcampo1Lista"></div><div class="comment-catalog-add"><input id="nuevoSubcampo1" maxlength="100" placeholder="Nuevo valor, por ejemplo: TRASLADO"><button type="button" class="secondary" onclick="agregarSubcampo1Config()">Agregar</button></div></section>
+              <section class="comment-catalog-card"><h3>Opciones de Subcampo 2</h3><label for="comentarioParentConfig">Asociadas a Subcampo 1</label><select id="comentarioParentConfig" onchange="seleccionarSubcampo1Config(this.value)"></select><div id="comentarioSubcampo2Lista"></div><div class="comment-catalog-add"><input id="nuevoSubcampo2" maxlength="100" placeholder="Nueva opción"><button type="button" class="secondary" onclick="agregarSubcampo2Config()">Agregar</button></div></section>
+            </div>
+            <div id="comentarioCatalogoActions" class="comment-catalog-actions hidden"><button id="guardarCatalogoComentariosBtn" type="button" class="success" onclick="guardarCatalogoComentarios()">Guardar configuración</button><span>Solo el administrador puede guardar cambios.</span></div>
+          </div>
+        </section>
+      </div>
+</main>
   </div>
 
   <div id="loading" class="loading"><div id="loadingText">Procesando...</div></div>
   <div id="toast" class="toast"></div>
   <div id="qrModal" class="modal" onclick="if(event.target===this)cerrarQR()"><div class="modal-card"><h3>CÓDIGO QR</h3><div id="qr"></div><div id="qrNumero" class="guide" style="margin-top:12px"></div><p id="qrDistrito" class="qr-district-label" hidden=""></p><button class="secondary" onclick="cerrarQR()">Cerrar</button></div></div>
   <div id="commentModal" class="modal" onclick="if(event.target===this)cerrarComentario()"><div class="modal-card modal-comment"><h3 id="commentTitle">COMENTARIO DEL CASO</h3><textarea id="commentText" maxlength="2000" placeholder="Escriba un comentario sobre los casos del PDV..."></textarea><div id="commentMeta" class="comment-meta"></div><div class="modal-actions"><button class="secondary" onclick="cerrarComentario()">Cancelar</button><button id="btnSaveComment" class="small" onclick="guardarComentario()">Guardar comentario</button></div></div></div>
-  <div id="bulkModal" class="modal" onclick="if(event.target===this)cerrarGestionMasiva()"><div class="modal-card modal-bulk"><h3>GESTIÓN MASIVA</h3><div id="bulkModalCount" class="bulk-note"></div><div class="bulk-form"><label>COMENTARIO PARA TODAS LAS GUÍAS</label><textarea id="bulkComment" maxlength="2000" placeholder="Ingrese el comentario que se registrará en todas las guías seleccionadas..."></textarea><label>CIERRE DEL CASO</label><select id="bulkCierre"><option value="">Seleccione una opción</option><option value="SI">SI — Finalizar casos</option><option value="NO">NO — Mantener en proceso</option></select><label>NOTIFICACIÓN AL PDV</label><select id="bulkNotificacion"><option value="">Seleccione una opción</option><option value="SI">SI — Mostrar el comentario al PDV</option><option value="NO">NO — Mantener el comentario oculto</option></select></div><div class="modal-actions" style="margin-top:18px"><button class="secondary" onclick="cerrarGestionMasiva()">Cancelar</button><button id="btnSaveBulk" class="small" onclick="guardarGestionMasiva()">Aplicar a seleccionadas</button></div></div></div>
+  <div id="bulkModal" class="modal" onclick="if(event.target===this)cerrarGestionMasiva()"><div class="modal-card modal-bulk"><h3>GESTIÓN MASIVA</h3><div id="bulkModalCount" class="bulk-note"></div><div class="bulk-form"><label>SUBCAMPO 1</label><select id="bulkSubcampo1" onchange="actualizarOpcionesSubcampo2Masivo()" aria-label="Subcampo 1 para gestión masiva"></select><label>SUBCAMPO 2</label><select id="bulkSubcampo2" aria-label="Subcampo 2 para gestión masiva"></select><label>COMENTARIO PARA TODAS LAS GUÍAS</label><textarea id="bulkComment" maxlength="2000" placeholder="Ingrese el comentario que se registrará en todas las guías seleccionadas..."></textarea><label>CIERRE DEL CASO</label><select id="bulkCierre"><option value="">Seleccione una opción</option><option value="SI">SI — Finalizar casos</option><option value="NO">NO — Mantener en proceso</option></select><label>NOTIFICACIÓN AL PDV</label><select id="bulkNotificacion"><option value="">Seleccione una opción</option><option value="SI">SI — Mostrar el comentario al PDV</option><option value="NO">NO — Mantener el comentario oculto</option></select></div><div class="modal-actions" style="margin-top:18px"><button class="secondary" onclick="cerrarGestionMasiva()">Cancelar</button><button id="btnSaveBulk" class="small" onclick="guardarGestionMasiva()">Aplicar a seleccionadas</button></div></div></div>
 
 <script>
   const APP_URL = new URL('./gestion-v2.html',location.href).href;
@@ -327,6 +363,11 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
   const EXCEL_PAGE_SIZE = 100, EXCEL_MAX_BYTES = 30 * 1024 * 1024;
   const seleccionadas = new Set();
   const gruposComentarioDetalleAbiertos = new Set();
+  const borradoresRevision = new Map();
+  let borradoresRevisionUsuario = "";
+  let catalogoComentarios={subcampos1:["ENTREGA","DEVOLUCIÓN","TRASLADO","OTROS"],opciones:[{subcampo1:"ENTREGA",subcampo2:"PENDIENTE ACTUALIZAR"},{subcampo1:"ENTREGA",subcampo2:"PENDIENTE GESTIONAR ANOMALIAS"},{subcampo1:"ENTREGA",subcampo2:"ERROR DE CLASIFICACIÓN"},{subcampo1:"ENTREGA",subcampo2:"POSIBLE PERDIDA"},{subcampo1:"DEVOLUCIÓN",subcampo2:"PENDIENTE REGISTRAR DEVOLUCIÓN"},{subcampo1:"DEVOLUCIÓN",subcampo2:"PENDIENTE CARGAR A OT"},{subcampo1:"DEVOLUCIÓN",subcampo2:"PENDIENTE LLEGADA AL CALLAO"},{subcampo1:"DEVOLUCIÓN",subcampo2:"PENDIENTE PROCESAR AL CALLAO"}]};
+  let catalogoComentariosBorrador={subcampos1:[...catalogoComentarios.subcampos1],opciones:catalogoComentarios.opciones.map(x=>({...x}))};
+  let catalogoComentariosDisponible=false,catalogoComentariosCargado=false,clasificacionesComentariosCargadas=false,subcampo1SeleccionadoConfig="ENTREGA";
   const ETIQUETAS_RESUMEN={h120o168:"Cola Larga · 120 o 168H",h360NoDevuelto:"Cola Larga · 360H · No Devuelto",h360PorDevolver:"Cola Larga · 360H · Por Devolver",h720NoDevuelto:"Cola Larga · 720H · No Devuelto",h720PorDevolver:"Cola Larga · 720H · Por Devolver",brecha48NoLlegado:"Brecha · 48 a 120H · No llegados al PDV",brecha120NoLlegado:"Brecha · 120 a 144H · No llegados al PDV",brecha48a120:"Brecha · 48 a 120H",brecha120a144:"Brecha · 120 a 144H",mayor144EnPDV:"Brecha · >144H · En el PDV",mayor144NoLlegado:"Brecha · >144H · No llegado al PDV",totalCasos:"Total de casos",totalCritico:"Total crítico",guiasUnicas:"Guías únicas"};
 
   document.addEventListener("DOMContentLoaded", restaurarSesion);
@@ -383,16 +424,94 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     }).withFailureHandler(e=>{btn.disabled=false;btn.textContent="INGRESAR";mostrarErrorLogin(errorTexto(e));}).iniciarSesion(usuario,clave);
   }
 
-  function abrirApp(){document.body.classList.toggle("no-summary-comments",sesion.rol==="PDV");document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("userBadge").textContent=sesion.usuario+" · "+sesion.rol;document.getElementById("sourceUploadPanel").classList.toggle("hidden",sesion.rol!=="ADMINISTRADOR");mostrarVista("gestion");cargarDatos();cargarConsultaCompartida();}
+  function abrirApp(){document.body.classList.toggle("no-summary-comments",sesion.rol==="PDV");document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("userBadge").textContent=sesion.usuario+" · "+sesion.rol;document.getElementById("sourceUploadPanel").classList.toggle("hidden",sesion.rol!=="ADMINISTRADOR");document.getElementById("tabComentariosConfig").hidden=sesion.rol!=="ADMINISTRADOR";cargarCatalogoComentarios();const solicitada=location.hash.replace(/^#/,"");mostrarVista(["gestion","excel","estadisticas","comentarios"].includes(solicitada)&&(solicitada!=="comentarios"||sesion.rol==="ADMINISTRADOR")?solicitada:"gestion");cargarDatos();cargarConsultaCompartida();}
   function mostrarLogin(){document.getElementById("login").classList.remove("hidden");document.getElementById("app").classList.add("hidden");}
   function mostrarErrorLogin(t){const e=document.getElementById("loginError");e.textContent=t;e.style.display="block";}
 
   function mostrarVista(vista){
-    const esExcel=vista==="excel";
-    document.getElementById("viewGestion").classList.toggle("hidden",esExcel);
-    document.getElementById("viewExcel").classList.toggle("hidden",!esExcel);
-    document.getElementById("tabGestion").classList.toggle("active",!esExcel);
-    document.getElementById("tabExcel").classList.toggle("active",esExcel);
+    const vistas={gestion:"viewGestion",excel:"viewExcel",estadisticas:"viewEstadisticas",comentarios:"viewComentariosConfig"};
+    if(!vistas[vista]||(vista==="comentarios"&&sesion?.rol!=="ADMINISTRADOR"))vista="gestion";
+    Object.entries(vistas).forEach(([clave,id])=>document.getElementById(id)?.classList.toggle("hidden",clave!==vista));
+    document.querySelectorAll("[data-view-tab]").forEach(tab=>tab.classList.toggle("active",tab.dataset.viewTab===vista));
+    if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
+    if(vista==="comentarios")renderConfiguracionComentarios();
+    if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
+  }
+
+  function claveComentarioCatalogo(valor){return String(valor||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim().toLocaleUpperCase("es");}
+  function opcionesSubcampo1Html(actual){
+    const valor=String(actual||""),lista=[...(catalogoComentarios.subcampos1||[])];
+    if(valor&&!lista.some(x=>claveComentarioCatalogo(x)===claveComentarioCatalogo(valor)))lista.unshift(valor+" (ya no disponible)");
+    return '<option value="">Subcampo 1 · Seleccione</option>'+lista.map(x=>`<option value="${esc(String(x).replace(/ \(ya no disponible\)$/,""))}" ${claveComentarioCatalogo(String(x).replace(/ \(ya no disponible\)$/,""))===claveComentarioCatalogo(valor)?"selected":""}>${esc(x)}</option>`).join("");
+  }
+  function opcionesSubcampo2Html(padre,actual){
+    const valor=String(actual||""),lista=(catalogoComentarios.opciones||[]).filter(x=>claveComentarioCatalogo(x.subcampo1)===claveComentarioCatalogo(padre)).map(x=>String(x.subcampo2||""));
+    if(valor&&!lista.some(x=>claveComentarioCatalogo(x)===claveComentarioCatalogo(valor)))lista.unshift(valor+" (ya no disponible)");
+    return '<option value="">Subcampo 2 · Seleccione</option>'+lista.map(x=>`<option value="${esc(String(x).replace(/ \(ya no disponible\)$/,""))}" ${claveComentarioCatalogo(String(x).replace(/ \(ya no disponible\)$/,""))===claveComentarioCatalogo(valor)?"selected":""}>${esc(x)}</option>`).join("");
+  }
+  function actualizarOpcionesSubcampo2(fila,padre,reiniciar=false){
+    const select=document.getElementById("subcampo2-"+fila);if(!select)return;
+    const antes=select.value,opciones=(catalogoComentarios.opciones||[]).filter(x=>claveComentarioCatalogo(x.subcampo1)===claveComentarioCatalogo(padre)).map(x=>x.subcampo2),valor=!reiniciar&&opciones.some(x=>claveComentarioCatalogo(x)===claveComentarioCatalogo(antes))?antes:"";
+    select.innerHTML=opcionesSubcampo2Html(padre,valor);select.value=valor;
+    if(antes!==valor)registrarBorradorRevision(Number(fila),"subcampo2",valor);
+  }
+  function actualizarOpcionesSubcampo2Masivo(){
+    const parent=document.getElementById("bulkSubcampo1"),child=document.getElementById("bulkSubcampo2");if(!parent||!child)return;
+    const old=child.value,valid=(catalogoComentarios.opciones||[]).filter(x=>claveComentarioCatalogo(x.subcampo1)===claveComentarioCatalogo(parent.value)).some(x=>claveComentarioCatalogo(x.subcampo2)===claveComentarioCatalogo(old));
+    child.innerHTML=opcionesSubcampo2Html(parent.value,valid?old:"");child.disabled=!catalogoComentariosDisponible||!parent.value;
+  }
+  function actualizarEstadoCatalogoComentarios(mensaje){
+    const estado=document.getElementById("comentarioCatalogoStatus");if(!estado)return;
+    if(mensaje){estado.textContent=mensaje;return;}
+    if(!catalogoComentariosCargado){estado.textContent="No se pudo cargar el catálogo. Ejecuta una vez el SQL supabase_gestion_v2_comentarios_catalogo.sql en el mismo proyecto Supabase.";return;}
+    if(!clasificacionesComentariosCargadas){estado.textContent="Catálogo cargado; validando el acceso a las clasificaciones guardadas…";return;}
+    estado.textContent="Catálogo compartido listo · "+catalogoComentarios.subcampos1.length+" opciones de Subcampo 1 · "+catalogoComentarios.opciones.length+" opciones de Subcampo 2.";
+  }
+  function aplicarCatalogoComentarios(respuesta){
+    const data=respuesta?.catalogo||respuesta||{},subcampos1=Array.isArray(data.subcampos1)?data.subcampos1.map(x=>typeof x==="string"?x:String(x?.etiqueta||"")).filter(Boolean):[],opciones=Array.isArray(data.opciones)?data.opciones.map(x=>({subcampo1:String(x?.subcampo1||""),subcampo2:String(x?.subcampo2||"")})).filter(x=>x.subcampo1&&x.subcampo2):[];
+    catalogoComentarios={subcampos1,opciones};catalogoComentariosBorrador={subcampos1:[...subcampos1],opciones:opciones.map(x=>({...x}))};
+    if(!subcampos1.some(x=>claveComentarioCatalogo(x)===claveComentarioCatalogo(subcampo1SeleccionadoConfig)))subcampo1SeleccionadoConfig=subcampos1[0]||"";
+    catalogoComentariosCargado=true;catalogoComentariosDisponible=clasificacionesComentariosCargadas;renderConfiguracionComentarios();if(typeof renderGuias==="function")renderGuias();actualizarEstadoCatalogoComentarios();
+  }
+  function cargarCatalogoComentarios(){
+    catalogoComentariosDisponible=false;catalogoComentariosCargado=false;clasificacionesComentariosCargadas=false;actualizarEstadoCatalogoComentarios("Cargando catálogo compartido desde Supabase…");
+    google.script.run.withSuccessHandler(r=>{aplicarCatalogoComentarios(r);cargarClasificacionesComentarios();}).withFailureHandler(e=>{catalogoComentariosDisponible=false;actualizarEstadoCatalogoComentarios("No se pudo cargar el catálogo: "+errorTexto(e)+". Ejecuta una vez el SQL supabase_gestion_v2_comentarios_catalogo.sql.");renderConfiguracionComentarios();if(typeof renderGuias==="function")renderGuias();}).obtenerCatalogoComentarios(token);
+  }
+  function claveClasificacionComentario(guia,pdv){return claveComentarioCatalogo(pdv)+"|"+claveComentarioCatalogo(guia);}
+  function cargarClasificacionesComentarios(){
+    if(!Array.isArray(guias)||!guias.length){clasificacionesComentariosCargadas=true;catalogoComentariosDisponible=catalogoComentariosCargado;actualizarEstadoCatalogoComentarios();return;}
+    google.script.run.withSuccessHandler(r=>{
+      const mapa=new Map((r?.clasificaciones||[]).map(x=>[claveClasificacionComentario(x.guia,x.pdv),x]));
+      guias.forEach(x=>{const c=mapa.get(claveClasificacionComentario(x.guia,x.pdv));x.subcampo1=String(c?.subcampo1||"");x.subcampo2=String(c?.subcampo2||"");});
+      clasificacionesComentariosCargadas=true;catalogoComentariosDisponible=catalogoComentariosCargado;const estado=reconciliarBorradoresRevision(guias);actualizarEstadoCatalogoComentarios();renderGuias();
+      if(estado.conflictos)toast("Se conservaron borradores locales; una clasificación guardada cambió mientras editabas. Revisa antes de guardar.",false);
+    }).withFailureHandler(e=>{clasificacionesComentariosCargadas=false;catalogoComentariosDisponible=false;actualizarEstadoCatalogoComentarios("No se pudieron cargar las clasificaciones: "+errorTexto(e)+". Verifica la instalación del SQL del catálogo.");renderGuias();}).obtenerClasificacionesComentarios(token);
+  }
+  function renderConfiguracionComentarios(){
+    const editor=document.getElementById("comentarioCatalogoEditor"),actions=document.getElementById("comentarioCatalogoActions");if(!editor||!actions)return;
+    const admin=sesion?.rol==="ADMINISTRADOR";editor.classList.toggle("hidden",!admin||!catalogoComentariosCargado);actions.classList.toggle("hidden",!admin||!catalogoComentariosCargado);if(!admin||!catalogoComentariosCargado)return;
+    const lista1=document.getElementById("comentarioSubcampo1Lista"),parent=document.getElementById("comentarioParentConfig"),lista2=document.getElementById("comentarioSubcampo2Lista"),fields=catalogoComentariosBorrador.subcampos1;
+    lista1.innerHTML=fields.map((v,i)=>`<div class="comment-catalog-row"><input aria-label="Editar Subcampo 1" maxlength="100" value="${esc(v)}" onchange="editarSubcampo1Config(${i},this.value)"><button type="button" onclick="eliminarSubcampo1Config(${i})" title="Quitar Subcampo 1">Quitar</button></div>`).join("")||'<small>No hay opciones configuradas.</small>';
+    parent.replaceChildren();fields.forEach(v=>parent.add(new Option(v,v)));if(fields.length){if(!fields.some(x=>claveComentarioCatalogo(x)===claveComentarioCatalogo(subcampo1SeleccionadoConfig)))subcampo1SeleccionadoConfig=fields[0];parent.value=subcampo1SeleccionadoConfig;}
+    const opciones=catalogoComentariosBorrador.opciones.filter(x=>claveComentarioCatalogo(x.subcampo1)===claveComentarioCatalogo(subcampo1SeleccionadoConfig));
+    lista2.innerHTML=opciones.map((x,i)=>`<div class="comment-catalog-row"><input aria-label="Editar opción de Subcampo 2" maxlength="100" value="${esc(x.subcampo2)}" onchange="editarSubcampo2Config(${i},this.value)"><button type="button" onclick="eliminarSubcampo2Config(${i})" title="Quitar opción">Quitar</button></div>`).join("")||'<small>Agrega opciones para el Subcampo 1 seleccionado.</small>';
+    document.getElementById("guardarCatalogoComentariosBtn").disabled=!catalogoComentariosCargado;
+  }
+  function seleccionarSubcampo1Config(valor){subcampo1SeleccionadoConfig=valor;renderConfiguracionComentarios();}
+  function agregarSubcampo1Config(){const input=document.getElementById("nuevoSubcampo1"),valor=String(input.value||"").trim();if(!valor)return toast("Escribe el nuevo valor de Subcampo 1.",false);if(catalogoComentariosBorrador.subcampos1.some(x=>claveComentarioCatalogo(x)===claveComentarioCatalogo(valor)))return toast("Ese valor de Subcampo 1 ya existe.",false);catalogoComentariosBorrador.subcampos1.push(valor);subcampo1SeleccionadoConfig=valor;input.value="";renderConfiguracionComentarios();}
+  function editarSubcampo1Config(indice,valor){const anterior=catalogoComentariosBorrador.subcampos1[indice],nuevo=String(valor||"").trim();if(!nuevo){toast("Subcampo 1 no puede quedar vacío.",false);renderConfiguracionComentarios();return;}if(catalogoComentariosBorrador.subcampos1.some((x,i)=>i!==indice&&claveComentarioCatalogo(x)===claveComentarioCatalogo(nuevo))){toast("Ese valor de Subcampo 1 ya existe.",false);renderConfiguracionComentarios();return;}catalogoComentariosBorrador.subcampos1[indice]=nuevo;catalogoComentariosBorrador.opciones.forEach(x=>{if(claveComentarioCatalogo(x.subcampo1)===claveComentarioCatalogo(anterior))x.subcampo1=nuevo;});if(claveComentarioCatalogo(subcampo1SeleccionadoConfig)===claveComentarioCatalogo(anterior))subcampo1SeleccionadoConfig=nuevo;renderConfiguracionComentarios();}
+  function eliminarSubcampo1Config(indice){if(catalogoComentariosBorrador.subcampos1.length<=1)return toast("Debe quedar al menos un valor de Subcampo 1.",false);const valor=catalogoComentariosBorrador.subcampos1[indice];catalogoComentariosBorrador.subcampos1.splice(indice,1);catalogoComentariosBorrador.opciones=catalogoComentariosBorrador.opciones.filter(x=>claveComentarioCatalogo(x.subcampo1)!==claveComentarioCatalogo(valor));if(claveComentarioCatalogo(subcampo1SeleccionadoConfig)===claveComentarioCatalogo(valor))subcampo1SeleccionadoConfig=catalogoComentariosBorrador.subcampos1[0]||"";renderConfiguracionComentarios();}
+  function agregarSubcampo2Config(){const input=document.getElementById("nuevoSubcampo2"),valor=String(input.value||"").trim(),parent=subcampo1SeleccionadoConfig;if(!parent)return toast("Agrega o selecciona un Subcampo 1.",false);if(!valor)return toast("Escribe la nueva opción de Subcampo 2.",false);if(catalogoComentariosBorrador.opciones.some(x=>claveComentarioCatalogo(x.subcampo1)===claveComentarioCatalogo(parent)&&claveComentarioCatalogo(x.subcampo2)===claveComentarioCatalogo(valor)))return toast("Esa opción ya existe para este Subcampo 1.",false);catalogoComentariosBorrador.opciones.push({subcampo1:parent,subcampo2:valor});input.value="";renderConfiguracionComentarios();}
+  function editarSubcampo2Config(indiceVisible,valor){const nuevo=String(valor||"").trim(),lista=catalogoComentariosBorrador.opciones.filter(x=>claveComentarioCatalogo(x.subcampo1)===claveComentarioCatalogo(subcampo1SeleccionadoConfig)),obj=lista[indiceVisible];if(!obj)return;if(!nuevo){toast("La opción de Subcampo 2 no puede quedar vacía.",false);renderConfiguracionComentarios();return;}if(lista.some(x=>x!==obj&&claveComentarioCatalogo(x.subcampo2)===claveComentarioCatalogo(nuevo))){toast("Esa opción ya existe para este Subcampo 1.",false);renderConfiguracionComentarios();return;}obj.subcampo2=nuevo;renderConfiguracionComentarios();}
+  function eliminarSubcampo2Config(indiceVisible){const lista=catalogoComentariosBorrador.opciones.filter(x=>claveComentarioCatalogo(x.subcampo1)===claveComentarioCatalogo(subcampo1SeleccionadoConfig)),obj=lista[indiceVisible];if(!obj)return;catalogoComentariosBorrador.opciones=catalogoComentariosBorrador.opciones.filter(x=>x!==obj);renderConfiguracionComentarios();}
+  function guardarCatalogoComentarios(){
+    if(sesion?.rol!=="ADMINISTRADOR")return toast("Solo el administrador puede modificar el catálogo.",false);
+    const subcampos1=catalogoComentariosBorrador.subcampos1.map(etiqueta=>({etiqueta:String(etiqueta||"").trim()})),opciones=catalogoComentariosBorrador.opciones.map(x=>({subcampo1:String(x.subcampo1||"").trim(),subcampo2:String(x.subcampo2||"").trim()})),status=document.getElementById("comentarioCatalogoStatus"),btn=document.getElementById("guardarCatalogoComentariosBtn");
+    if(!subcampos1.length)return toast("Debe existir al menos una opción de Subcampo 1.",false);
+    if(subcampos1.some(x=>!x.etiqueta)||new Set(subcampos1.map(x=>claveComentarioCatalogo(x.etiqueta))).size!==subcampos1.length)return toast("Revisa los nombres de Subcampo 1; deben estar completos y ser únicos.",false);
+    if(opciones.some(x=>!x.subcampo1||!x.subcampo2||!subcampos1.some(y=>claveComentarioCatalogo(y.etiqueta)===claveComentarioCatalogo(x.subcampo1)))||new Set(opciones.map(x=>claveComentarioCatalogo(x.subcampo1)+"|"+claveComentarioCatalogo(x.subcampo2))).size!==opciones.length)return toast("Revisa las opciones de Subcampo 2; deben tener un padre válido y ser únicas.",false);
+    btn.disabled=true;status.textContent="Guardando catálogo compartido…";
+    google.script.run.withSuccessHandler(r=>{btn.disabled=false;aplicarCatalogoComentarios(r);status.textContent="Configuración guardada y compartida con todos los usuarios.";renderGuias();toast("Catálogo de comentarios guardado.",true);}).withFailureHandler(e=>{btn.disabled=false;status.textContent="No se guardaron los cambios: "+errorTexto(e);toast(errorTexto(e),false);}).guardarCatalogoComentarios(token,{subcampos1,opciones});
   }
 
   async function cargarFuenteOperativaPortal(tipo){
@@ -713,14 +832,25 @@ function leerRegionesGestion(){try{const r=JSON.parse(sessionStorage.getItem(cla
 function restaurarRegionesGestion(){const regiones=leerRegionesGestion();if(!regiones)return;const elegidas=new Set(regiones.map(normalizarLocal));['sRegion','fRegion'].forEach(id=>{document.querySelectorAll('#'+id+'Menu input[type=checkbox]').forEach(x=>x.checked=elegidas.has(normalizarLocal(x.value)));actualizarEtiquetaMulti(id);});}
 function olvidarRegionesGestion(){try{sessionStorage.removeItem(claveRegionesGestion());}catch(e){}}
 
+function valorBaseRevision(registro,campo){if(!registro)return campo==="notificacion"?false:"";if(campo==="comentario")return String(registro.comentario||"");if(campo==="cierre")return String(registro.cerro||"").toUpperCase();if(campo==="subcampo1"||campo==="subcampo2")return String(registro[campo]||"");return Boolean(registro.comentarioVisiblePDV);}
+function mismoValorRevision(a,b,campo){return campo==="notificacion"?Boolean(a)===Boolean(b):String(a??"")===String(b??"");}
+function valorBorradorRevision(fila,campo){const entrada=borradoresRevision.get(Number(fila))?.[campo];return entrada&&typeof entrada==="object"&&Object.prototype.hasOwnProperty.call(entrada,"valor")?entrada.valor:undefined;}
+function claveBorradoresRevision(){const usuario=String(sesion?.usuario||"").trim().toLocaleUpperCase("es");return usuario?"borradoresRevisionV16:"+usuario:"";}
+function cargarBorradoresRevisionUsuario(){const clave=claveBorradoresRevision();if(!clave||clave===borradoresRevisionUsuario)return;borradoresRevision.clear();borradoresRevisionUsuario=clave;try{const filas=JSON.parse(sessionStorage.getItem(clave)||"[]");if(Array.isArray(filas))filas.forEach(par=>{const fila=Number(par?.[0]),borrador=par?.[1];if(Number.isFinite(fila)&&borrador&&typeof borrador==="object")borradoresRevision.set(fila,borrador);});}catch(e){borradoresRevision.clear();}}
+function persistirBorradoresRevision(){const clave=claveBorradoresRevision();if(!clave)return;try{if(borradoresRevision.size)sessionStorage.setItem(clave,JSON.stringify([...borradoresRevision]));else sessionStorage.removeItem(clave);}catch(e){/* El borrador sigue disponible en memoria si el almacenamiento de sesión está bloqueado. */}}
+function camposEnConflictoRevision(fila){const registro=guias.find(x=>Number(x.fila)===Number(fila)),borrador=borradoresRevision.get(Number(fila))||{};return Object.entries(borrador).filter(([campo,entrada])=>!mismoValorRevision(entrada.base,valorBaseRevision(registro,campo),campo)&&!mismoValorRevision(entrada.valor,valorBaseRevision(registro,campo),campo)).map(([campo])=>campo);}
+function reconciliarBorradoresRevision(guiasNuevas){const porFila=new Map((guiasNuevas||[]).map(x=>[Number(x.fila),x]));let conflictos=0;for(const [fila,borrador] of borradoresRevision){const registro=porFila.get(Number(fila));let conflicto=false;Object.keys(borrador).forEach(campo=>{const entrada=borrador[campo],actual=valorBaseRevision(registro,campo);if(mismoValorRevision(entrada.valor,actual,campo)){delete borrador[campo];}else if(!mismoValorRevision(entrada.base,actual,campo)){conflicto=true;}});if(!Object.keys(borrador).length)borradoresRevision.delete(fila);else if(conflicto)conflictos++;}persistirBorradoresRevision();return{conservados:borradoresRevision.size,conflictos};}
+function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const registro=guias.find(x=>Number(x.fila)===fila);if(!Number.isFinite(fila)||!campo)return;const base=valorBaseRevision(registro,campo),borrador=borradoresRevision.get(fila)||{},anterior=borrador[campo],baseOriginal=anterior&&typeof anterior==="object"&&Object.prototype.hasOwnProperty.call(anterior,"base")?anterior.base:base;if(mismoValorRevision(valor,baseOriginal,campo))delete borrador[campo];else borrador[campo]={valor,base:baseOriginal};if(Object.keys(borrador).length)borradoresRevision.set(fila,borrador);else borradoresRevision.delete(fila);persistirBorradoresRevision();}
+  function enlazarBorradoresRevision(){const body=document.getElementById("guiasBody");if(!body||body.dataset.draftBound)return;body.dataset.draftBound="1";const capturar=event=>{const control=event.target.closest("[data-draft-field][data-fila]");if(!control)return;const fila=Number(control.dataset.fila),campo=control.dataset.draftField;if(!Number.isFinite(fila)||!campo)return;if(campo==="subcampo1"){const previo=valorBorradorRevision(fila,"subcampo1"),registro=guias.find(x=>Number(x.fila)===fila),anterior=previo===undefined?String(registro?.subcampo1||""):String(previo),reiniciar=claveComentarioCatalogo(anterior)!==claveComentarioCatalogo(control.value);actualizarOpcionesSubcampo2(fila,control.value,reiniciar);}const valor=campo==="notificacion"?Boolean(control.checked):campo==="cierre"?String(control.value||"").toUpperCase():String(control.value??"");registrarBorradorRevision(fila,campo,valor);};body.addEventListener("input",capturar);body.addEventListener("change",capturar);}
+
   let versionCargaPortal=0;
   function cargarDatos(regionesImportadas,forzar){
     const version=++versionCargaPortal,actualToken=token;
     mostrarLoading(true,"Cargando información...");
     google.script.run.withSuccessHandler(r=>{
       if(version!==versionCargaPortal||actualToken!==token)return;
-      mostrarLoading(false);mostrarEstadoV2(r.v2);sesion=r.sesion;guias=Array.isArray(r.guias)?r.guias:[];resumenBase=r.resumen||{filas:[],total:{}};seleccionadas.clear();gruposComentarioDetalleAbiertos.clear();renderEstadoFuentes(r.fuentes);mostrarGuardadoFuentes(r.ultimoGuardado);
-      cargarFiltros();cargarFiltrosResumen();if(Array.isArray(regionesImportadas))enfocarResumenImportado(regionesImportadas);else restaurarRegionesGestion();aplicarFiltrosResumen();
+      mostrarLoading(false);mostrarEstadoV2(r.v2);sesion=r.sesion;cargarBorradoresRevisionUsuario();const guiasNuevas=Array.isArray(r.guias)?r.guias:[],estadoBorradores=reconciliarBorradoresRevision(guiasNuevas);guias=guiasNuevas;resumenBase=r.resumen||{filas:[],total:{}};cargarClasificacionesComentarios();seleccionadas.clear();gruposComentarioDetalleAbiertos.clear();renderEstadoFuentes(r.fuentes);mostrarGuardadoFuentes(r.ultimoGuardado);
+      cargarFiltros();cargarFiltrosResumen();if(Array.isArray(regionesImportadas))enfocarResumenImportado(regionesImportadas);else restaurarRegionesGestion();aplicarFiltrosResumen();if(estadoBorradores.conflictos)toast("Se conservaron borradores locales. El comentario, clasificación o cierre guardado cambió mientras editabas; revisa el contenido antes de guardar.",false);else if(estadoBorradores.conservados)toast("Se conservaron "+estadoBorradores.conservados+" borrador(es) sin guardar.",true);
     }).withFailureHandler(manejarError).obtenerDatosPortal(token,forzar===true);
   }
 
@@ -922,22 +1052,22 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function claveComentarioDetalle(comentario){return String(comentario||"").normalize("NFC").trim().replace(/\s+/g," ").toLocaleLowerCase("es");}
   function gruposPorComentarioDetalle(filas){
     const mapa=new Map();
-    filas.forEach(x=>{const comentario=String(x.comentario||"").normalize("NFC").trim().replace(/\s+/g," "),clave=claveComentarioDetalle(comentario)||"__sin_comentario_encargado__";if(!mapa.has(clave))mapa.set(clave,{clave,comentario,filas:[]});mapa.get(clave).filas.push(x);});
-    return [...mapa.values()].map(g=>({...g,etiqueta:g.comentario||"Sin comentario del encargado",cantidadGuias:new Set(g.filas.map(x=>String(x.guia||"").trim().toLocaleUpperCase("es")).filter(Boolean)).size})).sort((a,b)=>b.cantidadGuias-a.cantidadGuias||a.etiqueta.localeCompare(b.etiqueta,"es"));
+    filas.forEach(x=>{const comentario=String(x.comentario||"").normalize("NFC").trim().replace(/\s+/g," "),subcampo1=String(x.subcampo1||"").trim(),subcampo2=String(x.subcampo2||"").trim(),clave=[subcampo1,subcampo2,comentario].map(claveComentarioDetalle).join("|")||"__sin_comentario_encargado__";if(!mapa.has(clave))mapa.set(clave,{clave,comentario,subcampo1,subcampo2,filas:[]});mapa.get(clave).filas.push(x);});
+    return [...mapa.values()].map(g=>({...g,etiqueta:[g.subcampo1,g.subcampo2,g.comentario||"Sin comentario del encargado"].filter(Boolean).join(" · "),cantidadGuias:new Set(g.filas.map(x=>String(x.guia||"").trim().toLocaleUpperCase("es")).filter(Boolean)).size})).sort((a,b)=>b.cantidadGuias-a.cantidadGuias||a.etiqueta.localeCompare(b.etiqueta,"es"));
   }
   function crearFilaGuia(x){
-    const tr=document.createElement("tr"),fila=Number(x.fila),marcada=seleccionadas.has(fila);tr.id="row-"+fila;if(marcada)tr.classList.add("row-selected");tr.innerHTML=`
+    const tr=document.createElement("tr"),fila=Number(x.fila),marcada=seleccionadas.has(fila),comentario=valorBorradorRevision(fila,"comentario"),cierre=valorBorradorRevision(fila,"cierre"),notificacion=valorBorradorRevision(fila,"notificacion"),subcampo1=valorBorradorRevision(fila,"subcampo1"),subcampo2=valorBorradorRevision(fila,"subcampo2");const comentarioActual=comentario===undefined?String(x.comentario||""):String(comentario),cierreActual=String(cierre===undefined?x.cerro||"":cierre).toUpperCase(),notificacionActual=notificacion===undefined?Boolean(x.comentarioVisiblePDV):Boolean(notificacion),subcampo1Actual=String(subcampo1===undefined?x.subcampo1||"":subcampo1),subcampo2Actual=String(subcampo2===undefined?x.subcampo2||"":subcampo2);tr.id="row-"+fila;if(marcada)tr.classList.add("row-selected");tr.innerHTML=`
       <td class="check-cell"><input class="row-check" data-fila="${fila}" type="checkbox" ${marcada?"checked":""} aria-label="Seleccionar guía ${esc(x.guia)}" onchange="toggleSeleccionFila(${fila},this.checked)"></td>
       <td><span class="guide">${esc(x.guia)}</span><button type="button" class="qr" onclick="mostrarQR('${escJs(x.guia)}')">QR</button><button type="button" class="copy-guide" title="Copiar número de guía" onclick="copiarGuia('${escJs(x.guia)}')">📋 Copiar</button></td>
       <td>${esc(x.encargado)}</td><td>${esc(x.pdv)}</td><td class="gestion-destination">${formatearDestinoGestion(x)}</td><td>${esc(x.area)}</td>
       <td><span class="state ${claseEstado(x.estado)}">${esc(x.estado)}</span>${bloqueTiempoEntrada(x)}<div class="date">${esc(x.fecha||"")}</div></td><td class="type-cell">${formatearTipo(x.tipo)}</td><td class="update-cell">${formatearUltimaActualizacion(x)}</td>
-      <td class="edit"><textarea id="comentario-${x.fila}" placeholder="Comentario del encargado">${esc(x.comentario||"")}</textarea><select id="cierre-${x.fila}"><option value="">¿Cerrar caso?</option><option value="SI" ${String(x.cerro).toUpperCase()==="SI"?"selected":""}>SI</option><option value="NO" ${String(x.cerro).toUpperCase()==="NO"?"selected":""}>NO</option></select><label class="share-pdv"><input id="visible-pdv-${x.fila}" type="checkbox" ${x.comentarioVisiblePDV?"checked":""}><span>Notificar / mostrar al PDV</span></label></td>
+      <td class="edit"><div class="comment-taxonomy"><select id="subcampo1-${fila}" data-fila="${fila}" data-draft-field="subcampo1" aria-label="Subcampo 1" ${catalogoComentariosDisponible?"":"disabled"}>${opcionesSubcampo1Html(subcampo1Actual)}</select><select id="subcampo2-${fila}" data-fila="${fila}" data-draft-field="subcampo2" aria-label="Subcampo 2" ${catalogoComentariosDisponible?"":"disabled"}>${opcionesSubcampo2Html(subcampo1Actual,subcampo2Actual)}</select></div><textarea id="comentario-${x.fila}" data-fila="${fila}" data-draft-field="comentario" placeholder="Comentario del encargado">${esc(comentarioActual)}</textarea><select id="cierre-${x.fila}" data-fila="${fila}" data-draft-field="cierre"><option value="">¿Cerrar caso?</option><option value="SI" ${cierreActual==="SI"?"selected":""}>SI</option><option value="NO" ${cierreActual==="NO"?"selected":""}>NO</option></select><label class="share-pdv"><input id="visible-pdv-${x.fila}" data-fila="${fila}" data-draft-field="notificacion" type="checkbox" ${notificacionActual?"checked":""}><span>Notificar / mostrar al PDV</span></label></td>
       <td class="obs">${esc(x.observacionPDV||"Sin observación")}<div class="date">${esc(x.fechaPDV||"")}</div></td>
       <td class="action-cell"><button id="guardar-${x.fila}" class="small" onclick="guardarRevision(${Number(x.fila)})">Guardar</button></td>`;
     return tr;
   }
   function renderGuias(){actualizarEstadoListaGuias('gestion');
-    const body=document.getElementById("guiasBody"),toolbar=document.getElementById("detalleComentarioToolbar"),resumenComentarios=document.getElementById("detalleComentarioResumen"),agrupar=seleccionesResumen().length>0;body.replaceChildren();
+    const body=document.getElementById("guiasBody"),toolbar=document.getElementById("detalleComentarioToolbar"),resumenComentarios=document.getElementById("detalleComentarioResumen"),agrupar=seleccionesResumen().length>0;enlazarBorradoresRevision();body.replaceChildren();
     toolbar.classList.toggle("hidden",!agrupar);
     if(!filtradas.length){if(agrupar)resumenComentarios.textContent="0 comentarios · 0 guías";body.innerHTML='<tr><td colspan="12" style="padding:35px;color:#64748b">No se encontraron registros.</td></tr>';actualizarBarraSeleccion();return;}
     if(!agrupar){filtradas.forEach(x=>body.appendChild(crearFilaGuia(x)));}
@@ -980,26 +1110,29 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     document.getElementById("btnBulkManage").disabled=!seleccion.length;document.getElementById("btnPrintGestion").disabled=!seleccion.length;document.getElementById("btnPrintDetalleGestion").disabled=!seleccion.length;
     const check=document.getElementById("checkAllVisible");if(check){check.checked=Boolean(totalVisibles&&visibles===totalVisibles);check.indeterminate=Boolean(visibles&&visibles<totalVisibles);check.disabled=!totalVisibles;}
   }
-  function abrirGestionMasiva(){const cantidad=seleccionActual().length;if(!cantidad){toast("Seleccione al menos una guía.",false);return;}document.getElementById("bulkModalCount").textContent="La gestión se aplicará a "+cantidad+" guía"+(cantidad===1?" seleccionada.":"s seleccionadas.");document.getElementById("bulkComment").value="";document.getElementById("bulkCierre").value="";document.getElementById("bulkNotificacion").value="";document.getElementById("bulkModal").style.display="flex";setTimeout(()=>document.getElementById("bulkComment").focus(),50);}
+  function abrirGestionMasiva(){const cantidad=seleccionActual().length;if(!cantidad){toast("Seleccione al menos una guía.",false);return;}document.getElementById("bulkModalCount").textContent="La gestión se aplicará a "+cantidad+" guía"+(cantidad===1?" seleccionada.":"s seleccionadas.");document.getElementById("bulkComment").value="";document.getElementById("bulkCierre").value="";document.getElementById("bulkNotificacion").value="";document.getElementById("bulkSubcampo1").innerHTML=opcionesSubcampo1Html("");document.getElementById("bulkSubcampo1").disabled=!catalogoComentariosDisponible;actualizarOpcionesSubcampo2Masivo();document.getElementById("bulkModal").style.display="flex";setTimeout(()=>document.getElementById("bulkComment").focus(),50);}
   function cerrarGestionMasiva(){document.getElementById("bulkModal").style.display="none";}
   function guardarGestionMasiva(){
-    const seleccion=seleccionActual(),comentario=document.getElementById("bulkComment").value.trim(),cierre=document.getElementById("bulkCierre").value,notificacion=document.getElementById("bulkNotificacion").value;
+    const seleccion=seleccionActual(),comentario=document.getElementById("bulkComment").value.trim(),cierre=document.getElementById("bulkCierre").value,notificacion=document.getElementById("bulkNotificacion").value,subcampo1=document.getElementById("bulkSubcampo1").value,subcampo2=document.getElementById("bulkSubcampo2").value;
+    if((subcampo1||subcampo2)&&!catalogoComentariosDisponible){toast("El catálogo compartido no está disponible. Ejecuta primero el SQL de configuración de comentarios.",false);return;}
     if(!seleccion.length){cerrarGestionMasiva();toast("La selección ya no contiene guías válidas.",false);return;}
     if(!comentario||!cierre||!notificacion){toast("Complete comentario, cierre y notificación.",false);return;}
     if(!confirm("¿Aplicar esta gestión a "+seleccion.length+" guía"+(seleccion.length===1?"?":"s?")))return;
     cerrarGestionMasiva();mostrarLoading(true,"Actualizando "+seleccion.length+" guías...");
     google.script.run.withSuccessHandler(r=>{
       mostrarLoading(false);const filasActualizadas=new Set((r.actualizados||seleccion).map(x=>Number(x.fila)));
-      guias.forEach(x=>{if(filasActualizadas.has(Number(x.fila))){x.comentario=r.comentario;x.cerro=r.cierre;x.estado=r.estado;x.fecha=r.fecha;x.comentarioVisiblePDV=Boolean(r.comentarioVisiblePDV);}});
+      guias.forEach(x=>{if(filasActualizadas.has(Number(x.fila))){borradoresRevision.delete(Number(x.fila));x.comentario=r.comentario;x.cerro=r.cierre;x.estado=r.estado;x.fecha=r.fecha;x.comentarioVisiblePDV=Boolean(r.comentarioVisiblePDV);x.subcampo1=subcampo1;x.subcampo2=subcampo2;}});persistirBorradoresRevision();
       seleccionadas.clear();toast(r.cantidad+" guía"+(r.cantidad===1?" actualizada correctamente.":"s actualizadas correctamente."),true);aplicarFiltrosResumen(true);
-    }).withFailureHandler(manejarError).actualizarRevisionesMasivas(token,{seleccion:seleccion,comentario:comentario,cierre:cierre,notificacion:notificacion});
+    }).withFailureHandler(manejarError).actualizarRevisionesMasivas(token,{seleccion:seleccion,comentario:comentario,cierre:cierre,notificacion:notificacion,subcampo1:subcampo1,subcampo2:subcampo2,guardarClasificacion:catalogoComentariosDisponible});
   }
 
   function guardarRevision(fila){
-    const comentario=document.getElementById("comentario-"+fila).value.trim(),cierre=document.getElementById("cierre-"+fila).value,comentarioVisiblePDV=document.getElementById("visible-pdv-"+fila).checked;
+    const comentario=document.getElementById("comentario-"+fila).value.trim(),cierre=document.getElementById("cierre-"+fila).value,comentarioVisiblePDV=document.getElementById("visible-pdv-"+fila).checked,subcampo1=document.getElementById("subcampo1-"+fila).value,subcampo2=document.getElementById("subcampo2-"+fila).value;
+    if((subcampo1||subcampo2)&&!catalogoComentariosDisponible){toast("El catálogo compartido no está disponible. Ejecuta primero el SQL de configuración de comentarios.",false);return;}
     if(!comentario||!cierre){toast("Ingrese comentario y seleccione SI o NO.",false);return;}
+    if(camposEnConflictoRevision(fila).length&&!confirm("El comentario, clasificación, cierre o notificación guardado cambió mientras editabas. ¿Quieres guardar tu borrador y reemplazar ese cambio?"))return;
     const b=document.getElementById("guardar-"+fila);b.disabled=true;
-    google.script.run.withSuccessHandler(r=>{b.disabled=false;toast(r.comentarioVisiblePDV?"Revisión guardada y comentario visible para el PDV.":"Revisión guardada.",true);const x=guias.find(g=>Number(g.fila)===Number(fila));if(x){x.comentario=comentario;x.cerro=cierre;x.estado=r.estado;x.fecha=r.fecha;x.comentarioVisiblePDV=Boolean(r.comentarioVisiblePDV)}aplicarFiltrosResumen(true);}).withFailureHandler(e=>{b.disabled=false;toast(errorTexto(e),false);}).actualizarRevision(token,{fila,guia:guias.find(x=>Number(x.fila)===Number(fila))?.guia,comentario,cierre,comentarioVisiblePDV});
+    google.script.run.withSuccessHandler(r=>{b.disabled=false;borradoresRevision.delete(Number(fila));persistirBorradoresRevision();toast(r.comentarioVisiblePDV?"Revisión guardada y comentario visible para el PDV.":"Revisión guardada.",true);const x=guias.find(g=>Number(g.fila)===Number(fila));if(x){x.comentario=comentario;x.cerro=cierre;x.estado=r.estado;x.fecha=r.fecha;x.comentarioVisiblePDV=Boolean(r.comentarioVisiblePDV);x.subcampo1=subcampo1;x.subcampo2=subcampo2;}aplicarFiltrosResumen(true);}).withFailureHandler(e=>{b.disabled=false;toast(errorTexto(e),false);}).actualizarRevision(token,{fila,guia:guias.find(x=>Number(x.fila)===Number(fila))?.guia,comentario,cierre,comentarioVisiblePDV,subcampo1,subcampo2,guardarClasificacion:catalogoComentariosDisponible});
   }
 
   function descargarExcelCompleto(){
@@ -1029,7 +1162,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function cerrarQR(){document.getElementById("qrModal").style.display="none";}
   function copiarGuia(guia){const texto=String(guia||"").trim();if(!texto){toast("No existe una guía para copiar.",false);return;}if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(texto).then(()=>toast("Guía "+texto+" copiada.",true)).catch(()=>copiarGuiaAlternativo(texto));return;}copiarGuiaAlternativo(texto);}
   function copiarGuiaAlternativo(texto){const campo=document.createElement("textarea");campo.value=texto;campo.setAttribute("readonly","");campo.style.position="fixed";campo.style.opacity="0";document.body.appendChild(campo);campo.select();campo.setSelectionRange(0,texto.length);let copiado=false;try{copiado=document.execCommand("copy");}catch(e){copiado=false;}document.body.removeChild(campo);toast(copiado?"Guía "+texto+" copiada.":"No se pudo copiar la guía.",copiado);}
-  function salir(){const t=token;limpiarSesion();google.script.run.cerrarSesion(t);mostrarLogin();}
+  function salir(){const t=token,clave=claveBorradoresRevision();try{if(clave)sessionStorage.removeItem(clave);}catch(e){}borradoresRevision.clear();borradoresRevisionUsuario="";limpiarSesion();google.script.run.cerrarSesion(t);mostrarLogin();}
   function limpiarSesion(){cancelarRegionesFuente();token="";sesion=null;sessionStorage.removeItem("tokenGuiasSupabaseReplica");limpiarArchivoExcel(true);}
   function mostrarLoading(si,texto){document.getElementById("loadingText").textContent=texto||"Procesando...";document.getElementById("loading").style.display=si?"flex":"none";}
   function manejarError(e){mostrarLoading(false);const t=errorTexto(e);toast(t,false);if(/sesión|sesion/i.test(t)){limpiarSesion();mostrarLogin();}}
@@ -1584,4 +1717,4 @@ function actualizarClasificacionV2(){
  else{resumen=r.resumen;renderResumen();filtrar();}
 }
 setInterval(actualizarClasificacionV2,60000);
-</script><script src="./brecha-costos.js?v=2"></script><script src="./xlsx-resumen.js?v=20261019-v2-excel-combinado-1"></script></body></html>
+</script><script src="./brecha-costos.js?v=20261019-modulo-estadisticas-independiente-1"></script><script src="./xlsx-resumen.js?v=20261019-v2-excel-combinado-1"></script></body></html>

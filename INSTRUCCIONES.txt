@@ -177,3 +177,12 @@ CORRECCION DEL RPC DE MONTO SLA (15-10-2026)
 - El mensaje de error `Could not find the function ... (p_pdv, p_periodo)` indica que el navegador envió solo PDV y periodo. La función de guardado requiere tres datos: `p_periodo`, `p_pdv` y la lista `p_multiplicadores`.
 - El HTML actualizado envía los tres parámetros; la migración SQL crea la función con esa misma firma y solicita recargar el esquema de PostgREST.
 - Publica `index.html` y `penalidades.html` de este ZIP en la raíz del repositorio y entra de nuevo por el portal. Verifica que el enlace abra `penalidades.html?v=20261015-sla-resumen-montos-7`. Ejecuta nuevamente el SQL SLA del ZIP si aún no lo hiciste. No hace falta volver a importar Excel.
+
+
+ACTUALIZACION 2026-10-19: MODULOS Y CATALOGOS DE COMENTARIO
+- La pestaña “Estadísticas por PDV” es un módulo independiente de “Consulta desde Excel” y “Penalidades”. Reutiliza la última consulta compartida; los archivos se cargan y actualizan desde Consulta desde Excel.
+- En Gestión de guías V2, el comentario de encargado comienza con Subcampo 1 y Subcampo 2. El segundo muestra únicamente las opciones asociadas al primer campo. El comentario libre, cierre y notificación al PDV se mantienen.
+- La pestaña “Catálogo de comentarios” permite al administrador agregar, editar o quitar opciones de Subcampo 1 y mantener las opciones dependientes de Subcampo 2. El catálogo se comparte con los usuarios autorizados.
+- El catálogo inicial incluye ENTREGA, DEVOLUCIÓN, TRASLADO y OTROS, junto con las opciones de ENTREGA y DEVOLUCIÓN solicitadas. Puedes ajustar esos valores desde el módulo.
+- Para guardar el catálogo y las clasificaciones por guía, ejecuta una sola vez `supabase_gestion_v2_comentarios_catalogo.sql` en SQL Editor del mismo proyecto Supabase V16. El script crea tablas privadas nuevas y un RPC; no altera storage.objects, comentarios previos ni datos de penalidades.
+- Después de ejecutar el SQL, vuelve a iniciar sesión o actualiza Gestión de guías V2 para cargar el catálogo compartido.

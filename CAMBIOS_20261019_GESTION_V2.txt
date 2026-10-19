@@ -5,3 +5,9 @@ Actualización 2026-10-19
 - Consulta desde Excel: se reincorpora el panel de estadísticas y simulación de penalidades, agrupado por encargado, zona y PDV.
 - La simulación permite filtrar, ver gráficos, marcar guías u operaciones y estimar porcentajes y montos exonerados. Es temporal y no guarda decisiones reales.
 - Gestión de guías V2: casilla junto a cada comentario del grupo; permite seleccionar o quitar de la selección todas las guías de ese comentario aunque el grupo esté contraído. El estado parcial se muestra con casilla indeterminada y se sincroniza con las casillas individuales.
+- Gestión de guías V2: comentarios, cierre y notificación sin guardar se conservan al refrescar o reconstruir el detalle y en una recarga de la pestaña durante la misma sesión. Si otra actualización cambió el mismo campo, se avisa y se pide confirmar antes de sobrescribirlo.
+
+- Nuevo módulo independiente “Estadísticas por PDV”, separado de Consulta desde Excel y Penalidades; mantiene filtros, simulación, gráficos y detalle agrupado por encargado, zona y PDV, usando la última consulta compartida.
+- Gestión de guías V2 añade Subcampo 1 y Subcampo 2 dependiente al comentario de encargado, con catálogo editable por administrador y clasificación persistente por guía y PDV.
+- Catálogo inicial: ENTREGA, DEVOLUCIÓN, TRASLADO y OTROS. ENTREGA y DEVOLUCIÓN contienen las opciones indicadas; las nuevas opciones se administran desde “Catálogo de comentarios”.
+- Se incluye el SQL incremental `supabase_gestion_v2_comentarios_catalogo.sql`; ejecutarlo una vez en el proyecto V16 antes de guardar las clasificaciones. No modifica storage.objects.

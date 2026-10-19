@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=brecha-costos-1"></script>
+<script src="./bridge.js?v=20261019-comentarios-modulo-estadisticas-1"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -123,7 +123,25 @@
 .deadline-cutoff label{display:flex;gap:8px;align-items:center;font-weight:600;font-size:13px}.deadline-cutoff input{width:auto;accent-color:#2563eb}.deadline-cutoff small{font-size:12px;color:#475569}
 @media(max-width:850px){.date-filter-row{grid-template-columns:1fr}.date-filter-row input[type=datetime-local]{max-width:190px}}
 .entry-date{margin-top:9px;padding-top:8px;border-top:1px solid #e2e8f0;min-width:130px;line-height:1.5;color:#334155;font-size:12px}.entry-date b,.entry-date small,.entry-date span{display:block}.entry-date b{font-size:11px;color:#475569}.entry-date small{font-size:10px;color:#64748b}.entry-date span{font-variant-numeric:tabular-nums}
-</style></head>
+</style><style>
+.view-tabs{flex-wrap:wrap;overflow-x:auto;width:100%}
+.comment-catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:14px;margin-top:14px}
+.comment-catalog-card{padding:16px;border:1px solid #dbe2ea;border-radius:12px;background:#f8fafc;min-width:0}
+.comment-catalog-card h3{margin:0 0 12px;color:#153e67;font-size:14px}
+.comment-catalog-card select,.comment-catalog-card input{width:100%;min-height:38px;border:1px solid #cbd5e1;border-radius:8px;padding:8px;background:#fff}
+.comment-catalog-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin:7px 0}
+.comment-catalog-row button,.comment-taxonomy-remove{border:1px solid #fecaca;border-radius:7px;background:#fff;color:#b91c1c;padding:7px 9px;font-weight:700;cursor:pointer}
+.comment-catalog-add{display:flex;gap:8px;margin-top:10px}
+.comment-catalog-add input{flex:1;min-width:0}
+.comment-catalog-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}
+.comment-catalog-actions span{color:#64748b;font-size:11px}
+.comment-taxonomy{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px}
+.comment-taxonomy select{width:100%;margin:0!important;padding:6px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;font-size:11px}
+.comment-taxonomy textarea{margin-top:0}
+.comment-taxonomy select:disabled{background:#f1f5f9;color:#94a3b8}
+@media(max-width:700px){.comment-catalog-grid{grid-template-columns:1fr}.view-tabs{gap:5px}.view-tab{white-space:nowrap}}
+</style>
+</head>
 <body>
   <section id="login" class="login">
     <div class="login-card">
@@ -143,7 +161,7 @@
     </div></header>
 
     <main>
-      <div class="view-tabs"><button id="tabGestion" class="view-tab active" onclick="mostrarVista('gestion')">📋 Gestión de guías</button><button id="tabExcel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><a data-modulo-v2="true" href="./gestion-v2.html?v=20261019-v2-grupos-excel-seleccion-comentario-1" class="view-tab">Gestión de guías V2</a><a data-modulo-penalidades="true" href="./penalidades.html?v=20261015-sla-resumen-montos-7" class="view-tab">💰 Penalidades</a></div>
+      <div class="view-tabs"><button id="tabGestion" data-view-tab="gestion" class="view-tab active" onclick="mostrarVista('gestion')">📋 Gestión de guías</button><button id="tabExcel" data-view-tab="excel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabEstadisticas" data-view-tab="estadisticas" class="view-tab" onclick="mostrarVista('estadisticas')">📊 Estadísticas por PDV</button><a data-modulo-v2="true" href="./gestion-v2.html?v=20261019-v2-comentarios-estadisticas-1" class="view-tab">Gestión de guías V2</a><a data-modulo-penalidades="true" href="./penalidades.html?v=20261015-sla-resumen-montos-7" class="view-tab">💰 Penalidades</a></div>
       <div id="viewGestion" class="app-view">
       <section id="sourceUploadPanel" class="panel hidden">
         <div class="panel-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Carga de información operativa <span class="readonly-note">SOLO ADMINISTRADOR</span><button type="button" id="sourceUploadToggle" class="secondary" style="margin-left:auto" aria-expanded="true" aria-controls="sourceUploadContent" onclick="toggleCargaOperativa()">Ocultar carga</button></div>
@@ -236,7 +254,11 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
           </div>
         </section>
       </div>
-    </main>
+          <div id="viewEstadisticas" class="app-view hidden">
+        <p class="source-note">Módulo independiente de Consulta desde Excel y Penalidades. Analiza la última consulta compartida; para cargar o actualizar guías, usa Consulta desde Excel.</p>
+        <div id="statsModuleMount"></div>
+      </div>
+</main>
   </div>
 
   <div id="loading" class="loading"><div id="loadingText">Procesando...</div></div>
@@ -308,16 +330,17 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     }).withFailureHandler(e=>{btn.disabled=false;btn.textContent="INGRESAR";mostrarErrorLogin(errorTexto(e));}).iniciarSesion(usuario,clave);
   }
 
-  function abrirApp(){document.body.classList.toggle("no-summary-comments",sesion.rol==="PDV");document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("userBadge").textContent=sesion.usuario+" · "+sesion.rol;document.getElementById("sourceUploadPanel").classList.toggle("hidden",sesion.rol!=="ADMINISTRADOR");mostrarVista("gestion");cargarDatos();cargarConsultaCompartida();}
+  function abrirApp(){document.body.classList.toggle("no-summary-comments",sesion.rol==="PDV");document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("userBadge").textContent=sesion.usuario+" · "+sesion.rol;document.getElementById("sourceUploadPanel").classList.toggle("hidden",sesion.rol!=="ADMINISTRADOR");const solicitada=location.hash.replace(/^#/,"");mostrarVista(["gestion","excel","estadisticas"].includes(solicitada)?solicitada:"gestion");cargarDatos();cargarConsultaCompartida();}
   function mostrarLogin(){document.getElementById("login").classList.remove("hidden");document.getElementById("app").classList.add("hidden");}
   function mostrarErrorLogin(t){const e=document.getElementById("loginError");e.textContent=t;e.style.display="block";}
 
   function mostrarVista(vista){
-    const esExcel=vista==="excel";
-    document.getElementById("viewGestion").classList.toggle("hidden",esExcel);
-    document.getElementById("viewExcel").classList.toggle("hidden",!esExcel);
-    document.getElementById("tabGestion").classList.toggle("active",!esExcel);
-    document.getElementById("tabExcel").classList.toggle("active",esExcel);
+    const vistas={gestion:"viewGestion",excel:"viewExcel",estadisticas:"viewEstadisticas"};
+    if(!vistas[vista])vista="gestion";
+    Object.entries(vistas).forEach(([clave,id])=>document.getElementById(id)?.classList.toggle("hidden",clave!==vista));
+    document.querySelectorAll("[data-view-tab]").forEach(tab=>tab.classList.toggle("active",tab.dataset.viewTab===vista));
+    if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
+    if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
 
   async function cargarFuenteOperativaPortal(tipo){
@@ -1416,4 +1439,4 @@ async function descargarImagenResumen(){
   status.textContent='Imagen lista · filtros y grupos desplegados actuales.';
  }catch(e){status.textContent=e.message||String(e);toast(status.textContent,false);}finally{button.disabled=false;}
 }
-</script><script src="./brecha-costos.js?v=20261019-simulacion-estadisticas-1"></script></body></html>
+</script><script src="./brecha-costos.js?v=20261019-modulo-estadisticas-independiente-1"></script></body></html>

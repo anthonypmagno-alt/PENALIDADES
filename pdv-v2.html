@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=brecha-costos-1"></script>
+<script src="./bridge.js?v=gestion-v2-rangos-preventivos-20261020-1"></script>
   <base target="_top">
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Gestión de guías V2</title>
@@ -175,7 +175,7 @@
 .excel-qr-cost-summary td.num{text-align:right;font-variant-numeric:tabular-nums}
 .excel-qr-cost-summary tfoot td{background:#dbeafe;font-weight:800}
 @media print{body.imprimiendo-qr .excel-qr-cost-summary{display:block!important;margin:0 0 8mm!important;padding:0!important;border:0!important;background:#fff!important;break-after:page;page-break-after:always}body.imprimiendo-qr .excel-qr-cost-summary h4{font-size:14pt}body.imprimiendo-qr .excel-qr-cost-summary p{font-size:9pt}body.imprimiendo-qr .excel-qr-cost-summary th,body.imprimiendo-qr .excel-qr-cost-summary td{font-size:9pt;padding:2mm}body.imprimiendo-qr .excel-qr-cost-summary table{min-width:0!important}body.imprimiendo-qr .excel-qr-cost-summary th{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-</style></head>
+</style><style>#tablaResumenV2 thead th.preventive-column{background:#dcfce7!important;color:#166534!important}#tablaResumenV2 tbody td.preventive-cell{background:#f0fdf4!important;color:#166534!important;font-weight:800}</style></head>
 <body>
   <section id="login" class="login"><div class="login-card">
     <div class="icon">🏪</div><h1>Portal PDV</h1><p>Consulta y respuesta de casos asignados a su punto de venta</p>
@@ -191,9 +191,9 @@
       <div id="viewGestion" class="app-view">
       <div class="cards"><div class="card"><b id="total">0</b><span>Total</span></div><div class="card"><b id="pendientes">0</b><span>Pendientes</span></div><div class="card"><b id="proceso">0</b><span>En proceso</span></div><div class="card"><b id="finalizados">0</b><span>Finalizados</span></div></div>
 
-      <section class="panel"><div class="panel-title">Resumen de Brecha y Cola Larga <span class="readonly-note">SOLO LECTURA</span></div><div class="resumen-imagen-toolbar"><button type="button" class="secondary" id="btnImagenResumen" onclick="descargarImagenResumen()">Descargar imagen del resumen</button><small>PNG · Filtros y grupos desplegados actuales</small><span id="estadoImagenResumen" role="status"></span><a id="enlaceImagenResumen" hidden="">Descargar PNG</a></div><div id="gestionV2Status" style="padding: 12px; background: rgb(239, 246, 255); color: rgb(30, 64, 175); border-radius: 8px; margin: 12px 0px;">Gestión de guías V2 · Fuentes y comentarios compartidos con Gestión actual. Clasificación calculada cada minuto.</div><div class="table-wrap"><table class="summary-table" id="tablaResumenV2"><colgroup><col style="width:10%"><col style="width:7.1666666667%"><col style="width:7.1666666667%"><col style="width:7.1666666667%"><col style="width:7.1666666667%"><col style="width:7.1666666667%"><col style="width:7.1666666667%"><col style="width:7.1666666667%"><col style="width:7.1666666667%"><col style="width:7.1666666667%"><col style="width:7.1666666667%"><col style="width:7.1666666667%"><col style="width:7.1666666667%"><col style="width:4%"></colgroup>
+      <section class="panel"><div class="panel-title">Resumen de Brecha y Cola Larga <span class="readonly-note">SOLO LECTURA</span></div><div class="resumen-imagen-toolbar"><button type="button" class="secondary" id="btnImagenResumen" onclick="descargarImagenResumen()">Descargar imagen del resumen</button><small>PNG · Filtros y grupos desplegados actuales</small><span id="estadoImagenResumen" role="status"></span><a id="enlaceImagenResumen" hidden="">Descargar PNG</a></div><div id="gestionV2Status" style="padding: 12px; background: rgb(239, 246, 255); color: rgb(30, 64, 175); border-radius: 8px; margin: 12px 0px;">Gestión de guías V2 · Fuentes y comentarios compartidos con Gestión actual. Clasificación calculada cada minuto.</div><div class="table-wrap"><table class="summary-table" id="tablaResumenV2"><colgroup><col style="width:10%"><col style="width:6%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5%"><col style="width:6%"><col style="width:5%"><col style="width:2%"></colgroup>
         
-        <thead><tr><th rowspan="3">PDV</th><th rowspan="3">DESPACHOS AYER</th><th colspan="4">COLA LARGA</th><th colspan="4">BRECHA DE TRAZABILIDAD</th><th rowspan="3">TOTAL</th><th rowspan="3" class="summary-critical">TOTAL CRÍTICO</th><th rowspan="3">GUÍAS ÚNICAS</th><th rowspan="3">💬</th></tr><tr><th colspan="2">No devuelto</th><th colspan="2">Por devolver</th><th colspan="2">En el PDV</th><th colspan="2">No llegados al PDV</th></tr><tr><th>120 o 168 H</th><th>≥600 H<br>≥25 días</th><th>120 o 168 H</th><th>≥600 H<br>≥25 días</th><th>≥48 y &lt;120 H</th><th>≥120 H</th><th>≥48 y &lt;120 H</th><th>≥120 H</th></tr></thead>
+        <thead><tr><th rowspan="3">PDV</th><th rowspan="3">DESPACHOS AYER</th><th colspan="6">COLA LARGA</th><th colspan="6">BRECHA DE TRAZABILIDAD</th><th rowspan="3">TOTAL</th><th rowspan="3" class="summary-critical">TOTAL CRÍTICO</th><th rowspan="3">GUÍAS ÚNICAS</th><th rowspan="3">💬</th></tr><tr><th colspan="3">No devuelto</th><th colspan="3">Por devolver</th><th colspan="3">En el PDV</th><th colspan="3">No llegados al PDV</th></tr><tr><th>120 o 168 H</th><th class="preventive-column">588 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>120 o 168 H</th><th class="preventive-column">588 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>≥48 y &lt;108 H</th><th class="preventive-column">108 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th><th>≥48 y &lt;108 H</th><th class="preventive-column">108 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th></tr></thead>
         <tbody id="resumenBody"></tbody>
       </table></div></section>
 
@@ -718,7 +718,7 @@ function regionResumen(x){
 function alternarRegionResumen(key){if(regionesCerradas.has(key))regionesCerradas.delete(key);else regionesCerradas.add(key);renderResumen();}
 function renderResumen(){
  const body=document.getElementById('resumenBody'),filas=(resumen.filas||[]).slice().sort((a,b)=>{const ra=regionResumen(a),rb=regionResumen(b);return ra.orden-rb.orden||ra.key.localeCompare(rb.key)||String(a.area||'').localeCompare(String(b.area||''))||a.pdv.localeCompare(b.pdv);});
- const admin=typeof filaResumen==='function',cols=14,grupos=new Map();
+ const admin=typeof filaResumen==='function',cols=18,grupos=new Map();
  let pdvRows=[];
  if(!admin){const anterior=resumen.filas;resumen.filas=filas;renderResumenAnterior();pdvRows=[...body.children];resumen.filas=anterior;}
  body.replaceChildren();filas.forEach((x,i)=>{const k=regionResumen(x).key;if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push({x,i});});
@@ -988,10 +988,11 @@ async function descargarImagenResumen(){
   status.textContent='Imagen lista · filtros y grupos desplegados actuales.';
  }catch(e){status.textContent=e.message||String(e);toast(status.textContent,false);}finally{button.disabled=false;}
 }
-</script><script>const COLUMNAS_V2=['h360NoDevuelto','h720NoDevuelto','h360PorDevolver','h720PorDevolver','brecha48a120','mayor144EnPDV','brecha48NoLlegado','mayor144NoLlegado'];
-Object.assign(ETIQUETAS_RESUMEN,{h720NoDevuelto:'Cola larga · ≥600 H · No devuelto',h360NoDevuelto:'Cola larga · 120/168 H · No devuelto',h720PorDevolver:'Cola larga · ≥600 H · Por devolver',h360PorDevolver:'Cola larga · 120/168 H · Por devolver',brecha48a120:'Brecha · ≥48 y <120 H · En el PDV',mayor144EnPDV:'Brecha · ≥120 H · En el PDV',brecha48NoLlegado:'Brecha · ≥48 y <120 H · No llegados',mayor144NoLlegado:'Brecha · ≥120 H · No llegados'});
+</script><script>const COLUMNAS_V2=['h360NoDevuelto','h588a600NoDevuelto','h720NoDevuelto','h360PorDevolver','h588a600PorDevolver','h720PorDevolver','brecha48a120','brecha108a120','mayor144EnPDV','brecha48NoLlegado','brecha108NoLlegado','mayor144NoLlegado'];
+Object.assign(ETIQUETAS_RESUMEN,{h720NoDevuelto:'Cola larga · ≥600 H · No devuelto',h360NoDevuelto:'Cola larga · 120/168 H · No devuelto',h588a600NoDevuelto:'Cola larga · 588 a <600 H · Preventivo · No devuelto',h720PorDevolver:'Cola larga · ≥600 H · Por devolver',h360PorDevolver:'Cola larga · 120/168 H · Por devolver',h588a600PorDevolver:'Cola larga · 588 a <600 H · Preventivo · Por devolver',brecha48a120:'Brecha · ≥48 y <108 H · En el PDV',brecha108a120:'Brecha · 108 a <120 H · Preventivo · En el PDV',mayor144EnPDV:'Brecha · ≥120 H · En el PDV',brecha48NoLlegado:'Brecha · ≥48 y <108 H · No llegados',brecha108NoLlegado:'Brecha · 108 a <120 H · Preventivo · No llegados',mayor144NoLlegado:'Brecha · ≥120 H · No llegados'});
 function celdaV2(valor,pdv,categoria,total=false){
  const td=document.createElement('td');td.className='number';td.textContent=Number(valor||0)===0?'':num(valor);
+ if(['h588a600NoDevuelto','h588a600PorDevolver','brecha108a120','brecha108NoLlegado'].includes(categoria))td.classList.add('preventive-cell');
  if(categoria==='totalCritico')td.classList.add('summary-critical');
  if(valor){td.classList.add('summary-clickable');td.classList.toggle('summary-selected',celdaResumenSeleccionada(total?'':pdv,categoria));td.onclick=()=>aplicarFiltroResumen(total?'':pdv,categoria);}
  return td;
@@ -1018,7 +1019,7 @@ function subtotalGrupoResumen(items,nombre,admin,clase){
 function mostrarEstadoV2(info){
  const el=document.getElementById('gestionV2Status');if(!el||!info)return;
  const fecha=new Date(info.calculadoEn).toLocaleString('es-PE',{timeZone:'America/Lima'});
- el.textContent='Cálculo: '+fecha+' · Hora de Perú. '+(info.sinEntrada||info.sinEstado?`Cola larga sin clasificar: ${info.sinEntrada||0} guías sin entrada válida y ${info.sinEstado||0} sin estado de devolución. Vuelva a cargar Exportación y Cola Larga y guarde los datos.`:'600 H = 25 días desde Tiempo de entrada de Exportación.');
+ el.textContent='Cálculo: '+fecha+' · Hora de Perú. '+(info.sinEntrada||info.sinEstado?`Cola larga sin clasificar: ${info.sinEntrada||0} guías sin entrada válida y ${info.sinEstado||0} sin estado de devolución. Vuelva a cargar Exportación y Cola Larga y guarde los datos.`:'Cola larga preventiva: 588 a <600 H desde Tiempo de entrada. Brecha: 108 a <120 H preventiva y ≥120 H crítica desde Último tiempo de funcionamiento.');
 }
 function actualizarClasificacionV2(){
  if(!sesion||!window.refrescarGestionV2)return;

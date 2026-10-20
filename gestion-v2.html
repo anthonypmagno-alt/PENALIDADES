@@ -475,17 +475,20 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
   }
   function cargarCatalogoComentarios(){
     catalogoComentariosDisponible=false;catalogoComentariosCargado=false;clasificacionesComentariosCargadas=false;actualizarEstadoCatalogoComentarios("Cargando catálogo compartido desde Supabase…");
-    google.script.run.withSuccessHandler(r=>{aplicarCatalogoComentarios(r);cargarClasificacionesComentarios();}).withFailureHandler(e=>{catalogoComentariosDisponible=false;actualizarEstadoCatalogoComentarios("No se pudo cargar el catálogo: "+errorTexto(e)+". Ejecuta una vez el SQL supabase_gestion_v2_comentarios_catalogo.sql.");renderConfiguracionComentarios();if(typeof renderGuias==="function")renderGuias();}).obtenerCatalogoComentarios(token);
+    google.script.run.withSuccessHandler(r=>{aplicarCatalogoComentarios(r);}).withFailureHandler(e=>{catalogoComentariosDisponible=false;actualizarEstadoCatalogoComentarios("No se pudo cargar el catálogo: "+errorTexto(e)+". Ejecuta una vez el SQL supabase_gestion_v2_comentarios_catalogo.sql.");renderConfiguracionComentarios();if(typeof renderGuias==="function")renderGuias();}).obtenerCatalogoComentarios(token);
   }
+  let versionCargaClasificacionesComentarios=0;
   function claveClasificacionComentario(guia,pdv){return claveComentarioCatalogo(pdv)+"|"+claveComentarioCatalogo(guia);}
   function cargarClasificacionesComentarios(){
+    const version=++versionCargaClasificacionesComentarios;
     if(!Array.isArray(guias)||!guias.length){clasificacionesComentariosCargadas=true;catalogoComentariosDisponible=catalogoComentariosCargado;actualizarEstadoCatalogoComentarios();return;}
     google.script.run.withSuccessHandler(r=>{
+      if(version!==versionCargaClasificacionesComentarios)return;
       const mapa=new Map((r?.clasificaciones||[]).map(x=>[claveClasificacionComentario(x.guia,x.pdv),x]));
       guias.forEach(x=>{const c=mapa.get(claveClasificacionComentario(x.guia,x.pdv));x.subcampo1=String(c?.subcampo1||"");x.subcampo2=String(c?.subcampo2||"");});
       clasificacionesComentariosCargadas=true;catalogoComentariosDisponible=catalogoComentariosCargado;const estado=reconciliarBorradoresRevision(guias);actualizarEstadoCatalogoComentarios();renderGuias();
       if(estado.conflictos)toast("Se conservaron borradores locales; una clasificación guardada cambió mientras editabas. Revisa antes de guardar.",false);
-    }).withFailureHandler(e=>{clasificacionesComentariosCargadas=false;catalogoComentariosDisponible=false;actualizarEstadoCatalogoComentarios("No se pudieron cargar las clasificaciones: "+errorTexto(e)+". Verifica la instalación del SQL del catálogo.");renderGuias();}).obtenerClasificacionesComentarios(token);
+    }).withFailureHandler(e=>{if(version!==versionCargaClasificacionesComentarios)return;clasificacionesComentariosCargadas=false;catalogoComentariosDisponible=false;actualizarEstadoCatalogoComentarios("No se pudieron cargar las clasificaciones: "+errorTexto(e)+". Verifica la instalación del SQL del catálogo.");renderGuias();}).obtenerClasificacionesComentarios(token);
   }
   function renderConfiguracionComentarios(){
     const editor=document.getElementById("comentarioCatalogoEditor"),actions=document.getElementById("comentarioCatalogoActions");if(!editor||!actions)return;

@@ -28,3 +28,8 @@ Corrección de catálogo y vista en vivo · 2026-10-20
 
 - El SQL del catálogo desactiva solo las opciones que todavía están activas y usa condiciones WHERE, eliminando el error “UPDATE requires a WHERE clause”. Se puede volver a ejecutar para actualizar la función del catálogo.
 - Se restaura el renderizado de grupos contraíbles de Gestión V2. Al cambiar Subcampo 1 o Subcampo 2, la etiqueta de la fila agrupada se actualiza inmediatamente y conserva expandido el grupo si estaba abierto. El cambio permanece como borrador hasta guardar la guía.
+
+Corrección para que no desaparezcan los subcampos · 2026-10-20
+
+- Se eliminó la doble consulta de clasificaciones al abrir Gestión V2.
+- Cada recarga de datos ahora identifica su propia solicitud y descarta respuestas antiguas que lleguen después de una actualización más reciente, evitando que la fila contraíble pierda los subcampos ya mostrados.

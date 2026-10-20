@@ -197,9 +197,11 @@ begin
       end if;
 
       update v16_private.gestion_comentario_subcampo1
-        set activo=false, actualizado_en=now(), actualizado_por=auth.uid();
+        set activo=false, actualizado_en=now(), actualizado_por=auth.uid()
+        where activo is distinct from false;
       update v16_private.gestion_comentario_subcampo2
-        set activo=false, actualizado_en=now(), actualizado_por=auth.uid();
+        set activo=false, actualizado_en=now(), actualizado_por=auth.uid()
+        where activo is distinct from false;
 
       for v_item in select value from jsonb_array_elements(payload->'subcampos1') loop
         v_label := btrim(v_item->>'etiqueta');

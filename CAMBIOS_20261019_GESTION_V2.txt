@@ -17,3 +17,14 @@ Actualización adicional 2026-10-20
 - En Gestión de guías V2, Subcampo 1 aparece en tono rosado suave y Subcampo 2 en verde suave, tanto en los selectores del detalle como en las filas agrupadas por comentario.
 - En la ventana de gestión masiva, Cierre de caso y Notificación al PDV ahora son casillas: marcada finaliza / muestra el comentario y desmarcada mantiene en proceso / lo oculta.
 - El cambio conserva el envío de decisiones al backend existente; no requiere ejecutar SQL ni modifica datos guardados.
+
+
+Corrección catálogo y vista en vivo 2026-10-20
+
+- La migración del catálogo agrega condiciones WHERE a la desactivación de opciones existentes. Puede volver a ejecutarse para reemplazar la función; no elimina opciones ni clasificaciones.
+- La fila agrupada de Gestión V2 muestra en vivo los Subcampos 1 y 2 seleccionados como borrador, agrupando y moviendo la guía al grupo correspondiente sin recargar la pestaña. Al guardar la guía, la clasificación se conserva en Supabase como antes.
+
+Corrección de catálogo y vista en vivo · 2026-10-20
+
+- El SQL del catálogo desactiva solo las opciones que todavía están activas y usa condiciones WHERE, eliminando el error “UPDATE requires a WHERE clause”. Se puede volver a ejecutar para actualizar la función del catálogo.
+- Se restaura el renderizado de grupos contraíbles de Gestión V2. Al cambiar Subcampo 1 o Subcampo 2, la etiqueta de la fila agrupada se actualiza inmediatamente y conserva expandido el grupo si estaba abierto. El cambio permanece como borrador hasta guardar la guía.

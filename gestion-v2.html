@@ -841,7 +841,29 @@ function persistirBorradoresRevision(){const clave=claveBorradoresRevision();if(
 function camposEnConflictoRevision(fila){const registro=guias.find(x=>Number(x.fila)===Number(fila)),borrador=borradoresRevision.get(Number(fila))||{};return Object.entries(borrador).filter(([campo,entrada])=>!mismoValorRevision(entrada.base,valorBaseRevision(registro,campo),campo)&&!mismoValorRevision(entrada.valor,valorBaseRevision(registro,campo),campo)).map(([campo])=>campo);}
 function reconciliarBorradoresRevision(guiasNuevas){const porFila=new Map((guiasNuevas||[]).map(x=>[Number(x.fila),x]));let conflictos=0;for(const [fila,borrador] of borradoresRevision){const registro=porFila.get(Number(fila));let conflicto=false;Object.keys(borrador).forEach(campo=>{const entrada=borrador[campo],actual=valorBaseRevision(registro,campo);if(mismoValorRevision(entrada.valor,actual,campo)){delete borrador[campo];}else if(!mismoValorRevision(entrada.base,actual,campo)){conflicto=true;}});if(!Object.keys(borrador).length)borradoresRevision.delete(fila);else if(conflicto)conflictos++;}persistirBorradoresRevision();return{conservados:borradoresRevision.size,conflictos};}
 function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const registro=guias.find(x=>Number(x.fila)===fila);if(!Number.isFinite(fila)||!campo)return;const base=valorBaseRevision(registro,campo),borrador=borradoresRevision.get(fila)||{},anterior=borrador[campo],baseOriginal=anterior&&typeof anterior==="object"&&Object.prototype.hasOwnProperty.call(anterior,"base")?anterior.base:base;if(mismoValorRevision(valor,baseOriginal,campo))delete borrador[campo];else borrador[campo]={valor,base:baseOriginal};if(Object.keys(borrador).length)borradoresRevision.set(fila,borrador);else borradoresRevision.delete(fila);persistirBorradoresRevision();}
-  function enlazarBorradoresRevision(){const body=document.getElementById("guiasBody");if(!body||body.dataset.draftBound)return;body.dataset.draftBound="1";const capturar=event=>{const control=event.target.closest("[data-draft-field][data-fila]");if(!control)return;const fila=Number(control.dataset.fila),campo=control.dataset.draftField;if(!Number.isFinite(fila)||!campo)return;if(campo==="subcampo1"){const previo=valorBorradorRevision(fila,"subcampo1"),registro=guias.find(x=>Number(x.fila)===fila),anterior=previo===undefined?String(registro?.subcampo1||""):String(previo),reiniciar=claveComentarioCatalogo(anterior)!==claveComentarioCatalogo(control.value);actualizarOpcionesSubcampo2(fila,control.value,reiniciar);}const valor=campo==="notificacion"?Boolean(control.checked):campo==="cierre"?String(control.value||"").toUpperCase():String(control.value??"");registrarBorradorRevision(fila,campo,valor);};body.addEventListener("input",capturar);body.addEventListener("change",capturar);}
+  function enlazarBorradoresRevision(){
+    const body=document.getElementById("guiasBody");if(!body||body.dataset.draftBound)return;body.dataset.draftBound="1";
+    const capturar=event=>{
+      const control=event.target.closest("[data-draft-field][data-fila]");if(!control)return;
+      const fila=Number(control.dataset.fila),campo=control.dataset.draftField;if(!Number.isFinite(fila)||!campo)return;
+      const esSubcampo=campo==="subcampo1"||campo==="subcampo2";
+      if(esSubcampo&&event.type==="input")return;
+      const grupoPrevio=esSubcampo&&event.type==="change"?gruposPorComentarioDetalle(filtradas).find(g=>g.filas.some(x=>Number(x.fila)===fila)):null;
+      const conservarAbierto=Boolean(grupoPrevio&&gruposComentarioDetalleAbiertos.has(grupoPrevio.clave));
+      if(campo==="subcampo1"){
+        const previo=valorBorradorRevision(fila,"subcampo1"),registro=guias.find(x=>Number(x.fila)===fila),anterior=previo===undefined?String(registro?.subcampo1||""):String(previo),reiniciar=claveComentarioCatalogo(anterior)!==claveComentarioCatalogo(control.value);
+        actualizarOpcionesSubcampo2(fila,control.value,reiniciar);
+      }
+      const valor=campo==="notificacion"?Boolean(control.checked):campo==="cierre"?String(control.value||"").toUpperCase():String(control.value??"");
+      registrarBorradorRevision(fila,campo,valor);
+      if(esSubcampo&&event.type==="change"&&seleccionesResumen().length){
+        const grupoNuevo=gruposPorComentarioDetalle(filtradas).find(g=>g.filas.some(x=>Number(x.fila)===fila));
+        if(conservarAbierto&&grupoNuevo)gruposComentarioDetalleAbiertos.add(grupoNuevo.clave);
+        renderGuias();
+      }
+    };
+    body.addEventListener("input",capturar);body.addEventListener("change",capturar);
+  }
 
   let versionCargaPortal=0;
   function cargarDatos(regionesImportadas,forzar){
@@ -1052,7 +1074,12 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function claveComentarioDetalle(comentario){return String(comentario||"").normalize("NFC").trim().replace(/\s+/g," ").toLocaleLowerCase("es");}
   function gruposPorComentarioDetalle(filas){
     const mapa=new Map();
-    filas.forEach(x=>{const comentario=String(x.comentario||"").normalize("NFC").trim().replace(/\s+/g," "),subcampo1=String(x.subcampo1||"").trim(),subcampo2=String(x.subcampo2||"").trim(),clave=[subcampo1,subcampo2,comentario].map(claveComentarioDetalle).join("|")||"__sin_comentario_encargado__";if(!mapa.has(clave))mapa.set(clave,{clave,comentario,subcampo1,subcampo2,filas:[]});mapa.get(clave).filas.push(x);});
+    filas.forEach(x=>{
+      const valor=(campo)=>{const borrador=valorBorradorRevision(Number(x.fila),campo);return String(borrador===undefined?(x[campo]||""):borrador||"").trim();};
+      const comentario=valor("comentario").normalize("NFC").replace(/\s+/g," "),subcampo1=valor("subcampo1"),subcampo2=valor("subcampo2"),clave=[subcampo1,subcampo2,comentario].map(claveComentarioDetalle).join("|")||"__sin_comentario_encargado__";
+      if(!mapa.has(clave))mapa.set(clave,{clave,comentario,subcampo1,subcampo2,filas:[]});
+      mapa.get(clave).filas.push(x);
+    });
     return [...mapa.values()].map(g=>({...g,etiqueta:[g.subcampo1,g.subcampo2,g.comentario||"Sin comentario del encargado"].filter(Boolean).join(" · "),cantidadGuias:new Set(g.filas.map(x=>String(x.guia||"").trim().toLocaleUpperCase("es")).filter(Boolean)).size})).sort((a,b)=>b.cantidadGuias-a.cantidadGuias||a.etiqueta.localeCompare(b.etiqueta,"es"));
   }
   function crearFilaGuia(x){

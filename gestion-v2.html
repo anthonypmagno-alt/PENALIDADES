@@ -485,7 +485,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     google.script.run.withSuccessHandler(r=>{
       if(version!==versionCargaClasificacionesComentarios)return;
       const mapa=new Map((r?.clasificaciones||[]).map(x=>[claveClasificacionComentario(x.guia,x.pdv),x]));
-      guias.forEach(x=>{const c=mapa.get(claveClasificacionComentario(x.guia,x.pdv));x.subcampo1=String(c?.subcampo1||"");x.subcampo2=String(c?.subcampo2||"");});
+      guias.forEach(x=>{const c=mapa.get(claveClasificacionComentario(x.guia,x.pdv));if(c){x.subcampo1=String(c.subcampo1||"");x.subcampo2=String(c.subcampo2||"");}});
       clasificacionesComentariosCargadas=true;catalogoComentariosDisponible=catalogoComentariosCargado;const estado=reconciliarBorradoresRevision(guias);actualizarEstadoCatalogoComentarios();renderGuias();
       if(estado.conflictos)toast("Se conservaron borradores locales; una clasificación guardada cambió mientras editabas. Revisa antes de guardar.",false);
     }).withFailureHandler(e=>{if(version!==versionCargaClasificacionesComentarios)return;clasificacionesComentariosCargadas=false;catalogoComentariosDisponible=false;actualizarEstadoCatalogoComentarios("No se pudieron cargar las clasificaciones: "+errorTexto(e)+". Verifica la instalación del SQL del catálogo.");renderGuias();}).obtenerClasificacionesComentarios(token);
@@ -1740,9 +1740,21 @@ function mostrarEstadoV2(info){
  const fecha=new Date(info.calculadoEn).toLocaleString('es-PE',{timeZone:'America/Lima'});
  el.textContent='Cálculo: '+fecha+' · Hora de Perú. '+(info.sinEntrada||info.sinEstado?`Cola larga sin clasificar: ${info.sinEntrada||0} guías sin entrada válida y ${info.sinEstado||0} sin estado de devolución. Vuelva a cargar Exportación y Cola Larga y guarde los datos.`:'600 H = 25 días desde Tiempo de entrada de Exportación.');
 }
+function conservarClasificacionesComentarios(guiasNuevas){
+ const anteriores=new Map((Array.isArray(guias)?guias:[]).map(x=>[claveClasificacionComentario(x.guia,x.pdv),x]));
+ return (Array.isArray(guiasNuevas)?guiasNuevas:[]).map(x=>{
+  const anterior=anteriores.get(claveClasificacionComentario(x.guia,x.pdv));
+  if(!anterior)return x;
+  return {...x,
+   subcampo1:String(x.subcampo1||anterior.subcampo1||""),
+   subcampo2:String(x.subcampo2||anterior.subcampo2||"")
+  };
+ });
+}
 function actualizarClasificacionV2(){
  if(!sesion||!window.refrescarGestionV2)return;
- const r=window.refrescarGestionV2();guias=r.guias;mostrarEstadoV2(r);
+ const r=window.refrescarGestionV2();
+ guias=conservarClasificacionesComentarios(r.guias);mostrarEstadoV2(r);
  if(typeof aplicarFiltrosResumen==='function'){resumenBase=r.resumen;aplicarFiltrosResumen(true);}
  else{resumen=r.resumen;renderResumen();filtrar();}
 }

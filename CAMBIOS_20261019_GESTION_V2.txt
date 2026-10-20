@@ -47,3 +47,8 @@ Actualización de agrupación del detalle · 2026-10-21
 - Cada grupo de Subcampo 1 se puede expandir para ver los grupos de Subcampo 2 y comentario; esos grupos conservan su expansión para mostrar las guías.
 - Las casillas de Subcampo 1 y de cada grupo interior seleccionan o quitan todas sus guías, y muestran selección parcial cuando corresponde.
 - Expandir todos y Contraer todos controlan ambos niveles; se mantiene el conteo de guías y el botón para copiar cada comentario.
+
+Ajuste visual de resumen V2 · 2026-10-21
+
+- Se reforzaron las líneas de la cuadrícula y las divisiones entre Cola Larga, Brecha, sus subgrupos y el total.
+- Los encabezados y las celdas de ≥600 H / ≥25 días y ≥120 H / CRÍTICO ahora se resaltan en amarillo dorado. Se mantiene el azul de selección activa.

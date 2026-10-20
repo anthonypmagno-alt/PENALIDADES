@@ -252,6 +252,15 @@
 .resumen-imagen-card-actions button{font-size:11px;padding:6px 8px}.resumen-imagen-status{min-height:20px;margin:8px 0;color:#475569;font-size:12px}
 .imagen-lightbox{position:fixed;inset:0;z-index:220;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(15,23,42,.88)}
 .imagen-lightbox.open{display:flex}.imagen-lightbox img{max-width:95vw;max-height:88vh;object-fit:contain;background:#fff;border-radius:8px}.imagen-lightbox button{position:absolute;top:15px;right:18px}
+/* Enfatiza divisiones de periodos y resalta los umbrales críticos en amarillo. */
+#tablaResumenV2 th,#tablaResumenV2 td{border:1.5px solid #64748b!important}
+#tablaResumenV2 thead tr:first-child th:nth-child(3),#tablaResumenV2 thead tr:first-child th:nth-child(4),#tablaResumenV2 thead tr:first-child th:nth-child(5){border-left:4px solid #1e293b!important}
+#tablaResumenV2 thead tr:nth-child(2) th:nth-child(1),#tablaResumenV2 thead tr:nth-child(2) th:nth-child(2),#tablaResumenV2 thead tr:nth-child(2) th:nth-child(3),#tablaResumenV2 thead tr:nth-child(2) th:nth-child(4){border-left:4px solid #1e293b!important}
+#tablaResumenV2 thead tr:nth-child(3) th:nth-child(1),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(4),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(7),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(10){border-left:4px solid #1e293b!important}
+#tablaResumenV2 thead tr:nth-child(3) th:nth-child(12){border-right:4px solid #1e293b!important}
+#tablaResumenV2 tbody tr>td:nth-child(3),#tablaResumenV2 tbody tr>td:nth-child(6),#tablaResumenV2 tbody tr>td:nth-child(9),#tablaResumenV2 tbody tr>td:nth-child(12),#tablaResumenV2 tbody tr>td:nth-child(15){border-left:4px solid #1e293b!important}
+#tablaResumenV2 thead tr:nth-child(3) th:nth-child(3),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(6),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(9),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(12){background:#fde68a!important;color:#713f12!important;border-color:#d97706!important}
+#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(5):not(.summary-selected),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(8):not(.summary-selected),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(11):not(.summary-selected),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(14):not(.summary-selected),#tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(5),#tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(8),#tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(11),#tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(14),#tablaResumenV2 tbody tr.region-subtotal td:nth-child(5),#tablaResumenV2 tbody tr.region-subtotal td:nth-child(8),#tablaResumenV2 tbody tr.region-subtotal td:nth-child(11),#tablaResumenV2 tbody tr.region-subtotal td:nth-child(14),#tablaResumenV2 tbody tr.total-row td:nth-child(5),#tablaResumenV2 tbody tr.total-row td:nth-child(8),#tablaResumenV2 tbody tr.total-row td:nth-child(11),#tablaResumenV2 tbody tr.total-row td:nth-child(14){background:#fef3c7!important;color:#92400e!important;font-weight:800}
 </style></head>
 <body>
   <section id="login" class="login">

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=gestion-v2-rangos-preventivos-20261020-1"></script>
+<script src="./bridge.js?v=gestion-v2-colores-imagenes-20261021-1"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -125,7 +125,7 @@
 .entry-date{margin-top:9px;padding-top:8px;border-top:1px solid #e2e8f0;min-width:130px;line-height:1.5;color:#334155;font-size:12px}.entry-date b,.entry-date small,.entry-date span{display:block}.entry-date b{font-size:11px;color:#475569}.entry-date small{font-size:10px;color:#64748b}.entry-date span{font-variant-numeric:tabular-nums}
 </style><style>.summary-table{table-layout:auto!important}.summary-table th,.summary-table td{min-width:62px}.summary-table th:first-child,.summary-table td:first-child{min-width:110px}.summary-table tr.brecha-data-row td{border-left:1px solid #cbd5e1!important}.summary-table tr.brecha-data-row td:nth-child(7){border-left:3px solid #334155!important}.summary-table tr.brecha-data-row td:nth-child(5),.summary-table tr.brecha-data-row td:nth-child(6){background:#f3e8ff!important}.summary-table thead tr:nth-child(2) th:nth-child(2),.summary-table thead tr:nth-child(3) th:nth-child(3),.summary-table thead tr:nth-child(3) th:nth-child(4){background:#e9d5ff;color:#581c87}.summary-table thead tr:nth-child(2) th:nth-child(3){background:#dc2626;color:white}</style><style>/* V2 tiene ocho columnas de casos; reemplaza las posiciones heredadas de V16. */
 #tablaResumenV2 th,#tablaResumenV2 td{border-left:1px solid #475569!important}
-#tablaResumenV2 thead th{background:#ef1717!important;color:#111827!important}
+#tablaResumenV2 thead th{background:#edf2f8!important;color:#1e293b!important}
 #tablaResumenV2 thead tr:nth-child(2) th:nth-child(2),
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(3),
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(4){background:#e9d5ff!important;color:#581c87!important}
@@ -133,7 +133,7 @@
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(2){background:#fff4bf!important;color:#422006!important}
 #tablaResumenV2 thead tr:nth-child(2) th:nth-child(3),
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(5),
-#tablaResumenV2 thead tr:nth-child(3) th:nth-child(6){background:#dc2626!important;color:white!important}
+#tablaResumenV2 thead tr:nth-child(3) th:nth-child(6){background:#fee2e2!important;color:#991b1b!important}
 #tablaResumenV2 thead tr:nth-child(2) th:nth-child(4),
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(7),
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(8){background:#fff3a3!important;color:#422006!important}
@@ -145,18 +145,18 @@
 #tablaResumenV2 tbody tr.area-subtotal-nested td{background:#e5f3eb!important}
 #tablaResumenV2 tbody tr.region-subtotal td{background:#e3edf8!important}
 #tablaResumenV2 tbody tr.total-row td{background:#dbeafe!important}
-#tablaResumenV2 .summary-critical{background:#fff200!important;color:#111!important}
+#tablaResumenV2 .summary-critical{background:#fef3c7!important;color:#78350f!important}
 #tablaResumenV2 tbody tr.brecha-data-row td.summary-critical,
 #tablaResumenV2 tbody tr.area-subtotal-nested td.summary-critical,
 #tablaResumenV2 tbody tr.region-subtotal td.summary-critical,
-#tablaResumenV2 tbody tr.total-row td.summary-critical{background:#fff200!important;color:#111!important}
+#tablaResumenV2 tbody tr.total-row td.summary-critical{background:#fef3c7!important;color:#78350f!important}
 #tablaResumenV2 thead tr:first-child th:nth-child(4),
 #tablaResumenV2 thead tr:nth-child(2) th:nth-child(3),
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(5),
 #tablaResumenV2 tbody tr.brecha-data-row td:nth-child(7),
 #tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(7),
 #tablaResumenV2 tbody tr.region-subtotal td:nth-child(7),
-#tablaResumenV2 tbody tr.total-row td:nth-child(7){border-left:4px solid #334155!important}
+#tablaResumenV2 tbody tr.total-row td:nth-child(7){border-left:3px solid #94a3b8!important}
 #tablaResumenV2 tbody tr.brecha-data-row td.summary-selected,
 #tablaResumenV2 tbody tr.total-row td.summary-selected{background:#bfdbfe!important;color:#1e3a8a!important;box-shadow:inset 0 0 0 2px #2563eb}
 
@@ -180,7 +180,14 @@
   .comment-group-summary{font-size:12px;color:#334155;font-weight:700}
   .comment-group-summary small{display:block;margin-top:3px;color:#64748b;font-weight:400}
   .comment-group-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .subcampo1-group-row td{padding:0!important;background:#fff1f2;border-top:1px solid #fecdd3;border-bottom:1px solid #fecdd3;text-align:left}
+  .subcampo1-group-line{display:flex;align-items:stretch;gap:8px;padding:7px 10px}
+  .subcampo1-group-toggle{color:#9f1239}
+  .subcampo1-group-toggle:hover{background:#ffe4e6}
+  .subcampo1-group-check{flex:0 0 auto;width:18px;height:18px;margin:0 3px;accent-color:#e11d48;cursor:pointer}
   .comment-group-row td{padding:0!important;background:#eaf2ff;border-top:1px solid #bfdbfe;border-bottom:1px solid #bfdbfe;text-align:left}
+  .comment-group-row--nested td{box-shadow:inset 4px 0 #60a5fa}
+  .comment-group-line--nested{padding-left:30px}
   .comment-group-line{display:flex;align-items:stretch;gap:8px;padding:6px 10px}
   .comment-group-toggle{display:flex;flex:1;min-width:0;align-items:center;gap:10px;border:0;border-radius:7px;background:transparent;color:#16427e;padding:5px 6px;text-align:left;font-weight:800;cursor:pointer}
   .comment-group-toggle:hover{background:#dbeafe}
@@ -191,7 +198,7 @@
   .comment-group-copy{align-self:center;flex:0 0 auto;border:1px solid #bfdbfe;border-radius:7px;background:#fff;color:#1452a8;padding:7px 10px;font-size:11px;font-weight:800;cursor:pointer}
   .comment-group-copy:hover:not(:disabled){background:#dbeafe}
   .comment-group-copy:disabled{opacity:.5;cursor:not-allowed}
-  @media(max-width:560px){.comment-group-toolbar{padding:10px}.comment-group-actions{width:100%}.comment-group-actions button{flex:1}.comment-group-line{gap:4px;padding:5px}.comment-group-copy{padding:7px 6px}}
+  @media(max-width:560px){.comment-group-toolbar{padding:10px}.comment-group-actions{width:100%}.comment-group-actions button{flex:1}.comment-group-line{gap:4px;padding:5px}.comment-group-copy{padding:7px 6px}.subcampo1-group-line{gap:4px;padding:5px}}
 </style><style>
 .view-tabs{flex-wrap:wrap;overflow-x:auto;width:100%}
 .comment-catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:14px;margin-top:14px}
@@ -210,7 +217,42 @@
 .comment-taxonomy select:first-child{background:#fff1f2;border-color:#fda4af;color:#be123c;font-weight:700}.comment-taxonomy select:nth-child(2){background:#ecfdf5;border-color:#86efac;color:#047857;font-weight:700}.comment-taxonomy select:focus{outline:2px solid rgba(37,99,235,.2);outline-offset:1px}.comment-taxonomy select:disabled{background:#f1f5f9;color:#94a3b8}
 @media(max-width:700px){.comment-catalog-grid{grid-template-columns:1fr}.view-tabs{gap:5px}.view-tab{white-space:nowrap}}
 </style>
-<style>#tablaResumenV2 thead th.preventive-column{background:#dcfce7!important;color:#166534!important}#tablaResumenV2 tbody td.preventive-cell{background:#f0fdf4!important;color:#166534!important;font-weight:800}</style></head>
+<style>
+/* Paleta V2: azul para cola larga, violeta para brecha, verde preventivo y rojo suave crítico. */
+#tablaResumenV2 thead th{background:#edf2f8!important;color:#1e293b!important;border-color:#94a3b8!important}
+#tablaResumenV2 thead tr:first-child th:nth-child(3){background:#dbeafe!important;color:#1e3a8a!important}
+#tablaResumenV2 thead tr:first-child th:nth-child(4){background:#ede9fe!important;color:#5b21b6!important}
+#tablaResumenV2 thead tr:nth-child(2) th:nth-child(1){background:#eff6ff!important;color:#1e3a8a!important}
+#tablaResumenV2 thead tr:nth-child(2) th:nth-child(2){background:#f3e8ff!important;color:#581c87!important}
+#tablaResumenV2 thead tr:nth-child(2) th:nth-child(3){background:#f5f3ff!important;color:#5b21b6!important}
+#tablaResumenV2 thead tr:nth-child(2) th:nth-child(4){background:#eef2ff!important;color:#3730a3!important}
+#tablaResumenV2 thead tr:nth-child(3) th:nth-child(2),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(5),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(8),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(11),#tablaResumenV2 thead th.preventive-column{background:#dcfce7!important;color:#166534!important}
+#tablaResumenV2 thead tr:nth-child(3) th:nth-child(3),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(6),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(9),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(12){background:#fee2e2!important;color:#991b1b!important}
+#tablaResumenV2 tbody tr.brecha-data-row td{background:#fff!important;color:#172033!important}
+#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(4),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(7),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(10),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(13),#tablaResumenV2 tbody td.preventive-cell{background:#f0fdf4!important;color:#166534!important;font-weight:800}
+#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(5),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(8),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(11),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(14){background:#fff1f2!important;color:#9f1239!important}
+#tablaResumenV2 tbody tr.area-subtotal-nested td{background:#ecfdf5!important}
+#tablaResumenV2 tbody tr.region-subtotal td{background:#eaf1f8!important}
+#tablaResumenV2 tbody tr.total-row td{background:#eff6ff!important}
+#tablaResumenV2 .summary-critical,#tablaResumenV2 tbody tr.brecha-data-row td.summary-critical,#tablaResumenV2 tbody tr.area-subtotal-nested td.summary-critical,#tablaResumenV2 tbody tr.region-subtotal td.summary-critical,#tablaResumenV2 tbody tr.total-row td.summary-critical{background:#fef3c7!important;color:#78350f!important}
+#tablaResumenV2 thead tr:first-child th:nth-child(4),#tablaResumenV2 thead tr:nth-child(2) th:nth-child(3),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(7),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(9),#tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(9),#tablaResumenV2 tbody tr.region-subtotal td:nth-child(9),#tablaResumenV2 tbody tr.total-row td:nth-child(9){border-left:3px solid #94a3b8!important}
+#tablaResumenV2 .summary-clickable:hover{background:#dbeafe!important;color:#1d4ed8!important}
+#tablaResumenV2 .summary-selected{background:#bfdbfe!important;color:#1e3a8a!important;box-shadow:inset 0 0 0 2px #2563eb}
+#tablaResumenV2 .btn-comment{width:21px;height:25px;padding:0}
+.btn-image{display:inline-flex;align-items:center;justify-content:center;width:21px;height:25px;margin-left:2px;padding:0;border:1px solid #93c5fd;border-radius:7px;background:#eff6ff;color:#1d4ed8;font-size:13px;cursor:pointer}
+.btn-image:hover{background:#dbeafe;border-color:#60a5fa}.image-comment-col{white-space:nowrap;padding-left:1px!important;padding-right:1px!important}
+.resumen-imagen-modal{width:min(900px,calc(100vw - 28px));max-height:88vh;overflow:auto;text-align:left}
+.resumen-imagen-modal h3{margin:0 0 7px;color:#1e3a5f}.resumen-imagen-help{margin:0 0 14px;color:#64748b;font-size:12px}
+.resumen-imagen-upload{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px;margin:12px 0 16px;border:1px dashed #93c5fd;border-radius:10px;background:#f8fbff}
+.resumen-imagen-upload input[type=file]{max-width:100%;font-size:12px}.resumen-imagen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.resumen-imagen-card{min-width:0;padding:9px;border:1px solid #dbe4ee;border-radius:10px;background:#fff}
+.resumen-imagen-thumb{display:block;width:100%;height:130px;object-fit:contain;border-radius:7px;background:#f1f5f9;cursor:zoom-in}
+.resumen-imagen-name{margin:7px 0 3px;overflow-wrap:anywhere;font-size:11px;font-weight:700;color:#334155}
+.resumen-imagen-meta{font-size:10px;color:#64748b}.resumen-imagen-card-actions{display:flex;justify-content:space-between;gap:6px;margin-top:8px}
+.resumen-imagen-card-actions button{font-size:11px;padding:6px 8px}.resumen-imagen-status{min-height:20px;margin:8px 0;color:#475569;font-size:12px}
+.imagen-lightbox{position:fixed;inset:0;z-index:220;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(15,23,42,.88)}
+.imagen-lightbox.open{display:flex}.imagen-lightbox img{max-width:95vw;max-height:88vh;object-fit:contain;background:#fff;border-radius:8px}.imagen-lightbox button{position:absolute;top:15px;right:18px}
+</style></head>
 <body>
   <section id="login" class="login">
     <div class="login-card">
@@ -272,9 +314,9 @@
           <button type="button" class="secondary" onclick="limpiarFiltrosResumen()">Limpiar</button>
           <span id="summaryToolbarStatus" class="summary-toolbar-status"></span>
         </div>
-        <div class="resumen-imagen-toolbar"><button type="button" class="secondary" id="btnImagenResumen" onclick="descargarImagenResumen()">Descargar imagen del resumen</button><small>PNG · Filtros y grupos desplegados actuales</small><span id="estadoImagenResumen" role="status"></span><a id="enlaceImagenResumen" hidden="">Descargar PNG</a></div><div id="gestionV2Status" style="padding: 12px; background: rgb(239, 246, 255); color: rgb(30, 64, 175); border-radius: 8px; margin: 12px 0px;">Gestión de guías V2 · Fuentes y comentarios compartidos con Gestión actual. Clasificación calculada cada minuto.</div><div class="table-wrap"><table id="tablaResumenV2" class="summary-table"><colgroup><col style="width:10%"><col style="width:6%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5%"><col style="width:6%"><col style="width:5%"><col style="width:2%"></colgroup>
+        <div class="resumen-imagen-toolbar"><button type="button" class="secondary" id="btnImagenResumen" onclick="descargarImagenResumen()">Descargar imagen del resumen</button><small>PNG · Filtros y grupos desplegados actuales</small><span id="estadoImagenResumen" role="status"></span><a id="enlaceImagenResumen" hidden="">Descargar PNG</a></div><div id="gestionV2Status" style="padding: 12px; background: rgb(239, 246, 255); color: rgb(30, 64, 175); border-radius: 8px; margin: 12px 0px;">Gestión de guías V2 · Fuentes y comentarios compartidos con Gestión actual. Clasificación calculada cada minuto.</div><div class="table-wrap"><table id="tablaResumenV2" class="summary-table"><colgroup><col style="width:10%"><col style="width:6%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5%"><col style="width:6%"><col style="width:5%"><col style="width:5%"></colgroup>
           
-          <thead><tr><th rowspan="3">PDV</th><th rowspan="3">DESPACHOS AYER</th><th colspan="6">COLA LARGA</th><th colspan="6">BRECHA DE TRAZABILIDAD</th><th rowspan="3">TOTAL</th><th rowspan="3" class="summary-critical">TOTAL CRÍTICO</th><th rowspan="3">GUÍAS ÚNICAS</th><th rowspan="3">💬</th></tr><tr><th colspan="3">No devuelto</th><th colspan="3">Por devolver</th><th colspan="3">En el PDV</th><th colspan="3">No llegados al PDV</th></tr><tr><th>120 o 168 H</th><th class="preventive-column">588 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>120 o 168 H</th><th class="preventive-column">588 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>≥48 y &lt;108 H</th><th class="preventive-column">108 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th><th>≥48 y &lt;108 H</th><th class="preventive-column">108 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th></tr></thead><tbody id="resumenBody"></tbody>
+          <thead><tr><th rowspan="3">PDV</th><th rowspan="3">DESPACHOS AYER</th><th colspan="6">COLA LARGA</th><th colspan="6">BRECHA DE TRAZABILIDAD</th><th rowspan="3">TOTAL</th><th rowspan="3" class="summary-critical">TOTAL CRÍTICO</th><th rowspan="3">GUÍAS ÚNICAS</th><th rowspan="3">💬 / 🖼</th></tr><tr><th colspan="3">No devuelto</th><th colspan="3">Por devolver</th><th colspan="3">En el PDV</th><th colspan="3">No llegados al PDV</th></tr><tr><th>120 o 168 H</th><th class="preventive-column">588 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>120 o 168 H</th><th class="preventive-column">588 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>≥48 y &lt;108 H</th><th class="preventive-column">108 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th><th>≥48 y &lt;108 H</th><th class="preventive-column">108 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th></tr></thead><tbody id="resumenBody"></tbody>
         </table></div>
       </section>
 
@@ -298,7 +340,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
           <div class="bulk-actions"><button class="secondary" onclick="seleccionarVisibles()">Seleccionar visibles</button><button class="secondary" onclick="copiarGuiasSeleccionadas('gestion')">Copiar guías seleccionadas</button><button class="secondary" onclick="limpiarSeleccion()">Limpiar selección</button><button id="btnPrintDetalleGestion" class="secondary" disabled="" onclick="verDetalleSeleccionadoGestion()">Imprimir detalle seleccionado</button><button id="btnPrintGestion" class="secondary" disabled="" onclick="verGuiasSeleccionadasGestion()">Imprimir guías seleccionadas</button><button id="btnBulkManage" class="small" disabled="" onclick="abrirGestionMasiva()">Gestionar seleccionadas</button></div>
         </div>
         <div id="detalleComentarioToolbar" class="comment-group-toolbar hidden" aria-live="polite">
-          <div class="comment-group-summary"><span id="detalleComentarioResumen"></span><small>Guías agrupadas por comentario del encargado. Usa la casilla junto al comentario para seleccionar todo el grupo.</small></div>
+          <div class="comment-group-summary"><span id="detalleComentarioResumen"></span><small>Agrupado por Subcampo 1; dentro puedes expandir los grupos de Subcampo 2 y comentario. Las casillas seleccionan todas las guías del grupo.</small></div>
           <div class="comment-group-actions"><button type="button" class="secondary" onclick="expandirGruposComentarioDetalle()">Expandir todos</button><button type="button" class="secondary" onclick="contraerGruposComentarioDetalle()">Contraer todos</button></div>
         </div>
         <div class="table-wrap"><table id="tablaDetalle" class="detail-table">
@@ -352,7 +394,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
   <div id="loading" class="loading"><div id="loadingText">Procesando...</div></div>
   <div id="toast" class="toast"></div>
   <div id="qrModal" class="modal" onclick="if(event.target===this)cerrarQR()"><div class="modal-card"><h3>CÓDIGO QR</h3><div id="qr"></div><div id="qrNumero" class="guide" style="margin-top:12px"></div><p id="qrDistrito" class="qr-district-label" hidden=""></p><button class="secondary" onclick="cerrarQR()">Cerrar</button></div></div>
-  <div id="commentModal" class="modal" onclick="if(event.target===this)cerrarComentario()"><div class="modal-card modal-comment"><h3 id="commentTitle">COMENTARIO DEL CASO</h3><textarea id="commentText" maxlength="2000" placeholder="Escriba un comentario sobre los casos del PDV..."></textarea><div id="commentMeta" class="comment-meta"></div><div class="modal-actions"><button class="secondary" onclick="cerrarComentario()">Cancelar</button><button id="btnSaveComment" class="small" onclick="guardarComentario()">Guardar comentario</button></div></div></div>
+  <div id="commentModal" class="modal" onclick="if(event.target===this)cerrarComentario()"><div class="modal-card modal-comment"><h3 id="commentTitle">COMENTARIO DEL CASO</h3><textarea id="commentText" maxlength="2000" placeholder="Escriba un comentario sobre los casos del PDV..."></textarea><div id="commentMeta" class="comment-meta"></div><div class="modal-actions"><button class="secondary" onclick="cerrarComentario()">Cancelar</button><button id="btnSaveComment" class="small" onclick="guardarComentario()">Guardar comentario</button></div></div></div><div id="resumenImagenModal" class="modal" onclick="if(event.target===this)cerrarImagenesResumen()"><div class="modal-card resumen-imagen-modal"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div><h3 id="resumenImagenTitulo">IMÁGENES DEL PDV</h3><p class="resumen-imagen-help">Adjunta PNG, JPG o WebP de hasta 8 MB. Haz clic en una imagen para verla ampliada.</p></div><button type="button" class="secondary" onclick="cerrarImagenesResumen()">Cerrar</button></div><div class="resumen-imagen-upload"><label for="archivoImagenResumen" style="margin:0">Seleccionar imagen</label><input id="archivoImagenResumen" type="file" accept="image/png,image/jpeg,image/webp"><button type="button" id="btnSubirImagenResumen" class="small" onclick="subirImagenResumen()">Cargar imagen</button></div><div id="resumenImagenEstado" class="resumen-imagen-status" role="status" aria-live="polite"></div><div id="resumenImagenGrid" class="resumen-imagen-grid"></div></div></div><div id="imagenResumenLightbox" class="imagen-lightbox" onclick="if(event.target===this)cerrarImagenResumenAmpliada()"><button type="button" class="secondary" onclick="cerrarImagenResumenAmpliada()">Cerrar</button><img id="imagenResumenAmpliada" alt="Imagen del resumen"></div>
   <div id="bulkModal" class="modal" onclick="if(event.target===this)cerrarGestionMasiva()"><div class="modal-card modal-bulk"><h3>GESTIÓN MASIVA</h3><div id="bulkModalCount" class="bulk-note"></div><div class="bulk-form"><label>SUBCAMPO 1</label><select id="bulkSubcampo1" onchange="actualizarOpcionesSubcampo2Masivo()" aria-label="Subcampo 1 para gestión masiva"></select><label>SUBCAMPO 2</label><select id="bulkSubcampo2" aria-label="Subcampo 2 para gestión masiva"></select><label>COMENTARIO PARA TODAS LAS GUÍAS</label><textarea id="bulkComment" maxlength="2000" placeholder="Ingrese el comentario que se registrará en todas las guías seleccionadas..."></textarea><div class="bulk-check-options"><label class="bulk-check-option"><input id="bulkCierre" type="checkbox" aria-label="Cerrar los casos seleccionados"><span><strong>Cierre de caso</strong><small>Marcado: finalizar los casos. Desmarcado: mantenerlos en proceso.</small></span></label><label class="bulk-check-option"><input id="bulkNotificacion" type="checkbox" aria-label="Mostrar el comentario al PDV"><span><strong>Notificación al PDV</strong><small>Marcado: mostrar el comentario. Desmarcado: mantenerlo oculto.</small></span></label></div></div><div class="modal-actions" style="margin-top:18px"><button class="secondary" onclick="cerrarGestionMasiva()">Cancelar</button><button id="btnSaveBulk" class="small" onclick="guardarGestionMasiva()">Aplicar a seleccionadas</button></div></div></div>
 
 <script>
@@ -363,6 +405,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
   const EXCEL_PAGE_SIZE = 100, EXCEL_MAX_BYTES = 30 * 1024 * 1024;
   const seleccionadas = new Set();
   const gruposComentarioDetalleAbiertos = new Set();
+  const gruposSubcampo1DetalleAbiertos = new Set();
   const borradoresRevision = new Map();
   let borradoresRevisionUsuario = "";
   let catalogoComentarios={subcampos1:["ENTREGA","DEVOLUCIÓN","TRASLADO","OTROS"],opciones:[{subcampo1:"ENTREGA",subcampo2:"PENDIENTE ACTUALIZAR"},{subcampo1:"ENTREGA",subcampo2:"PENDIENTE GESTIONAR ANOMALIAS"},{subcampo1:"ENTREGA",subcampo2:"ERROR DE CLASIFICACIÓN"},{subcampo1:"ENTREGA",subcampo2:"POSIBLE PERDIDA"},{subcampo1:"DEVOLUCIÓN",subcampo2:"PENDIENTE REGISTRAR DEVOLUCIÓN"},{subcampo1:"DEVOLUCIÓN",subcampo2:"PENDIENTE CARGAR A OT"},{subcampo1:"DEVOLUCIÓN",subcampo2:"PENDIENTE LLEGADA AL CALLAO"},{subcampo1:"DEVOLUCIÓN",subcampo2:"PENDIENTE PROCESAR AL CALLAO"}]};
@@ -852,7 +895,9 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
       const esSubcampo=campo==="subcampo1"||campo==="subcampo2";
       if(esSubcampo&&event.type==="input")return;
       const grupoPrevio=esSubcampo&&event.type==="change"?gruposPorComentarioDetalle(filtradas).find(g=>g.filas.some(x=>Number(x.fila)===fila)):null;
+      const subcampoPrevio=esSubcampo&&event.type==="change"?gruposPorSubcampo1Detalle(filtradas).find(g=>g.filas.some(x=>Number(x.fila)===fila)):null;
       const conservarAbierto=Boolean(grupoPrevio&&gruposComentarioDetalleAbiertos.has(grupoPrevio.clave));
+      const conservarSubcampoAbierto=Boolean(subcampoPrevio&&gruposSubcampo1DetalleAbiertos.has(subcampoPrevio.clave));
       if(campo==="subcampo1"){
         const previo=valorBorradorRevision(fila,"subcampo1"),registro=guias.find(x=>Number(x.fila)===fila),anterior=previo===undefined?String(registro?.subcampo1||""):String(previo),reiniciar=claveComentarioCatalogo(anterior)!==claveComentarioCatalogo(control.value);
         actualizarOpcionesSubcampo2(fila,control.value,reiniciar);
@@ -861,7 +906,9 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
       registrarBorradorRevision(fila,campo,valor);
       if(esSubcampo&&event.type==="change"&&seleccionesResumen().length){
         const grupoNuevo=gruposPorComentarioDetalle(filtradas).find(g=>g.filas.some(x=>Number(x.fila)===fila));
+        const subcampoNuevo=gruposPorSubcampo1Detalle(filtradas).find(g=>g.filas.some(x=>Number(x.fila)===fila));
         if(conservarAbierto&&grupoNuevo)gruposComentarioDetalleAbiertos.add(grupoNuevo.clave);
+        if(conservarSubcampoAbierto&&subcampoNuevo)gruposSubcampo1DetalleAbiertos.add(subcampoNuevo.clave);
         renderGuias();
       }
     };
@@ -874,7 +921,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     mostrarLoading(true,"Cargando información...");
     google.script.run.withSuccessHandler(r=>{
       if(version!==versionCargaPortal||actualToken!==token)return;
-      mostrarLoading(false);mostrarEstadoV2(r.v2);sesion=r.sesion;cargarBorradoresRevisionUsuario();const guiasNuevas=Array.isArray(r.guias)?r.guias:[],estadoBorradores=reconciliarBorradoresRevision(guiasNuevas);guias=guiasNuevas;resumenBase=r.resumen||{filas:[],total:{}};cargarClasificacionesComentarios();seleccionadas.clear();gruposComentarioDetalleAbiertos.clear();renderEstadoFuentes(r.fuentes);mostrarGuardadoFuentes(r.ultimoGuardado);
+      mostrarLoading(false);mostrarEstadoV2(r.v2);sesion=r.sesion;cargarBorradoresRevisionUsuario();const guiasNuevas=Array.isArray(r.guias)?r.guias:[],estadoBorradores=reconciliarBorradoresRevision(guiasNuevas);guias=guiasNuevas;resumenBase=r.resumen||{filas:[],total:{}};cargarClasificacionesComentarios();seleccionadas.clear();gruposComentarioDetalleAbiertos.clear();gruposSubcampo1DetalleAbiertos.clear();renderEstadoFuentes(r.fuentes);mostrarGuardadoFuentes(r.ultimoGuardado);
       cargarFiltros();cargarFiltrosResumen();if(Array.isArray(regionesImportadas))enfocarResumenImportado(regionesImportadas);else restaurarRegionesGestion();aplicarFiltrosResumen();if(estadoBorradores.conflictos)toast("Se conservaron borradores locales. El comentario, clasificación o cierre guardado cambió mientras editabas; revisa el contenido antes de guardar.",false);else if(estadoBorradores.conservados)toast("Se conservaron "+estadoBorradores.conservados+" borrador(es) sin guardar.",true);
     }).withFailureHandler(manejarError).obtenerDatosPortal(token,forzar===true);
   }
@@ -913,7 +960,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   function aplicarFiltrosResumen(conservarSeleccion){
     const resumenCalculado=construirResumenGuiasCliente(guias.filter(cumpleFiltrosGuiaResumen));
     resumen=soloCriticos?recalcularResumenVisible(resumenCalculado.filas.filter(x=>Number(x.totalCritico||0)>0)):resumenCalculado;
-    if(!conservarSeleccion){filtroResumenActivo=null;gruposComentarioDetalleAbiertos.clear();actualizarChipResumen();}
+    if(!conservarSeleccion){filtroResumenActivo=null;gruposComentarioDetalleAbiertos.clear();gruposSubcampo1DetalleAbiertos.clear();actualizarChipResumen();}
     renderResumen();actualizarEstadoFiltrosResumen();filtrar();
   }
 
@@ -997,11 +1044,11 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   function filaResumen(x,esTotal){
     const tr=document.createElement("tr");if(esTotal)tr.className="total-row";
     const puedeComentar=sesion&&["ENCARGADO","ADMINISTRADOR"].includes(sesion.rol);
-    const comentario=!esTotal&&puedeComentar?`<button class="btn-comment ${x.comentario?'has-comment':''}" title="${x.comentario?'Ver o actualizar comentario':'Agregar comentario'}" onclick="abrirComentario('${escJs(x.pdv)}')">💬</button>`:"";
+    const comentario=!esTotal&&puedeComentar?`<button class="btn-comment ${x.comentario?'has-comment':''}" title="${x.comentario?'Ver o actualizar comentario':'Agregar comentario'}" onclick="abrirComentario('${escJs(x.pdv)}')">💬</button><button type="button" class="btn-image" title="Ver o cargar imágenes de ${esc(x.pdv)}" aria-label="Ver o cargar imágenes de ${esc(x.pdv)}" onclick="abrirImagenesResumen('${escJs(x.pdv)}')">🖼</button>`:"";
     const pdvFiltro=esTotal?"":String(x.pdv||""),pdvActivo=!esTotal&&celdaResumenSeleccionada(pdvFiltro,'');
     if(!esTotal&&filaResumenSeleccionada(pdvFiltro))tr.classList.add("summary-row-active");
     const celdaPdv=esTotal?`<td><b>${esc(x.pdv)}</b></td>`:`<td class="summary-clickable${pdvActivo?' summary-selected':''}" title="Filtrar todas las guías de ${esc(x.pdv)}" onclick="aplicarFiltroResumen('${escJs(pdvFiltro)}','')"><b>${esc(x.pdv)}</b></td>`;
-    tr.innerHTML=`${celdaPdv}<td>${num(x.despachosAyer||0)}</td>${celdaNumeroResumen(x.h120o168,pdvFiltro,"h120o168",esTotal)}${celdaNumeroResumen(x.h360NoDevuelto,pdvFiltro,"h360NoDevuelto",esTotal)}${celdaNumeroResumen(x.h360PorDevolver,pdvFiltro,"h360PorDevolver",esTotal)}${celdaNumeroResumen(x.h720NoDevuelto,pdvFiltro,"h720NoDevuelto",esTotal)}${celdaNumeroResumen(x.h720PorDevolver,pdvFiltro,"h720PorDevolver",esTotal)}${celdaNumeroResumen(x.brecha48a120,pdvFiltro,"brecha48a120",esTotal)}${celdaNumeroResumen(x.brecha48NoLlegado,pdvFiltro,"brecha48NoLlegado",esTotal)}${celdaNumeroResumen(x.brecha120a144,pdvFiltro,"brecha120a144",esTotal)}${celdaNumeroResumen(x.brecha120NoLlegado,pdvFiltro,"brecha120NoLlegado",esTotal)}${celdaNumeroResumen(x.mayor144EnPDV,pdvFiltro,"mayor144EnPDV",esTotal)}${celdaNumeroResumen(Number(x.mayor144NoLlegado||0)+Number(x.brecha144a168NoLlegado||0),pdvFiltro,"mayor144NoLlegado",esTotal)}${celdaNumeroResumen(x.total,pdvFiltro,"totalCasos",esTotal)}${celdaNumeroResumen(x.totalCritico,pdvFiltro,"totalCritico",esTotal,"summary-critical")}${celdaNumeroResumen(x.guiasUnicas,pdvFiltro,"guiasUnicas",esTotal)}<td class="comment-col">${comentario}</td>`;
+    tr.innerHTML=`${celdaPdv}<td>${num(x.despachosAyer||0)}</td>${celdaNumeroResumen(x.h120o168,pdvFiltro,"h120o168",esTotal)}${celdaNumeroResumen(x.h360NoDevuelto,pdvFiltro,"h360NoDevuelto",esTotal)}${celdaNumeroResumen(x.h360PorDevolver,pdvFiltro,"h360PorDevolver",esTotal)}${celdaNumeroResumen(x.h720NoDevuelto,pdvFiltro,"h720NoDevuelto",esTotal)}${celdaNumeroResumen(x.h720PorDevolver,pdvFiltro,"h720PorDevolver",esTotal)}${celdaNumeroResumen(x.brecha48a120,pdvFiltro,"brecha48a120",esTotal)}${celdaNumeroResumen(x.brecha48NoLlegado,pdvFiltro,"brecha48NoLlegado",esTotal)}${celdaNumeroResumen(x.brecha120a144,pdvFiltro,"brecha120a144",esTotal)}${celdaNumeroResumen(x.brecha120NoLlegado,pdvFiltro,"brecha120NoLlegado",esTotal)}${celdaNumeroResumen(x.mayor144EnPDV,pdvFiltro,"mayor144EnPDV",esTotal)}${celdaNumeroResumen(Number(x.mayor144NoLlegado||0)+Number(x.brecha144a168NoLlegado||0),pdvFiltro,"mayor144NoLlegado",esTotal)}${celdaNumeroResumen(x.total,pdvFiltro,"totalCasos",esTotal)}${celdaNumeroResumen(x.totalCritico,pdvFiltro,"totalCritico",esTotal,"summary-critical")}${celdaNumeroResumen(x.guiasUnicas,pdvFiltro,"guiasUnicas",esTotal)}<td class="comment-col image-comment-col">${comentario}</td>`;
     return tr;
   }
 
@@ -1018,11 +1065,11 @@ function aplicarFiltroResumen(pdv,categoria){
  const actuales=seleccionesResumen();
  const nuevas=celdaResumenSeleccionada(pdv,categoria)?actuales.filter(s=>s.pdv!==pdv||s.categoria!==categoria):[...actuales,{pdv,categoria}];
  filtroResumenActivo=nuevas.length?nuevas:null;
- gruposComentarioDetalleAbiertos.clear();
+ gruposComentarioDetalleAbiertos.clear();gruposSubcampo1DetalleAbiertos.clear();
  actualizarChipResumen();renderResumen();filtrar();
 }
 function limpiarFiltroResumen(desplazar){
- filtroResumenActivo=null;gruposComentarioDetalleAbiertos.clear();actualizarChipResumen();renderResumen();filtrar();
+ filtroResumenActivo=null;gruposComentarioDetalleAbiertos.clear();gruposSubcampo1DetalleAbiertos.clear();actualizarChipResumen();renderResumen();filtrar();
  if(desplazar)document.getElementById('detalleGuiasPanel').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function actualizarChipResumen(){
@@ -1044,6 +1091,46 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     cerrarComentario();
     mostrarLoading(true,"Guardando comentario...");
     google.script.run.withSuccessHandler(()=>{mostrarLoading(false);toast("Comentario guardado correctamente.",true);cargarDatos();}).withFailureHandler(manejarError).guardarComentarioResumen(token,{pdv:pdv,comentario:el.value.trim()});
+  }
+
+  let imagenesResumenPdvActual=null, imagenesResumenAreaActual="", imagenesResumenRegionActual="", imagenesResumenUsuarioActual="";
+  async function abrirImagenesResumen(pdv){
+    const fila=(resumen.filas||[]).find(x=>String(x.pdv)===String(pdv));if(!fila)return;
+    imagenesResumenPdvActual=String(fila.pdv||"");imagenesResumenAreaActual=String(fila.area||"");imagenesResumenRegionActual=String(fila.region||"");
+    document.getElementById("resumenImagenTitulo").textContent="IMÁGENES · "+imagenesResumenPdvActual;
+    document.getElementById("archivoImagenResumen").value="";document.getElementById("resumenImagenGrid").replaceChildren();
+    document.getElementById("resumenImagenEstado").textContent="Cargando imágenes…";document.getElementById("resumenImagenModal").style.display="flex";
+    try{await cargarImagenesResumen();}catch(e){document.getElementById("resumenImagenEstado").textContent=mensajeErrorImagen(e);}
+  }
+  function cerrarImagenesResumen(){document.getElementById("resumenImagenModal").style.display="none";imagenesResumenPdvActual=null;}
+  function mensajeErrorImagen(e){const m=String(e?.message||e||"Error desconocido");return /relation .* does not exist|could not find the table/i.test(m)?"Falta habilitar la tabla de imágenes en Supabase. Ejecuta supabase_gestion_v2_imagenes_resumen.sql.":/row-level security|policy|not allowed|permission denied/i.test(m)?"Supabase no autorizó esta acción. Revisa que existan el bucket privado y las políticas de imágenes para el rol authenticated.":"No se pudo completar la acción de imágenes: "+m;}
+  async function cargarImagenesResumen(){
+    const api=window.V16GestionImagenesApi,grid=document.getElementById("resumenImagenGrid"),estado=document.getElementById("resumenImagenEstado");if(!api)throw new Error("No se cargó el módulo de imágenes. Recarga la página.");
+    const filas=await api.listar(imagenesResumenPdvActual);imagenesResumenUsuarioActual=await api.usuarioId();grid.replaceChildren();
+    if(!filas.length){estado.textContent="Aún no hay imágenes para este PDV. Usa “Cargar imagen” para adjuntar la primera.";return;}
+    estado.textContent=filas.length+" imagen"+(filas.length===1?"":"es");
+    for(const registro of filas){
+      const card=document.createElement("article");card.className="resumen-imagen-card";
+      const url=await api.url(registro.object_path),img=document.createElement("img");img.className="resumen-imagen-thumb";img.src=url;img.alt=registro.nombre_original||"Imagen adjunta";img.title="Clic para ampliar";img.onclick=()=>abrirImagenResumenAmpliada(url,registro.nombre_original);card.appendChild(img);
+      const nombre=document.createElement("div");nombre.className="resumen-imagen-name";nombre.textContent=registro.nombre_original||"Imagen";card.appendChild(nombre);
+      const meta=document.createElement("div");meta.className="resumen-imagen-meta";meta.textContent=registro.subido_en?new Date(registro.subido_en).toLocaleString("es-PE"):"";card.appendChild(meta);
+      if(String(registro.subido_por||"")===String(imagenesResumenUsuarioActual||"")){const acciones=document.createElement("div");acciones.className="resumen-imagen-card-actions";const borrar=document.createElement("button");borrar.type="button";borrar.className="danger";borrar.textContent="Eliminar";borrar.onclick=()=>eliminarImagenResumen(registro);acciones.appendChild(borrar);card.appendChild(acciones);}
+      grid.appendChild(card);
+    }
+  }
+  function abrirImagenResumenAmpliada(src,nombre){const img=document.getElementById("imagenResumenAmpliada");img.src=src;img.alt=nombre||"Imagen del resumen";document.getElementById("imagenResumenLightbox").classList.add("open");}
+  function cerrarImagenResumenAmpliada(){document.getElementById("imagenResumenLightbox").classList.remove("open");document.getElementById("imagenResumenAmpliada").removeAttribute("src");}
+  async function subirImagenResumen(){
+    const archivo=document.getElementById("archivoImagenResumen"),boton=document.getElementById("btnSubirImagenResumen"),estado=document.getElementById("resumenImagenEstado"),f=archivo.files?.[0];if(!f){estado.textContent="Selecciona primero una imagen.";return;}
+    boton.disabled=true;estado.textContent="Cargando imagen…";
+    try{await window.V16GestionImagenesApi.subir({pdv:imagenesResumenPdvActual,area:imagenesResumenAreaActual,region:imagenesResumenRegionActual},f);archivo.value="";await cargarImagenesResumen();toast("Imagen guardada para "+imagenesResumenPdvActual+".",true);}
+    catch(e){estado.textContent=mensajeErrorImagen(e);}finally{boton.disabled=false;}
+  }
+  async function eliminarImagenResumen(registro){
+    if(!confirm("¿Eliminar la imagen “"+(registro.nombre_original||"Imagen")+"” de este PDV?"))return;
+    const estado=document.getElementById("resumenImagenEstado");estado.textContent="Eliminando imagen…";
+    try{await window.V16GestionImagenesApi.eliminar(registro.id,registro.object_path);await cargarImagenesResumen();toast("Imagen eliminada.",true);}
+    catch(e){estado.textContent=mensajeErrorImagen(e);}
   }
 
   function cargarFiltros(){llenarMulti("fEscaneoExportacion",guias.map(x=>x.tipoEscaneoExportacion),"Todos los escaneos (Exportación)");llenarMulti("fEscaneo",guias.map(x=>x.tipoEscaneoReciente),"Todos los escaneos recientes");llenarMulti("fRegion",guias.map(x=>x.region),"Todas las regiones");llenarMulti("fArea",guias.map(x=>x.area),"Todas las áreas");llenarMulti("fEncargado",guias.map(x=>x.encargado),"Todos los encargados");llenarMulti("fPdv",guias.map(x=>x.pdv),"Todos los PDV");llenarMulti("fEstado",["PENDIENTE","EN PROCESO","FINALIZADO"],"Todos los estados");llenarMulti("fComentario",["CON COMENTARIO","SIN COMENTARIO"],"Comentario encargado");llenarMulti("fTipo",opcionesTipo(),"Todos los tipos");}
@@ -1075,15 +1162,27 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
 
   function formatearDestinoGestion(x){return `<div><b>Departamento:</b> ${esc(x.dpto||"")}</div><div><b>Provincia:</b> ${esc(x.prov||"")}</div><div><b>Distrito:</b> ${esc(x.dsto||"")}</div>`;}
   function claveComentarioDetalle(comentario){return String(comentario||"").normalize("NFC").trim().replace(/\s+/g," ").toLocaleLowerCase("es");}
+  function valorGrupoDetalle(x,campo){const borrador=valorBorradorRevision(Number(x.fila),campo);return String(borrador===undefined?(x[campo]||""):borrador||"").trim();}
+  function cantidadGuiasUnicasDetalle(filas){return new Set(filas.map(x=>String(x.guia||"").trim().toLocaleUpperCase("es")).filter(Boolean)).size;}
   function gruposPorComentarioDetalle(filas){
     const mapa=new Map();
     filas.forEach(x=>{
-      const valor=(campo)=>{const borrador=valorBorradorRevision(Number(x.fila),campo);return String(borrador===undefined?(x[campo]||""):borrador||"").trim();};
-      const comentario=valor("comentario").normalize("NFC").replace(/\s+/g," "),subcampo1=valor("subcampo1"),subcampo2=valor("subcampo2"),clave=[subcampo1,subcampo2,comentario].map(claveComentarioDetalle).join("|")||"__sin_comentario_encargado__";
+      const comentario=valorGrupoDetalle(x,"comentario").normalize("NFC").replace(/\s+/g," "),subcampo1=valorGrupoDetalle(x,"subcampo1"),subcampo2=valorGrupoDetalle(x,"subcampo2"),clave=[subcampo1,subcampo2,comentario].map(claveComentarioDetalle).join("|")||"__sin_comentario_encargado__";
       if(!mapa.has(clave))mapa.set(clave,{clave,comentario,subcampo1,subcampo2,filas:[]});
       mapa.get(clave).filas.push(x);
     });
-    return [...mapa.values()].map(g=>({...g,etiqueta:[g.subcampo1,g.subcampo2,g.comentario||"Sin comentario del encargado"].filter(Boolean).join(" · "),cantidadGuias:new Set(g.filas.map(x=>String(x.guia||"").trim().toLocaleUpperCase("es")).filter(Boolean)).size})).sort((a,b)=>b.cantidadGuias-a.cantidadGuias||a.etiqueta.localeCompare(b.etiqueta,"es"));
+    return [...mapa.values()].map(g=>({...g,etiqueta:[g.subcampo1,g.subcampo2,g.comentario||"Sin comentario del encargado"].filter(Boolean).join(" · "),cantidadGuias:cantidadGuiasUnicasDetalle(g.filas)})).sort((a,b)=>b.cantidadGuias-a.cantidadGuias||a.etiqueta.localeCompare(b.etiqueta,"es"));
+  }
+  function gruposPorSubcampo1Detalle(filas){
+    const mapa=new Map();
+    filas.forEach(x=>{
+      const subcampo1=valorGrupoDetalle(x,"subcampo1"),normalizado=claveComentarioDetalle(subcampo1),clave="subcampo1:"+(normalizado||"__vacio__");
+      if(!mapa.has(clave))mapa.set(clave,{clave,subcampo1,filas:[]});
+      mapa.get(clave).filas.push(x);
+    });
+    return [...mapa.values()].map(g=>({...g,etiqueta:g.subcampo1||"Sin Subcampo 1",cantidadGuias:cantidadGuiasUnicasDetalle(g.filas),grupos:gruposPorComentarioDetalle(g.filas)})).sort((a,b)=>{
+      if(!a.subcampo1)return 1;if(!b.subcampo1)return -1;return a.subcampo1.localeCompare(b.subcampo1,"es");
+    });
   }
   function crearFilaGuia(x){
     const tr=document.createElement("tr"),fila=Number(x.fila),marcada=seleccionadas.has(fila),comentario=valorBorradorRevision(fila,"comentario"),cierre=valorBorradorRevision(fila,"cierre"),notificacion=valorBorradorRevision(fila,"notificacion"),subcampo1=valorBorradorRevision(fila,"subcampo1"),subcampo2=valorBorradorRevision(fila,"subcampo2");const comentarioActual=comentario===undefined?String(x.comentario||""):String(comentario),cierreActual=String(cierre===undefined?x.cerro||"":cierre).toUpperCase(),notificacionActual=notificacion===undefined?Boolean(x.comentarioVisiblePDV):Boolean(notificacion),subcampo1Actual=String(subcampo1===undefined?x.subcampo1||"":subcampo1),subcampo2Actual=String(subcampo2===undefined?x.subcampo2||"":subcampo2);tr.id="row-"+fila;if(marcada)tr.classList.add("row-selected");tr.innerHTML=`
@@ -1099,29 +1198,40 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function renderGuias(){actualizarEstadoListaGuias('gestion');
     const body=document.getElementById("guiasBody"),toolbar=document.getElementById("detalleComentarioToolbar"),resumenComentarios=document.getElementById("detalleComentarioResumen"),agrupar=seleccionesResumen().length>0;enlazarBorradoresRevision();body.replaceChildren();
     toolbar.classList.toggle("hidden",!agrupar);
-    if(!filtradas.length){if(agrupar)resumenComentarios.textContent="0 comentarios · 0 guías";body.innerHTML='<tr><td colspan="12" style="padding:35px;color:#64748b">No se encontraron registros.</td></tr>';actualizarBarraSeleccion();return;}
+    if(!filtradas.length){if(agrupar)resumenComentarios.textContent="0 Subcampos 1 · 0 grupos · 0 guías";body.innerHTML='<tr><td colspan="12" style="padding:35px;color:#64748b">No se encontraron registros.</td></tr>';actualizarBarraSeleccion();return;}
     if(!agrupar){filtradas.forEach(x=>body.appendChild(crearFilaGuia(x)));}
     else{
-      const grupos=gruposPorComentarioDetalle(filtradas),totalGuias=new Set(filtradas.map(x=>String(x.guia||"").trim().toLocaleUpperCase("es")).filter(Boolean)).size;
-      resumenComentarios.textContent=grupos.length+" comentarios · "+totalGuias+" guías";
-      grupos.forEach(g=>{
-        const abierto=gruposComentarioDetalleAbiertos.has(g.clave),tr=document.createElement("tr"),td=document.createElement("td"),linea=document.createElement("div"),seleccionar=document.createElement("input"),boton=document.createElement("button"),flecha=document.createElement("span"),nombre=document.createElement("span"),cantidad=document.createElement("span"),copiar=document.createElement("button");
-        tr.className="comment-group-row";td.colSpan=12;linea.className="comment-group-line";boton.type="button";boton.className="comment-group-toggle";boton.setAttribute("aria-expanded",String(abierto));
-        const seleccionadasGrupo=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;seleccionar.type="checkbox";seleccionar.className="comment-group-check";seleccionar.dataset.groupKey=g.clave;seleccionar.checked=seleccionadasGrupo===g.filas.length&&g.filas.length>0;seleccionar.indeterminate=seleccionadasGrupo>0&&seleccionadasGrupo<g.filas.length;seleccionar.setAttribute("aria-checked",seleccionadasGrupo===0?"false":seleccionadasGrupo===g.filas.length?"true":"mixed");seleccionar.setAttribute("aria-label","Seleccionar todas las guías del comentario: "+g.etiqueta);seleccionar.title="Seleccionar o quitar todas las guías de este comentario";seleccionar.addEventListener("change",()=>toggleSeleccionGrupoComentario(g.clave,seleccionar.checked));
-        flecha.className="comment-group-arrow";flecha.textContent=abierto?"▾":"▸";nombre.className="comment-group-name";nombre.title=g.etiqueta;const partesNombre=[];if(g.subcampo1)partesNombre.push(["comment-group-tag comment-group-tag--one",g.subcampo1]);if(g.subcampo2)partesNombre.push(["comment-group-tag comment-group-tag--two",g.subcampo2]);partesNombre.push(["comment-group-free-text",g.comentario||"Sin comentario del encargado"]);partesNombre.forEach(([clase,texto],indice)=>{if(indice){const separador=document.createElement("span");separador.className="comment-group-separator";separador.textContent="·";nombre.appendChild(separador);}const parte=document.createElement("span");parte.className=clase;parte.textContent=texto;nombre.appendChild(parte);});cantidad.className="comment-group-count";cantidad.textContent=g.cantidadGuias+" guía"+(g.cantidadGuias===1?"":"s");
-        boton.append(flecha,nombre,cantidad);boton.addEventListener("click",()=>alternarGrupoComentarioDetalle(g.clave));
-        copiar.type="button";copiar.className="comment-group-copy";copiar.textContent="📋 Copiar";copiar.title="Copiar comentario del encargado";copiar.disabled=!g.comentario;copiar.addEventListener("click",()=>copiarComentarioGrupo(g.comentario));
-        linea.append(seleccionar,boton,copiar);td.appendChild(linea);tr.appendChild(td);body.appendChild(tr);
-        if(abierto)g.filas.forEach(x=>body.appendChild(crearFilaGuia(x)));
+      const padres=gruposPorSubcampo1Detalle(filtradas),cantidadGrupos=padres.reduce((total,g)=>total+g.grupos.length,0),totalGuias=cantidadGuiasUnicasDetalle(filtradas);
+      resumenComentarios.textContent=padres.length+" Subcampos 1 · "+cantidadGrupos+" grupos · "+totalGuias+" guías";
+      padres.forEach(p=>{
+        const abierto=gruposSubcampo1DetalleAbiertos.has(p.clave),tr=document.createElement("tr"),td=document.createElement("td"),linea=document.createElement("div"),seleccionar=document.createElement("input"),boton=document.createElement("button"),flecha=document.createElement("span"),nombre=document.createElement("span"),cantidad=document.createElement("span");
+        tr.className="subcampo1-group-row";td.colSpan=12;linea.className="comment-group-line subcampo1-group-line";boton.type="button";boton.className="comment-group-toggle subcampo1-group-toggle";boton.setAttribute("aria-expanded",String(abierto));
+        const seleccionadasGrupo=p.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;seleccionar.type="checkbox";seleccionar.className="subcampo1-group-check";seleccionar.dataset.subcampoKey=p.clave;seleccionar.checked=seleccionadasGrupo===p.filas.length&&p.filas.length>0;seleccionar.indeterminate=seleccionadasGrupo>0&&seleccionadasGrupo<p.filas.length;seleccionar.setAttribute("aria-checked",seleccionadasGrupo===0?"false":seleccionadasGrupo===p.filas.length?"true":"mixed");seleccionar.setAttribute("aria-label","Seleccionar todas las guías de Subcampo 1: "+p.etiqueta);seleccionar.title="Seleccionar o quitar todas las guías de este Subcampo 1";seleccionar.addEventListener("change",()=>toggleSeleccionGrupoSubcampo1(p.clave,seleccionar.checked));
+        flecha.className="comment-group-arrow";flecha.textContent=abierto?"▾":"▸";nombre.className="comment-group-name";nombre.title="Subcampo 1: "+p.etiqueta;const etiqueta=document.createElement("span");etiqueta.className="comment-group-tag comment-group-tag--one";etiqueta.textContent=p.etiqueta;nombre.appendChild(etiqueta);cantidad.className="comment-group-count";cantidad.textContent=p.cantidadGuias+" guía"+(p.cantidadGuias===1?"":"s");
+        boton.append(flecha,nombre,cantidad);boton.addEventListener("click",()=>alternarGrupoSubcampo1Detalle(p.clave));linea.append(seleccionar,boton);td.appendChild(linea);tr.appendChild(td);body.appendChild(tr);
+        if(abierto)p.grupos.forEach(g=>{
+          const grupoAbierto=gruposComentarioDetalleAbiertos.has(g.clave),filaGrupo=document.createElement("tr"),celda=document.createElement("td"),lineaGrupo=document.createElement("div"),seleccionarGrupo=document.createElement("input"),botonGrupo=document.createElement("button"),flechaGrupo=document.createElement("span"),nombreGrupo=document.createElement("span"),cantidadGrupo=document.createElement("span"),copiar=document.createElement("button");
+          filaGrupo.className="comment-group-row comment-group-row--nested";celda.colSpan=12;lineaGrupo.className="comment-group-line comment-group-line--nested";botonGrupo.type="button";botonGrupo.className="comment-group-toggle";botonGrupo.setAttribute("aria-expanded",String(grupoAbierto));
+          const seleccionadasSubgrupo=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;seleccionarGrupo.type="checkbox";seleccionarGrupo.className="comment-group-check";seleccionarGrupo.dataset.groupKey=g.clave;seleccionarGrupo.checked=seleccionadasSubgrupo===g.filas.length&&g.filas.length>0;seleccionarGrupo.indeterminate=seleccionadasSubgrupo>0&&seleccionadasSubgrupo<g.filas.length;seleccionarGrupo.setAttribute("aria-checked",seleccionadasSubgrupo===0?"false":seleccionadasSubgrupo===g.filas.length?"true":"mixed");seleccionarGrupo.setAttribute("aria-label","Seleccionar todas las guías del grupo: "+g.etiqueta);seleccionarGrupo.title="Seleccionar o quitar todas las guías de este grupo";seleccionarGrupo.addEventListener("change",()=>toggleSeleccionGrupoComentario(g.clave,seleccionarGrupo.checked));
+          flechaGrupo.className="comment-group-arrow";flechaGrupo.textContent=grupoAbierto?"▾":"▸";nombreGrupo.className="comment-group-name";nombreGrupo.title=g.etiqueta;if(g.subcampo2){const subcampo=document.createElement("span");subcampo.className="comment-group-tag comment-group-tag--two";subcampo.textContent=g.subcampo2;nombreGrupo.appendChild(subcampo);}else{const subcampo=document.createElement("span");subcampo.className="comment-group-separator";subcampo.textContent="Sin Subcampo 2";nombreGrupo.appendChild(subcampo);}const comentario=document.createElement("span");comentario.className="comment-group-free-text";comentario.textContent=g.comentario||"Sin comentario del encargado";nombreGrupo.append(comentario);cantidadGrupo.className="comment-group-count";cantidadGrupo.textContent=g.cantidadGuias+" guía"+(g.cantidadGuias===1?"":"s");
+          botonGrupo.append(flechaGrupo,nombreGrupo,cantidadGrupo);botonGrupo.addEventListener("click",()=>alternarGrupoComentarioDetalle(g.clave));copiar.type="button";copiar.className="comment-group-copy";copiar.textContent="📋 Copiar";copiar.title="Copiar comentario del encargado";copiar.disabled=!g.comentario;copiar.addEventListener("click",()=>copiarComentarioGrupo(g.comentario));lineaGrupo.append(seleccionarGrupo,botonGrupo,copiar);celda.appendChild(lineaGrupo);filaGrupo.appendChild(celda);body.appendChild(filaGrupo);
+          if(grupoAbierto)g.filas.forEach(x=>body.appendChild(crearFilaGuia(x)));
+        });
       });
     }
     actualizarBarraSeleccion();
   }
-  function sincronizarCasillasGruposComentario(){const grupos=new Map(gruposPorComentarioDetalle(filtradas).map(g=>[g.clave,g]));document.querySelectorAll("#guiasBody .comment-group-check").forEach(casilla=>{const g=grupos.get(casilla.dataset.groupKey);if(!g){casilla.checked=false;casilla.indeterminate=false;return;}const marcadas=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;casilla.checked=marcadas===g.filas.length&&g.filas.length>0;casilla.indeterminate=marcadas>0&&marcadas<g.filas.length;casilla.setAttribute("aria-checked",marcadas===0?"false":marcadas===g.filas.length?"true":"mixed");});}
+  function sincronizarCasillasGruposComentario(){
+    const grupos=new Map(gruposPorComentarioDetalle(filtradas).map(g=>[g.clave,g])),padres=new Map(gruposPorSubcampo1Detalle(filtradas).map(g=>[g.clave,g]));
+    document.querySelectorAll("#guiasBody .comment-group-check").forEach(casilla=>{const g=grupos.get(casilla.dataset.groupKey);if(!g){casilla.checked=false;casilla.indeterminate=false;return;}const marcadas=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;casilla.checked=marcadas===g.filas.length&&g.filas.length>0;casilla.indeterminate=marcadas>0&&marcadas<g.filas.length;casilla.setAttribute("aria-checked",marcadas===0?"false":marcadas===g.filas.length?"true":"mixed");});
+    document.querySelectorAll("#guiasBody .subcampo1-group-check").forEach(casilla=>{const g=padres.get(casilla.dataset.subcampoKey);if(!g){casilla.checked=false;casilla.indeterminate=false;return;}const marcadas=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;casilla.checked=marcadas===g.filas.length&&g.filas.length>0;casilla.indeterminate=marcadas>0&&marcadas<g.filas.length;casilla.setAttribute("aria-checked",marcadas===0?"false":marcadas===g.filas.length?"true":"mixed");});
+  }
+  function toggleSeleccionGrupoSubcampo1(clave,marcada){const grupo=gruposPorSubcampo1Detalle(filtradas).find(g=>g.clave===clave);if(!grupo)return;grupo.filas.forEach(x=>{const fila=Number(x.fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
   function toggleSeleccionGrupoComentario(clave,marcada){const grupo=gruposPorComentarioDetalle(filtradas).find(g=>g.clave===clave);if(!grupo)return;grupo.filas.forEach(x=>{const fila=Number(x.fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
+  function alternarGrupoSubcampo1Detalle(clave){if(gruposSubcampo1DetalleAbiertos.has(clave))gruposSubcampo1DetalleAbiertos.delete(clave);else gruposSubcampo1DetalleAbiertos.add(clave);renderGuias();}
   function alternarGrupoComentarioDetalle(clave){if(gruposComentarioDetalleAbiertos.has(clave))gruposComentarioDetalleAbiertos.delete(clave);else gruposComentarioDetalleAbiertos.add(clave);renderGuias();}
-  function expandirGruposComentarioDetalle(){gruposPorComentarioDetalle(filtradas).forEach(g=>gruposComentarioDetalleAbiertos.add(g.clave));renderGuias();}
-  function contraerGruposComentarioDetalle(){gruposComentarioDetalleAbiertos.clear();renderGuias();}
+  function expandirGruposComentarioDetalle(){gruposPorSubcampo1Detalle(filtradas).forEach(p=>{gruposSubcampo1DetalleAbiertos.add(p.clave);p.grupos.forEach(g=>gruposComentarioDetalleAbiertos.add(g.clave));});renderGuias();}
+  function contraerGruposComentarioDetalle(){gruposComentarioDetalleAbiertos.clear();gruposSubcampo1DetalleAbiertos.clear();renderGuias();}
   async function copiarComentarioGrupo(comentario){
     const texto=String(comentario||"").trim();if(!texto){toast("Este grupo no tiene comentario para copiar.",false);return;}
     try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(texto);}else{const auxiliar=document.createElement("textarea");auxiliar.value=texto;auxiliar.style.position="fixed";auxiliar.style.opacity="0";document.body.appendChild(auxiliar);auxiliar.select();const copiado=document.execCommand("copy");auxiliar.remove();if(!copiado)throw new Error("No se pudo copiar el comentario.");}toast("Comentario copiado.",true);}
@@ -1182,7 +1292,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     }catch(e){mostrarLoading(false);toast("No se pudo generar el Excel combinado: "+(e.message||String(e)),false);}
     finally{if(boton)boton.disabled=false;}
   }
-  function limpiarFiltros(){limpiarListaGuias('gestion',false);limpiarEntradaExportacion('fEntrada',false);limpiarFechaExportacion('fFechaExportacion',false);limpiarFiltroExcelMultiple('fEscaneoExportacion');limpiarFiltroExcelMultiple('fActualizacion');document.querySelectorAll("#fEscaneoMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fEscaneo");document.querySelectorAll("#fRegionMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fRegion");document.getElementById("buscar").value="";["fArea","fEncargado","fPdv","fEstado","fComentario","fTipo"].forEach(id=>{document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti(id);});filtroResumenActivo=null;gruposComentarioDetalleAbiertos.clear();actualizarChipResumen();renderResumen();cerrarMultis();filtrar();}
+  function limpiarFiltros(){limpiarListaGuias('gestion',false);limpiarEntradaExportacion('fEntrada',false);limpiarFechaExportacion('fFechaExportacion',false);limpiarFiltroExcelMultiple('fEscaneoExportacion');limpiarFiltroExcelMultiple('fActualizacion');document.querySelectorAll("#fEscaneoMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fEscaneo");document.querySelectorAll("#fRegionMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fRegion");document.getElementById("buscar").value="";["fArea","fEncargado","fPdv","fEstado","fComentario","fTipo"].forEach(id=>{document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti(id);});filtroResumenActivo=null;gruposComentarioDetalleAbiertos.clear();gruposSubcampo1DetalleAbiertos.clear();actualizarChipResumen();renderResumen();cerrarMultis();filtrar();}
   function actualizarTarjetas(){document.getElementById("totalGuias").textContent=filtradas.length;document.getElementById("pendientes").textContent=filtradas.filter(x=>estado(x)==="PENDIENTE").length;document.getElementById("proceso").textContent=filtradas.filter(x=>estado(x)==="EN PROCESO").length;document.getElementById("finalizados").textContent=filtradas.filter(x=>estado(x)==="FINALIZADO").length;}
   function estado(x){return String(x.estado||"PENDIENTE").trim().toUpperCase()}
   function claseEstado(v){v=String(v||"").toUpperCase();return v==="FINALIZADO"?"finalizado":v==="EN PROCESO"?"proceso":"pendiente";}
@@ -1726,6 +1836,7 @@ function filaResumen(x,esTotal){
  const comentario=document.createElement('td');comentario.className='comment-col';if(!esTotal)comentario.dataset.excelComment=String(x.comentario||'');
  if(!esTotal&&['ADMINISTRADOR','ENCARGADO'].includes(sesion?.rol)&&typeof abrirComentario==='function'){
   const b=document.createElement('button');b.className='btn-comment'+(x.comentario?' has-comment':'');b.textContent='💬';b.title='Comentario del PDV';b.onclick=()=>abrirComentario(x.pdv);comentario.append(b);
+  const imagen=document.createElement('button');imagen.type='button';imagen.className='btn-image';imagen.textContent='🖼';imagen.title='Ver o cargar imágenes de '+x.pdv;imagen.setAttribute('aria-label','Ver o cargar imágenes de '+x.pdv);imagen.onclick=()=>abrirImagenesResumen(x.pdv);comentario.append(imagen);
  }tr.append(comentario);return tr;
 }
 function subtotalGrupoResumen(items,nombre,admin,clase){

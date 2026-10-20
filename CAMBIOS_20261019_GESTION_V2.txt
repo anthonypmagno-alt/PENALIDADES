@@ -33,3 +33,17 @@ Corrección para que no desaparezcan los subcampos · 2026-10-20
 
 - Se eliminó la doble consulta de clasificaciones al abrir Gestión V2.
 - Cada recarga de datos ahora identifica su propia solicitud y descarta respuestas antiguas que lleguen después de una actualización más reciente, evitando que la fila contraíble pierda los subcampos ya mostrados.
+
+Corrección visual y recuperación de imágenes · 2026-10-21
+
+- Gestión de guías V2 reemplaza el rojo intenso de todos los encabezados por una paleta suave: azul para Cola Larga, violeta para Brecha, verde para los rangos preventivos y rojo claro para los críticos. El total crítico queda resaltado en ámbar.
+- Se restaura el icono de imagen al costado del comentario por PDV. Abre el panel para cargar PNG, JPG o WebP de hasta 8 MB, revisar miniaturas, ampliarlas y eliminar las que subió el usuario.
+- La carga utiliza la sesión activa y el bucket privado `v16-gestion-v2-resumen`; no se necesita un proyecto Supabase distinto. Se mantiene la seguridad por rol y alcance configurada para ese bucket.
+- Si aún no existe el bucket o la tabla de metadatos, el panel muestra una indicación para ejecutar el SQL existente de imágenes y revisar las políticas Storage.
+
+Actualización de agrupación del detalle · 2026-10-21
+
+- Al seleccionar una celda del resumen, el detalle se agrupa primero por Subcampo 1.
+- Cada grupo de Subcampo 1 se puede expandir para ver los grupos de Subcampo 2 y comentario; esos grupos conservan su expansión para mostrar las guías.
+- Las casillas de Subcampo 1 y de cada grupo interior seleccionan o quitan todas sus guías, y muestran selección parcial cuando corresponde.
+- Expandir todos y Contraer todos controlan ambos niveles; se mantiene el conteo de guías y el botón para copiar cada comentario.

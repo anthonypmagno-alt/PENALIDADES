@@ -11,3 +11,9 @@ Actualización 2026-10-19
 - Gestión de guías V2 añade Subcampo 1 y Subcampo 2 dependiente al comentario de encargado, con catálogo editable por administrador y clasificación persistente por guía y PDV.
 - Catálogo inicial: ENTREGA, DEVOLUCIÓN, TRASLADO y OTROS. ENTREGA y DEVOLUCIÓN contienen las opciones indicadas; las nuevas opciones se administran desde “Catálogo de comentarios”.
 - Se incluye el SQL incremental `supabase_gestion_v2_comentarios_catalogo.sql`; ejecutarlo una vez en el proyecto V16 antes de guardar las clasificaciones. No modifica storage.objects.
+
+Actualización adicional 2026-10-20
+
+- En Gestión de guías V2, Subcampo 1 y Subcampo 2 ahora se distinguen con tonalidades suaves distintas tanto en los selectores del detalle como en las filas agrupadas por comentario.
+- En la ventana de gestión masiva, Cierre de caso y Notificación al PDV ahora son casillas: marcada finaliza / muestra el comentario y desmarcada mantiene en proceso / lo oculta.
+- El cambio conserva el envío de decisiones al backend existente; no requiere ejecutar SQL ni modifica datos guardados.

@@ -1,0 +1,9 @@
+GESTIÓN DE GUÍAS V2 — 21/10/2026
+
+- El detalle agrupado ahora separa la jerarquía Subcampo 1 → Subcampo 2 → motivo → guías.
+- Al expandir Subcampo 1 se muestran sus Subcampos 2 y motivos; las guías permanecen cerradas hasta abrir un motivo.
+- Se añadieron casillas de selección a nivel de Subcampo 2 y motivo, además de conservar la selección por Subcampo 1.
+- La expansión global abre las agrupaciones hasta el nivel de motivos sin desplegar todas las guías.
+- Los cambios individuales de clasificación permanecen en el grupo original hasta Guardar; el detalle mantiene un aviso con guía y PDV.
+- Tras guardar, se expande la ruta de destino, se desplaza a la guía editada y se resalta temporalmente.
+- Se actualizó el enlace de Gestión de guías V2 con una nueva versión de caché.

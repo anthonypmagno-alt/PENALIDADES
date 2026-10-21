@@ -195,10 +195,16 @@
   .comment-group-arrow{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#dbeafe;color:#1452a8;flex:0 0 auto}
   .comment-group-name{display:flex;flex:1;min-width:0;align-items:center;gap:7px;overflow-wrap:anywhere}.comment-group-tag{display:inline-flex;align-items:center;max-width:100%;padding:3px 8px;border:1px solid transparent;border-radius:6px;font-size:11px;line-height:1.35;white-space:normal;overflow-wrap:anywhere}.comment-group-tag--one{background:#fff1f2;border-color:#fecdd3;color:#be123c}.comment-group-tag--two{background:#ecfdf5;border-color:#a7f3d0;color:#047857}.comment-group-free-text{color:#16427e;font-weight:700;overflow-wrap:anywhere}.comment-group-separator{color:#94a3b8;font-size:11px;font-weight:700}
   .comment-group-count{padding:4px 9px;border-radius:999px;background:#fff;color:#1452a8;font-size:11px;white-space:nowrap}
+  .comment-group-critical-counts{display:inline-flex;align-items:center;gap:5px;flex:0 1 auto;flex-wrap:wrap}
+  .comment-group-critical-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 7px;border:1px solid;border-radius:999px;font-size:10px;line-height:1.2;font-weight:800;white-space:nowrap}
+  .comment-group-critical-badge--brecha{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+  .comment-group-critical-badge--cola{background:#ffedd5;border-color:#fb923c;color:#9a3412}
+  .comment-group-critical-counts{margin-left:auto;justify-content:flex-end}
+  .comment-group-critical-badge{cursor:help}
   .comment-group-copy{align-self:center;flex:0 0 auto;border:1px solid #bfdbfe;border-radius:7px;background:#fff;color:#1452a8;padding:7px 10px;font-size:11px;font-weight:800;cursor:pointer}
   .comment-group-copy:hover:not(:disabled){background:#dbeafe}
   .comment-group-copy:disabled{opacity:.5;cursor:not-allowed}
-  @media(max-width:560px){.comment-group-toolbar{padding:10px}.comment-group-actions{width:100%}.comment-group-actions button{flex:1}.comment-group-line{gap:4px;padding:5px}.comment-group-copy{padding:7px 6px}.subcampo1-group-line{gap:4px;padding:5px}}
+  @media(max-width:560px){.comment-group-toolbar{padding:10px}.comment-group-actions{width:100%}.comment-group-actions button{flex:1}.comment-group-line{gap:4px;padding:5px}.comment-group-copy{padding:7px 6px}.subcampo1-group-line{gap:4px;padding:5px}.comment-group-toggle{flex-wrap:wrap;gap:5px}.comment-group-name{flex:1 1 160px}.comment-group-count{margin-left:auto}.comment-group-critical-counts{flex:1 1 100%;margin-left:30px;justify-content:flex-start}.comment-group-critical-badge{font-size:9px;padding:3px 5px}}
 </style><style>
 .view-tabs{flex-wrap:wrap;overflow-x:auto;width:100%}
 .comment-catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:14px;margin-top:14px}
@@ -261,6 +267,15 @@
 #tablaResumenV2 tbody tr>td:nth-child(3),#tablaResumenV2 tbody tr>td:nth-child(6),#tablaResumenV2 tbody tr>td:nth-child(9),#tablaResumenV2 tbody tr>td:nth-child(12),#tablaResumenV2 tbody tr>td:nth-child(15){border-left:4px solid #1e293b!important}
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(3),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(6),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(9),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(12){background:#fde68a!important;color:#713f12!important;border-color:#d97706!important}
 #tablaResumenV2 tbody tr.brecha-data-row td:nth-child(5):not(.summary-selected),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(8):not(.summary-selected),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(11):not(.summary-selected),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(14):not(.summary-selected),#tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(5),#tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(8),#tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(11),#tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(14),#tablaResumenV2 tbody tr.region-subtotal td:nth-child(5),#tablaResumenV2 tbody tr.region-subtotal td:nth-child(8),#tablaResumenV2 tbody tr.region-subtotal td:nth-child(11),#tablaResumenV2 tbody tr.region-subtotal td:nth-child(14),#tablaResumenV2 tbody tr.total-row td:nth-child(5),#tablaResumenV2 tbody tr.total-row td:nth-child(8),#tablaResumenV2 tbody tr.total-row td:nth-child(11),#tablaResumenV2 tbody tr.total-row td:nth-child(14){background:#fef3c7!important;color:#92400e!important;font-weight:800}
+/* Separador continuo, de alto contraste, entre Cola Larga y Brecha. */
+#tablaResumenV2 thead tr:first-child th:nth-child(4),
+#tablaResumenV2 thead tr:nth-child(2) th:nth-child(3),
+#tablaResumenV2 thead tr:nth-child(3) th:nth-child(7),
+#tablaResumenV2 tbody tr>td:nth-child(9){border-left:6px solid #dc2626!important;box-shadow:inset 2px 0 #fee2e2!important}
+#tablaResumenV2 thead tr:first-child th:nth-child(3),
+#tablaResumenV2 thead tr:nth-child(2) th:nth-child(2),
+#tablaResumenV2 thead tr:nth-child(3) th:nth-child(6),
+#tablaResumenV2 tbody tr>td:nth-child(8){border-right:6px solid #dc2626!important}
 </style></head>
 <body>
   <section id="login" class="login">
@@ -1173,6 +1188,28 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function claveComentarioDetalle(comentario){return String(comentario||"").normalize("NFC").trim().replace(/\s+/g," ").toLocaleLowerCase("es");}
   function valorGrupoDetalle(x,campo){const borrador=valorBorradorRevision(Number(x.fila),campo);return String(borrador===undefined?(x[campo]||""):borrador||"").trim();}
   function cantidadGuiasUnicasDetalle(filas){return new Set(filas.map(x=>String(x.guia||"").trim().toLocaleUpperCase("es")).filter(Boolean)).size;}
+  function contarGuiasCriticasDetalle(filas,categorias){
+    const criticas=new Set(categorias),guias=new Set();
+    filas.forEach(x=>{
+      const casos=Array.isArray(x.casosResumen)?x.casosResumen:[];
+      casos.forEach(c=>{
+        if(!criticas.has(String(c.categoria||"")))return;
+        const guia=String(x.guia||"").normalize("NFC").trim().toLocaleUpperCase("es"),pdv=String(c.pdv||x.pdv||"").normalize("NFC").trim().toLocaleUpperCase("es");
+        guias.add(guia?guia+"|"+pdv:"FILA:"+Number(x.fila)+"|"+pdv);
+      });
+    });
+    return guias.size;
+  }
+  function indicadoresCriticosDetalle(filas){return{
+    guiasBrechaCritica:contarGuiasCriticasDetalle(filas,["mayor144EnPDV","mayor144NoLlegado"]),
+    guiasColaLargaCritica:contarGuiasCriticasDetalle(filas,["h720NoDevuelto","h720PorDevolver"])
+  };}
+  function crearIndicadoresCriticosDetalle(grupo){
+    const indicadores=document.createElement("span");indicadores.className="comment-group-critical-counts";indicadores.setAttribute("aria-label","Recuento de guías críticas del grupo");
+    const brecha=document.createElement("span");brecha.className="comment-group-critical-badge comment-group-critical-badge--brecha";brecha.textContent="Brecha crítica: "+grupo.guiasBrechaCritica+" guía"+(grupo.guiasBrechaCritica===1?"":"s");brecha.title="Brecha crítica: guía con 120 horas o más";
+    const cola=document.createElement("span");cola.className="comment-group-critical-badge comment-group-critical-badge--cola";cola.textContent="Cola larga crítica: "+grupo.guiasColaLargaCritica+" guía"+(grupo.guiasColaLargaCritica===1?"":"s");cola.title="Cola larga crítica: 600 horas o más, o 25 días o más";
+    indicadores.append(brecha,cola);return indicadores;
+  }
   function gruposPorComentarioDetalle(filas){
     const mapa=new Map();
     filas.forEach(x=>{
@@ -1180,7 +1217,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
       if(!mapa.has(clave))mapa.set(clave,{clave,comentario,subcampo1,subcampo2,filas:[]});
       mapa.get(clave).filas.push(x);
     });
-    return [...mapa.values()].map(g=>({...g,etiqueta:[g.subcampo1,g.subcampo2,g.comentario||"Sin comentario del encargado"].filter(Boolean).join(" · "),cantidadGuias:cantidadGuiasUnicasDetalle(g.filas)})).sort((a,b)=>b.cantidadGuias-a.cantidadGuias||a.etiqueta.localeCompare(b.etiqueta,"es"));
+    return [...mapa.values()].map(g=>({...g,...indicadoresCriticosDetalle(g.filas),etiqueta:[g.subcampo1,g.subcampo2,g.comentario||"Sin comentario del encargado"].filter(Boolean).join(" · "),cantidadGuias:cantidadGuiasUnicasDetalle(g.filas)})).sort((a,b)=>b.cantidadGuias-a.cantidadGuias||a.etiqueta.localeCompare(b.etiqueta,"es"));
   }
   function gruposPorSubcampo1Detalle(filas){
     const mapa=new Map();
@@ -1189,7 +1226,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
       if(!mapa.has(clave))mapa.set(clave,{clave,subcampo1,filas:[]});
       mapa.get(clave).filas.push(x);
     });
-    return [...mapa.values()].map(g=>({...g,etiqueta:g.subcampo1||"Sin Subcampo 1",cantidadGuias:cantidadGuiasUnicasDetalle(g.filas),grupos:gruposPorComentarioDetalle(g.filas)})).sort((a,b)=>{
+    return [...mapa.values()].map(g=>({...g,...indicadoresCriticosDetalle(g.filas),etiqueta:g.subcampo1||"Sin Subcampo 1",cantidadGuias:cantidadGuiasUnicasDetalle(g.filas),grupos:gruposPorComentarioDetalle(g.filas)})).sort((a,b)=>{
       if(!a.subcampo1)return 1;if(!b.subcampo1)return -1;return a.subcampo1.localeCompare(b.subcampo1,"es");
     });
   }
@@ -1217,13 +1254,13 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
         tr.className="subcampo1-group-row";td.colSpan=12;linea.className="comment-group-line subcampo1-group-line";boton.type="button";boton.className="comment-group-toggle subcampo1-group-toggle";boton.setAttribute("aria-expanded",String(abierto));
         const seleccionadasGrupo=p.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;seleccionar.type="checkbox";seleccionar.className="subcampo1-group-check";seleccionar.dataset.subcampoKey=p.clave;seleccionar.checked=seleccionadasGrupo===p.filas.length&&p.filas.length>0;seleccionar.indeterminate=seleccionadasGrupo>0&&seleccionadasGrupo<p.filas.length;seleccionar.setAttribute("aria-checked",seleccionadasGrupo===0?"false":seleccionadasGrupo===p.filas.length?"true":"mixed");seleccionar.setAttribute("aria-label","Seleccionar todas las guías de Subcampo 1: "+p.etiqueta);seleccionar.title="Seleccionar o quitar todas las guías de este Subcampo 1";seleccionar.addEventListener("change",()=>toggleSeleccionGrupoSubcampo1(p.clave,seleccionar.checked));
         flecha.className="comment-group-arrow";flecha.textContent=abierto?"▾":"▸";nombre.className="comment-group-name";nombre.title="Subcampo 1: "+p.etiqueta;const etiqueta=document.createElement("span");etiqueta.className="comment-group-tag comment-group-tag--one";etiqueta.textContent=p.etiqueta;nombre.appendChild(etiqueta);cantidad.className="comment-group-count";cantidad.textContent=p.cantidadGuias+" guía"+(p.cantidadGuias===1?"":"s");
-        boton.append(flecha,nombre,cantidad);boton.addEventListener("click",()=>alternarGrupoSubcampo1Detalle(p.clave));linea.append(seleccionar,boton);td.appendChild(linea);tr.appendChild(td);body.appendChild(tr);
+        boton.append(flecha,nombre,cantidad,crearIndicadoresCriticosDetalle(p));boton.addEventListener("click",()=>alternarGrupoSubcampo1Detalle(p.clave));linea.append(seleccionar,boton);td.appendChild(linea);tr.appendChild(td);body.appendChild(tr);
         if(abierto)p.grupos.forEach(g=>{
           const grupoAbierto=gruposComentarioDetalleAbiertos.has(g.clave),filaGrupo=document.createElement("tr"),celda=document.createElement("td"),lineaGrupo=document.createElement("div"),seleccionarGrupo=document.createElement("input"),botonGrupo=document.createElement("button"),flechaGrupo=document.createElement("span"),nombreGrupo=document.createElement("span"),cantidadGrupo=document.createElement("span"),copiar=document.createElement("button");
           filaGrupo.className="comment-group-row comment-group-row--nested";celda.colSpan=12;lineaGrupo.className="comment-group-line comment-group-line--nested";botonGrupo.type="button";botonGrupo.className="comment-group-toggle";botonGrupo.setAttribute("aria-expanded",String(grupoAbierto));
           const seleccionadasSubgrupo=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;seleccionarGrupo.type="checkbox";seleccionarGrupo.className="comment-group-check";seleccionarGrupo.dataset.groupKey=g.clave;seleccionarGrupo.checked=seleccionadasSubgrupo===g.filas.length&&g.filas.length>0;seleccionarGrupo.indeterminate=seleccionadasSubgrupo>0&&seleccionadasSubgrupo<g.filas.length;seleccionarGrupo.setAttribute("aria-checked",seleccionadasSubgrupo===0?"false":seleccionadasSubgrupo===g.filas.length?"true":"mixed");seleccionarGrupo.setAttribute("aria-label","Seleccionar todas las guías del grupo: "+g.etiqueta);seleccionarGrupo.title="Seleccionar o quitar todas las guías de este grupo";seleccionarGrupo.addEventListener("change",()=>toggleSeleccionGrupoComentario(g.clave,seleccionarGrupo.checked));
           flechaGrupo.className="comment-group-arrow";flechaGrupo.textContent=grupoAbierto?"▾":"▸";nombreGrupo.className="comment-group-name";nombreGrupo.title=g.etiqueta;if(g.subcampo2){const subcampo=document.createElement("span");subcampo.className="comment-group-tag comment-group-tag--two";subcampo.textContent=g.subcampo2;nombreGrupo.appendChild(subcampo);}else{const subcampo=document.createElement("span");subcampo.className="comment-group-separator";subcampo.textContent="Sin Subcampo 2";nombreGrupo.appendChild(subcampo);}const comentario=document.createElement("span");comentario.className="comment-group-free-text";comentario.textContent=g.comentario||"Sin comentario del encargado";nombreGrupo.append(comentario);cantidadGrupo.className="comment-group-count";cantidadGrupo.textContent=g.cantidadGuias+" guía"+(g.cantidadGuias===1?"":"s");
-          botonGrupo.append(flechaGrupo,nombreGrupo,cantidadGrupo);botonGrupo.addEventListener("click",()=>alternarGrupoComentarioDetalle(g.clave));copiar.type="button";copiar.className="comment-group-copy";copiar.textContent="📋 Copiar";copiar.title="Copiar comentario del encargado";copiar.disabled=!g.comentario;copiar.addEventListener("click",()=>copiarComentarioGrupo(g.comentario));lineaGrupo.append(seleccionarGrupo,botonGrupo,copiar);celda.appendChild(lineaGrupo);filaGrupo.appendChild(celda);body.appendChild(filaGrupo);
+          botonGrupo.append(flechaGrupo,nombreGrupo,cantidadGrupo,crearIndicadoresCriticosDetalle(g));botonGrupo.addEventListener("click",()=>alternarGrupoComentarioDetalle(g.clave));copiar.type="button";copiar.className="comment-group-copy";copiar.textContent="📋 Copiar";copiar.title="Copiar comentario del encargado";copiar.disabled=!g.comentario;copiar.addEventListener("click",()=>copiarComentarioGrupo(g.comentario));lineaGrupo.append(seleccionarGrupo,botonGrupo,copiar);celda.appendChild(lineaGrupo);filaGrupo.appendChild(celda);body.appendChild(filaGrupo);
           if(grupoAbierto)g.filas.forEach(x=>body.appendChild(crearFilaGuia(x)));
         });
       });

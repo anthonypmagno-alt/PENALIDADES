@@ -1,0 +1,6 @@
+GESTIÓN DE GUÍAS V2 — 21/10/2026
+
+- En el detalle agrupado por Subcampo 1 y comentario del encargado se muestran dos indicadores: guías con Brecha crítica (≥120 h) y Cola larga crítica (≥600 h o ≥25 días).
+- Los indicadores cuentan guías distintas por guía y PDV y respetan los filtros activos.
+- Se reforzó con una línea roja continua la separación visual entre Cola Larga y Brecha en el resumen por PDV.
+- Se actualizó el enlace de Gestión de guías V2 con una nueva versión de caché.

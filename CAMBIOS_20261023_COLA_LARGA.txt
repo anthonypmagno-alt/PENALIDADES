@@ -1,0 +1,12 @@
+GESTIÓN DE GUÍAS V2 — CARGA DE COLA LARGA
+
+Corrección 23/10/2026
+
+- Los rangos de Cola Larga se calculan con Tiempo de Entrada (columna B) de cada fila del archivo cargado.
+- La fecha queda guardada por caso de guía/PDV; no depende de que Exportación de guías tenga la misma fecha ni de que exista allí una coincidencia.
+- Exportación de guías sigue aportando destino, datos de escaneo y firma.
+- Se valida que el archivo contenga Tiempo de Entrada para evitar omitir registros silenciosamente.
+- Para las guías marcadas 120 o 168 H, el grupo comprende desde 120 hasta menos de 588 horas.
+- De 588 a menos de 600 horas se muestra el rango preventivo; desde 600 horas se muestra como crítico.
+- Los registros marcados 360H que todavía no llegan a 588 horas continúan fuera de los grupos actuales.
+- Se actualizó la versión de bridge.js en los módulos web para evitar que el navegador reutilice el archivo anterior en caché.

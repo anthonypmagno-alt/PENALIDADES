@@ -1,0 +1,10 @@
+GESTIÓN DE GUÍAS V2 · PREVENTIVO DE 24 HORAS
+
+Se ajustó la clasificación preventiva para abarcar las 24 horas previas al umbral crítico:
+
+• Cola larga: 576 a menos de 600 horas desde Tiempo de entrada. A partir de 600 horas se mantiene como crítico.
+• Brecha: 96 a menos de 120 horas desde el último tiempo de funcionamiento. A partir de 120 horas se mantiene como crítico.
+
+Se actualizaron los rótulos de las tablas de Gestión V2, vista PDV y Excel de resumen. Los rangos preventivos continúan separados de los conteos críticos.
+
+No se requiere ejecutar SQL ni modificar datos en Supabase. Se incrementó la versión de caché de bridge.js para que GitHub Pages cargue la actualización.

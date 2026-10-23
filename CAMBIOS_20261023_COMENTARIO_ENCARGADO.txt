@@ -1,0 +1,14 @@
+Gestión de Guías: comentarios separados por rol
+
+- El administrador conserva la edición del campo “Comentario encargado”. Los encargados lo ven en modo lectura.
+- El campo que antes se llamaba “Observación PDV” ahora es “Comentario de gestión · Encargado”. Cada encargado puede registrar y actualizar su nota por combinación de guía y PDV.
+- Los portales PDV ya no muestran controles para escribir ni guardar observaciones. Se conserva la visualización de comentarios del administrador que fueron marcados para compartir.
+- Los comentarios de gestión se guardan en una tabla nueva de Supabase y tienen control de concurrencia para evitar que un encargado sobrescriba una actualización reciente de otro.
+- Las observaciones PDV anteriores no se eliminan ni se modifican; el nuevo campo inicia independiente.
+- El detalle exportado incluye el comentario y la fecha de actualización.
+
+Instalación
+
+1. Confirma que ya ejecutaste supabase_gestion_v2_comentarios_catalogo.sql, que crea la función de alcance usada por este módulo.
+2. En el SQL Editor del mismo proyecto Supabase, ejecuta una sola vez supabase_gestion_v2_comentario_encargado.sql.
+3. Publica index.html, gestion-v2.html, pdv.html, pdv-v2.html, bridge.js y este SQL. La página muestra un aviso si la migración aún no está disponible.

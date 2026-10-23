@@ -215,6 +215,7 @@
   .comment-group-copy{align-self:center;flex:0 0 auto;border:1px solid #bfdbfe;border-radius:7px;background:#fff;color:#1452a8;padding:7px 10px;font-size:11px;font-weight:800;cursor:pointer}
   .comment-group-copy:hover:not(:disabled){background:#dbeafe}
   .comment-group-copy:disabled{opacity:.5;cursor:not-allowed}
+  .comment-hierarchy-table{min-width:980px;width:100%;border-collapse:collapse;table-layout:fixed}.comment-hierarchy-table th,.comment-hierarchy-table td{text-align:center;vertical-align:middle}.comment-hierarchy-table th{background:#f1f5f9;color:#334155;white-space:normal}.comment-hierarchy-table td{overflow-wrap:anywhere}.comment-hierarchy-table .hierarchy-category-cell{font-weight:800;background:#f8fafc;color:#16427e}.comment-hierarchy-table .hierarchy-comment-cell{min-width:240px;white-space:pre-wrap}.comment-hierarchy-table .comment-group-row--selected td{background:#dbeafe!important;box-shadow:inset 4px 0 #1769e0}.comment-hierarchy-table .comment-group-row--selected .hierarchy-category-cell{background:#dbeafe!important}.comment-group-view{align-self:center;flex:0 0 auto;border:1px solid #1769e0;border-radius:7px;background:#1769e0;color:#fff;padding:7px 10px;font-size:11px;font-weight:800;cursor:pointer}.comment-group-view:hover{background:#1452a8}.comment-hierarchy-empty{padding:22px!important;color:#64748b;text-align:center!important}.comment-hierarchy-summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.comment-hierarchy-summary strong{color:#16427e}.comment-hierarchy-actions{display:flex;gap:8px;flex-wrap:wrap}.comment-hierarchy-table .hierarchy-actions{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap}
   @media(max-width:560px){.comment-group-toolbar{padding:10px}.comment-group-actions{width:100%}.comment-group-actions button{flex:1}.comment-group-line{gap:4px;padding:5px}.comment-group-copy{padding:7px 6px}.subcampo1-group-line{gap:4px;padding:5px}.subcampo2-group-line{padding-left:16px}.comment-group-line--reason{padding-left:28px}.comment-group-toggle{flex-wrap:wrap;gap:5px}.comment-group-name{flex:1 1 160px}.comment-group-count{margin-left:auto}.comment-group-critical-counts{flex:1 1 100%;margin-left:30px;justify-content:flex-start}.comment-group-critical-badge{font-size:9px;padding:3px 5px}.revision-edit-context{margin:8px 6px}}
 </style><style>
 .view-tabs{flex-wrap:wrap;overflow-x:auto;width:100%}
@@ -342,8 +343,8 @@
           <span class="summary-toolbar-title">FILTRAR RESUMEN:</span>
           <div class="multi-filter" id="sRegion"><button type="button" id="sRegionButton" class="multi-trigger" onclick="toggleMulti('sRegion',event)" aria-label="Filtrar por región"><span id="sRegionLabel">Todas las regiones</span><span>▾</span></button><div id="sRegionMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="sArea"><button type="button" id="sAreaButton" class="multi-trigger" onclick="toggleMulti('sArea',event)"><span id="sAreaLabel">Todas las áreas</span><span>▾</span></button><div id="sAreaMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
           <div class="multi-filter" id="sEncargado"><button type="button" id="sEncargadoButton" class="multi-trigger" onclick="toggleMulti('sEncargado',event)"><span id="sEncargadoLabel">Todos los encargados</span><span>▾</span></button><div id="sEncargadoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
-          <div class="multi-filter" id="sComentarioEncargado"><button type="button" id="sComentarioEncargadoButton" class="multi-trigger" onclick="toggleMulti('sComentarioEncargado',event)"><span id="sComentarioEncargadoLabel">Comentario encargado</span><span>▾</span></button><div id="sComentarioEncargadoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
-          <div class="multi-filter" id="sComentarioPDV"><button type="button" id="sComentarioPDVButton" class="multi-trigger" onclick="toggleMulti('sComentarioPDV',event)"><span id="sComentarioPDVLabel">Comentario PDV</span><span>▾</span></button><div id="sComentarioPDVMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
+          <div class="multi-filter" id="sComentarioEncargado"><button type="button" id="sComentarioEncargadoButton" class="multi-trigger" onclick="toggleMulti('sComentarioEncargado',event)"><span id="sComentarioEncargadoLabel">Comentario principal · Administrador</span><span>▾</span></button><div id="sComentarioEncargadoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
+          <div class="multi-filter" id="sComentarioPDV"><button type="button" id="sComentarioPDVButton" class="multi-trigger" onclick="toggleMulti('sComentarioPDV',event)"><span id="sComentarioPDVLabel">Comentario de gestión · Encargado</span><span>▾</span></button><div id="sComentarioPDVMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
           <button type="button" id="btnSoloNoFinalizadas" class="summary-toggle" aria-pressed="false" onclick="alternarSoloNoFinalizadas()">Solo no finalizadas</button>
           <button type="button" id="btnSoloCriticos" class="summary-toggle summary-toggle-critical" aria-pressed="false" onclick="alternarSoloCriticos()">Solo casos críticos</button>
           <button type="button" class="secondary" onclick="limpiarFiltrosResumen()">Limpiar</button>
@@ -355,6 +356,15 @@
         </table></div>
       </section>
 
+      <section id="comentarioJerarquiaPanel" class="panel">
+        <div class="panel-title">Resumen por Subtipo 1, Subtipo 2 y comentario encargado</div>
+        <div class="comment-group-toolbar" aria-live="polite">
+          <div class="comment-group-summary"><span id="comentarioJerarquiaResumen"></span><small>Los subtipos se combinan por filas. Selecciona “Ver guías” para cargar sus guías en el detalle.</small></div>
+          <div class="comment-hierarchy-actions"><button type="button" class="secondary" onclick="limpiarFiltroComentarioJerarquia(true)">Mostrar todas las guías</button></div>
+        </div>
+        <div class="table-wrap"><table class="comment-hierarchy-table"><colgroup><col style="width:5%"><col style="width:12%"><col style="width:16%"><col style="width:27%"><col style="width:7%"><col style="width:9%"><col style="width:11%"><col style="width:13%"></colgroup><thead><tr><th>SELECCIÓN</th><th>SUBTIPO 1</th><th>SUBTIPO 2</th><th>COMENTARIO ENCARGADO</th><th>GUÍAS</th><th>BRECHA CRÍTICA</th><th>COLA LARGA CRÍTICA</th><th>ACCIONES</th></tr></thead><tbody id="comentarioJerarquiaBody"></tbody></table></div>
+      </section>
+
       <section id="detalleGuiasPanel" class="panel">
         <div class="panel-title">Detalle de guías <span id="filtroResumenChip" class="summary-filter-chip hidden"></span></div>
         <div class="panel-body">
@@ -364,7 +374,7 @@
             <div class="multi-filter" id="fEncargado"><button type="button" id="fEncargadoButton" class="multi-trigger" onclick="toggleMulti('fEncargado',event)"><span id="fEncargadoLabel">Todos los encargados</span><span>▾</span></button><div id="fEncargadoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
             <div class="multi-filter" id="fPdv"><button type="button" id="fPdvButton" class="multi-trigger" onclick="toggleMulti('fPdv',event)"><span id="fPdvLabel">Todos los PDV</span><span>▾</span></button><div id="fPdvMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
             <div class="multi-filter" id="fEstado"><button type="button" id="fEstadoButton" class="multi-trigger" onclick="toggleMulti('fEstado',event)"><span id="fEstadoLabel">Todos los estados</span><span>▾</span></button><div id="fEstadoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
-            <div class="multi-filter" id="fComentario"><button type="button" id="fComentarioButton" class="multi-trigger" onclick="toggleMulti('fComentario',event)"><span id="fComentarioLabel">Comentario encargado</span><span>▾</span></button><div id="fComentarioMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
+            <div class="multi-filter" id="fComentario"><button type="button" id="fComentarioButton" class="multi-trigger" onclick="toggleMulti('fComentario',event)"><span id="fComentarioLabel">Comentario de gestión · Encargado</span><span>▾</span></button><div id="fComentarioMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
             <div class="multi-filter" id="fTipo"><button type="button" id="fTipoButton" class="multi-trigger" onclick="toggleMulti('fTipo',event)"><span id="fTipoLabel">Todos los tipos</span><span>▾</span></button><div id="fTipoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
           <div class="date-filter-row"><fieldset style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1px solid #cbd5e1;border-radius:6px;padding:8px"><legend>Fecha de actualización · Exportación de guías</legend><label>Desde <input type="date" id="fFechaExportacionDesde" onchange="cambiarFechaExportacion('fFechaExportacion')"></label><label>Hasta <input type="date" id="fFechaExportacionHasta" onchange="cambiarFechaExportacion('fFechaExportacion')"></label><button type="button" class="secondary" onclick="limpiarFechaExportacion('fFechaExportacion')">Limpiar fechas</button><small>Días completos · Tiempo del escaneo más reciente</small><span id="fFechaExportacionError" role="status" style="color:#b91c1c"></span></fieldset><fieldset style="border:1px solid #cbd5e1;border-radius:6px;padding:8px"><legend>Tiempo de entrada · Exportación de guías</legend><label>Desde <input type="datetime-local" step="1" id="fEntradaDesde" onchange="cambiarEntradaExportacion('fEntrada')"></label> <label>Hasta <input type="datetime-local" step="1" id="fEntradaHasta" onchange="cambiarEntradaExportacion('fEntrada')"></label><div id="fEntradaRapidos"><label style="margin-right:12px" title="Ingresos de hace 25 días o antes"><input type="checkbox" value="25" onchange="cambiarEntradaExportacion('fEntrada')"> ≥ 25 días</label><label style="margin-right:12px" title="Ingresos de hace 15 días o antes"><input type="checkbox" value="15" onchange="cambiarEntradaExportacion('fEntrada')"> ≥ 15 días</label><label style="margin-right:12px" title="Ingresos de hace 7 días o antes"><input type="checkbox" value="7" onchange="cambiarEntradaExportacion('fEntrada')"> ≥ 7 días</label></div><small>Corte respecto de ahora · Varias opciones unen resultados · El rango manual se aplica además</small> <button type="button" class="secondary" onclick="limpiarEntradaExportacion('fEntrada')">Limpiar entrada</button><span id="fEntradaError" role="status" style="color:#b91c1c"></span></fieldset></div></div><details class="lista-guias-panel"><summary>Filtrar varias guías</summary><label for="listaGuias_gestion">Pega la columna de Excel, una guía por línea</label><textarea id="listaGuias_gestion" rows="5" placeholder="JPE000016332754
 JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuias('gestion')">Aplicar lista</button> <button type="button" class="secondary" onclick="limpiarListaGuias('gestion')">Limpiar lista</button></div><small>También acepta espacios, comas y punto y coma. Coincidencia exacta; conserva los demás filtros.</small><p role="status" aria-live="polite" id="listaGuiasEstado_gestion">Sin filtro por lista de guías.</p><div id="listaGuiasFaltantes_gestion"></div></details>
@@ -373,10 +383,6 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
         <div class="bulk-toolbar">
           <div class="bulk-info"><b id="bulkCount">0 guías seleccionadas</b><br><span>La gestión masiva aplica comentario, cierre y notificación al PDV.</span></div>
           <div class="bulk-actions"><button class="secondary" onclick="seleccionarVisibles()">Seleccionar visibles</button><button class="secondary" onclick="copiarGuiasSeleccionadas('gestion')">Copiar guías seleccionadas</button><button class="secondary" onclick="limpiarSeleccion()">Limpiar selección</button><button id="btnPrintDetalleGestion" class="secondary" disabled="" onclick="verDetalleSeleccionadoGestion()">Imprimir detalle seleccionado</button><button id="btnPrintGestion" class="secondary" disabled="" onclick="verGuiasSeleccionadasGestion()">Imprimir guías seleccionadas</button><button id="btnBulkManage" class="small" disabled="" onclick="abrirGestionMasiva()">Gestionar seleccionadas</button></div>
-        </div>
-        <div id="detalleComentarioToolbar" class="comment-group-toolbar hidden" aria-live="polite">
-          <div class="comment-group-summary"><span id="detalleComentarioResumen"></span><small>Subcampo 1 → Subcampo 2 → motivo → guías. Al abrir un motivo se muestran sus guías; las casillas seleccionan el grupo correspondiente.</small></div>
-          <div class="comment-group-actions"><button type="button" class="secondary" onclick="expandirGruposComentarioDetalle()">Expandir clasificación</button><button type="button" class="secondary" onclick="contraerGruposComentarioDetalle()">Contraer todo</button></div>
         </div>
         <div id="revisionEditContext" class="revision-edit-context hidden" role="status" aria-live="polite"><span id="revisionEditContextText"></span><button type="button" class="secondary" onclick="enfocarEdicionActiva()">Ir a guía</button></div>
         <div id="comentarioGestionEstado" class="source-note" role="status" aria-live="polite"></div>
@@ -437,13 +443,10 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
 <script>
   const APP_URL = new URL('./gestion-v2.html',location.href).href;
   let token = sessionStorage.getItem("tokenGuiasSupabaseReplica") || "";
-  let sesion = null, guias = [], filtradas = [], resumenBase = {filas:[],total:{}}, resumen = {filas:[],total:{}}, filtroResumenActivo = null, soloNoFinalizadas = false, soloCriticos = false;
+  let sesion = null, guias = [], filtradas = [], filtradasParaResumenComentario = [], resumenBase = {filas:[],total:{}}, resumen = {filas:[],total:{}}, filtroResumenActivo = null, filtroComentarioJerarquiaActivo = null, soloNoFinalizadas = false, soloCriticos = false;
   let excelRegistros = [], excelFiltrados = [], excelPagina = 1, excelTrackNombre = "", excelEnvioNombre = "";
   const EXCEL_PAGE_SIZE = 100, EXCEL_MAX_BYTES = 30 * 1024 * 1024;
   const seleccionadas = new Set();
-  const gruposComentarioDetalleAbiertos = new Set();
-  const gruposSubcampo2DetalleAbiertos = new Set();
-  const gruposSubcampo1DetalleAbiertos = new Set();
   const borradoresRevision = new Map();
   let borradoresRevisionUsuario = "";
   let guiaActivaEdicionRevision = null, temporizadorResaltadoGuia = null;
@@ -959,11 +962,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     requestAnimationFrame(()=>{const filaGuia=document.getElementById("row-"+Number(fila));if(!filaGuia)return;filaGuia.classList.add("guide-updated-focus");filaGuia.scrollIntoView({behavior:"smooth",block:"center"});temporizadorResaltadoGuia=setTimeout(()=>filaGuia.classList.remove("guide-updated-focus"),5000);});
   }
   function abrirRutaGuiaDetalle(fila,abrirMotivo){
-    const padre=gruposPorSubcampo1Detalle(filtradas).find(g=>g.filas.some(x=>Number(x.fila)===Number(fila)));if(!padre)return;
-    gruposSubcampo1DetalleAbiertos.add(padre.clave);
-    const subgrupo=padre.subgrupos.find(g=>g.filas.some(x=>Number(x.fila)===Number(fila)));if(!subgrupo)return;
-    gruposSubcampo2DetalleAbiertos.add(subgrupo.clave);
-    if(abrirMotivo){const motivo=subgrupo.motivos.find(g=>g.filas.some(x=>Number(x.fila)===Number(fila)));if(motivo)gruposComentarioDetalleAbiertos.add(motivo.clave);}
+    const guia=guias.find(x=>Number(x.fila)===Number(fila));if(filtroComentarioJerarquiaActivo&&guia&&!coincideFiltroComentarioJerarquia(guia)){filtroComentarioJerarquiaActivo=null;actualizarChipResumen();}
   }
   function enfocarEdicionActiva(){
     const fila=Number(guiaActivaEdicionRevision);if(!Number.isFinite(fila))return;
@@ -976,7 +975,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     mostrarLoading(true,"Cargando información...");
     google.script.run.withSuccessHandler(r=>{
       if(version!==versionCargaPortal||actualToken!==token)return;
-      mostrarLoading(false);mostrarEstadoV2(r.v2);sesion=r.sesion;comentarioGestionEncargadoDisponible=r.comentariosGestionEncargadoDisponible===true;cargarBorradoresRevisionUsuario();const guiasNuevas=Array.isArray(r.guias)?r.guias:[],estadoBorradores=reconciliarBorradoresRevision(guiasNuevas);guias=guiasNuevas;resumenBase=r.resumen||{filas:[],total:{}};actualizarEstadoComentarioGestion(r.errorComentariosGestionEncargado||"");cargarClasificacionesComentarios();seleccionadas.clear();gruposComentarioDetalleAbiertos.clear();gruposSubcampo2DetalleAbiertos.clear();gruposSubcampo1DetalleAbiertos.clear();renderEstadoFuentes(r.fuentes);mostrarGuardadoFuentes(r.ultimoGuardado);
+      mostrarLoading(false);mostrarEstadoV2(r.v2);sesion=r.sesion;comentarioGestionEncargadoDisponible=r.comentariosGestionEncargadoDisponible===true;cargarBorradoresRevisionUsuario();const guiasNuevas=Array.isArray(r.guias)?r.guias:[],estadoBorradores=reconciliarBorradoresRevision(guiasNuevas);guias=guiasNuevas;filtradasParaResumenComentario=[];filtroComentarioJerarquiaActivo=null;resumenBase=r.resumen||{filas:[],total:{}};actualizarEstadoComentarioGestion(r.errorComentariosGestionEncargado||"");cargarClasificacionesComentarios();seleccionadas.clear();renderEstadoFuentes(r.fuentes);mostrarGuardadoFuentes(r.ultimoGuardado);
       cargarFiltros();cargarFiltrosResumen();if(Array.isArray(regionesImportadas))enfocarResumenImportado(regionesImportadas);else restaurarRegionesGestion();aplicarFiltrosResumen();if(estadoBorradores.conflictos)toast("Se conservaron borradores locales. El comentario, clasificación o cierre guardado cambió mientras editabas; revisa el contenido antes de guardar.",false);else if(estadoBorradores.conservados)toast("Se conservaron "+estadoBorradores.conservados+" borrador(es) sin guardar.",true);
     }).withFailureHandler(manejarError).obtenerDatosPortal(token,forzar===true);
   }
@@ -995,7 +994,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     ['sRegion','fRegion'].forEach(id=>{
       document.querySelectorAll('#'+id+'Menu input[type=checkbox]').forEach(x=>x.checked=elegidas.has(normalizarLocal(x.value)||'SIN REGIÓN'));actualizarEtiquetaMulti(id);
     });
-    document.getElementById('buscar').value='';soloNoFinalizadas=false;soloCriticos=false;actualizarBotonNoFinalizadas();actualizarBotonSoloCriticos();
+    document.getElementById('buscar').value='';soloNoFinalizadas=false;soloCriticos=false;filtroComentarioJerarquiaActivo=null;actualizarChipResumen();actualizarBotonNoFinalizadas();actualizarBotonSoloCriticos();
     filtroResumenActivo=null;regionesCerradas.clear();areasCerradasResumen.clear();actualizarOpcionesEncargadoResumen();
   }
 
@@ -1003,7 +1002,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
  llenarMulti("sRegion",guias.map(x=>x.region),"Todas las regiones",cambiarFiltrosResumen);
     llenarMulti("sArea",(resumenBase.filas||[]).map(x=>x.area),"Todas las áreas",cambiarAreasResumen);
     actualizarOpcionesEncargadoResumen();
-    llenarMulti("sComentarioEncargado",["CON COMENTARIO","SIN COMENTARIO"],"Comentario encargado",cambiarFiltrosResumen);
+    llenarMulti("sComentarioEncargado",["CON COMENTARIO","SIN COMENTARIO"],"Comentario principal · Administrador",cambiarFiltrosResumen);
     llenarMulti("sComentarioPDV",["CON COMENTARIO","SIN COMENTARIO"],"Comentario de gestión · Encargado",cambiarFiltrosResumen);
     actualizarBotonNoFinalizadas();actualizarBotonSoloCriticos();
   }
@@ -1021,7 +1020,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   function aplicarFiltrosResumen(conservarSeleccion){
     const resumenCalculado=construirResumenGuiasCliente(guias.filter(cumpleFiltrosGuiaResumen));
     resumen=soloCriticos?recalcularResumenVisible(resumenCalculado.filas.filter(x=>Number(x.totalCritico||0)>0)):resumenCalculado;
-    if(!conservarSeleccion){filtroResumenActivo=null;gruposComentarioDetalleAbiertos.clear();gruposSubcampo2DetalleAbiertos.clear();gruposSubcampo1DetalleAbiertos.clear();actualizarChipResumen();}
+    if(!conservarSeleccion){filtroResumenActivo=null;actualizarChipResumen();}
     renderResumen();actualizarEstadoFiltrosResumen();filtrar();
   }
 
@@ -1126,20 +1125,18 @@ function aplicarFiltroResumen(pdv,categoria){
  const actuales=seleccionesResumen();
  const nuevas=celdaResumenSeleccionada(pdv,categoria)?actuales.filter(s=>s.pdv!==pdv||s.categoria!==categoria):[...actuales,{pdv,categoria}];
  filtroResumenActivo=nuevas.length?nuevas:null;
- gruposComentarioDetalleAbiertos.clear();gruposSubcampo2DetalleAbiertos.clear();gruposSubcampo1DetalleAbiertos.clear();
  actualizarChipResumen();renderResumen();filtrar();
 }
 function limpiarFiltroResumen(desplazar){
- filtroResumenActivo=null;gruposComentarioDetalleAbiertos.clear();gruposSubcampo2DetalleAbiertos.clear();gruposSubcampo1DetalleAbiertos.clear();actualizarChipResumen();renderResumen();filtrar();
+ filtroResumenActivo=null;actualizarChipResumen();renderResumen();filtrar();
  if(desplazar)document.getElementById('detalleGuiasPanel').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function actualizarChipResumen(){
- const chip=document.getElementById('filtroResumenChip'),seleccion=seleccionesResumen();
- chip.classList.toggle('hidden',!seleccion.length);chip.replaceChildren();
- if(!seleccion.length)return;
- const texto=document.createElement('span');texto.textContent=seleccion.length+' celdas seleccionadas · '+seleccion.map(s=>etiquetaFiltroResumen(s.pdv,s.categoria)).join(' | ');chip.append(texto);
- const limpiar=document.createElement('button');limpiar.type='button';limpiar.textContent='Limpiar selección del resumen';limpiar.onclick=()=>limpiarFiltroResumen(false);chip.append(limpiar);
- const ver=document.createElement('button');ver.type='button';ver.textContent='Ver detalle';ver.onclick=()=>document.getElementById('detalleGuiasPanel').scrollIntoView({behavior:'smooth',block:'start'});chip.append(ver);
+ const chip=document.getElementById('filtroResumenChip'),seleccion=seleccionesResumen(),grupo=filtroComentarioJerarquiaActivo;
+ chip.classList.toggle('hidden',!seleccion.length&&!grupo);chip.replaceChildren();
+ if(seleccion.length){const texto=document.createElement('span');texto.textContent=seleccion.length+' celdas del resumen seleccionadas · '+seleccion.map(s=>etiquetaFiltroResumen(s.pdv,s.categoria)).join(' | ');chip.append(texto);const limpiar=document.createElement('button');limpiar.type='button';limpiar.textContent='Quitar filtro del resumen';limpiar.onclick=()=>limpiarFiltroResumen(false);chip.append(limpiar);}
+ if(grupo){const texto=document.createElement('span');texto.textContent='Comentario encargado: '+(grupo.comentario||'Sin comentario del encargado')+' · '+[grupo.subcampo1,grupo.subcampo2].filter(Boolean).join(' → ');chip.append(texto);const limpiar=document.createElement('button');limpiar.type='button';limpiar.textContent='Quitar comentario';limpiar.onclick=()=>limpiarFiltroComentarioJerarquia(false);chip.append(limpiar);}
+ if(seleccion.length||grupo){const ver=document.createElement('button');ver.type='button';ver.textContent='Ver detalle';ver.onclick=()=>document.getElementById('detalleGuiasPanel').scrollIntoView({behavior:'smooth',block:'start'});chip.append(ver);}
 }
 function coincideFiltroResumen(x){return !seleccionesResumen().length||seleccionesResumen().some(s=>coincideFiltroResumenIndividual(x,s));}
 
@@ -1211,8 +1208,9 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
 
   function filtrar(){const escaneosExportacion=valoresMulti('fEscaneoExportacion');const actualizaciones=valoresMulti('fActualizacion');const escaneosRecientes=valoresMulti("fEscaneo");const regionesGestion=valoresMulti("fRegion");
     const q=document.getElementById("buscar").value.trim().toLowerCase(),areas=valoresMulti("fArea"),encargados=valoresMulti("fEncargado"),pdvs=valoresMulti("fPdv"),estados=valoresMulti("fEstado"),comentarios=valoresMulti("fComentario"),tipos=valoresMulti("fTipo");
-    filtradas=guias.filter(x=>{const textoTipo=String(x.tipo||"").toUpperCase(),estadoComentario=String(x.comentario||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";return coincideListaGuias(x,'gestion')&&coincideEntradaExportacion(x,'fEntrada')&&coincideFechaExportacion(x,'fFechaExportacion')&&(!escaneosExportacion.length||escaneosExportacion.includes(String(x.tipoEscaneoExportacion||"")))&&(!actualizaciones.length||actualizaciones.includes(estadoActualizacionGuia(x)))&&(!escaneosRecientes.length||escaneosRecientes.includes(String(x.tipoEscaneoReciente||"")))&&(!regionesGestion.length||regionesGestion.includes(String(x.region||"")))&&coincideFiltroResumen(x)&&(!q||String(x.guia).toLowerCase().includes(q))&&(!areas.length||areas.includes(String(x.area||"")))&&(!encargados.length||encargados.includes(String(x.encargado||"")))&&(!pdvs.length||pdvs.includes(String(x.pdv||"")))&&(!estados.length||estados.includes(String(x.estado||"").toUpperCase()))&&(!comentarios.length||comentarios.includes(estadoComentario))&&(!tipos.length||tipos.some(t=>textoTipo.includes(t.toUpperCase())));});
-    renderGuias();actualizarTarjetas();
+    filtradasParaResumenComentario=guias.filter(x=>{const textoTipo=String(x.tipo||"").toUpperCase(),estadoComentario=String(x.comentarioGestionEncargado||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";return coincideListaGuias(x,'gestion')&&coincideEntradaExportacion(x,'fEntrada')&&coincideFechaExportacion(x,'fFechaExportacion')&&(!escaneosExportacion.length||escaneosExportacion.includes(String(x.tipoEscaneoExportacion||"")))&&(!actualizaciones.length||actualizaciones.includes(estadoActualizacionGuia(x)))&&(!escaneosRecientes.length||escaneosRecientes.includes(String(x.tipoEscaneoReciente||"")))&&(!regionesGestion.length||regionesGestion.includes(String(x.region||"")))&&coincideFiltroResumen(x)&&(!q||String(x.guia).toLowerCase().includes(q))&&(!areas.length||areas.includes(String(x.area||"")))&&(!encargados.length||encargados.includes(String(x.encargado||"")))&&(!pdvs.length||pdvs.includes(String(x.pdv||"")))&&(!estados.length||estados.includes(String(x.estado||"").toUpperCase()))&&(!comentarios.length||comentarios.includes(estadoComentario))&&(!tipos.length||tipos.some(t=>textoTipo.includes(t.toUpperCase())));});
+    filtradas=filtroComentarioJerarquiaActivo?filtradasParaResumenComentario.filter(coincideFiltroComentarioJerarquia):[...filtradasParaResumenComentario];
+    renderResumenComentarioEncargado();renderGuias();actualizarTarjetas();
   }
 
   function formatearTipo(tipo){
@@ -1250,7 +1248,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function gruposPorComentarioDetalle(filas){
     const mapa=new Map();
     filas.forEach(x=>{
-      const comentario=valorGrupoDetalle(x,"comentario").normalize("NFC").replace(/\s+/g," "),subcampo1=valorGrupoDetalle(x,"subcampo1"),subcampo2=valorGrupoDetalle(x,"subcampo2"),clave="motivo:"+[subcampo1,subcampo2,comentario].map(claveComentarioDetalle).join("|");
+      const comentario=valorGrupoDetalle(x,"comentarioGestionEncargado").normalize("NFC").replace(/\s+/g," "),subcampo1=valorGrupoDetalle(x,"subcampo1"),subcampo2=valorGrupoDetalle(x,"subcampo2"),clave="motivo:"+[subcampo1,subcampo2,comentario].map(claveComentarioDetalle).join("|");
       if(!mapa.has(clave))mapa.set(clave,{clave,comentario,subcampo1,subcampo2,filas:[]});
       mapa.get(clave).filas.push(x);
     });
@@ -1290,53 +1288,55 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
       <td class="action-cell"><button id="guardar-${fila}" class="small" onclick="guardarRevision(${fila})">Guardar revisión</button></td>`;
     return tr;
   }
-  function renderGuias(){actualizarEstadoListaGuias('gestion');
-    const body=document.getElementById("guiasBody"),toolbar=document.getElementById("detalleComentarioToolbar"),resumenComentarios=document.getElementById("detalleComentarioResumen"),agrupar=seleccionesResumen().length>0;enlazarBorradoresRevision();body.replaceChildren();
-    toolbar.classList.toggle("hidden",!agrupar);
-    if(!filtradas.length){if(agrupar)resumenComentarios.textContent="0 Subcampos 1 · 0 Subcampos 2 · 0 motivos · 0 guías";body.innerHTML='<tr><td colspan="12" style="padding:35px;color:#64748b">No se encontraron registros.</td></tr>';actualizarContextoEdicionRevision();actualizarBarraSeleccion();return;}
-    if(!agrupar){filtradas.forEach(x=>body.appendChild(crearFilaGuia(x)));}
-    else{
-      const padres=gruposPorSubcampo1Detalle(filtradas),cantidadSubcampos2=padres.reduce((total,p)=>total+p.subgrupos.length,0),cantidadMotivos=padres.reduce((total,p)=>total+p.subgrupos.reduce((suma,g)=>suma+g.motivos.length,0),0),totalGuias=cantidadGuiasUnicasDetalle(filtradas);
-      resumenComentarios.textContent=padres.length+" Subcampos 1 · "+cantidadSubcampos2+" Subcampos 2 · "+cantidadMotivos+" motivos · "+totalGuias+" guías";
-      padres.forEach(p=>{
-        const abierto=gruposSubcampo1DetalleAbiertos.has(p.clave),tr=document.createElement("tr"),td=document.createElement("td"),linea=document.createElement("div"),seleccionar=document.createElement("input"),boton=document.createElement("button"),flecha=document.createElement("span"),nombre=document.createElement("span"),cantidad=document.createElement("span");
-        tr.className="subcampo1-group-row";td.colSpan=12;linea.className="comment-group-line subcampo1-group-line";boton.type="button";boton.className="comment-group-toggle subcampo1-group-toggle";boton.setAttribute("aria-expanded",String(abierto));
-        const seleccionadasGrupo=p.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;seleccionar.type="checkbox";seleccionar.className="subcampo1-group-check";seleccionar.dataset.subcampoKey=p.clave;seleccionar.checked=seleccionadasGrupo===p.filas.length&&p.filas.length>0;seleccionar.indeterminate=seleccionadasGrupo>0&&seleccionadasGrupo<p.filas.length;seleccionar.setAttribute("aria-checked",seleccionadasGrupo===0?"false":seleccionadasGrupo===p.filas.length?"true":"mixed");seleccionar.setAttribute("aria-label","Seleccionar todas las guías de Subcampo 1: "+p.etiqueta);seleccionar.title="Seleccionar o quitar todas las guías de este Subcampo 1";seleccionar.addEventListener("change",()=>toggleSeleccionGrupoSubcampo1(p.clave,seleccionar.checked));
-        flecha.className="comment-group-arrow";flecha.textContent=abierto?"▾":"▸";nombre.className="comment-group-name";nombre.title="Subcampo 1: "+p.etiqueta;const etiqueta=document.createElement("span");etiqueta.className="comment-group-tag comment-group-tag--one";etiqueta.textContent=p.etiqueta;nombre.appendChild(etiqueta);cantidad.className="comment-group-count";cantidad.textContent=p.cantidadGuias+" guía"+(p.cantidadGuias===1?"":"s");
-        boton.append(flecha,nombre,cantidad,crearIndicadoresCriticosDetalle(p));boton.addEventListener("click",()=>alternarGrupoSubcampo1Detalle(p.clave));linea.append(seleccionar,boton);td.appendChild(linea);tr.appendChild(td);body.appendChild(tr);
-        if(abierto)p.subgrupos.forEach(s2=>{
-          const subcampo2Abierto=gruposSubcampo2DetalleAbiertos.has(s2.clave),filaSubcampo2=document.createElement("tr"),celdaSubcampo2=document.createElement("td"),lineaSubcampo2=document.createElement("div"),seleccionarSubcampo2=document.createElement("input"),botonSubcampo2=document.createElement("button"),flechaSubcampo2=document.createElement("span"),nombreSubcampo2=document.createElement("span"),cantidadSubcampo2=document.createElement("span");
-          filaSubcampo2.className="subcampo2-group-row";celdaSubcampo2.colSpan=12;lineaSubcampo2.className="comment-group-line subcampo2-group-line";botonSubcampo2.type="button";botonSubcampo2.className="comment-group-toggle subcampo2-group-toggle";botonSubcampo2.setAttribute("aria-expanded",String(subcampo2Abierto));
-          const seleccionadasSubcampo2=s2.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;seleccionarSubcampo2.type="checkbox";seleccionarSubcampo2.className="subcampo2-group-check";seleccionarSubcampo2.dataset.subcampo2Key=s2.clave;seleccionarSubcampo2.checked=seleccionadasSubcampo2===s2.filas.length&&s2.filas.length>0;seleccionarSubcampo2.indeterminate=seleccionadasSubcampo2>0&&seleccionadasSubcampo2<s2.filas.length;seleccionarSubcampo2.setAttribute("aria-checked",seleccionadasSubcampo2===0?"false":seleccionadasSubcampo2===s2.filas.length?"true":"mixed");seleccionarSubcampo2.setAttribute("aria-label","Seleccionar todas las guías de Subcampo 2: "+s2.etiqueta);seleccionarSubcampo2.title="Seleccionar o quitar todas las guías de este Subcampo 2";seleccionarSubcampo2.addEventListener("change",()=>toggleSeleccionGrupoSubcampo2(s2.clave,seleccionarSubcampo2.checked));
-          flechaSubcampo2.className="comment-group-arrow subcampo2-group-arrow";flechaSubcampo2.textContent=subcampo2Abierto?"▾":"▸";nombreSubcampo2.className="comment-group-name";nombreSubcampo2.title="Subcampo 2: "+s2.etiqueta;const etiquetaSubcampo2=document.createElement("span");etiquetaSubcampo2.className="comment-group-tag comment-group-tag--two";etiquetaSubcampo2.textContent=s2.etiqueta;nombreSubcampo2.appendChild(etiquetaSubcampo2);cantidadSubcampo2.className="comment-group-count";cantidadSubcampo2.textContent=s2.cantidadGuias+" guía"+(s2.cantidadGuias===1?"":"s");
-          botonSubcampo2.append(flechaSubcampo2,nombreSubcampo2,cantidadSubcampo2,crearIndicadoresCriticosDetalle(s2));botonSubcampo2.addEventListener("click",()=>alternarGrupoSubcampo2Detalle(s2.clave));lineaSubcampo2.append(seleccionarSubcampo2,botonSubcampo2);celdaSubcampo2.appendChild(lineaSubcampo2);filaSubcampo2.appendChild(celdaSubcampo2);body.appendChild(filaSubcampo2);
-          if(subcampo2Abierto)s2.motivos.forEach(g=>{
-            const motivoAbierto=gruposComentarioDetalleAbiertos.has(g.clave),filaMotivo=document.createElement("tr"),celdaMotivo=document.createElement("td"),lineaMotivo=document.createElement("div"),seleccionarMotivo=document.createElement("input"),botonMotivo=document.createElement("button"),flechaMotivo=document.createElement("span"),nombreMotivo=document.createElement("span"),cantidadMotivo=document.createElement("span"),copiar=document.createElement("button");
-            filaMotivo.className="comment-group-row comment-group-row--nested comment-group-row--reason";celdaMotivo.colSpan=12;lineaMotivo.className="comment-group-line comment-group-line--nested comment-group-line--reason";botonMotivo.type="button";botonMotivo.className="comment-group-toggle";botonMotivo.setAttribute("aria-expanded",String(motivoAbierto));
-            const seleccionadasMotivo=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;seleccionarMotivo.type="checkbox";seleccionarMotivo.className="comment-group-check";seleccionarMotivo.dataset.groupKey=g.clave;seleccionarMotivo.checked=seleccionadasMotivo===g.filas.length&&g.filas.length>0;seleccionarMotivo.indeterminate=seleccionadasMotivo>0&&seleccionadasMotivo<g.filas.length;seleccionarMotivo.setAttribute("aria-checked",seleccionadasMotivo===0?"false":seleccionadasMotivo===g.filas.length?"true":"mixed");seleccionarMotivo.setAttribute("aria-label","Seleccionar todas las guías del motivo: "+(g.comentario||"Sin motivo registrado"));seleccionarMotivo.title="Seleccionar o quitar todas las guías de este motivo";seleccionarMotivo.addEventListener("change",()=>toggleSeleccionGrupoComentario(g.clave,seleccionarMotivo.checked));
-            flechaMotivo.className="comment-group-arrow";flechaMotivo.textContent=motivoAbierto?"▾":"▸";nombreMotivo.className="comment-group-name";nombreMotivo.title="Motivo: "+(g.comentario||"Sin motivo registrado");const etiquetaMotivo=document.createElement("span");etiquetaMotivo.className="comment-group-separator";etiquetaMotivo.textContent="Motivo:";const comentario=document.createElement("span");comentario.className="comment-group-free-text";comentario.textContent=g.comentario||"Sin motivo registrado";nombreMotivo.append(etiquetaMotivo,comentario);cantidadMotivo.className="comment-group-count";cantidadMotivo.textContent=g.cantidadGuias+" guía"+(g.cantidadGuias===1?"":"s");
-            botonMotivo.append(flechaMotivo,nombreMotivo,cantidadMotivo,crearIndicadoresCriticosDetalle(g));botonMotivo.addEventListener("click",()=>alternarGrupoComentarioDetalle(g.clave));copiar.type="button";copiar.className="comment-group-copy";copiar.textContent="📋 Copiar";copiar.title="Copiar motivo del encargado";copiar.disabled=!g.comentario;copiar.addEventListener("click",()=>copiarComentarioGrupo(g.comentario));lineaMotivo.append(seleccionarMotivo,botonMotivo,copiar);celdaMotivo.appendChild(lineaMotivo);filaMotivo.appendChild(celdaMotivo);body.appendChild(filaMotivo);
-            if(motivoAbierto)g.filas.forEach(x=>body.appendChild(crearFilaGuia(x)));
-          });
+  function crearCasillaGrupoJerarquia(clase,dataKey,clave,filas,etiqueta,cambiar){
+    const casilla=document.createElement("input"),cantidad=filas.filter(x=>seleccionadas.has(Number(x.fila))).length;
+    casilla.type="checkbox";casilla.className=clase;casilla.dataset[dataKey]=clave;casilla.checked=cantidad===filas.length&&filas.length>0;casilla.indeterminate=cantidad>0&&cantidad<filas.length;
+    casilla.setAttribute("aria-checked",cantidad===0?"false":cantidad===filas.length?"true":"mixed");casilla.setAttribute("aria-label","Seleccionar guías: "+etiqueta);casilla.title="Seleccionar o quitar las guías de este grupo";
+    casilla.addEventListener("change",()=>cambiar(clave,casilla.checked));return casilla;
+  }
+  function crearFilaComentarioJerarquia(g){
+    const activo=filtroComentarioJerarquiaActivo?.clave===g.clave,tr=document.createElement("tr"),celdaComentario=document.createElement("td"),acciones=document.createElement("td"),contenedorAcciones=document.createElement("div"),ver=document.createElement("button"),copiar=document.createElement("button"),brecha=document.createElement("td"),cola=document.createElement("td"),guiasCount=document.createElement("td");
+    tr.className="comment-group-row comment-group-row--reason"+(activo?" comment-group-row--selected":"");
+    const casilla=crearCasillaGrupoJerarquia("comment-group-check","groupKey",g.clave,g.filas,"Comentario encargado: "+(g.comentario||"Sin comentario del encargado"),toggleSeleccionGrupoComentario),celdaCheck=document.createElement("td");celdaCheck.appendChild(casilla);tr.appendChild(celdaCheck);
+    celdaComentario.className="hierarchy-comment-cell";celdaComentario.textContent=g.comentario||"Sin comentario del encargado";celdaComentario.title="Comentario escrito por el encargado";tr.appendChild(celdaComentario);
+    guiasCount.className="number";guiasCount.textContent=num(g.cantidadGuias);tr.appendChild(guiasCount);
+    brecha.className="number";brecha.textContent=num(g.guiasBrechaCritica);brecha.title="Guías con brecha crítica";tr.appendChild(brecha);
+    cola.className="number";cola.textContent=num(g.guiasColaLargaCritica);cola.title="Guías con cola larga crítica";tr.appendChild(cola);
+    contenedorAcciones.className="hierarchy-actions";ver.type="button";ver.className="comment-group-view";ver.textContent=activo?"Mostrando guías":"Ver guías";ver.setAttribute("aria-pressed",String(activo));ver.title="Mostrar las guías de este comentario en el detalle";ver.onclick=()=>seleccionarComentarioJerarquia(g.clave);
+    copiar.type="button";copiar.className="comment-group-copy";copiar.textContent="📋 Copiar";copiar.title="Copiar comentario del encargado";copiar.disabled=!g.comentario;copiar.onclick=()=>copiarComentarioGrupo(g.comentario);contenedorAcciones.append(ver,copiar);acciones.appendChild(contenedorAcciones);tr.appendChild(acciones);return tr;
+  }
+  function renderResumenComentarioEncargado(){
+    const body=document.getElementById("comentarioJerarquiaBody"),resumenEl=document.getElementById("comentarioJerarquiaResumen");if(!body||!resumenEl)return;body.replaceChildren();
+    const padres=gruposPorSubcampo1Detalle(filtradasParaResumenComentario),cantidadSubtipos2=padres.reduce((a,p)=>a+p.subgrupos.length,0),cantidadComentarios=padres.reduce((a,p)=>a+p.subgrupos.reduce((b,s2)=>b+s2.motivos.length,0),0),totalGuias=cantidadGuiasUnicasDetalle(filtradasParaResumenComentario);
+    resumenEl.textContent=padres.length+" Subtipos 1 · "+cantidadSubtipos2+" Subtipos 2 · "+cantidadComentarios+" grupos de comentario · "+totalGuias+" guías";
+    if(!padres.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=8;td.className="comment-hierarchy-empty";td.textContent="No hay guías que coincidan con los filtros actuales.";tr.appendChild(td);body.appendChild(tr);sincronizarCasillasGruposComentario();return;}
+    padres.forEach(p=>{
+      const cantidadFilasPadre=p.subgrupos.reduce((total,s2)=>total+s2.motivos.length,0);let primeraFilaPadre=true;
+      p.subgrupos.forEach(s2=>{let primeraFilaSubtipo2=true;
+        s2.motivos.forEach(g=>{
+          const tr=crearFilaComentarioJerarquia(g);
+          if(primeraFilaPadre){const td=document.createElement("td");td.className="hierarchy-category-cell";td.rowSpan=cantidadFilasPadre;td.textContent=p.etiqueta;tr.insertBefore(td,tr.children[1]);primeraFilaPadre=false;}
+          if(primeraFilaSubtipo2){const td=document.createElement("td");td.className="hierarchy-category-cell";td.rowSpan=s2.motivos.length;td.textContent=s2.etiqueta;tr.insertBefore(td,tr.children[2]);primeraFilaSubtipo2=false;}
+          body.appendChild(tr);
         });
       });
-    }
+    });
+    sincronizarCasillasGruposComentario();
+  }
+  function renderGuias(){actualizarEstadoListaGuias('gestion');
+    const body=document.getElementById("guiasBody");enlazarBorradoresRevision();body.replaceChildren();
+    if(!filtradas.length){body.innerHTML='<tr><td colspan="12" style="padding:35px;color:#64748b">No hay guías para mostrar. Selecciona un comentario en el resumen o ajusta los filtros.</td></tr>';actualizarContextoEdicionRevision();actualizarBarraSeleccion();return;}
+    filtradas.forEach(x=>body.appendChild(crearFilaGuia(x)));
     actualizarContextoEdicionRevision();actualizarBarraSeleccion();
   }
   function sincronizarCasillasGruposComentario(){
-    const grupos=new Map(gruposPorComentarioDetalle(filtradas).map(g=>[g.clave,g])),subcampos2=new Map(gruposPorSubcampo2Detalle(filtradas).map(g=>[g.clave,g])),padres=new Map(gruposPorSubcampo1Detalle(filtradas).map(g=>[g.clave,g]));
-    document.querySelectorAll("#guiasBody .comment-group-check").forEach(casilla=>{const g=grupos.get(casilla.dataset.groupKey);if(!g){casilla.checked=false;casilla.indeterminate=false;return;}const marcadas=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;casilla.checked=marcadas===g.filas.length&&g.filas.length>0;casilla.indeterminate=marcadas>0&&marcadas<g.filas.length;casilla.setAttribute("aria-checked",marcadas===0?"false":marcadas===g.filas.length?"true":"mixed");});
-    document.querySelectorAll("#guiasBody .subcampo2-group-check").forEach(casilla=>{const g=subcampos2.get(casilla.dataset.subcampo2Key);if(!g){casilla.checked=false;casilla.indeterminate=false;return;}const marcadas=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;casilla.checked=marcadas===g.filas.length&&g.filas.length>0;casilla.indeterminate=marcadas>0&&marcadas<g.filas.length;casilla.setAttribute("aria-checked",marcadas===0?"false":marcadas===g.filas.length?"true":"mixed");});
-    document.querySelectorAll("#guiasBody .subcampo1-group-check").forEach(casilla=>{const g=padres.get(casilla.dataset.subcampoKey);if(!g){casilla.checked=false;casilla.indeterminate=false;return;}const marcadas=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;casilla.checked=marcadas===g.filas.length&&g.filas.length>0;casilla.indeterminate=marcadas>0&&marcadas<g.filas.length;casilla.setAttribute("aria-checked",marcadas===0?"false":marcadas===g.filas.length?"true":"mixed");});
+    const grupos=new Map(gruposPorComentarioDetalle(filtradasParaResumenComentario).map(g=>[g.clave,g]));
+    document.querySelectorAll("#comentarioJerarquiaBody .comment-group-check").forEach(casilla=>{const g=grupos.get(casilla.dataset.groupKey);if(!g){casilla.checked=false;casilla.indeterminate=false;return;}const marcadas=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;casilla.checked=marcadas===g.filas.length&&g.filas.length>0;casilla.indeterminate=marcadas>0&&marcadas<g.filas.length;casilla.setAttribute("aria-checked",marcadas===0?"false":marcadas===g.filas.length?"true":"mixed");});
   }
-  function toggleSeleccionGrupoSubcampo1(clave,marcada){const grupo=gruposPorSubcampo1Detalle(filtradas).find(g=>g.clave===clave);if(!grupo)return;grupo.filas.forEach(x=>{const fila=Number(x.fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
-  function toggleSeleccionGrupoSubcampo2(clave,marcada){const grupo=gruposPorSubcampo2Detalle(filtradas).find(g=>g.clave===clave);if(!grupo)return;grupo.filas.forEach(x=>{const fila=Number(x.fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
-  function toggleSeleccionGrupoComentario(clave,marcada){const grupo=gruposPorComentarioDetalle(filtradas).find(g=>g.clave===clave);if(!grupo)return;grupo.filas.forEach(x=>{const fila=Number(x.fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
-  function alternarGrupoSubcampo1Detalle(clave){const grupo=gruposPorSubcampo1Detalle(filtradas).find(g=>g.clave===clave);if(!grupo)return;if(gruposSubcampo1DetalleAbiertos.has(clave)){gruposSubcampo1DetalleAbiertos.delete(clave);grupo.subgrupos.forEach(s2=>{gruposSubcampo2DetalleAbiertos.delete(s2.clave);s2.motivos.forEach(m=>gruposComentarioDetalleAbiertos.delete(m.clave));});}else{gruposSubcampo1DetalleAbiertos.add(clave);grupo.subgrupos.forEach(s2=>gruposSubcampo2DetalleAbiertos.add(s2.clave));}renderGuias();}
-  function alternarGrupoSubcampo2Detalle(clave){const grupo=gruposPorSubcampo2Detalle(filtradas).find(g=>g.clave===clave);if(!grupo)return;if(gruposSubcampo2DetalleAbiertos.has(clave)){gruposSubcampo2DetalleAbiertos.delete(clave);grupo.motivos.forEach(m=>gruposComentarioDetalleAbiertos.delete(m.clave));}else gruposSubcampo2DetalleAbiertos.add(clave);renderGuias();}
-  function alternarGrupoComentarioDetalle(clave){if(gruposComentarioDetalleAbiertos.has(clave))gruposComentarioDetalleAbiertos.delete(clave);else gruposComentarioDetalleAbiertos.add(clave);renderGuias();}
-  function expandirGruposComentarioDetalle(){gruposComentarioDetalleAbiertos.clear();gruposPorSubcampo1Detalle(filtradas).forEach(p=>{gruposSubcampo1DetalleAbiertos.add(p.clave);p.subgrupos.forEach(s2=>gruposSubcampo2DetalleAbiertos.add(s2.clave));});renderGuias();}
-  function contraerGruposComentarioDetalle(){gruposComentarioDetalleAbiertos.clear();gruposSubcampo2DetalleAbiertos.clear();gruposSubcampo1DetalleAbiertos.clear();renderGuias();}
+  function toggleSeleccionGrupoComentario(clave,marcada){const grupo=gruposPorComentarioDetalle(filtradasParaResumenComentario).find(g=>g.clave===clave);if(!grupo)return;grupo.filas.forEach(x=>{const fila=Number(x.fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
+  function seleccionarComentarioJerarquia(clave){const grupo=gruposPorComentarioDetalle(filtradasParaResumenComentario).find(g=>g.clave===clave);if(!grupo)return;filtroComentarioJerarquiaActivo={clave:grupo.clave,subcampo1:grupo.subcampo1,subcampo2:grupo.subcampo2,comentario:grupo.comentario};actualizarChipResumen();filtrar();document.getElementById("detalleGuiasPanel").scrollIntoView({behavior:"smooth",block:"start"});}
+  function coincideFiltroComentarioJerarquia(x){const filtro=filtroComentarioJerarquiaActivo;if(!filtro)return true;return claveComentarioDetalle(x.subcampo1)===claveComentarioDetalle(filtro.subcampo1)&&claveComentarioDetalle(x.subcampo2)===claveComentarioDetalle(filtro.subcampo2)&&claveComentarioDetalle(x.comentarioGestionEncargado)===claveComentarioDetalle(filtro.comentario);}
+  function limpiarFiltroComentarioJerarquia(desplazar){filtroComentarioJerarquiaActivo=null;actualizarChipResumen();filtrar();if(desplazar)document.getElementById("detalleGuiasPanel").scrollIntoView({behavior:"smooth",block:"start"});}
   async function copiarComentarioGrupo(comentario){
     const texto=String(comentario||"").trim();if(!texto){toast("Este grupo no tiene comentario para copiar.",false);return;}
     try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(texto);}else{const auxiliar=document.createElement("textarea");auxiliar.value=texto;auxiliar.style.position="fixed";auxiliar.style.opacity="0";document.body.appendChild(auxiliar);auxiliar.select();const copiado=document.execCommand("copy");auxiliar.remove();if(!copiado)throw new Error("No se pudo copiar el comentario.");}toast("Comentario copiado.",true);}
@@ -1385,7 +1385,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     if(!comentarioGestionEncargadoDisponible||!window.V16GestionComentariosEncargadoApi){toast("Activa el SQL supabase_gestion_v2_comentario_encargado.sql y vuelve a cargar.",false);return;}
     const comentario=el.value.trim();if(comentario.length>2000){toast("El comentario admite hasta 2000 caracteres.",false);return;}
     b.disabled=true;b.textContent="Guardando…";
-    try{const r=await window.V16GestionComentariosEncargadoApi.guardar({guia:x.guia,pdv:x.pdv,area:x.area,region:x.region,comentario,esperadoActualizadoEn:x.comentarioGestionActualizadoEn||null});x.comentarioGestionEncargado=String(r.comentario||"");x.comentarioGestionActualizadoEn=r.actualizado_en||null;borrarCamposBorradorRevision(fila,["comentarioGestionEncargado"]);toast("Comentario de gestión guardado.",true);filtrar();}
+    try{const comentarioAnterior=String(x.comentarioGestionEncargado||""),coincidiaFiltro=!!filtroComentarioJerarquiaActivo&&claveComentarioDetalle(filtroComentarioJerarquiaActivo.subcampo1)===claveComentarioDetalle(x.subcampo1)&&claveComentarioDetalle(filtroComentarioJerarquiaActivo.subcampo2)===claveComentarioDetalle(x.subcampo2)&&claveComentarioDetalle(filtroComentarioJerarquiaActivo.comentario)===claveComentarioDetalle(comentarioAnterior),r=await window.V16GestionComentariosEncargadoApi.guardar({guia:x.guia,pdv:x.pdv,area:x.area,region:x.region,comentario,esperadoActualizadoEn:x.comentarioGestionActualizadoEn||null});x.comentarioGestionEncargado=String(r.comentario||"");x.comentarioGestionActualizadoEn=r.actualizado_en||null;if(coincidiaFiltro)filtroComentarioJerarquiaActivo={clave:"motivo:"+[x.subcampo1,x.subcampo2,x.comentarioGestionEncargado].map(claveComentarioDetalle).join("|"),subcampo1:String(x.subcampo1||""),subcampo2:String(x.subcampo2||""),comentario:x.comentarioGestionEncargado};actualizarChipResumen();borrarCamposBorradorRevision(fila,["comentarioGestionEncargado"]);toast("Comentario de gestión guardado.",true);filtrar();}
     catch(e){toast(errorTexto(e),false);}
     finally{const actual=document.getElementById("guardar-comentario-gestion-"+fila);if(actual){actual.disabled=false;actual.textContent="Guardar comentario";}}
   }
@@ -1407,7 +1407,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     }catch(e){mostrarLoading(false);toast("No se pudo generar el Excel combinado: "+(e.message||String(e)),false);}
     finally{if(boton)boton.disabled=false;}
   }
-  function limpiarFiltros(){limpiarListaGuias('gestion',false);limpiarEntradaExportacion('fEntrada',false);limpiarFechaExportacion('fFechaExportacion',false);limpiarFiltroExcelMultiple('fEscaneoExportacion');limpiarFiltroExcelMultiple('fActualizacion');document.querySelectorAll("#fEscaneoMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fEscaneo");document.querySelectorAll("#fRegionMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fRegion");document.getElementById("buscar").value="";["fArea","fEncargado","fPdv","fEstado","fComentario","fTipo"].forEach(id=>{document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti(id);});filtroResumenActivo=null;gruposComentarioDetalleAbiertos.clear();gruposSubcampo2DetalleAbiertos.clear();gruposSubcampo1DetalleAbiertos.clear();actualizarChipResumen();renderResumen();cerrarMultis();filtrar();}
+function limpiarFiltros(){limpiarListaGuias('gestion',false);limpiarEntradaExportacion('fEntrada',false);limpiarFechaExportacion('fFechaExportacion',false);limpiarFiltroExcelMultiple('fEscaneoExportacion');limpiarFiltroExcelMultiple('fActualizacion');document.querySelectorAll("#fEscaneoMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fEscaneo");document.querySelectorAll("#fRegionMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fRegion");document.getElementById("buscar").value="";["fArea","fEncargado","fPdv","fEstado","fComentario","fTipo"].forEach(id=>{document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti(id);});filtroResumenActivo=null;filtroComentarioJerarquiaActivo=null;actualizarChipResumen();renderResumen();cerrarMultis();filtrar();}
   function actualizarTarjetas(){document.getElementById("totalGuias").textContent=filtradas.length;document.getElementById("pendientes").textContent=filtradas.filter(x=>estado(x)==="PENDIENTE").length;document.getElementById("proceso").textContent=filtradas.filter(x=>estado(x)==="EN PROCESO").length;document.getElementById("finalizados").textContent=filtradas.filter(x=>estado(x)==="FINALIZADO").length;}
   function estado(x){return String(x.estado||"PENDIENTE").trim().toUpperCase()}
   function claseEstado(v){v=String(v||"").toUpperCase();return v==="FINALIZADO"?"finalizado":v==="EN PROCESO"?"proceso":"pendiente";}

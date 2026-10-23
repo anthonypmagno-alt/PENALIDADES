@@ -1,0 +1,11 @@
+Gestión de Guías V2: resumen tabular por comentario del encargado
+
+- Se separó la jerarquía de comentarios del detalle de guías.
+- Antes del detalle se muestra una tabla agrupada por Subtipo 1, Subtipo 2 y comentario de gestión escrito por el Encargado.
+- Las celdas de Subtipo 1 y Subtipo 2 se combinan verticalmente para evitar repetir el mismo valor y quedan centradas.
+- La tabla muestra guías, brecha crítica y cola larga crítica por comentario.
+- Cada fila permite seleccionar sus guías, copiar el comentario y filtrar el detalle con el botón “Ver guías”.
+- El detalle muestra las guías en filas independientes. El chip del detalle permite retirar el filtro del comentario seleccionado.
+- El resumen conserva los filtros generales de Gestión V2.
+
+No se requiere ejecutar SQL adicional. La tabla usa el comentario de gestión del Encargado guardado por la migración supabase_gestion_v2_comentario_encargado.sql.

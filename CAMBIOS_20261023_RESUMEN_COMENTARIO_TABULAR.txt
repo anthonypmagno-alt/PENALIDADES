@@ -4,6 +4,8 @@ Gestión de Guías V2: resumen tabular por comentario del Administrador
 - Antes del detalle se muestra una tabla agrupada por Subtipo 1, Subtipo 2 y comentario registrado por el Administrador.
 - Las celdas de Subtipo 1 y Subtipo 2 se combinan verticalmente y quedan centradas.
 - La tabla muestra guías, brecha crítica y cola larga crítica por comentario.
+- Se añadieron subtotales por Subtipo 2, totales por Subtipo 1 y un total general.
+- Los totales cuentan guías únicas y muestran por separado brecha crítica y cola larga crítica.
 - Cada fila permite seleccionar sus guías, copiar el comentario del Administrador y filtrar el detalle con el botón “Ver guías”.
 - El detalle muestra las guías en filas independientes. El chip del detalle permite retirar el filtro del comentario seleccionado.
 - El resumen conserva los filtros generales de Gestión V2.

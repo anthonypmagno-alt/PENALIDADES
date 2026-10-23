@@ -1,0 +1,5 @@
+GESTIÓN DE GUÍAS V2 · COLUMNA PREVENTIVA EN RESUMEN POR COMENTARIO
+
+Se añadió la columna PREVENTIVA al resumen tabular por Subtipo 1, Subtipo 2 y comentario administrador. Cuenta guías únicas en cualquiera de estos rangos: brecha preventiva 96 a menos de 120 horas y cola larga preventiva 576 a menos de 600 horas. Si una guía coincide con ambos rangos, se cuenta una sola vez en esa columna.
+
+La columna se incluye en los subtotales por Subtipo 2, los totales por Subtipo 1 y el total general. Se renovó la versión de caché. No requiere SQL.

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=gestion-v2-preventivo-24h-20261023-2"></script>
+<script src="./bridge.js?v=gestion-v2-fixes-20261023-2"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -983,7 +983,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   function actualizarEstadoComentarioGestion(error){
     const el=document.getElementById("comentarioGestionEstado");if(!el)return;
     if(comentarioGestionEncargadoDisponible){el.className="source-note";el.textContent="Comentario encargado · Administrador: solo lectura para el encargado. Comentario de gestión · Encargado: campo independiente por guía y PDV.";return;}
-    el.className="source-note warning";el.textContent="No se pudieron cargar los comentarios de gestión del encargado. Ejecuta una vez supabase_gestion_v2_comentario_encargado.sql y recarga la página."+(error?" Detalle: "+error:"");
+    el.className="source-note warning";el.textContent="No se pudieron cargar los comentarios de gestión del encargado. Verifica la instalación de supabase_gestion_v2_comentario_encargado.sql y los permisos de la cuenta."+(error?" Detalle: "+error:"");
   }
 
   function enfocarResumenImportado(regiones){
@@ -1318,9 +1318,9 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
       const cantidadFilasPadre=p.subgrupos.reduce((total,s2)=>total+s2.motivos.length+1,0);let primeraFilaPadre=true;
       p.subgrupos.forEach(s2=>{let primeraFilaSubtipo2=true;
         s2.motivos.forEach(g=>{
-          const tr=crearFilaComentarioJerarquia(g);
+          const tr=crearFilaComentarioJerarquia(g),indiceSubtipo2=primeraFilaPadre?2:1;
           if(primeraFilaPadre){const td=document.createElement("td");td.className="hierarchy-category-cell";td.rowSpan=cantidadFilasPadre;td.textContent=p.etiqueta;tr.insertBefore(td,tr.children[1]);primeraFilaPadre=false;}
-          if(primeraFilaSubtipo2){const td=document.createElement("td");td.className="hierarchy-category-cell";td.rowSpan=s2.motivos.length;td.textContent=s2.etiqueta;tr.insertBefore(td,tr.children[2]);primeraFilaSubtipo2=false;}
+          if(primeraFilaSubtipo2){const td=document.createElement("td");td.className="hierarchy-category-cell";td.rowSpan=s2.motivos.length;td.textContent=s2.etiqueta;tr.insertBefore(td,tr.children[indiceSubtipo2]);primeraFilaSubtipo2=false;}
           body.appendChild(tr);
         });
         body.appendChild(crearFilaSubtotalJerarquia("Subtotal Subtipo 2 · "+s2.etiqueta,s2.filas,"comment-hierarchy-subtotal--subtipo2",2));

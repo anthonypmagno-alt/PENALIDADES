@@ -1,0 +1,5 @@
+GESTIÓN DE GUÍAS V2 · RESUMEN POR COMENTARIO
+
+Se corrigió la posición del Subtipo 2 en las filas que siguen a un Subtipo 1 combinado mediante rowspan. Algunos grupos aparecían desplazados entre las columnas Subtipo 2 y Comentario administrador. Ahora cada campo permanece alineado en su columna.
+
+Se renovó la versión de caché para publicar la corrección y se mantiene incluido el arreglo anterior del nombre de función de comentarios. No requiere SQL.

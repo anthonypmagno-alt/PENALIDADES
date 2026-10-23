@@ -1,0 +1,5 @@
+GESTIÓN DE GUÍAS V2 · CORRECCIÓN DE COMENTARIOS DEL ENCARGADO
+
+Se corrigió el error “Wc is not a function” que impedía cargar los comentarios. El nombre de una función propia coincidía con una variable interna incluida en la biblioteca de Supabase; se renombró para eliminar el conflicto.
+
+No requiere ejecutar nuevamente el SQL si ya se instaló correctamente. También se mejoró el aviso para que indique revisar la instalación y los permisos sin asumir que falta ejecutar el script. Se renovó la versión de caché de bridge.js.

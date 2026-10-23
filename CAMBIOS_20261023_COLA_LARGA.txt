@@ -1,12 +1,21 @@
-GESTIÓN DE GUÍAS V2 — CARGA DE COLA LARGA
+GESTIÓN DE GUÍAS V2 — CORRECCIÓN DE CATEGORIZACIÓN DE COLA LARGA
 
-Corrección 23/10/2026
+Actualización 23/10/2026
 
-- Los rangos de Cola Larga se calculan con Tiempo de Entrada (columna B) de cada fila del archivo cargado.
-- La fecha queda guardada por caso de guía/PDV; no depende de que Exportación de guías tenga la misma fecha ni de que exista allí una coincidencia.
-- Exportación de guías sigue aportando destino, datos de escaneo y firma.
-- Se valida que el archivo contenga Tiempo de Entrada para evitar omitir registros silenciosamente.
-- Para las guías marcadas 120 o 168 H, el grupo comprende desde 120 hasta menos de 588 horas.
-- De 588 a menos de 600 horas se muestra el rango preventivo; desde 600 horas se muestra como crítico.
-- Los registros marcados 360H que todavía no llegan a 588 horas continúan fuera de los grupos actuales.
-- Se actualizó la versión de bridge.js en los módulos web para evitar que el navegador reutilice el archivo anterior en caché.
+- El cálculo de edad usa la columna B, “Tiempo de Entrada 录入时间”, de cada fila del archivo Cola Larga.
+- El proceso guarda esa fecha junto con cada caso guía/PDV. Ya no depende de Exportación de guías para encontrar la fecha.
+- Cada guía se clasifica por las horas transcurridas desde su propia fecha de entrada, sin excluir filas por el tipo original indicado en “Tipo de Cola Larga”:
+  • 120 a menos de 588 horas.
+  • 588 a menos de 600 horas: preventivo.
+  • 600 horas o más: crítico.
+- El resumen ahora suma los dos rangos de devolución de la categoría preventiva y los incluye en el total general.
+- El rótulo del primer rango se actualizó a “120 a <588 H” para dejar claro que clasifica por tiempo transcurrido, incluso cuando el archivo fuente etiqueta la fila como 360H o 720H.
+- Se agregó una versión nueva a las URL de bridge.js y process-worker.js para evitar que el navegador conserve los scripts anteriores en caché.
+
+PUBLICACIÓN Y RECARGA DE DATOS
+
+1. Reemplaza el contenido del repositorio por el contenido completo de este ZIP y espera a que GitHub Pages termine de publicar.
+2. Abre Gestión de guías V2 y vuelve a cargar el archivo Cola Larga. Este paso es necesario para guardar la columna B junto a cada guía; los registros guardados por versiones anteriores no contienen esa fecha por fila.
+3. Completa “Guardar cambios” si el portal lo solicita y luego actualiza el módulo. No requiere ejecutar SQL en Supabase.
+
+Validación con el archivo de prueba: la hoja CL CENTRO tiene 1,232 guías únicas. Con hora de corte 23/10/2026 22:00 (Perú), las 1,232 quedaron clasificadas: 1,164 entre 120 y <588 horas, 12 entre 588 y <600 horas y 56 desde 600 horas. No quedaron guías sin fecha ni sin estado de devolución.

@@ -1,0 +1,8 @@
+GESTIÓN DE GUÍAS V2 · TOTAL PREVENTIVO + CRÍTICO
+
+- Se agregó en los resúmenes por PDV, junto a TOTAL CRÍTICO, la columna TOTAL PREVENTIVOS + CRÍTICOS.
+- El valor suma los cuatro rangos preventivos (dos de Cola Larga y dos de Brecha) y los cuatro rangos críticos.
+- Al seleccionar la celda, el detalle filtra las guías que tienen al menos un caso preventivo o crítico en ese PDV.
+- Los subtotales de área/región y el total general incluyen la nueva columna.
+- Se corrigió el resumen del perfil PDV para que cuente también los rangos preventivos de Brecha (96 a <120 H).
+- Se actualizó la versión de caché de las páginas V2 y del bridge. No requiere ejecutar SQL.

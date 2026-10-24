@@ -312,10 +312,57 @@
     return archivos;
   }
 
-  function generarLibroDesdeTabla(tablaResumen, detalle) {
+  function agregarEstilosResumenSubtipos(stylesXml) {
+    let xml = stylesXml;
+    const fonts = Number((xml.match(/<fonts count="(\d+)">/) || [])[1]);
+    const fills = Number((xml.match(/<fills count="(\d+)">/) || [])[1]);
+    const borders = Number((xml.match(/<borders count="(\d+)">/) || [])[1]);
+    const xfs = Number((xml.match(/<cellXfs count="(\d+)">/) || [])[1]);
+    if (![fonts, fills, borders, xfs].every(Number.isFinite)) throw new Error("No se pudieron preparar los estilos del Excel.");
+
+    const nuevosFont = `<font><b/><color rgb="FFFFFFFF"/><sz val="10"/><name val="Arial"/><family val="2"/></font><font><b/><color rgb="FF153E67"/><sz val="10"/><name val="Arial"/><family val="2"/></font>`;
+    const nuevosFill = `<fill><patternFill patternType="solid"><fgColor rgb="FF153E67"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE2E8F0"/><bgColor indexed="64"/></patternFill></fill>`;
+    const nuevoBorder = `<border><left style="thin"><color rgb="FFCBD5E1"/></left><right style="thin"><color rgb="FFCBD5E1"/></right><top style="thin"><color rgb="FFCBD5E1"/></top><bottom style="thin"><color rgb="FFCBD5E1"/></bottom><diagonal/></border>`;
+    const nuevosXfs = `<xf numFmtId="0" fontId="${fonts}" fillId="${fills}" borderId="${borders}" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="${fonts + 1}" fillId="${fills + 1}" borderId="${borders}" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>`;
+
+    xml = xml.replace(`<fonts count="${fonts}">`, `<fonts count="${fonts + 2}">`).replace("</fonts>", `${nuevosFont}</fonts>`);
+    xml = xml.replace(`<fills count="${fills}">`, `<fills count="${fills + 2}">`).replace("</fills>", `${nuevosFill}</fills>`);
+    xml = xml.replace(`<borders count="${borders}">`, `<borders count="${borders + 1}">`).replace("</borders>", `${nuevoBorder}</borders>`);
+    xml = xml.replace(`<cellXfs count="${xfs}">`, `<cellXfs count="${xfs + 2}">`).replace("</cellXfs>", `${nuevosXfs}</cellXfs>`);
+    return { xml, headerStyle: xfs, subtotalStyle: xfs + 1 };
+  }
+
+  function crearHojaResumenSubtiposXml(datos, estilos) {
+    const encabezados = datos?.encabezados || [];
+    const filas = datos?.filas || [];
+    if (!encabezados.length) throw new Error("No se definieron las columnas del resumen por subtipos.");
+    const matriz = [{ tipo: "encabezado", valores: encabezados }, ...filas];
+    if (matriz.length > 1048576) throw new Error("El resumen por subtipos supera el límite de filas de Excel.");
+    const columnas = encabezados.length;
+    const filasXml = matriz.map((fila, idx) => {
+      const filaNumero = idx + 1;
+      const valores = fila.valores || [];
+      const estilo = fila.tipo === "encabezado" ? estilos.headerStyle : fila.tipo === "subtotal" || fila.tipo === "total" ? estilos.subtotalStyle : null;
+      const celdas = Array.from({ length: columnas }, (_, col) => {
+        const valor = valores[col], ref = `${nombreColumna(col + 1)}${filaNumero}`, estiloAttr = estilo == null ? "" : ` s="${estilo}"`;
+        if (valor == null || valor === "") return `<c r="${ref}"${estiloAttr}/>`;
+        if (typeof valor === "number" && Number.isFinite(valor)) return `<c r="${ref}"${estiloAttr}><v>${valor}</v></c>`;
+        return `<c r="${ref}"${estiloAttr} t="inlineStr"><is><t xml:space="preserve">${escaparXml(valor)}</t></is></c>`;
+      }).join("");
+      const alto = fila.tipo === "encabezado" ? 32 : fila.tipo === "subtotal" || fila.tipo === "total" ? 23 : 20;
+      return `<row r="${filaNumero}" ht="${alto}" customHeight="1">${celdas}</row>`;
+    }).join("");
+    const anchosXml = (datos.anchos || encabezados.map(() => 18)).map((ancho, idx) => `<col min="${idx + 1}" max="${idx + 1}" width="${Math.max(8, Math.min(60, Number(ancho) || 18)).toFixed(2)}" customWidth="1"/>`).join("");
+    const ultimaColumna = nombreColumna(columnas), ultimaFila = matriz.length;
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${ultimaColumna}${ultimaFila}"/><sheetViews><sheetView showGridLines="0" workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${anchosXml}</cols><sheetData>${filasXml}</sheetData><autoFilter ref="A1:${ultimaColumna}${ultimaFila}"/><printOptions gridLines="0"/><pageMargins left="0.25" right="0.25" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+  }
+
+  function generarLibroDesdeTabla(tablaResumen, detalle, resumenSubtipos) {
     const encabezados = detalle?.encabezados || [], registros = detalle?.filas || [];
     if (!encabezados.length) throw new Error("No se definieron las columnas del detalle.");
+    if (!resumenSubtipos?.encabezados?.length) throw new Error("No se definieron las columnas del resumen por Subtipo 1 y Subtipo 2.");
     const resumen = leerZipXlsx(generarDesdeTabla(tablaResumen));
+    const estilos = agregarEstilosResumenSubtipos(resumen.get("xl/styles.xml"));
     const filasDetalle = [{ altoPx: 34, celdas: encabezados.map(texto => ({ texto: String(texto ?? "") })) }];
     registros.forEach(registro => filasDetalle.push({ altoPx: 30, celdas: registro.map(texto => ({ texto: String(texto ?? "") })) }));
     const anchosDetalle = detalle.anchos || encabezados.map(() => 22);
@@ -325,21 +372,22 @@
 
     const contenido = resumen.get("[Content_Types].xml").replace(
       '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>',
-      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
     );
     const libro = resumen.get("xl/workbook.xml").replace(
       '<sheets><sheet name="Resumen V2" sheetId="1" r:id="rId1"/></sheets>',
-      '<sheets><sheet name="Resumen V2" sheetId="1" r:id="rId1"/><sheet name="Detalle" sheetId="2" r:id="rId2"/></sheets>'
+      '<sheets><sheet name="Resumen V2" sheetId="1" r:id="rId1"/><sheet name="Resumen subtipos" sheetId="2" r:id="rId2"/><sheet name="Detalle guías" sheetId="3" r:id="rId3"/></sheets>'
     );
-    const relaciones = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+    const relaciones = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
     return zipSinCompresion([
       { nombre: "[Content_Types].xml", contenido },
       { nombre: "_rels/.rels", contenido: resumen.get("_rels/.rels") },
       { nombre: "xl/workbook.xml", contenido: libro },
       { nombre: "xl/_rels/workbook.xml.rels", contenido: relaciones },
-      { nombre: "xl/styles.xml", contenido: resumen.get("xl/styles.xml") },
+      { nombre: "xl/styles.xml", contenido: estilos.xml },
       { nombre: "xl/worksheets/sheet1.xml", contenido: resumen.get("xl/worksheets/sheet1.xml") },
-      { nombre: "xl/worksheets/sheet2.xml", contenido: detalleXml }
+      { nombre: "xl/worksheets/sheet2.xml", contenido: crearHojaResumenSubtiposXml(resumenSubtipos, estilos) },
+      { nombre: "xl/worksheets/sheet3.xml", contenido: detalleXml }
     ]);
   }
 

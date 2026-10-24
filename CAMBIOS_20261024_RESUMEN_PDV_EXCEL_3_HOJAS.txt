@@ -1,0 +1,9 @@
+GESTIÓN DE GUÍAS V2 · RESUMEN AGRUPADO POR PDV Y EXCEL DE 3 HOJAS
+
+- El resumen por Subtipo 1, Subtipo 2 y comentario del administrador ahora tiene un botón para ocultarlo o mostrarlo.
+- Los comentarios se presentan agrupados por PDV; cada PDV se puede expandir o contraer por separado.
+- Cada grupo PDV conserva sus subtotales de Subtipo 2, totales de Subtipo 1, total PDV y total general, junto con los recuentos preventiva, brecha crítica y cola larga crítica.
+- El botón Excel genera un libro con tres pestañas: Resumen V2 habitual, Resumen subtipos agrupado por PDV y Detalle de guías.
+- La segunda pestaña conserva las columnas PDV, Subtipo 1, Subtipo 2, comentario del administrador y recuentos. Incluye subtotales por Subtipo 2 y Subtipo 1, total por PDV y total general.
+- La exportación respeta los filtros actuales y el detalle mantiene las guías visibles.
+- No requiere ejecutar SQL. Reemplace los archivos de la publicación con el ZIP completo y vuelva a cargar la página.

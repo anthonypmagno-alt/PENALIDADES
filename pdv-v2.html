@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=gestion-v2-fixes-20261023-3"></script>
+<script src="./bridge.js?v=gestion-v2-fixes-20261024-total-prev-crit-1"></script>
   <base target="_top">
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Gestión de guías V2</title>
@@ -175,7 +175,13 @@
 .excel-qr-cost-summary td.num{text-align:right;font-variant-numeric:tabular-nums}
 .excel-qr-cost-summary tfoot td{background:#dbeafe;font-weight:800}
 @media print{body.imprimiendo-qr .excel-qr-cost-summary{display:block!important;margin:0 0 8mm!important;padding:0!important;border:0!important;background:#fff!important;break-after:page;page-break-after:always}body.imprimiendo-qr .excel-qr-cost-summary h4{font-size:14pt}body.imprimiendo-qr .excel-qr-cost-summary p{font-size:9pt}body.imprimiendo-qr .excel-qr-cost-summary th,body.imprimiendo-qr .excel-qr-cost-summary td{font-size:9pt;padding:2mm}body.imprimiendo-qr .excel-qr-cost-summary table{min-width:0!important}body.imprimiendo-qr .excel-qr-cost-summary th{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-</style><style>#tablaResumenV2 thead th.preventive-column{background:#dcfce7!important;color:#166534!important}#tablaResumenV2 tbody td.preventive-cell{background:#f0fdf4!important;color:#166534!important;font-weight:800}</style></head>
+</style><style>#tablaResumenV2 thead th.preventive-column{background:#dcfce7!important;color:#166534!important}#tablaResumenV2 tbody td.preventive-cell{background:#f0fdf4!important;color:#166534!important;font-weight:800}
+.summary-table .summary-preventive-critical{background:#fef3c7!important;color:#92400e!important;font-weight:900}
+.summary-table thead th.summary-preventive-critical{background:#f59e0b!important;color:#1f2937!important}
+.summary-table tbody td.summary-preventive-critical.summary-selected{background:#93c5fd!important;color:#0f3d7a!important}
+.summary-table tbody tr.summary-row-active td.summary-preventive-critical:not(.summary-selected){background:#fde68a!important;color:#78350f!important}
+.summary-table tbody tr.area-subtotal-nested td.summary-preventive-critical,.summary-table tbody tr.region-subtotal td.summary-preventive-critical{background:#fef3c7!important;color:#92400e!important}
+</style></head>
 <body>
   <section id="login" class="login"><div class="login-card">
     <div class="icon">🏪</div><h1>Portal PDV</h1><p>Consulta y respuesta de casos asignados a su punto de venta</p>
@@ -191,9 +197,9 @@
       <div id="viewGestion" class="app-view">
       <div class="cards"><div class="card"><b id="total">0</b><span>Total</span></div><div class="card"><b id="pendientes">0</b><span>Pendientes</span></div><div class="card"><b id="proceso">0</b><span>En proceso</span></div><div class="card"><b id="finalizados">0</b><span>Finalizados</span></div></div>
 
-      <section class="panel"><div class="panel-title">Resumen de Brecha y Cola Larga <span class="readonly-note">SOLO LECTURA</span></div><div class="resumen-imagen-toolbar"><button type="button" class="secondary" id="btnImagenResumen" onclick="descargarImagenResumen()">Descargar imagen del resumen</button><small>PNG · Filtros y grupos desplegados actuales</small><span id="estadoImagenResumen" role="status"></span><a id="enlaceImagenResumen" hidden="">Descargar PNG</a></div><div id="gestionV2Status" style="padding: 12px; background: rgb(239, 246, 255); color: rgb(30, 64, 175); border-radius: 8px; margin: 12px 0px;">Gestión de guías V2 · Fuentes y comentarios compartidos con Gestión actual. Clasificación calculada cada minuto.</div><div class="table-wrap"><table class="summary-table" id="tablaResumenV2"><colgroup><col style="width:10%"><col style="width:6%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5%"><col style="width:6%"><col style="width:5%"><col style="width:2%"></colgroup>
+      <section class="panel"><div class="panel-title">Resumen de Brecha y Cola Larga <span class="readonly-note">SOLO LECTURA</span></div><div class="resumen-imagen-toolbar"><button type="button" class="secondary" id="btnImagenResumen" onclick="descargarImagenResumen()">Descargar imagen del resumen</button><small>PNG · Filtros y grupos desplegados actuales</small><span id="estadoImagenResumen" role="status"></span><a id="enlaceImagenResumen" hidden="">Descargar PNG</a></div><div id="gestionV2Status" style="padding: 12px; background: rgb(239, 246, 255); color: rgb(30, 64, 175); border-radius: 8px; margin: 12px 0px;">Gestión de guías V2 · Fuentes y comentarios compartidos con Gestión actual. Clasificación calculada cada minuto.</div><div class="table-wrap"><table class="summary-table" id="tablaResumenV2"><colgroup><col style="width:10%"><col style="width:6%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:5%"><col style="width:5%"><col style="width:7%"><col style="width:5%"><col style="width:5%"></colgroup>
         
-        <thead><tr><th rowspan="3">PDV</th><th rowspan="3">DESPACHOS AYER</th><th colspan="6">COLA LARGA</th><th colspan="6">BRECHA DE TRAZABILIDAD</th><th rowspan="3">TOTAL</th><th rowspan="3" class="summary-critical">TOTAL CRÍTICO</th><th rowspan="3">GUÍAS ÚNICAS</th><th rowspan="3">💬</th></tr><tr><th colspan="3">No devuelto</th><th colspan="3">Por devolver</th><th colspan="3">En el PDV</th><th colspan="3">No llegados al PDV</th></tr><tr><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th></tr></thead>
+        <thead><tr><th rowspan="3">PDV</th><th rowspan="3">DESPACHOS AYER</th><th colspan="6">COLA LARGA</th><th colspan="6">BRECHA DE TRAZABILIDAD</th><th rowspan="3">TOTAL</th><th rowspan="3" class="summary-critical">TOTAL CRÍTICO</th><th rowspan="3" class="summary-preventive-critical" title="Suma de los casos preventivos y críticos">PREVENTIVOS<br>+ CRÍTICOS</th><th rowspan="3">GUÍAS ÚNICAS</th><th rowspan="3">💬</th></tr><tr><th colspan="3">No devuelto</th><th colspan="3">Por devolver</th><th colspan="3">En el PDV</th><th colspan="3">No llegados al PDV</th></tr><tr><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th></tr></thead>
         <tbody id="resumenBody"></tbody>
       </table></div></section>
 
@@ -236,7 +242,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
   let excelRegistros=[],excelFiltrados=[],excelPagina=1,excelTrackNombre="",excelEnvioNombre="";
   const EXCEL_PAGE_SIZE=100,EXCEL_MAX_BYTES=30*1024*1024;
   const seleccionadas=new Set();
-  const ETIQUETAS_RESUMEN={h120o168:"Cola Larga · 120 o 168H",h360NoDevuelto:"Cola Larga · 360H · No Devuelto",h360PorDevolver:"Cola Larga · 360H · Por Devolver",h720NoDevuelto:"Cola Larga · 720H · No Devuelto",h720PorDevolver:"Cola Larga · 720H · Por Devolver",brecha48NoLlegado:"Brecha · 48 a 120H · No llegados al PDV",brecha120NoLlegado:"Brecha · 120 a 144H · No llegados al PDV",brecha48a120:"Brecha · 48 a 120H",brecha120a144:"Brecha · 120 a 144H",mayor144EnPDV:"Brecha · >144H · En el PDV",mayor144NoLlegado:"Brecha · >144H · No llegado al PDV",totalCasos:"Total de casos",totalCritico:"Total crítico",guiasUnicas:"Guías únicas"};
+  const ETIQUETAS_RESUMEN={h120o168:"Cola Larga · 120 o 168H",h360NoDevuelto:"Cola Larga · 360H · No Devuelto",h360PorDevolver:"Cola Larga · 360H · Por Devolver",h720NoDevuelto:"Cola Larga · 720H · No Devuelto",h720PorDevolver:"Cola Larga · 720H · Por Devolver",brecha48NoLlegado:"Brecha · 48 a 120H · No llegados al PDV",brecha120NoLlegado:"Brecha · 120 a 144H · No llegados al PDV",brecha48a120:"Brecha · 48 a 120H",brecha120a144:"Brecha · 120 a 144H",mayor144EnPDV:"Brecha · >144H · En el PDV",mayor144NoLlegado:"Brecha · >144H · No llegado al PDV",totalCasos:"Total de casos",totalCritico:"Total crítico",totalPreventivoCritico:"Total de casos preventivos + críticos",guiasUnicas:"Guías únicas"};
   document.addEventListener("DOMContentLoaded",restaurarSesion);
   document.addEventListener("click",cerrarMultis);
 const excelSeleccion = new Set();
@@ -457,7 +463,7 @@ function actualizarChipResumen(){
 }
 function coincideFiltroResumen(x){return !seleccionesResumen().length||seleccionesResumen().some(s=>coincideFiltroResumenIndividual(x,s));}
 
-function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;if(String(x.fr||"").trim().toUpperCase().replace(/\s+/g,"")==="TRUE-TRUE")return false;const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],pdv=seleccion.pdv,categoria=seleccion.categoria,criticas=["h720NoDevuelto","h720PorDevolver","mayor144EnPDV","mayor144NoLlegado"];return casos.some(c=>{if(pdv&&String(c.pdv||"")!==pdv)return false;const tipo=String(c.categoria||"");if(!categoria||categoria==="totalCasos"||categoria==="guiasUnicas")return true;if(categoria==="totalCritico")return criticas.includes(tipo);return tipo===categoria||(categoria==="mayor144NoLlegado"&&tipo==="brecha144a168NoLlegado")})}
+function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;if(String(x.fr||"").trim().toUpperCase().replace(/\s+/g,"")==="TRUE-TRUE")return false;const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],pdv=seleccion.pdv,categoria=seleccion.categoria,criticas=["h720NoDevuelto","h720PorDevolver","mayor144EnPDV","mayor144NoLlegado"],preventivasCriticas=CATEGORIAS_PREVENTIVO_CRITICO_V2;return casos.some(c=>{if(pdv&&String(c.pdv||"")!==pdv)return false;const tipo=String(c.categoria||"");if(!categoria||categoria==="totalCasos"||categoria==="guiasUnicas")return true;if(categoria==="totalCritico")return criticas.includes(tipo);if(categoria==="totalPreventivoCritico")return preventivasCriticas.includes(tipo);return tipo===categoria||(categoria==="mayor144NoLlegado"&&tipo==="brecha144a168NoLlegado")})}
 
 
   function cargarFiltrosPDV(){llenarMulti("fEscaneoExportacion",guias.map(x=>x.tipoEscaneoExportacion),"Todos los escaneos (Exportación)");llenarMulti("fEscaneo",guias.map(x=>x.tipoEscaneoReciente),"Todos los escaneos recientes");llenarMulti("fRegion",guias.map(x=>x.region),"Todas las regiones");const tipos=[];guias.forEach(x=>String(x.tipo||"").split(/\n+/).map(v=>v.trim()).filter(Boolean).forEach(v=>tipos.push(v)));llenarMulti("fEstado",["PENDIENTE","EN PROCESO","FINALIZADO"],"Todos los estados");llenarMulti("fComentario",["CON COMENTARIO","SIN COMENTARIO"],"Comentario compartido");llenarMulti("fTipo",tipos,"Todos los tipos")}
@@ -712,7 +718,7 @@ function regionResumen(x){
 function alternarRegionResumen(key){if(regionesCerradas.has(key))regionesCerradas.delete(key);else regionesCerradas.add(key);renderResumen();}
 function renderResumen(){
  const body=document.getElementById('resumenBody'),filas=(resumen.filas||[]).slice().sort((a,b)=>{const ra=regionResumen(a),rb=regionResumen(b);return ra.orden-rb.orden||ra.key.localeCompare(rb.key)||String(a.area||'').localeCompare(String(b.area||''))||a.pdv.localeCompare(b.pdv);});
- const admin=typeof filaResumen==='function',cols=18,grupos=new Map();
+ const admin=typeof filaResumen==='function',cols=19,grupos=new Map();
  let pdvRows=[];
  if(!admin){const anterior=resumen.filas;resumen.filas=filas;renderResumenAnterior();pdvRows=[...body.children];resumen.filas=anterior;}
  body.replaceChildren();filas.forEach((x,i)=>{const k=regionResumen(x).key;if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push({x,i});});
@@ -983,11 +989,14 @@ async function descargarImagenResumen(){
  }catch(e){status.textContent=e.message||String(e);toast(status.textContent,false);}finally{button.disabled=false;}
 }
 </script><script>const COLUMNAS_V2=['h360NoDevuelto','h576a600NoDevuelto','h720NoDevuelto','h360PorDevolver','h576a600PorDevolver','h720PorDevolver','brecha48a120','brecha96a120','mayor144EnPDV','brecha48NoLlegado','brecha96NoLlegado','mayor144NoLlegado'];
-Object.assign(ETIQUETAS_RESUMEN,{h720NoDevuelto:'Cola larga · ≥600 H · No devuelto',h360NoDevuelto:'Cola larga · 120 a <576 H · No devuelto',h576a600NoDevuelto:'Cola larga · 576 a <600 H · Preventivo · No devuelto',h720PorDevolver:'Cola larga · ≥600 H · Por devolver',h360PorDevolver:'Cola larga · 120 a <576 H · Por devolver',h576a600PorDevolver:'Cola larga · 576 a <600 H · Preventivo · Por devolver',brecha48a120:'Brecha · ≥48 y <96 H · En el PDV',brecha96a120:'Brecha · 96 a <120 H · Preventivo · En el PDV',mayor144EnPDV:'Brecha · ≥120 H · En el PDV',brecha48NoLlegado:'Brecha · ≥48 y <96 H · No llegados',brecha96NoLlegado:'Brecha · 96 a <120 H · Preventivo · No llegados',mayor144NoLlegado:'Brecha · ≥120 H · No llegados'});
+Object.assign(ETIQUETAS_RESUMEN,{h720NoDevuelto:'Cola larga · ≥600 H · No devuelto',h360NoDevuelto:'Cola larga · 120 a <576 H · No devuelto',h576a600NoDevuelto:'Cola larga · 576 a <600 H · Preventivo · No devuelto',h720PorDevolver:'Cola larga · ≥600 H · Por devolver',h360PorDevolver:'Cola larga · 120 a <576 H · Por devolver',h576a600PorDevolver:'Cola larga · 576 a <600 H · Preventivo · Por devolver',brecha48a120:'Brecha · ≥48 y <96 H · En el PDV',brecha96a120:'Brecha · 96 a <120 H · Preventivo · En el PDV',mayor144EnPDV:'Brecha · ≥120 H · En el PDV',brecha48NoLlegado:'Brecha · ≥48 y <96 H · No llegados',brecha96NoLlegado:'Brecha · 96 a <120 H · Preventivo · No llegados',mayor144NoLlegado:'Brecha · ≥120 H · No llegados',totalPreventivoCritico:'Total de casos preventivos + críticos'});
+const CATEGORIAS_PREVENTIVO_CRITICO_V2=['h576a600NoDevuelto','h576a600PorDevolver','brecha96a120','brecha96NoLlegado','h720NoDevuelto','h720PorDevolver','mayor144EnPDV','mayor144NoLlegado'];
+function totalPreventivoCriticoV2(x){return CATEGORIAS_PREVENTIVO_CRITICO_V2.reduce((n,k)=>n+Number(x?.[k]||0),0)}
 function celdaV2(valor,pdv,categoria,total=false){
  const td=document.createElement('td');td.className='number';td.textContent=Number(valor||0)===0?'':num(valor);
  if(['h576a600NoDevuelto','h576a600PorDevolver','brecha96a120','brecha96NoLlegado'].includes(categoria))td.classList.add('preventive-cell');
  if(categoria==='totalCritico')td.classList.add('summary-critical');
+ if(categoria==='totalPreventivoCritico')td.classList.add('summary-preventive-critical');
  if(valor){td.classList.add('summary-clickable');td.classList.toggle('summary-selected',celdaResumenSeleccionada(total?'':pdv,categoria));td.onclick=()=>aplicarFiltroResumen(total?'':pdv,categoria);}
  return td;
 }
@@ -996,7 +1005,7 @@ function filaResumen(x,esTotal){
  tr.classList.toggle('summary-row-active',!esTotal&&filaResumenSeleccionada(x.pdv));
  const pdv=document.createElement('td');pdv.textContent=x.pdv;pdv.className='summary-clickable';pdv.classList.toggle('summary-selected',!esTotal&&celdaResumenSeleccionada(x.pdv,''));pdv.onclick=()=>esTotal?limpiarFiltroResumen(false):aplicarFiltroResumen(x.pdv,'');tr.append(pdv);
  const desp=document.createElement('td');desp.textContent=Number(x.despachosAyer||0)===0?'':num(x.despachosAyer);tr.append(desp);
- for(const k of [...COLUMNAS_V2,'total','totalCritico','guiasUnicas'])tr.append(celdaV2(x[k],x.pdv,k==='total'?'totalCasos':k,esTotal));
+ for(const k of [...COLUMNAS_V2,'total','totalCritico','totalPreventivoCritico','guiasUnicas'])tr.append(celdaV2(k==='totalPreventivoCritico'?totalPreventivoCriticoV2(x):x[k],x.pdv,k==='total'?'totalCasos':k,esTotal));
  const comentario=document.createElement('td');comentario.className='comment-col';
  if(!esTotal&&['ADMINISTRADOR','ENCARGADO'].includes(sesion?.rol)&&typeof abrirComentario==='function'){
   const b=document.createElement('button');b.className='btn-comment'+(x.comentario?' has-comment':'');b.textContent='💬';b.title='Comentario del PDV';b.onclick=()=>abrirComentario(x.pdv);comentario.append(b);
@@ -1004,10 +1013,10 @@ function filaResumen(x,esTotal){
 }
 function subtotalGrupoResumen(items,nombre,admin,clase){
  const tr=document.createElement('tr');tr.className=clase;const td=document.createElement('td');td.textContent=clase==='area-subtotal-nested'?'SUBTOTAL ÁREA':'SUBTOTAL REGIÓN';td.title=nombre;tr.append(td);
- for(const k of ['despachosAyer',...COLUMNAS_V2,'total','totalCritico','guiasUnicas']){
-  const c=document.createElement('td');let n=items.reduce((s,{x})=>s+Number(x[k]||0),0);
+ for(const k of ['despachosAyer',...COLUMNAS_V2,'total','totalCritico','totalPreventivoCritico','guiasUnicas']){
+  const c=document.createElement('td');let n=items.reduce((s,{x})=>s+(k==='totalPreventivoCritico'?totalPreventivoCriticoV2(x):Number(x[k]||0)),0);
   if(k==='guiasUnicas')n=new Set(items.flatMap(({x})=>x.guiasIds||[])).size;
-  c.textContent=n===0?'':num(n);if(k==='totalCritico')c.className='summary-critical';tr.append(c);
+  c.textContent=n===0?'':num(n);if(k==='totalCritico')c.className='summary-critical';if(k==='totalPreventivoCritico')c.className='summary-preventive-critical';tr.append(c);
  }tr.append(document.createElement('td'));return tr;
 }
 function mostrarEstadoV2(info){

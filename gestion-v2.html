@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=gestion-v2-fixes-20261023-3"></script>
+<script src="./bridge.js?v=gestion-v2-fixes-20261024-total-prev-crit-1"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -288,6 +288,19 @@
 #tablaResumenV2 thead tr:nth-child(2) th:nth-child(2),
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(6),
 #tablaResumenV2 tbody tr>td:nth-child(8){border-right:6px solid #dc2626!important}
+
+.summary-table .summary-preventive-critical{background:#fef3c7!important;color:#92400e!important;font-weight:900}
+.summary-table thead th.summary-preventive-critical{background:#f59e0b!important;color:#1f2937!important}
+.summary-table tbody td.summary-preventive-critical.summary-selected{background:#93c5fd!important;color:#0f3d7a!important}
+.summary-table tbody tr.summary-row-active td.summary-preventive-critical:not(.summary-selected){background:#fde68a!important;color:#78350f!important}
+.summary-table tbody tr.area-subtotal-nested td.summary-preventive-critical,.summary-table tbody tr.region-subtotal td.summary-preventive-critical{background:#fef3c7!important;color:#92400e!important}
+
+.comment-hierarchy-panel-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.comment-hierarchy-panel-title .summary-toggle{flex:0 0 auto}
+.comment-pdv-group-row td{padding:0!important;background:#153e67!important;color:#fff!important;border-top:3px solid #0f2742!important;border-bottom:2px solid #0f2742!important}
+.comment-pdv-toggle{display:flex;align-items:center;gap:9px;flex-wrap:wrap;width:100%;padding:9px 11px;border:0;background:transparent;color:#fff;text-align:left;cursor:pointer;font-size:11px}
+.comment-pdv-toggle:hover{background:#1e4978}.comment-pdv-arrow{width:14px;font-size:15px;font-weight:900}.comment-pdv-toggle strong{font-size:12px}.comment-pdv-count,.comment-pdv-badge{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;background:#e2e8f0;color:#1e293b;font-size:10px;font-weight:800}.comment-pdv-badge--preventive{background:#dcfce7;color:#166534}
+.comment-hierarchy-subtotal--pdv td{background:#dbeafe!important;color:#153e67;font-weight:900;border-top:3px solid #153e67!important;border-bottom:2px solid #153e67!important}
+@media(max-width:800px){.comment-pdv-toggle{gap:6px}.comment-pdv-badge{font-size:9px}}
 </style></head>
 <body>
   <section id="login" class="login">
@@ -304,7 +317,7 @@
   <div id="app" class="hidden">
     <header><div class="header-inner">
       <div><div class="title">📋 Revisión de Guías · V16</div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
-      <div class="actions"><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel resumen + detalle</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
+      <div class="actions"><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
     <main>
@@ -350,19 +363,21 @@
           <button type="button" class="secondary" onclick="limpiarFiltrosResumen()">Limpiar</button>
           <span id="summaryToolbarStatus" class="summary-toolbar-status"></span>
         </div>
-        <div class="resumen-imagen-toolbar"><button type="button" class="secondary" id="btnImagenResumen" onclick="descargarImagenResumen()">Descargar imagen del resumen</button><small>PNG · Filtros y grupos desplegados actuales</small><span id="estadoImagenResumen" role="status"></span><a id="enlaceImagenResumen" hidden="">Descargar PNG</a></div><div id="gestionV2Status" style="padding: 12px; background: rgb(239, 246, 255); color: rgb(30, 64, 175); border-radius: 8px; margin: 12px 0px;">Gestión de guías V2 · Fuentes y comentarios compartidos con Gestión actual. Clasificación calculada cada minuto.</div><div class="table-wrap"><table id="tablaResumenV2" class="summary-table"><colgroup><col style="width:10%"><col style="width:6%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5.25%"><col style="width:5%"><col style="width:6%"><col style="width:5%"><col style="width:5%"></colgroup>
+        <div class="resumen-imagen-toolbar"><button type="button" class="secondary" id="btnImagenResumen" onclick="descargarImagenResumen()">Descargar imagen del resumen</button><small>PNG · Filtros y grupos desplegados actuales</small><span id="estadoImagenResumen" role="status"></span><a id="enlaceImagenResumen" hidden="">Descargar PNG</a></div><div id="gestionV2Status" style="padding: 12px; background: rgb(239, 246, 255); color: rgb(30, 64, 175); border-radius: 8px; margin: 12px 0px;">Gestión de guías V2 · Fuentes y comentarios compartidos con Gestión actual. Clasificación calculada cada minuto.</div><div class="table-wrap"><table id="tablaResumenV2" class="summary-table"><colgroup><col style="width:10%"><col style="width:6%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:5%"><col style="width:5%"><col style="width:7%"><col style="width:5%"><col style="width:5%"></colgroup>
           
-          <thead><tr><th rowspan="3">PDV</th><th rowspan="3">DESPACHOS AYER</th><th colspan="6">COLA LARGA</th><th colspan="6">BRECHA DE TRAZABILIDAD</th><th rowspan="3">TOTAL</th><th rowspan="3" class="summary-critical">TOTAL CRÍTICO</th><th rowspan="3">GUÍAS ÚNICAS</th><th rowspan="3">💬 / 🖼</th></tr><tr><th colspan="3">No devuelto</th><th colspan="3">Por devolver</th><th colspan="3">En el PDV</th><th colspan="3">No llegados al PDV</th></tr><tr><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th></tr></thead><tbody id="resumenBody"></tbody>
+          <thead><tr><th rowspan="3">PDV</th><th rowspan="3">DESPACHOS AYER</th><th colspan="6">COLA LARGA</th><th colspan="6">BRECHA DE TRAZABILIDAD</th><th rowspan="3">TOTAL</th><th rowspan="3" class="summary-critical">TOTAL CRÍTICO</th><th rowspan="3" class="summary-preventive-critical" title="Suma de los casos preventivos y críticos">PREVENTIVOS<br>+ CRÍTICOS</th><th rowspan="3">GUÍAS ÚNICAS</th><th rowspan="3">💬 / 🖼</th></tr><tr><th colspan="3">No devuelto</th><th colspan="3">Por devolver</th><th colspan="3">En el PDV</th><th colspan="3">No llegados al PDV</th></tr><tr><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th></tr></thead><tbody id="resumenBody"></tbody>
         </table></div>
       </section>
 
       <section id="comentarioJerarquiaPanel" class="panel">
-        <div class="panel-title">Resumen por Subtipo 1, Subtipo 2 y comentario administrador</div>
-        <div class="comment-group-toolbar" aria-live="polite">
-          <div class="comment-group-summary"><span id="comentarioJerarquiaResumen"></span><small>El agrupamiento usa el comentario del Administrador. Los subtipos se combinan por filas; selecciona “Ver guías” para cargar sus guías en el detalle.</small></div>
-          <div class="comment-hierarchy-actions"><button type="button" class="secondary" onclick="limpiarFiltroComentarioJerarquia(true)">Mostrar todas las guías</button></div>
+        <div class="panel-title comment-hierarchy-panel-title"><span>Resumen por Subtipo 1, Subtipo 2 y comentario administrador</span><button type="button" id="btnToggleComentarioJerarquia" class="summary-toggle" aria-expanded="true" aria-controls="comentarioJerarquiaContenido" onclick="toggleResumenComentarioJerarquia()">Ocultar resumen</button></div>
+        <div id="comentarioJerarquiaContenido">
+          <div class="comment-group-toolbar" aria-live="polite">
+            <div class="comment-group-summary"><span id="comentarioJerarquiaResumen"></span><small>El agrupamiento usa el comentario del Administrador. Los subtipos se combinan por filas; selecciona “Ver guías” para cargar sus guías en el detalle.</small></div>
+            <div class="comment-hierarchy-actions"><button type="button" class="secondary" onclick="limpiarFiltroComentarioJerarquia(true)">Mostrar todas las guías</button></div>
+          </div>
+          <div class="table-wrap"><table class="comment-hierarchy-table"><colgroup><col style="width:5%"><col style="width:11%"><col style="width:14%"><col style="width:26%"><col style="width:7%"><col style="width:8%"><col style="width:9%"><col style="width:10%"><col style="width:10%"></colgroup><thead><tr><th>SELECCIÓN</th><th>SUBTIPO 1</th><th>SUBTIPO 2</th><th>COMENTARIO ADMINISTRADOR</th><th>GUÍAS</th><th class="preventive-column">PREVENTIVA</th><th>BRECHA CRÍTICA</th><th>COLA LARGA CRÍTICA</th><th>ACCIONES</th></tr></thead><tbody id="comentarioJerarquiaBody"></tbody></table></div>
         </div>
-        <div class="table-wrap"><table class="comment-hierarchy-table"><colgroup><col style="width:5%"><col style="width:11%"><col style="width:14%"><col style="width:26%"><col style="width:7%"><col style="width:8%"><col style="width:9%"><col style="width:10%"><col style="width:10%"></colgroup><thead><tr><th>SELECCIÓN</th><th>SUBTIPO 1</th><th>SUBTIPO 2</th><th>COMENTARIO ADMINISTRADOR</th><th>GUÍAS</th><th class="preventive-column">PREVENTIVA</th><th>BRECHA CRÍTICA</th><th>COLA LARGA CRÍTICA</th><th>ACCIONES</th></tr></thead><tbody id="comentarioJerarquiaBody"></tbody></table></div>
       </section>
 
       <section id="detalleGuiasPanel" class="panel">
@@ -447,13 +462,15 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
   let excelRegistros = [], excelFiltrados = [], excelPagina = 1, excelTrackNombre = "", excelEnvioNombre = "";
   const EXCEL_PAGE_SIZE = 100, EXCEL_MAX_BYTES = 30 * 1024 * 1024;
   const seleccionadas = new Set();
+  const pdvsComentarioCerrados = new Set();
+  let resumenJerarquiaContraido = false;
   const borradoresRevision = new Map();
   let borradoresRevisionUsuario = "";
   let guiaActivaEdicionRevision = null, temporizadorResaltadoGuia = null;
   let catalogoComentarios={subcampos1:["ENTREGA","DEVOLUCIÓN","TRASLADO","OTROS"],opciones:[{subcampo1:"ENTREGA",subcampo2:"PENDIENTE ACTUALIZAR"},{subcampo1:"ENTREGA",subcampo2:"PENDIENTE GESTIONAR ANOMALIAS"},{subcampo1:"ENTREGA",subcampo2:"ERROR DE CLASIFICACIÓN"},{subcampo1:"ENTREGA",subcampo2:"POSIBLE PERDIDA"},{subcampo1:"DEVOLUCIÓN",subcampo2:"PENDIENTE REGISTRAR DEVOLUCIÓN"},{subcampo1:"DEVOLUCIÓN",subcampo2:"PENDIENTE CARGAR A OT"},{subcampo1:"DEVOLUCIÓN",subcampo2:"PENDIENTE LLEGADA AL CALLAO"},{subcampo1:"DEVOLUCIÓN",subcampo2:"PENDIENTE PROCESAR AL CALLAO"}]};
   let catalogoComentariosBorrador={subcampos1:[...catalogoComentarios.subcampos1],opciones:catalogoComentarios.opciones.map(x=>({...x}))};
   let catalogoComentariosDisponible=false,catalogoComentariosCargado=false,clasificacionesComentariosCargadas=false,subcampo1SeleccionadoConfig="ENTREGA",comentarioGestionEncargadoDisponible=false;
-  const ETIQUETAS_RESUMEN={h120o168:"Cola Larga · 120 o 168H",h360NoDevuelto:"Cola Larga · 360H · No Devuelto",h360PorDevolver:"Cola Larga · 360H · Por Devolver",h720NoDevuelto:"Cola Larga · 720H · No Devuelto",h720PorDevolver:"Cola Larga · 720H · Por Devolver",brecha48NoLlegado:"Brecha · 48 a 120H · No llegados al PDV",brecha120NoLlegado:"Brecha · 120 a 144H · No llegados al PDV",brecha48a120:"Brecha · 48 a 120H",brecha120a144:"Brecha · 120 a 144H",mayor144EnPDV:"Brecha · >144H · En el PDV",mayor144NoLlegado:"Brecha · >144H · No llegado al PDV",totalCasos:"Total de casos",totalCritico:"Total crítico",guiasUnicas:"Guías únicas"};
+  const ETIQUETAS_RESUMEN={h120o168:"Cola Larga · 120 o 168H",h360NoDevuelto:"Cola Larga · 360H · No Devuelto",h360PorDevolver:"Cola Larga · 360H · Por Devolver",h720NoDevuelto:"Cola Larga · 720H · No Devuelto",h720PorDevolver:"Cola Larga · 720H · Por Devolver",brecha48NoLlegado:"Brecha · 48 a 120H · No llegados al PDV",brecha120NoLlegado:"Brecha · 120 a 144H · No llegados al PDV",brecha48a120:"Brecha · 48 a 120H",brecha120a144:"Brecha · 120 a 144H",mayor144EnPDV:"Brecha · >144H · En el PDV",mayor144NoLlegado:"Brecha · >144H · No llegado al PDV",totalCasos:"Total de casos",totalCritico:"Total crítico",totalPreventivoCritico:"Total de casos preventivos + críticos",guiasUnicas:"Guías únicas"};
 
   document.addEventListener("DOMContentLoaded", restaurarSesion);
   document.addEventListener("click", cerrarMultis);
@@ -1135,12 +1152,12 @@ function actualizarChipResumen(){
  const chip=document.getElementById('filtroResumenChip'),seleccion=seleccionesResumen(),grupo=filtroComentarioJerarquiaActivo;
  chip.classList.toggle('hidden',!seleccion.length&&!grupo);chip.replaceChildren();
  if(seleccion.length){const texto=document.createElement('span');texto.textContent=seleccion.length+' celdas del resumen seleccionadas · '+seleccion.map(s=>etiquetaFiltroResumen(s.pdv,s.categoria)).join(' | ');chip.append(texto);const limpiar=document.createElement('button');limpiar.type='button';limpiar.textContent='Quitar filtro del resumen';limpiar.onclick=()=>limpiarFiltroResumen(false);chip.append(limpiar);}
- if(grupo){const texto=document.createElement('span');texto.textContent='Comentario administrador: '+(grupo.comentario||'Sin comentario del administrador')+' · '+[grupo.subcampo1,grupo.subcampo2].filter(Boolean).join(' → ');chip.append(texto);const limpiar=document.createElement('button');limpiar.type='button';limpiar.textContent='Quitar comentario';limpiar.onclick=()=>limpiarFiltroComentarioJerarquia(false);chip.append(limpiar);}
+ if(grupo){const texto=document.createElement('span');texto.textContent='PDV '+(grupo.pdv||'SIN PDV')+' · Comentario administrador: '+(grupo.comentario||'Sin comentario del administrador')+' · '+[grupo.subcampo1,grupo.subcampo2].filter(Boolean).join(' → ');chip.append(texto);const limpiar=document.createElement('button');limpiar.type='button';limpiar.textContent='Quitar comentario';limpiar.onclick=()=>limpiarFiltroComentarioJerarquia(false);chip.append(limpiar);}
  if(seleccion.length||grupo){const ver=document.createElement('button');ver.type='button';ver.textContent='Ver detalle';ver.onclick=()=>document.getElementById('detalleGuiasPanel').scrollIntoView({behavior:'smooth',block:'start'});chip.append(ver);}
 }
 function coincideFiltroResumen(x){return !seleccionesResumen().length||seleccionesResumen().some(s=>coincideFiltroResumenIndividual(x,s));}
 
-function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;if(!cumpleFiltrosGuiaResumen(x))return false;const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],pdv=seleccion.pdv,categoria=seleccion.categoria,criticas=["h720NoDevuelto","h720PorDevolver","mayor144EnPDV","mayor144NoLlegado"];return casos.some(c=>{if(pdv&&String(c.pdv||"")!==pdv)return false;const tipo=String(c.categoria||"");if(!categoria||categoria==="totalCasos"||categoria==="guiasUnicas")return true;if(categoria==="totalCritico")return criticas.includes(tipo);return tipo===categoria||(categoria==="mayor144NoLlegado"&&tipo==="brecha144a168NoLlegado");});}
+function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;if(!cumpleFiltrosGuiaResumen(x))return false;const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],pdv=seleccion.pdv,categoria=seleccion.categoria,criticas=["h720NoDevuelto","h720PorDevolver","mayor144EnPDV","mayor144NoLlegado"],preventivasCriticas=CATEGORIAS_PREVENTIVO_CRITICO_V2;return casos.some(c=>{if(pdv&&String(c.pdv||"")!==pdv)return false;const tipo=String(c.categoria||"");if(!categoria||categoria==="totalCasos"||categoria==="guiasUnicas")return true;if(categoria==="totalCritico")return criticas.includes(tipo);if(categoria==="totalPreventivoCritico")return preventivasCriticas.includes(tipo);return tipo===categoria||(categoria==="mayor144NoLlegado"&&tipo==="brecha144a168NoLlegado");});}
 
   function abrirComentario(pdv){const x=(resumen.filas||[]).find(r=>r.pdv===pdv);if(!x)return;document.getElementById("commentModal").dataset.pdv=pdv;document.getElementById("commentTitle").textContent="COMENTARIO · "+pdv;document.getElementById("commentText").value=x.comentario||"";document.getElementById("commentMeta").textContent=x.comentarioFecha?("Último registro: "+x.comentarioFecha+" · "+(x.comentarioUsuario||"")):"Sin comentario previo";document.getElementById("commentModal").style.display="flex";setTimeout(()=>document.getElementById("commentText").focus(),50);}
   function cerrarComentario(){document.getElementById("commentModal").style.display="none";}
@@ -1249,11 +1266,11 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function gruposPorComentarioDetalle(filas){
     const mapa=new Map();
     filas.forEach(x=>{
-      const comentario=valorGrupoDetalle(x,"comentario").normalize("NFC").replace(/\s+/g," "),subcampo1=valorGrupoDetalle(x,"subcampo1"),subcampo2=valorGrupoDetalle(x,"subcampo2"),clave="motivo:"+[subcampo1,subcampo2,comentario].map(claveComentarioDetalle).join("|");
-      if(!mapa.has(clave))mapa.set(clave,{clave,comentario,subcampo1,subcampo2,filas:[]});
+      const pdv=String(valorGrupoDetalle(x,"pdv")||"SIN PDV").trim(),comentario=valorGrupoDetalle(x,"comentario").normalize("NFC").replace(/\s+/g," "),subcampo1=valorGrupoDetalle(x,"subcampo1"),subcampo2=valorGrupoDetalle(x,"subcampo2"),clave="motivo:"+[pdv,subcampo1,subcampo2,comentario].map(claveComentarioDetalle).join("|");
+      if(!mapa.has(clave))mapa.set(clave,{clave,pdv,comentario,subcampo1,subcampo2,filas:[]});
       mapa.get(clave).filas.push(x);
     });
-    return [...mapa.values()].map(g=>({...g,...indicadoresCriticosDetalle(g.filas),etiqueta:[g.subcampo1,g.subcampo2,g.comentario||"Sin comentario del administrador"].filter(Boolean).join(" · "),cantidadGuias:cantidadGuiasUnicasDetalle(g.filas)})).sort((a,b)=>b.cantidadGuias-a.cantidadGuias||a.etiqueta.localeCompare(b.etiqueta,"es"));
+    return [...mapa.values()].map(g=>({...g,...indicadoresCriticosDetalle(g.filas),etiqueta:[g.subcampo1,g.subcampo2,g.comentario||"Sin comentario del administrador"].filter(Boolean).join(" · "),cantidadGuias:cantidadGuiasUnicasDetalle(g.filas)})).sort((a,b)=>a.pdv.localeCompare(b.pdv,"es",{numeric:true})||b.cantidadGuias-a.cantidadGuias||a.etiqueta.localeCompare(b.etiqueta,"es"));
   }
   function gruposPorSubcampo2Detalle(filas){
     const mapa=new Map();
@@ -1311,26 +1328,62 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     const indicadores=indicadoresCriticosDetalle(filas),tr=document.createElement("tr"),seleccion=document.createElement("td"),rotulo=document.createElement("td"),guias=document.createElement("td"),preventiva=document.createElement("td"),brecha=document.createElement("td"),cola=document.createElement("td"),acciones=document.createElement("td");
     tr.className="comment-hierarchy-subtotal "+clase;seleccion.textContent="";rotulo.colSpan=colSpanEtiqueta;rotulo.textContent=etiqueta;guias.className="number";guias.textContent=num(cantidadGuiasUnicasDetalle(filas));preventiva.className="number preventive-count";preventiva.textContent=num(indicadores.guiasPreventivas);preventiva.title="Guías en cualquiera de los rangos preventivos";brecha.className="number";brecha.textContent=num(indicadores.guiasBrechaCritica);brecha.title="Guías con brecha crítica";cola.className="number";cola.textContent=num(indicadores.guiasColaLargaCritica);cola.title="Guías con cola larga crítica";acciones.textContent="";tr.append(seleccion,rotulo,guias,preventiva,brecha,cola,acciones);return tr;
   }
+  function toggleResumenComentarioJerarquia(){
+    const contenido=document.getElementById("comentarioJerarquiaContenido"),boton=document.getElementById("btnToggleComentarioJerarquia");if(!contenido||!boton)return;
+    resumenJerarquiaContraido=!resumenJerarquiaContraido;contenido.hidden=resumenJerarquiaContraido;boton.setAttribute("aria-expanded",String(!resumenJerarquiaContraido));boton.textContent=resumenJerarquiaContraido?"Mostrar resumen":"Ocultar resumen";
+  }
+  function gruposPorPdvComentarioDetalle(filas){
+    const mapa=new Map();
+    filas.forEach(x=>{const pdv=String(valorGrupoDetalle(x,"pdv")||"SIN PDV").trim()||"SIN PDV",clave="pdv:"+claveComentarioDetalle(pdv);if(!mapa.has(clave))mapa.set(clave,{clave,pdv,filas:[]});mapa.get(clave).filas.push(x);});
+    return [...mapa.values()].map(g=>({...g,...indicadoresCriticosDetalle(g.filas),cantidadGuias:cantidadGuiasUnicasDetalle(g.filas),subtipos:gruposPorSubcampo1Detalle(g.filas)})).sort((a,b)=>a.pdv.localeCompare(b.pdv,"es",{numeric:true}));
+  }
+  function crearFilaGrupoPdvComentario(g,cerrado){
+    const tr=document.createElement("tr"),td=document.createElement("td"),boton=document.createElement("button"),flecha=document.createElement("span"),nombre=document.createElement("strong"),guias=document.createElement("span"),preventiva=document.createElement("span"),brecha=document.createElement("span"),cola=document.createElement("span");
+    tr.className="comment-pdv-group-row";td.colSpan=9;boton.type="button";boton.className="comment-pdv-toggle";boton.setAttribute("aria-expanded",String(!cerrado));boton.setAttribute("aria-label",(cerrado?"Expandir":"Contraer")+" grupos del PDV "+g.pdv);boton.onclick=()=>toggleGrupoComentarioPdv(g.clave);
+    flecha.className="comment-pdv-arrow";flecha.textContent=cerrado?"▸":"▾";nombre.textContent="PDV · "+g.pdv;guias.className="comment-pdv-count";guias.textContent=num(g.cantidadGuias)+" guías";preventiva.className="comment-pdv-badge comment-pdv-badge--preventive";preventiva.textContent="Preventivas · "+num(g.guiasPreventivas);brecha.className="comment-pdv-badge";brecha.textContent="Brecha crítica · "+num(g.guiasBrechaCritica);cola.className="comment-pdv-badge";cola.textContent="Cola larga crítica · "+num(g.guiasColaLargaCritica);boton.append(flecha,nombre,guias,preventiva,brecha,cola);td.appendChild(boton);tr.appendChild(td);return tr;
+  }
+  function toggleGrupoComentarioPdv(clave){if(pdvsComentarioCerrados.has(clave))pdvsComentarioCerrados.delete(clave);else pdvsComentarioCerrados.add(clave);renderResumenComentarioEncargado();}
   function renderResumenComentarioEncargado(){
     const body=document.getElementById("comentarioJerarquiaBody"),resumenEl=document.getElementById("comentarioJerarquiaResumen");if(!body||!resumenEl)return;body.replaceChildren();
-    const padres=gruposPorSubcampo1Detalle(filtradasParaResumenComentario),cantidadSubtipos2=padres.reduce((a,p)=>a+p.subgrupos.length,0),cantidadComentarios=padres.reduce((a,p)=>a+p.subgrupos.reduce((b,s2)=>b+s2.motivos.length,0),0),totalGuias=cantidadGuiasUnicasDetalle(filtradasParaResumenComentario);
-    resumenEl.textContent=padres.length+" Subtipos 1 · "+cantidadSubtipos2+" Subtipos 2 · "+cantidadComentarios+" grupos de comentario · "+totalGuias+" guías";
-    if(!padres.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=9;td.className="comment-hierarchy-empty";td.textContent="No hay guías que coincidan con los filtros actuales.";tr.appendChild(td);body.appendChild(tr);sincronizarCasillasGruposComentario();return;}
-    padres.forEach(p=>{
-      const cantidadFilasPadre=p.subgrupos.reduce((total,s2)=>total+s2.motivos.length+1,0);let primeraFilaPadre=true;
-      p.subgrupos.forEach(s2=>{let primeraFilaSubtipo2=true;
-        s2.motivos.forEach(g=>{
-          const tr=crearFilaComentarioJerarquia(g),indiceSubtipo2=primeraFilaPadre?2:1;
-          if(primeraFilaPadre){const td=document.createElement("td");td.className="hierarchy-category-cell";td.rowSpan=cantidadFilasPadre;td.textContent=p.etiqueta;tr.insertBefore(td,tr.children[1]);primeraFilaPadre=false;}
-          if(primeraFilaSubtipo2){const td=document.createElement("td");td.className="hierarchy-category-cell";td.rowSpan=s2.motivos.length;td.textContent=s2.etiqueta;tr.insertBefore(td,tr.children[indiceSubtipo2]);primeraFilaSubtipo2=false;}
-          body.appendChild(tr);
+    const pdvs=gruposPorPdvComentarioDetalle(filtradasParaResumenComentario),padres=pdvs.flatMap(p=>p.subtipos),cantidadSubtipos2=padres.reduce((a,p)=>a+p.subgrupos.length,0),cantidadComentarios=padres.reduce((a,p)=>a+p.subgrupos.reduce((b,s2)=>b+s2.motivos.length,0),0),totalGuias=cantidadGuiasUnicasDetalle(filtradasParaResumenComentario);
+    resumenEl.textContent=pdvs.length+" PDV · "+padres.length+" Subtipos 1 · "+cantidadSubtipos2+" Subtipos 2 · "+cantidadComentarios+" grupos de comentario · "+totalGuias+" guías";
+    if(!pdvs.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=9;td.className="comment-hierarchy-empty";td.textContent="No hay guías que coincidan con los filtros actuales.";tr.appendChild(td);body.appendChild(tr);sincronizarCasillasGruposComentario();return;}
+    pdvs.forEach(gpdv=>{
+      const cerrado=pdvsComentarioCerrados.has(gpdv.clave);body.appendChild(crearFilaGrupoPdvComentario(gpdv,cerrado));if(cerrado)return;
+      const padresPdv=gpdv.subtipos;
+      padresPdv.forEach(p=>{
+        const cantidadFilasPadre=p.subgrupos.reduce((total,s2)=>total+s2.motivos.length+1,0);let primeraFilaPadre=true;
+        p.subgrupos.forEach(s2=>{let primeraFilaSubtipo2=true;
+          s2.motivos.forEach(g=>{
+            const tr=crearFilaComentarioJerarquia(g),indiceSubtipo2=primeraFilaPadre?2:1;
+            if(primeraFilaPadre){const td=document.createElement("td");td.className="hierarchy-category-cell";td.rowSpan=cantidadFilasPadre;td.textContent=p.etiqueta;tr.insertBefore(td,tr.children[1]);primeraFilaPadre=false;}
+            if(primeraFilaSubtipo2){const td=document.createElement("td");td.className="hierarchy-category-cell";td.rowSpan=s2.motivos.length;td.textContent=s2.etiqueta;tr.insertBefore(td,tr.children[indiceSubtipo2]);primeraFilaSubtipo2=false;}
+            body.appendChild(tr);
+          });
+          body.appendChild(crearFilaSubtotalJerarquia("Subtotal Subtipo 2 · "+s2.etiqueta,s2.filas,"comment-hierarchy-subtotal--subtipo2",3));
         });
-        body.appendChild(crearFilaSubtotalJerarquia("Subtotal Subtipo 2 · "+s2.etiqueta,s2.filas,"comment-hierarchy-subtotal--subtipo2",2));
+        body.appendChild(crearFilaSubtotalJerarquia("Total Subtipo 1 · "+p.etiqueta,p.filas,"comment-hierarchy-subtotal--subtipo1",3));
       });
-      body.appendChild(crearFilaSubtotalJerarquia("Total Subtipo 1 · "+p.etiqueta,p.filas,"comment-hierarchy-subtotal--subtipo1",3));
+      body.appendChild(crearFilaSubtotalJerarquia("TOTAL PDV · "+gpdv.pdv,gpdv.filas,"comment-hierarchy-subtotal--pdv",3));
     });
     body.appendChild(crearFilaSubtotalJerarquia("TOTAL GENERAL",filtradasParaResumenComentario,"comment-hierarchy-grand-total",3));
     sincronizarCasillasGruposComentario();
+  }
+  function construirResumenComentarioExcel(){
+    const encabezados=["PDV","SUBTIPO 1","SUBTIPO 2","COMENTARIO ADMINISTRADOR","GUÍAS","PREVENTIVA","BRECHA CRÍTICA","COLA LARGA CRÍTICA"],filas=[],pdvs=gruposPorPdvComentarioDetalle(filtradasParaResumenComentario);
+    const filaTotal=(pdv,etiquetas,filasGrupo,tipo)=>{const indicadores=indicadoresCriticosDetalle(filasGrupo);return {tipo,valores:[pdv,etiquetas.subtipo1||"",etiquetas.subtipo2||"",etiquetas.comentario||"",cantidadGuiasUnicasDetalle(filasGrupo),indicadores.guiasPreventivas,indicadores.guiasBrechaCritica,indicadores.guiasColaLargaCritica]};};
+    pdvs.forEach(gpdv=>{
+      gpdv.subtipos.forEach(p=>{
+        p.subgrupos.forEach(s2=>{
+          s2.motivos.forEach(g=>filas.push({tipo:"dato",valores:[gpdv.pdv,g.subcampo1||"Sin Subtipo 1",g.subcampo2||"Sin Subtipo 2",g.comentario||"Sin comentario del administrador",g.cantidadGuias,g.guiasPreventivas,g.guiasBrechaCritica,g.guiasColaLargaCritica]}));
+          filas.push(filaTotal(gpdv.pdv,{subtipo2:"SUBTOTAL SUBTIPO 2 · "+(s2.subcampo2||"Sin Subtipo 2")},s2.filas,"subtotal"));
+        });
+        filas.push(filaTotal(gpdv.pdv,{subtipo1:"TOTAL SUBTIPO 1 · "+(p.subcampo1||"Sin Subtipo 1")},p.filas,"subtotal"));
+      });
+      filas.push(filaTotal(gpdv.pdv,{subtipo1:"TOTAL PDV"},gpdv.filas,"subtotal"));
+    });
+    filas.push(filaTotal("",{subtipo1:"TOTAL GENERAL"},filtradasParaResumenComentario,"total"));
+    return {encabezados,filas,anchos:[20,26,34,60,12,14,18,20]};
   }
   function renderGuias(){actualizarEstadoListaGuias('gestion');
     const body=document.getElementById("guiasBody");enlazarBorradoresRevision();body.replaceChildren();
@@ -1343,8 +1396,8 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     document.querySelectorAll("#comentarioJerarquiaBody .comment-group-check").forEach(casilla=>{const g=grupos.get(casilla.dataset.groupKey);if(!g){casilla.checked=false;casilla.indeterminate=false;return;}const marcadas=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;casilla.checked=marcadas===g.filas.length&&g.filas.length>0;casilla.indeterminate=marcadas>0&&marcadas<g.filas.length;casilla.setAttribute("aria-checked",marcadas===0?"false":marcadas===g.filas.length?"true":"mixed");});
   }
   function toggleSeleccionGrupoComentario(clave,marcada){const grupo=gruposPorComentarioDetalle(filtradasParaResumenComentario).find(g=>g.clave===clave);if(!grupo)return;grupo.filas.forEach(x=>{const fila=Number(x.fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
-  function seleccionarComentarioJerarquia(clave){const grupo=gruposPorComentarioDetalle(filtradasParaResumenComentario).find(g=>g.clave===clave);if(!grupo)return;filtroComentarioJerarquiaActivo={clave:grupo.clave,subcampo1:grupo.subcampo1,subcampo2:grupo.subcampo2,comentario:grupo.comentario};actualizarChipResumen();filtrar();document.getElementById("detalleGuiasPanel").scrollIntoView({behavior:"smooth",block:"start"});}
-  function coincideFiltroComentarioJerarquia(x){const filtro=filtroComentarioJerarquiaActivo;if(!filtro)return true;return claveComentarioDetalle(x.subcampo1)===claveComentarioDetalle(filtro.subcampo1)&&claveComentarioDetalle(x.subcampo2)===claveComentarioDetalle(filtro.subcampo2)&&claveComentarioDetalle(x.comentario)===claveComentarioDetalle(filtro.comentario);}
+  function seleccionarComentarioJerarquia(clave){const grupo=gruposPorComentarioDetalle(filtradasParaResumenComentario).find(g=>g.clave===clave);if(!grupo)return;filtroComentarioJerarquiaActivo={clave:grupo.clave,pdv:grupo.pdv,subcampo1:grupo.subcampo1,subcampo2:grupo.subcampo2,comentario:grupo.comentario};actualizarChipResumen();filtrar();document.getElementById("detalleGuiasPanel").scrollIntoView({behavior:"smooth",block:"start"});}
+  function coincideFiltroComentarioJerarquia(x){const filtro=filtroComentarioJerarquiaActivo;if(!filtro)return true;return claveComentarioDetalle(x.pdv)===claveComentarioDetalle(filtro.pdv)&&claveComentarioDetalle(x.subcampo1)===claveComentarioDetalle(filtro.subcampo1)&&claveComentarioDetalle(x.subcampo2)===claveComentarioDetalle(filtro.subcampo2)&&claveComentarioDetalle(x.comentario)===claveComentarioDetalle(filtro.comentario);}
   function limpiarFiltroComentarioJerarquia(desplazar){filtroComentarioJerarquiaActivo=null;actualizarChipResumen();filtrar();if(desplazar)document.getElementById("detalleGuiasPanel").scrollIntoView({behavior:"smooth",block:"start"});}
   async function copiarComentarioGrupo(comentario){
     const texto=String(comentario||"").trim();if(!texto){toast("Este grupo no tiene comentario para copiar.",false);return;}
@@ -1404,15 +1457,15 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     if(!tabla){toast("No se encontró la tabla resumen de Gestión V2.",false);return;}
     if(!filtradas.length&&!(resumen.filas||[]).length){toast("No hay resumen ni guías visibles para exportar.",false);return;}
     if(boton?.disabled)return;if(boton)boton.disabled=true;
-    mostrarLoading(true,"Generando Excel con resumen y detalle...");
+    mostrarLoading(true,"Generando Excel con resumen, comentarios y detalle...");
     try{
       if(!window.XlsxResumenV2||typeof window.XlsxResumenV2.generarLibroDesdeTabla!=="function")throw new Error("No se cargó el generador XLSX actualizado. Reemplace también xlsx-resumen.js en el repositorio.");
       const encabezados=["GUIAS A REVISAR","ENCARGADO","PDV","DEPARTAMENTO","PROVINCIA","DISTRITO","AREA ASIGNADA","FECHA Y HORA DE REVISIÓN","ESTADO DE REVISIÓN","TIPO DE REVISIÓN","COMENTARIO","SE CERRO EL CASO?","ÚLTIMA FECHA Y HORA DE OPERACIÓN","TIPO DE ESCANEO MÁS RECIENTE","COMENTARIO DE GESTIÓN · ENCARGADO","FECHA DEL COMENTARIO DE GESTIÓN"];
       const filas=filtradas.map(x=>[x.guia,x.encargado,x.pdv,x.dpto,x.prov,x.dsto,x.area,x.fecha,x.estado,x.tipo,x.comentario,x.cerro,x.ultimaOperacion,x.tipoEscaneoReciente,x.comentarioGestionEncargado,x.comentarioGestionActualizadoEn]);
       const anchos=[22,24,16,22,22,22,20,23,20,30,44,20,26,34,44,25];
-      const bytes=window.XlsxResumenV2.generarLibroDesdeTabla(tabla,{encabezados,filas,anchos}),blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+      const bytes=window.XlsxResumenV2.generarLibroDesdeTabla(tabla,{encabezados,filas,anchos},construirResumenComentarioExcel()),blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),url=URL.createObjectURL(blob),a=document.createElement("a");
       a.href=url;a.download="Gestion_Guias_V2_"+new Date().toISOString().replace(/[:.]/g,"-")+".xlsx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
-      mostrarLoading(false);toast("Excel generado: Resumen V2 en la primera pestaña y Detalle en la segunda.",true);
+      mostrarLoading(false);toast("Excel generado con tres hojas: Resumen V2, Resumen por subtipos y Detalle de guías.",true);
     }catch(e){mostrarLoading(false);toast("No se pudo generar el Excel combinado: "+(e.message||String(e)),false);}
     finally{if(boton)boton.disabled=false;}
   }
@@ -1647,7 +1700,7 @@ function regionResumen(x){
 function alternarRegionResumen(key){if(regionesCerradas.has(key))regionesCerradas.delete(key);else regionesCerradas.add(key);renderResumen();}
 function renderResumen(){
  const body=document.getElementById('resumenBody'),filas=(resumen.filas||[]).slice().sort((a,b)=>{const ra=regionResumen(a),rb=regionResumen(b);return ra.orden-rb.orden||ra.key.localeCompare(rb.key)||String(a.area||'').localeCompare(String(b.area||''))||a.pdv.localeCompare(b.pdv);});
- const admin=typeof filaResumen==='function',cols=18,grupos=new Map();
+ const admin=typeof filaResumen==='function',cols=19,grupos=new Map();
  let pdvRows=[];
  if(!admin){const anterior=resumen.filas;resumen.filas=filas;renderResumenAnterior();pdvRows=[...body.children];resumen.filas=anterior;}
  body.replaceChildren();filas.forEach((x,i)=>{const k=regionResumen(x).key;if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push({x,i});});
@@ -1943,11 +1996,14 @@ async function descargarImagenResumen(){
  }catch(e){status.textContent=e.message||String(e);toast(status.textContent,false);}finally{button.disabled=false;}
 }
 </script><script>const COLUMNAS_V2=['h360NoDevuelto','h576a600NoDevuelto','h720NoDevuelto','h360PorDevolver','h576a600PorDevolver','h720PorDevolver','brecha48a120','brecha96a120','mayor144EnPDV','brecha48NoLlegado','brecha96NoLlegado','mayor144NoLlegado'];
-Object.assign(ETIQUETAS_RESUMEN,{h720NoDevuelto:'Cola larga · ≥600 H · No devuelto',h360NoDevuelto:'Cola larga · 120 a <576 H · No devuelto',h576a600NoDevuelto:'Cola larga · 576 a <600 H · Preventivo · No devuelto',h720PorDevolver:'Cola larga · ≥600 H · Por devolver',h360PorDevolver:'Cola larga · 120 a <576 H · Por devolver',h576a600PorDevolver:'Cola larga · 576 a <600 H · Preventivo · Por devolver',brecha48a120:'Brecha · ≥48 y <96 H · En el PDV',brecha96a120:'Brecha · 96 a <120 H · Preventivo · En el PDV',mayor144EnPDV:'Brecha · ≥120 H · En el PDV',brecha48NoLlegado:'Brecha · ≥48 y <96 H · No llegados',brecha96NoLlegado:'Brecha · 96 a <120 H · Preventivo · No llegados',mayor144NoLlegado:'Brecha · ≥120 H · No llegados'});
+Object.assign(ETIQUETAS_RESUMEN,{h720NoDevuelto:'Cola larga · ≥600 H · No devuelto',h360NoDevuelto:'Cola larga · 120 a <576 H · No devuelto',h576a600NoDevuelto:'Cola larga · 576 a <600 H · Preventivo · No devuelto',h720PorDevolver:'Cola larga · ≥600 H · Por devolver',h360PorDevolver:'Cola larga · 120 a <576 H · Por devolver',h576a600PorDevolver:'Cola larga · 576 a <600 H · Preventivo · Por devolver',brecha48a120:'Brecha · ≥48 y <96 H · En el PDV',brecha96a120:'Brecha · 96 a <120 H · Preventivo · En el PDV',mayor144EnPDV:'Brecha · ≥120 H · En el PDV',brecha48NoLlegado:'Brecha · ≥48 y <96 H · No llegados',brecha96NoLlegado:'Brecha · 96 a <120 H · Preventivo · No llegados',mayor144NoLlegado:'Brecha · ≥120 H · No llegados',totalPreventivoCritico:'Total de casos preventivos + críticos'});
+const CATEGORIAS_PREVENTIVO_CRITICO_V2=['h576a600NoDevuelto','h576a600PorDevolver','brecha96a120','brecha96NoLlegado','h720NoDevuelto','h720PorDevolver','mayor144EnPDV','mayor144NoLlegado'];
+function totalPreventivoCriticoV2(x){return CATEGORIAS_PREVENTIVO_CRITICO_V2.reduce((n,k)=>n+Number(x?.[k]||0),0)}
 function celdaV2(valor,pdv,categoria,total=false){
  const td=document.createElement('td');td.className='number';td.textContent=Number(valor||0)===0?'':num(valor);
  if(['h576a600NoDevuelto','h576a600PorDevolver','brecha96a120','brecha96NoLlegado'].includes(categoria))td.classList.add('preventive-cell');
  if(categoria==='totalCritico')td.classList.add('summary-critical');
+ if(categoria==='totalPreventivoCritico')td.classList.add('summary-preventive-critical');
  if(valor){td.classList.add('summary-clickable');td.classList.toggle('summary-selected',celdaResumenSeleccionada(total?'':pdv,categoria));td.onclick=()=>aplicarFiltroResumen(total?'':pdv,categoria);}
  return td;
 }
@@ -1956,7 +2012,7 @@ function filaResumen(x,esTotal){
  tr.classList.toggle('summary-row-active',!esTotal&&filaResumenSeleccionada(x.pdv));
  const pdv=document.createElement('td');pdv.textContent=x.pdv;pdv.className='summary-clickable';pdv.classList.toggle('summary-selected',!esTotal&&celdaResumenSeleccionada(x.pdv,''));pdv.onclick=()=>esTotal?limpiarFiltroResumen(false):aplicarFiltroResumen(x.pdv,'');tr.append(pdv);
  const desp=document.createElement('td');desp.textContent=Number(x.despachosAyer||0)===0?'':num(x.despachosAyer);tr.append(desp);
- for(const k of [...COLUMNAS_V2,'total','totalCritico','guiasUnicas'])tr.append(celdaV2(x[k],x.pdv,k==='total'?'totalCasos':k,esTotal));
+ for(const k of [...COLUMNAS_V2,'total','totalCritico','totalPreventivoCritico','guiasUnicas'])tr.append(celdaV2(k==='totalPreventivoCritico'?totalPreventivoCriticoV2(x):x[k],x.pdv,k==='total'?'totalCasos':k,esTotal));
  const comentario=document.createElement('td');comentario.className='comment-col';if(!esTotal)comentario.dataset.excelComment=String(x.comentario||'');
  if(!esTotal&&['ADMINISTRADOR','ENCARGADO'].includes(sesion?.rol)&&typeof abrirComentario==='function'){
   const b=document.createElement('button');b.className='btn-comment'+(x.comentario?' has-comment':'');b.textContent='💬';b.title='Comentario del PDV';b.onclick=()=>abrirComentario(x.pdv);comentario.append(b);
@@ -1965,10 +2021,10 @@ function filaResumen(x,esTotal){
 }
 function subtotalGrupoResumen(items,nombre,admin,clase){
  const tr=document.createElement('tr');tr.className=clase;const td=document.createElement('td');td.textContent=clase==='area-subtotal-nested'?'SUBTOTAL ÁREA':'SUBTOTAL REGIÓN';td.title=nombre;tr.append(td);
- for(const k of ['despachosAyer',...COLUMNAS_V2,'total','totalCritico','guiasUnicas']){
-  const c=document.createElement('td');let n=items.reduce((s,{x})=>s+Number(x[k]||0),0);
+ for(const k of ['despachosAyer',...COLUMNAS_V2,'total','totalCritico','totalPreventivoCritico','guiasUnicas']){
+  const c=document.createElement('td');let n=items.reduce((s,{x})=>s+(k==='totalPreventivoCritico'?totalPreventivoCriticoV2(x):Number(x[k]||0)),0);
   if(k==='guiasUnicas')n=new Set(items.flatMap(({x})=>x.guiasIds||[])).size;
-  c.textContent=n===0?'':num(n);if(k==='totalCritico')c.className='summary-critical';tr.append(c);
+  c.textContent=n===0?'':num(n);if(k==='totalCritico')c.className='summary-critical';if(k==='totalPreventivoCritico')c.className='summary-preventive-critical';tr.append(c);
  }tr.append(document.createElement('td'));return tr;
 }
 function mostrarEstadoV2(info){
@@ -1995,4 +2051,4 @@ function actualizarClasificacionV2(){
  else{resumen=r.resumen;renderResumen();filtrar();}
 }
 setInterval(actualizarClasificacionV2,60000);
-</script><script src="./brecha-costos.js?v=20261019-modulo-estadisticas-independiente-1"></script><script src="./xlsx-resumen.js?v=20261019-v2-excel-combinado-1"></script></body></html>
+</script><script src="./brecha-costos.js?v=20261019-modulo-estadisticas-independiente-1"></script><script src="./xlsx-resumen.js?v=20261024-v2-excel-3hojas-pdv-1"></script></body></html>

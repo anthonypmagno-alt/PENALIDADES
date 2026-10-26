@@ -4,7 +4,9 @@ Cambios
 - Se agregó la pestaña “SLA de paquetes” para administradores y encargados.
 - El SLA inicia con “Hora de llegada al PDV”. Si ese dato falta, usa en orden salida del CEDIS, llegada al CEDIS, salida del HUB y generación del dato.
 - El fin del SLA es “Hora de firma”. Si no hay firma, usa la hora actual y actualiza el cálculo cada minuto.
-- El parámetro inicial es 48 horas y la tarifa inicial es 90%. El administrador puede cambiar ambos valores; la clasificación es compartida.
+- Los porcentajes se configuran por rangos de horas. La migración inicial conserva la regla previa como 0–48 h = 0% y 48 h o más = 90%. El administrador puede agregar, quitar y editar tramos y tarifas.
+- Los límites se manejan sin solapamiento: el inicio se incluye y el fin se excluye. Por ejemplo, 0 ≤ h < 48 y 48 ≤ h < 72; exactamente 48 h pertenece al segundo tramo.
+- La tabla crea una columna por cada rango configurado, más las columnas de guías sin inicio y con fechas inconsistentes. El bloque de clasificación se puede contraer.
 - El resumen agrupa paquetes por provincia y permite expandir los distritos. Los conteos de clasificación se pueden contraer/expandir y filtrar; al elegir un grupo se muestran sus guías en el detalle.
 - El detalle incluye guía, PDV, departamento, provincia, distrito, todos los hitos del Excel, inicio y fin usados, horas transcurridas y clasificación.
 - El archivo se carga en bloques a tablas nuevas de `v16_private`. Una carga solo reemplaza la activa cuando termina y se publica correctamente.
@@ -12,7 +14,7 @@ Cambios
 
 Instalación
 1. Reemplaza los archivos del repositorio con los de este ZIP.
-2. En el SQL Editor del proyecto Supabase de Gestión de Guías, ejecuta una vez `supabase_gestion_v2_sla_paquetes.sql`.
+2. En el SQL Editor del proyecto Supabase de Gestión de Guías, ejecuta `supabase_gestion_v2_sla_paquetes.sql`. Si ejecutaste la versión anterior, vuelve a ejecutar este archivo actualizado: conserva los rangos anteriores y migra el umbral único a rangos.
 3. Publica el repositorio y vuelve a entrar a Gestión de guías V2. El módulo aparece como una pestaña adicional.
 
 El SQL crea tablas y funciones nuevas. No altera `storage.objects`, las tablas existentes de gestión, consulta desde Excel o Penalidades, ni sus datos.

@@ -6,6 +6,13 @@
     role: "",
     rows: [],
     config: null,
+    prices: new Map(),
+    priceDrafts: new Map(),
+    priceDistricts: [],
+    ranges: [
+      { orden: 1, desde_horas: 0, hasta_horas: 48, tarifa_porcentaje: 0 },
+      { orden: 2, desde_horas: 48, hasta_horas: null, tarifa_porcentaje: 90 }
+    ],
     dataset: null,
     loadedAt: 0,
     loading: false,
@@ -44,6 +51,9 @@
   function headerText(value) {
     return safeText(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleUpperCase("es").replace(/[^A-Z0-9]+/g, "");
   }
+  function geoKey(department, province, district) {
+    return keyText(department) + "|" + keyText(province) + "|" + keyText(district);
+  }
   function showStatus(message, isError) {
     var el = byId("slaEstado");
     if (!el) return;
@@ -66,6 +76,7 @@
     out.distrito = safeText(row.distrito).trim();
     out._provinceKey = keyText(out.departamento) + "|" + keyText(out.provincia);
     out._districtKey = out._provinceKey + "|" + keyText(out.distrito || "SIN DISTRITO");
+    out._geoKey = geoKey(out.departamento, out.provincia, out.distrito);
     out._guideKey = keyText(out.guia) + "|" + keyText(out.pdv);
     return out;
   }
@@ -116,22 +127,90 @@
     var signed = !!row.firma;
     var end = signed ? row.firma : now;
     var hours = start ? (end - start) / 3600000 : null;
-    var threshold = Number(state.config && state.config.umbral_horas || 48);
     var classification = "SIN_INICIO";
     if (start && hours < 0) classification = "INCONSISTENTE";
-    else if (start && hours >= threshold) classification = "TARIFA";
-    else if (start) classification = "EN_SLA";
-    return { start: start, startLabel: label, end: end, signed: signed, hours: hours, classification: classification };
+    else if (start) {
+      var range = (state.ranges || []).find(function (item) {
+        return hours >= Number(item.desde_horas) && (item.hasta_horas === null || item.hasta_horas === undefined || hours < Number(item.hasta_horas));
+      });
+      if (range) classification = "RANGO_" + range.orden;
+      else classification = "INCONSISTENTE";
+      var price = state.prices.has(row._geoKey) ? state.prices.get(row._geoKey) : null;
+      var tariff = range ? Number(range.tarifa_porcentaje) : null;
+      var amount = range && tariff === 0 ? 0 : range && price !== null ? Math.round((price * tariff / 100 + Number.EPSILON) * 100) / 100 : null;
+      return { start: start, startLabel: label, end: end, signed: signed, hours: hours, classification: classification, range: range || null, tariff: tariff, price: price, amount: amount };
+    }
+    return { start: start, startLabel: label, end: end, signed: signed, hours: hours, classification: classification, range: null, tariff: null, price: state.prices.has(row._geoKey) ? state.prices.get(row._geoKey) : null, amount: null };
   }
   function classificationLabel(code) {
-    var threshold = Number(state.config && state.config.umbral_horas || 48);
-    var tariff = Number(state.config && state.config.tarifa_porcentaje || 90);
-    if (code === "TARIFA") return "≥ " + threshold + " h · Tarifa " + tariff + "%";
-    if (code === "EN_SLA") return "Dentro de " + threshold + " h";
+    var match = safeText(code).match(/^RANGO_(\d+)$/);
+    if (match) {
+      var range = (state.ranges || []).find(function (item) { return Number(item.orden) === Number(match[1]); });
+      return range ? rangeLabel(range) : "Rango " + match[1];
+    }
     if (code === "SIN_INICIO") return "Sin fecha de inicio";
     if (code === "INCONSISTENTE") return "Fecha inconsistente";
     if (code === "SIN_FIRMA") return "Sin firma · en curso";
     return "Todas";
+  }
+  function formatMoney(value) {
+    if (value === null || value === undefined || !isFinite(Number(value))) return "Pendiente";
+    return "S/ " + Number(value).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function formatPrice(value) {
+    if (value === null || value === undefined || !isFinite(Number(value))) return "Pendiente";
+    return "S/ " + Number(value).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  }
+  function rangeLabel(range) {
+    var from = Number(range.desde_horas);
+    var to = range.hasta_horas === null || range.hasta_horas === undefined || range.hasta_horas === "" ? null : Number(range.hasta_horas);
+    var tariff = Number(range.tarifa_porcentaje);
+    return to === null ? "≥ " + from + " h · Tarifa " + tariff + "%" : from + " ≤ h < " + to + " · Tarifa " + tariff + "%";
+  }
+  function rangeHeaderLabel(range) {
+    var from = Number(range.desde_horas);
+    var to = range.hasta_horas === null || range.hasta_horas === undefined || range.hasta_horas === "" ? null : Number(range.hasta_horas);
+    var tariff = Number(range.tarifa_porcentaje);
+    return to === null ? "≥ " + from + " h · " + tariff + "%" : from + "–<" + to + " h · " + tariff + "%";
+  }
+  function normalizedRanges(config) {
+    var configured = config && Array.isArray(config.rangos) ? config.rangos : [];
+    if (configured.length) return configured.map(function (range, index) {
+      return {
+        orden: index + 1,
+        desde_horas: Number(range.desde_horas),
+        hasta_horas: range.hasta_horas === null || range.hasta_horas === undefined || range.hasta_horas === "" ? null : Number(range.hasta_horas),
+        tarifa_porcentaje: Number(range.tarifa_porcentaje)
+      };
+    });
+    var threshold = Number(config && config.umbral_horas || 48);
+    var tariff = Number(config && config.tarifa_porcentaje || 90);
+    return [
+      { orden: 1, desde_horas: 0, hasta_horas: threshold, tarifa_porcentaje: 0 },
+      { orden: 2, desde_horas: threshold, hasta_horas: null, tarifa_porcentaje: tariff }
+    ];
+  }
+  function normalizedPrices(config) {
+    var prices = new Map();
+    (config && Array.isArray(config.precios) ? config.precios : []).forEach(function (item) {
+      var value = item.precio === null || item.precio === undefined || item.precio === "" ? null : Number(item.precio);
+      prices.set(geoKey(item.departamento, item.provincia, item.distrito), isFinite(value) ? value : null);
+    });
+    return prices;
+  }
+  function updateFilterOptions() {
+    var select = byId("slaFiltroClasificacion");
+    if (!select) return;
+    var current = select.value;
+    var options = ['<option value="">Todas las clasificaciones</option>'];
+    (state.ranges || []).forEach(function (range) {
+      options.push('<option value="RANGO_' + range.orden + '">' + escapeHtml(rangeLabel(range)) + '</option>');
+    });
+    options.push('<option value="SIN_INICIO">Sin fecha de inicio</option>');
+    options.push('<option value="INCONSISTENTE">Fecha inconsistente</option>');
+    options.push('<option value="SIN_FIRMA">Sin firma · en curso</option>');
+    select.innerHTML = options.join("");
+    if (Array.prototype.some.call(select.options, function (option) { return option.value === current; })) select.value = current;
   }
   function allRows() {
     var now = Date.now();
@@ -157,10 +236,12 @@
     return allRows().filter(function (row) { return matchesFilter(row, filters); });
   }
   function classCounts(rows) {
-    var result = { EN_SLA: 0, TARIFA: 0, SIN_INICIO: 0, INCONSISTENTE: 0, SIN_FIRMA: 0 };
+    var result = { SIN_INICIO: 0, INCONSISTENTE: 0, SIN_FIRMA: 0, SIN_PRECIO: 0 };
+    (state.ranges || []).forEach(function (range) { result["RANGO_" + range.orden] = 0; });
     rows.forEach(function (row) {
       result[row._calc.classification] = (result[row._calc.classification] || 0) + 1;
       if (!row._calc.signed) result.SIN_FIRMA++;
+      if (row._calc.price === null || row._calc.price === undefined) result.SIN_PRECIO++;
     });
     return result;
   }
@@ -170,9 +251,15 @@
     if (!state.dataset) return;
     var counts = classCounts(rows);
     if (byId("slaTotalPaquetes")) byId("slaTotalPaquetes").textContent = rows.length.toLocaleString("es-PE");
-    if (byId("slaEnPlazo")) byId("slaEnPlazo").textContent = counts.EN_SLA.toLocaleString("es-PE");
-    if (byId("slaTarifaAplicada")) byId("slaTarifaAplicada").textContent = counts.TARIFA.toLocaleString("es-PE");
+    var noTarifa = 0, conTarifa = 0;
+    (state.ranges || []).forEach(function (range) {
+      var count = counts["RANGO_" + range.orden] || 0;
+      if (Number(range.tarifa_porcentaje) > 0) conTarifa += count; else noTarifa += count;
+    });
+    if (byId("slaEnPlazo")) byId("slaEnPlazo").textContent = noTarifa.toLocaleString("es-PE");
+    if (byId("slaTarifaAplicada")) byId("slaTarifaAplicada").textContent = conTarifa.toLocaleString("es-PE");
     if (byId("slaSinFirma")) byId("slaSinFirma").textContent = counts.SIN_FIRMA.toLocaleString("es-PE");
+    if (byId("slaSinPrecio")) byId("slaSinPrecio").textContent = counts.SIN_PRECIO.toLocaleString("es-PE");
   }
   function groupRows(rows) {
     var provinces = new Map();
@@ -199,25 +286,66 @@
       return province;
     });
   }
-  function actionButton(label, action, provinceKey, districtKey, classification, className) {
-    return '<button type="button" class="sla-count-link ' + (className || "") + '" data-sla-action="select" data-province="' + encodeURIComponent(provinceKey || "") + '" data-district="' + encodeURIComponent(districtKey || "") + '" data-class="' + encodeURIComponent(classification || "") + '" aria-label="Ver ' + escapeHtml(label) + ' paquetes">' + Number(label || 0).toLocaleString("es-PE") + '</button>';
+  function districtRows(rows) {
+    var districts = new Map();
+    rows.forEach(function (row) {
+      if (!row.distrito) return;
+      var key = row._geoKey;
+      if (!districts.has(key)) districts.set(key, {
+        key: key,
+        departamento: row.departamento || "Sin departamento",
+        provincia: row.provincia || "Sin provincia",
+        distrito: row.distrito || "Sin distrito"
+      });
+    });
+    return Array.from(districts.values()).sort(function (a, b) {
+      return (a.departamento + a.provincia + a.distrito).localeCompare(b.departamento + b.provincia + b.distrito, "es");
+    });
+  }
+  function amountTotal(rows, classCode) {
+    var total = 0, priced = 0, matching = 0;
+    rows.forEach(function (row) {
+      if (row._calc.classification !== classCode) return;
+      matching++;
+      if (row._calc.amount === null) return;
+      total += row._calc.amount; priced++;
+    });
+    return { total: Math.round((total + Number.EPSILON) * 100) / 100, priced: priced, matching: matching };
+  }
+  function actionButton(label, action, provinceKey, districtKey, classification, className, amount) {
+    var amountHtml = amount === undefined ? "" : '<small class="sla-count-amount">' + formatMoney(amount) + '</small>';
+    return '<button type="button" class="sla-count-link ' + (className || "") + '" data-sla-action="select" data-province="' + encodeURIComponent(provinceKey || "") + '" data-district="' + encodeURIComponent(districtKey || "") + '" data-class="' + encodeURIComponent(classification || "") + '" aria-label="Ver ' + escapeHtml(label) + ' paquetes">' + Number(label || 0).toLocaleString("es-PE") + amountHtml + '</button>';
   }
   function countCells(rows, provinceKey, districtKey) {
     var c = classCounts(rows);
     var hidden = state.collapsedClasses ? " hidden" : "";
-    return '<td class="number">' + actionButton(rows.length, "select", provinceKey, districtKey, "", "") + '</td>' +
-      '<td class="number sla-classification-col' + hidden + '">' + actionButton(c.EN_SLA, "select", provinceKey, districtKey, "EN_SLA", "sla-good") + '</td>' +
-      '<td class="number sla-classification-col' + hidden + '">' + actionButton(c.TARIFA, "select", provinceKey, districtKey, "TARIFA", "sla-bad") + '</td>' +
-      '<td class="number sla-classification-col' + hidden + '">' + actionButton(c.SIN_INICIO, "select", provinceKey, districtKey, "SIN_INICIO", "sla-open") + '</td>' +
+    var html = '<td class="number">' + actionButton(rows.length, "select", provinceKey, districtKey, "", "") + '</td>';
+    (state.ranges || []).forEach(function (range) {
+      var code = "RANGO_" + range.orden;
+      var total = amountTotal(rows, code);
+      var amount = total.matching === 0 || total.priced === total.matching ? total.total : null;
+      html += '<td class="number sla-classification-col' + hidden + '">' + actionButton(c[code], "select", provinceKey, districtKey, code, Number(range.tarifa_porcentaje) > 0 ? "sla-bad" : "sla-good", amount) + '</td>';
+    });
+    html += '<td class="number sla-classification-col' + hidden + '">' + actionButton(c.SIN_INICIO, "select", provinceKey, districtKey, "SIN_INICIO", "sla-open") + '</td>' +
       '<td class="number sla-classification-col' + hidden + '">' + actionButton(c.INCONSISTENTE, "select", provinceKey, districtKey, "INCONSISTENTE", "sla-open") + '</td>' +
       '<td class="number">' + actionButton(c.SIN_FIRMA, "select", provinceKey, districtKey, "SIN_FIRMA", "sla-open") + '</td>';
+    return html;
   }
   function renderSummary(rows) {
     var tbody = byId("slaResumenBody");
     if (!tbody) return;
+    var classHeader = byId("slaClassificationGroup");
+    var classHeaders = byId("slaClassificationHeaders");
+    var ranges = state.ranges || [];
+    if (classHeader) classHeader.colSpan = ranges.length + 2;
+    if (classHeaders) {
+      classHeaders.innerHTML = ranges.map(function (range) {
+        return '<th class="sla-classification-col">' + escapeHtml(rangeHeaderLabel(range)) + '</th>';
+      }).join("") + '<th class="sla-classification-col">Sin inicio</th><th class="sla-classification-col">Fecha inconsistente</th>';
+    }
     var groups = groupRows(rows);
     if (!groups.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="sla-empty">No hay paquetes que coincidan con los filtros.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="' + (ranges.length + 5) + '" class="sla-empty">No hay paquetes que coincidan con los filtros.</td></tr>';
       return;
     }
     var html = "";
@@ -232,10 +360,13 @@
     });
     var totals = classCounts(rows);
     var hidden = state.collapsedClasses ? " hidden" : "";
-    html += '<tr class="sla-total-row"><td>TOTAL GENERAL</td><td class="number">' + rows.length.toLocaleString("es-PE") + '</td>' +
-      '<td class="number sla-classification-col' + hidden + '">' + totals.EN_SLA.toLocaleString("es-PE") + '</td>' +
-      '<td class="number sla-classification-col' + hidden + '">' + totals.TARIFA.toLocaleString("es-PE") + '</td>' +
-      '<td class="number sla-classification-col' + hidden + '">' + totals.SIN_INICIO.toLocaleString("es-PE") + '</td>' +
+    html += '<tr class="sla-total-row"><td>TOTAL GENERAL</td><td class="number">' + rows.length.toLocaleString("es-PE") + '</td>';
+    ranges.forEach(function (range) {
+      var total = amountTotal(rows, "RANGO_" + range.orden);
+      var amount = total.matching === 0 || total.priced === total.matching ? total.total : null;
+      html += '<td class="number sla-classification-col' + hidden + '">' + actionButton(totals["RANGO_" + range.orden] || 0, "select", "", "", "RANGO_" + range.orden, Number(range.tarifa_porcentaje) > 0 ? "sla-bad" : "sla-good", amount) + '</td>';
+    });
+    html += '<td class="number sla-classification-col' + hidden + '">' + totals.SIN_INICIO.toLocaleString("es-PE") + '</td>' +
       '<td class="number sla-classification-col' + hidden + '">' + totals.INCONSISTENTE.toLocaleString("es-PE") + '</td>' +
       '<td class="number">' + totals.SIN_FIRMA.toLocaleString("es-PE") + '</td></tr>';
     tbody.innerHTML = html;
@@ -279,14 +410,14 @@
     var from = (state.page - 1) * PAGE_SIZE;
     var pageRows = rows.slice(from, from + PAGE_SIZE);
     if (!pageRows.length) {
-      tbody.innerHTML = '<tr><td colspan="19" class="sla-empty">No hay registros para mostrar.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="22" class="sla-empty">No hay registros para mostrar.</td></tr>';
     } else {
       tbody.innerHTML = pageRows.map(function (row) {
         var c = row._calc;
-        var badge = c.classification === "TARIFA" ? "tarifa" : c.classification === "SIN_INICIO" ? "sin-inicio" : c.classification === "INCONSISTENTE" ? "inconsistente" : "";
+        var badge = c.range ? (Number(c.range.tarifa_porcentaje) > 0 ? "tarifa" : "sin-tarifa") : c.classification === "SIN_INICIO" ? "sin-inicio" : c.classification === "INCONSISTENTE" ? "inconsistente" : "";
         var hours = c.hours === null ? "—" : c.hours.toFixed(2) + " h";
         var endLabel = c.signed ? "Firma" : "Ahora";
-        var values = [row.guia,row.pdv,row.departamento,row.provincia,row.distrito,(c.startLabel ? c.startLabel + " · " : "") + formatDate(c.start),endLabel + " · " + formatDate(c.end),formatDate(row.fecha_generacion),formatDate(row.salida_hub),formatDate(row.llegada_cedis),formatDate(row.salida_cedis),formatDate(row.llegada_pdv),formatDate(row.despacho),formatDate(row.firma),formatDate(row.problema),formatDate(row.retorno_almacen),formatDate(row.devolucion),hours];
+        var values = [row.guia,row.pdv,row.departamento,row.provincia,row.distrito,(c.startLabel ? c.startLabel + " · " : "") + formatDate(c.start),endLabel + " · " + formatDate(c.end),formatDate(row.fecha_generacion),formatDate(row.salida_hub),formatDate(row.llegada_cedis),formatDate(row.salida_cedis),formatDate(row.llegada_pdv),formatDate(row.despacho),formatDate(row.firma),formatDate(row.problema),formatDate(row.retorno_almacen),formatDate(row.devolucion),hours,formatPrice(c.price),c.tariff === null ? "—" : c.tariff.toFixed(2) + "%",formatMoney(c.amount)];
         return '<tr>' + values.map(function (value, index) { return '<td' + (index === 5 || index === 6 ? ' class="sla-destino-hito"' : "") + '>' + escapeHtml(value || "—") + '</td>'; }).join("") + '<td><span class="sla-class-badge ' + badge + '">' + escapeHtml(classificationLabel(c.classification)) + '</span></td></tr>';
       }).join("");
     }
@@ -298,14 +429,11 @@
     if (info) info.textContent = rows.length ? (from + 1).toLocaleString("es-PE") + "–" + Math.min(from + PAGE_SIZE, rows.length).toLocaleString("es-PE") + " de " + rows.length.toLocaleString("es-PE") : "0 resultados";
   }
   function renderAll() {
+    updateFilterOptions();
     var rows = filteredRows();
     renderCards(rows);
     renderSummary(rows);
     renderDetail();
-    var threshold = Number(state.config && state.config.umbral_horas || 48);
-    var tariff = Number(state.config && state.config.tarifa_porcentaje || 90);
-    if (byId("slaCumpleHeader")) byId("slaCumpleHeader").textContent = "Dentro de " + threshold + " h";
-    if (byId("slaTarifaHeader")) byId("slaTarifaHeader").textContent = "≥ " + threshold + " h · Tarifa " + tariff + "%";
     var toggle = byId("slaToggleClasificacion");
     if (toggle) toggle.textContent = state.collapsedClasses ? "Mostrar columnas de clasificación" : "Ocultar columnas de clasificación";
     document.querySelectorAll("#viewSla .sla-classification-col").forEach(function (cell) { cell.hidden = state.collapsedClasses; });
@@ -313,6 +441,11 @@
   function applyDataset(data, config) {
     state.rows = (data || []).map(normalizeRow);
     state.config = config || state.config || { umbral_horas: 48, tarifa_porcentaje: 90 };
+    state.ranges = normalizedRanges(state.config);
+    state.prices = normalizedPrices(state.config);
+    state.priceDrafts = new Map();
+    state.priceDistricts = districtRows(state.rows);
+    renderPriceEditor();
   }
   async function loadAllPages() {
     var rows = [];
@@ -339,8 +472,8 @@
     try {
       var config = await api().ejecutar("config", {});
       state.config = config || { umbral_horas: 48, tarifa_porcentaje: 90 };
-      if (byId("slaUmbralHoras")) byId("slaUmbralHoras").value = state.config.umbral_horas || 48;
-      if (byId("slaTarifaPorcentaje")) byId("slaTarifaPorcentaje").value = state.config.tarifa_porcentaje || 90;
+      state.ranges = normalizedRanges(state.config);
+      renderRangeEditor(state.ranges);
       var result = await loadAllPages();
       applyDataset(result.rows, config);
       state.dataset = result.dataset || config.dataset || null;
@@ -363,6 +496,138 @@
     state.role = safeText(role).toUpperCase();
     var admin = byId("slaAdminTools");
     if (admin) admin.classList.toggle("hidden", state.role !== "ADMINISTRADOR");
+  }
+  function renderPriceEditor() {
+    var body = byId("slaPreciosEditor");
+    if (!body) return;
+    var query = safeText(byId("slaPrecioBuscar") && byId("slaPrecioBuscar").value).trim().toLocaleUpperCase("es");
+    var rows = state.priceDistricts.filter(function (item) {
+      return !query || [item.departamento,item.provincia,item.distrito].join(" ").toLocaleUpperCase("es").indexOf(query) >= 0;
+    });
+    if (!rows.length) {
+      body.innerHTML = '<tr><td colspan="4" class="sla-empty">No hay distritos disponibles para editar.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(function (item) {
+      var value = state.priceDrafts.has(item.key) ? state.priceDrafts.get(item.key) : state.prices.get(item.key);
+      return '<tr><td>' + escapeHtml(item.departamento) + '</td><td>' + escapeHtml(item.provincia) + '</td><td>' + escapeHtml(item.distrito) + '</td><td><input type="number" min="0" max="9999999999.9999" step="0.0001" inputmode="decimal" data-price-key="' + encodeURIComponent(item.key) + '" aria-label="Precio por guía de ' + escapeHtml(item.distrito) + '" placeholder="Sin definir" value="' + (value === null || value === undefined ? "" : escapeHtml(value)) + '"></td></tr>';
+    }).join("");
+  }
+  function filtrarPrecios() { renderPriceEditor(); }
+  function updatePriceDraft(event) {
+    var input = event.target.closest("input[data-price-key]");
+    if (!input) return;
+    var key = decodeURIComponent(input.getAttribute("data-price-key") || "");
+    var value = input.value.trim();
+    state.priceDrafts.set(key, value === "" ? null : Number(value));
+    renderAll();
+  }
+  async function guardarPrecios() {
+    if (state.role !== "ADMINISTRADOR") { showStatus("Solo el administrador puede cambiar el precio por distrito.", true); return; }
+    if (!state.priceDrafts.size) { showStatus("No hay cambios de precio por guardar.", false); return; }
+    var districtByKey = new Map(state.priceDistricts.map(function (item) { return [item.key, item]; }));
+    var prices = Array.from(state.priceDrafts.entries()).map(function (entry) {
+      var item = districtByKey.get(entry[0]);
+      var amount = entry[1];
+      return item ? { departamento: item.departamento, provincia: item.provincia, distrito: item.distrito, precio: entry[1] } : null;
+    }).filter(Boolean);
+    var invalidPrice = prices.find(function (item) {
+      var amount = item.precio;
+      return amount !== null && (!isFinite(amount) || amount < 0 || amount > 9999999999.9999 || Math.abs(amount * 10000 - Math.round(amount * 10000)) > 0.000001);
+    });
+    if (invalidPrice) { showStatus("Cada precio debe ser mayor o igual a cero y tener hasta 4 decimales.", true); return; }
+    var button = byId("slaGuardarPrecios");
+    if (button) button.disabled = true;
+    try {
+      await api().ejecutar("guardar_precios", { precios: prices });
+      state.config = await api().ejecutar("config", {});
+      state.ranges = normalizedRanges(state.config);
+      state.prices = normalizedPrices(state.config);
+      state.priceDrafts.clear();
+      renderPriceEditor();
+      renderAll();
+      showStatus("Precios por distrito guardados y compartidos.", false);
+    } catch (error) {
+      showStatus("No se pudieron guardar los precios. Detalle: " + (error && error.message || error), true);
+    } finally { if (button) button.disabled = false; }
+  }
+  function readRangeEditor() {
+    var body = byId("slaRangesEditor");
+    if (!body) return [];
+    return Array.prototype.map.call(body.querySelectorAll("tr"), function (row, index) {
+      var get = function (field) { return row.querySelector('[data-range-field="' + field + '"]').value.trim(); };
+      var from = get("desde");
+      var to = get("hasta");
+      var tariff = get("tarifa");
+      return {
+        orden: index + 1,
+        desde_horas: from === "" ? null : Number(from),
+        hasta_horas: to === "" ? null : Number(to),
+        tarifa_porcentaje: tariff === "" ? null : Number(tariff)
+      };
+    });
+  }
+  function renderRangeEditor(ranges) {
+    var body = byId("slaRangesEditor");
+    if (!body) return;
+    var values = ranges && ranges.length ? ranges : state.ranges;
+    body.innerHTML = values.map(function (range, index) {
+      var to = range.hasta_horas === null || range.hasta_horas === undefined ? "" : safeText(range.hasta_horas);
+      return '<tr><td><input type="number" min="0" max="100000" step="0.01" data-range-field="desde" aria-label="Hora inicial del rango ' + (index + 1) + '" value="' + escapeHtml(range.desde_horas) + '"></td>' +
+        '<td><input type="number" min="0" max="100000" step="0.01" data-range-field="hasta" aria-label="Hora final del rango ' + (index + 1) + '" placeholder="Sin límite" value="' + escapeHtml(to) + '"></td>' +
+        '<td><input type="number" min="0" max="100" step="0.01" data-range-field="tarifa" aria-label="Tarifa porcentual del rango ' + (index + 1) + '" value="' + escapeHtml(range.tarifa_porcentaje) + '"></td>' +
+        '<td><button type="button" class="danger sla-remove-range" onclick="SlaPaquetesV2.quitarRango(' + index + ')" aria-label="Eliminar rango ' + (index + 1) + '" ' + (values.length <= 1 ? "disabled" : "") + '>Quitar</button></td></tr>';
+    }).join("");
+  }
+  function validateRanges(ranges) {
+    if (!ranges.length || ranges.length > 20) return "Configura entre 1 y 20 rangos.";
+    if (ranges[0].desde_horas !== 0) return "El primer rango debe comenzar en 0 horas.";
+    for (var i = 0; i < ranges.length; i++) {
+      var range = ranges[i];
+      if (!isFinite(range.desde_horas) || range.desde_horas < 0 || range.desde_horas > 100000) return "Revisa la hora inicial del rango " + (i + 1) + ".";
+      if (!isFinite(range.tarifa_porcentaje) || range.tarifa_porcentaje < 0 || range.tarifa_porcentaje > 100) return "La tarifa del rango " + (i + 1) + " debe estar entre 0 y 100%.";
+      if (i > 0 && range.desde_horas !== ranges[i - 1].hasta_horas) return "Los rangos deben ser continuos y no solaparse. El rango " + (i + 1) + " debe iniciar donde termina el anterior.";
+      if (i < ranges.length - 1) {
+        if (!isFinite(range.hasta_horas) || range.hasta_horas <= range.desde_horas) return "Cada rango intermedio necesita un límite final mayor a su inicio.";
+      } else if (range.hasta_horas !== null) return "Deja vacío el límite final del último rango para cubrir las horas mayores.";
+      if (range.hasta_horas !== null && (!isFinite(range.hasta_horas) || range.hasta_horas > 100000 || range.hasta_horas <= range.desde_horas)) return "Revisa el límite final del rango " + (i + 1) + ".";
+    }
+    return "";
+  }
+  function agregarRango() {
+    var ranges = readRangeEditor();
+    if (!ranges.length) ranges = state.ranges.map(function (x) { return Object.assign({}, x); });
+    if (ranges.length >= 20) { showStatus("Se permiten hasta 20 rangos.", true); return; }
+    var last = ranges[ranges.length - 1];
+    if (!isFinite(last.desde_horas) || last.desde_horas < 0 || !isFinite(last.tarifa_porcentaje)) {
+      showStatus("Completa las horas y la tarifa antes de agregar otro rango.", true); return;
+    }
+    if (last.hasta_horas === null) {
+      var boundary = last.desde_horas + 24;
+      if (boundary > 100000) { showStatus("El rango supera el máximo de horas permitido.", true); return; }
+      last.hasta_horas = boundary;
+      ranges.push({ orden: ranges.length + 1, desde_horas: boundary, hasta_horas: null, tarifa_porcentaje: last.tarifa_porcentaje });
+    } else {
+      if (!isFinite(last.hasta_horas) || last.hasta_horas <= last.desde_horas) { showStatus("Corrige el límite del último rango antes de agregar otro.", true); return; }
+      ranges.push({ orden: ranges.length + 1, desde_horas: last.hasta_horas, hasta_horas: null, tarifa_porcentaje: last.tarifa_porcentaje });
+    }
+    ranges.forEach(function (range, index) { range.orden = index + 1; });
+    renderRangeEditor(ranges);
+  }
+  function quitarRango(index) {
+    var ranges = readRangeEditor();
+    if (ranges.length <= 1) { showStatus("Debe quedar al menos un rango.", true); return; }
+    var removed = ranges.splice(Number(index), 1)[0];
+    if (!removed) return;
+    var cursor = 0;
+    ranges.forEach(function (range, i) {
+      var width = range.hasta_horas === null ? null : range.hasta_horas - range.desde_horas;
+      range.orden = i + 1;
+      range.desde_horas = cursor;
+      range.hasta_horas = i === ranges.length - 1 ? null : cursor + (isFinite(width) && width > 0 ? width : 24);
+      if (range.hasta_horas !== null) cursor = range.hasta_horas;
+    });
+    renderRangeEditor(ranges);
   }
   function applyFilters() {
     state.page = 1;
@@ -550,18 +815,20 @@
   }
   async function guardarParametros() {
     if (state.role !== "ADMINISTRADOR") return;
-    var umbral = Number(byId("slaUmbralHoras") && byId("slaUmbralHoras").value);
-    var tarifa = Number(byId("slaTarifaPorcentaje") && byId("slaTarifaPorcentaje").value);
-    if (!isFinite(umbral) || umbral < 1 || umbral > 8760 || !isFinite(tarifa) || tarifa < 0 || tarifa > 100) {
-      showStatus("Ingresa un umbral entre 1 y 8760 horas y una tarifa entre 0 y 100%.", true);
-      return;
-    }
+    var ranges = readRangeEditor();
+    var validation = validateRanges(ranges);
+    if (validation) { showStatus(validation, true); return; }
+    ranges.forEach(function (range, index) { range.orden = index + 1; });
     var button = byId("slaGuardarParametros");
     if (button) button.disabled = true;
     try {
-      state.config = await api().ejecutar("guardar_parametros", { umbral_horas: umbral, tarifa_porcentaje: tarifa });
+      state.config = await api().ejecutar("guardar_parametros", { rangos: ranges });
       state.config.dataset = state.dataset;
-      showStatus("Parámetros compartidos guardados: " + umbral + " horas → tarifa " + tarifa + "%.", false);
+      state.ranges = normalizedRanges(state.config);
+      state.selectedClass = "";
+      if (byId("slaFiltroClasificacion")) byId("slaFiltroClasificacion").value = "";
+      renderRangeEditor(state.ranges);
+      showStatus("Rangos y tarifas compartidos guardados.", false);
       renderAll();
     } catch (error) {
       showStatus("No se pudieron guardar los parámetros. Detalle: " + (error && error.message || error), true);
@@ -577,6 +844,8 @@
   function init() {
     var tbody = byId("slaResumenBody");
     if (tbody) tbody.addEventListener("click", handleSummaryClick);
+    var pricesBody = byId("slaPreciosEditor");
+    if (pricesBody) pricesBody.addEventListener("input", updatePriceDraft);
     if (!state.timer) state.timer = window.setInterval(function () { if (state.dataset && !state.loading) renderAll(); }, 60000);
   }
   document.addEventListener("DOMContentLoaded", init);
@@ -591,6 +860,10 @@
     alternarClasificacion: toggleClasses,
     cambiarPagina: changePage,
     importarArchivo: importarArchivo,
-    guardarParametros: guardarParametros
+    guardarParametros: guardarParametros,
+    guardarPrecios: guardarPrecios,
+    filtrarPrecios: filtrarPrecios,
+    agregarRango: agregarRango,
+    quitarRango: quitarRango
   };
 })();

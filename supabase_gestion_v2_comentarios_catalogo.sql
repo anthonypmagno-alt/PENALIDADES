@@ -148,6 +148,20 @@ begin
   end if;
 
   if accion in ('listar_catalogo','guardar_catalogo') then
+    if accion='guardar_catalogo' and not public.v16_gestion_modulo_permitido('catalogo_comentarios','ejecutar',v_perfil) then
+      raise exception 'Tu usuario no tiene permiso para guardar el catálogo de comentarios.' using errcode='42501';
+    elsif accion='listar_catalogo'
+       and not public.v16_gestion_modulo_permitido('catalogo_comentarios','ver',v_perfil)
+       and not public.v16_gestion_modulo_permitido('gestion_v2','ver',v_perfil) then
+      raise exception 'Tu usuario no tiene permiso para esta acción del catálogo de comentarios.' using errcode='42501';
+    end if;
+  elsif accion in ('listar_clasificaciones','guardar_clasificaciones') then
+    if not public.v16_gestion_modulo_permitido('gestion_v2',case when accion='guardar_clasificaciones' then 'ejecutar' else 'ver' end,v_perfil) then
+      raise exception 'Tu usuario no tiene permiso para esta acción de Gestión de Guías V2.' using errcode='42501';
+    end if;
+  end if;
+
+  if accion in ('listar_catalogo','guardar_catalogo') then
     if accion='guardar_catalogo' and v_rol<>'ADMINISTRADOR' then
       raise exception 'Solo el administrador puede modificar el catálogo.' using errcode='42501';
     end if;

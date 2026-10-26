@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=gestion-v2-fixes-20261024-total-prev-crit-1"></script>
+<script src="./bridge.js?v=20261026-sla-rangos-precios-permisos-v31"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -141,6 +141,10 @@
 .comment-taxonomy select:disabled{background:#f1f5f9;color:#94a3b8}
 @media(max-width:700px){.comment-catalog-grid{grid-template-columns:1fr}.view-tabs{gap:5px}.view-tab{white-space:nowrap}}
 </style>
+
+<style>
+.v16-module-permissions{grid-column:1/-1;border:1px solid #cbd5e1;border-radius:9px;padding:12px;background:#f8fafc;text-align:left}.v16-module-permissions>div:first-child strong,.v16-module-permission-editor-head strong{display:block;color:#17324d;font-size:13px}.v16-module-permissions small{display:block;color:#64748b;font-size:10px;margin-top:3px}.v16-module-permission-matrix{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px;margin-top:10px}.v16-module-permission-row{display:grid;grid-template-columns:minmax(130px,1fr) 62px 82px;align-items:center;gap:8px;padding:7px 8px;border:1px solid #e2e8f0;border-radius:7px;background:white;font-size:11px}.v16-module-permission-row>span{font-weight:700;color:#334155}.v16-module-permission-row label{display:flex;align-items:center;gap:4px;color:#475569;font-size:10px;white-space:nowrap}.v16-module-permission-editor-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.v16-module-permission-editor-head button{margin:0}
+</style>
 </head>
 <body>
   <section id="login" class="login">
@@ -157,11 +161,11 @@
   <div id="app" class="hidden">
     <header><div class="header-inner">
       <div><div class="title">📋 Revisión de Guías · V16</div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
-      <div class="actions"><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button class="success" onclick="descargarExcel()">📥 Excel detalle</button><button class="success" onclick="descargarExcelResumen()">📊 Excel resumen</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
+      <div class="actions"><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion" class="success" onclick="descargarExcel()">📥 Excel detalle</button><button data-module-key="gestion" class="success" onclick="descargarExcelResumen()">📊 Excel resumen</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
     <main>
-      <div class="view-tabs"><button id="tabGestion" data-view-tab="gestion" class="view-tab active" onclick="mostrarVista('gestion')">📋 Gestión de guías</button><button id="tabExcel" data-view-tab="excel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabEstadisticas" data-view-tab="estadisticas" class="view-tab" onclick="mostrarVista('estadisticas')">📊 Estadísticas por PDV</button><a data-modulo-v2="true" href="./gestion-v2.html?v=20261026-sla-paquetes-1" class="view-tab">Gestión de guías V2</a><a data-modulo-penalidades="true" href="./penalidades.html?v=20261015-sla-resumen-montos-7" class="view-tab">💰 Penalidades</a></div>
+      <div class="view-tabs"><button id="tabGestion" data-view-tab="gestion" data-module-key="gestion" class="view-tab active" onclick="mostrarVista('gestion')">📋 Gestión de guías</button><button id="tabExcel" data-view-tab="excel" data-module-key="consulta_excel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabEstadisticas" data-view-tab="estadisticas" data-module-key="estadisticas" class="view-tab" onclick="mostrarVista('estadisticas')">📊 Estadísticas por PDV</button><a data-modulo-v2="true" data-module-key="gestion_v2" href="./gestion-v2.html?v=20261026-sla-rangos-precios-permisos-v31" class="view-tab">Gestión de guías V2</a><a data-modulo-penalidades="true" data-module-key="penalidades" href="./penalidades.html?v=20261026-sla-rangos-precios-permisos-v31" class="view-tab">💰 Penalidades</a></div>
       <div id="viewGestion" class="app-view">
       <section id="sourceUploadPanel" class="panel hidden">
         <div class="panel-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Carga de información operativa <span class="readonly-note">SOLO ADMINISTRADOR</span><button type="button" id="sourceUploadToggle" class="secondary" style="margin-left:auto" aria-expanded="true" aria-controls="sourceUploadContent" onclick="toggleCargaOperativa()">Ocultar carga</button></div>
@@ -331,14 +335,16 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     }).withFailureHandler(e=>{btn.disabled=false;btn.textContent="INGRESAR";mostrarErrorLogin(errorTexto(e));}).iniciarSesion(usuario,clave);
   }
 
-  function abrirApp(){document.body.classList.toggle("no-summary-comments",sesion.rol==="PDV");document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("userBadge").textContent=sesion.usuario+" · "+sesion.rol;document.getElementById("sourceUploadPanel").classList.toggle("hidden",sesion.rol!=="ADMINISTRADOR");const solicitada=location.hash.replace(/^#/,"");mostrarVista(["gestion","excel","estadisticas"].includes(solicitada)?solicitada:"gestion");cargarDatos();cargarConsultaCompartida();}
+  function abrirApp(){document.body.classList.toggle("no-summary-comments",sesion.rol==="PDV");document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("userBadge").textContent=sesion.usuario+" · "+sesion.rol;document.getElementById("sourceUploadPanel").classList.toggle("hidden",sesion.rol!=="ADMINISTRADOR");window.V16ModulePermissions?.apply();const solicitada=location.hash.replace(/^#/,"");mostrarVista(["gestion","excel","estadisticas"].includes(solicitada)?solicitada:"gestion");cargarDatos();cargarConsultaCompartida();}
   function mostrarLogin(){document.getElementById("login").classList.remove("hidden");document.getElementById("app").classList.add("hidden");}
   function mostrarErrorLogin(t){const e=document.getElementById("loginError");e.textContent=t;e.style.display="block";}
 
   function mostrarVista(vista){
-    const vistas={gestion:"viewGestion",excel:"viewExcel",estadisticas:"viewEstadisticas"};
-    if(!vistas[vista])vista="gestion";
+    const vistas={gestion:"viewGestion",excel:"viewExcel",estadisticas:"viewEstadisticas"},modulos={gestion:"gestion",excel:"consulta_excel",estadisticas:"estadisticas"};
+    if(!vistas[vista]||!window.V16ModulePermissions?.canView(modulos[vista]))vista=["gestion","excel","estadisticas"].find(opcion=>window.V16ModulePermissions?.canView(modulos[opcion]));
+    if(!vista){Object.values(vistas).forEach(id=>document.getElementById(id)?.classList.add("hidden"));toast("Tu usuario no tiene módulos disponibles. Solicita acceso al administrador.",false);return;}
     Object.entries(vistas).forEach(([clave,id])=>document.getElementById(id)?.classList.toggle("hidden",clave!==vista));
+    window.V16ModulePermissions?.apply();
     document.querySelectorAll("[data-view-tab]").forEach(tab=>tab.classList.toggle("active",tab.dataset.viewTab===vista));
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
@@ -1361,12 +1367,20 @@ function toggleCargaOperativa(){
     <label id="v16ScopeKindLabel">Asignar por <select id="v16ScopeKind"><option value="pdvs">PDV específicos</option><option value="areas">Áreas</option><option value="regiones">Regiones</option></select></label>
     <label style="display:block;margin-top:10px">Alcance<select id="v16ScopeValues" style="display:block;width:100%;margin-top:6px"></select></label><small id="v16ScopeHint"></small>
    </div>
+   <div id="v16NewModulePermissions" class="v16-module-permissions">
+    <div><strong>Accesos a módulos</strong><small>Define qué puede ver y ejecutar este usuario. El administrador conserva acceso completo.</small></div>
+    <div id="v16NewModulePermissionMatrix" class="v16-module-permission-matrix"></div>
+   </div>
    <button id="v16CreateUser" class="success" type="submit">Crear usuario</button>
   </form>
+  <section id="v16ModulePermEditor" class="v16-module-permissions hidden">
+   <div class="v16-module-permission-editor-head"><div><strong>Permisos del usuario: <span id="v16ModulePermUsername"></span></strong><small>Los cambios se aplican al iniciar sesión o actualizar su página.</small></div><div><button id="v16SaveModulePerms" type="button" class="success">Guardar permisos</button> <button id="v16CancelModulePerms" type="button" class="secondary">Cerrar editor</button></div></div>
+   <div id="v16ModulePermissionsEditor" class="v16-module-permission-matrix"></div>
+  </section>
   <p id="v16UsersStatus" role="status" aria-live="polite" style="white-space:pre-wrap;color:#1e3a5f"></p>
   <hr><h4>Usuarios registrados</h4>
   <form id="v16UsersSearchForm" style="display:flex;gap:8px;margin:12px 0"><input id="v16UsersSearch" aria-label="Buscar usuario" placeholder="Buscar usuario" maxlength="64"><button type="submit" class="secondary">Buscar / actualizar</button></form>
-  <div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Usuario</th><th>Rol</th><th>Alcance</th><th>Estado</th></tr></thead><tbody id="v16UsersRows"></tbody></table></div>
+  <div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Usuario</th><th>Rol</th><th>Alcance</th><th>Estado</th><th>Módulos</th></tr></thead><tbody id="v16UsersRows"></tbody></table></div>
   <div style="display:flex;gap:12px;align-items:center;margin-top:12px"><button id="v16UsersPrev" class="secondary" type="button">Anterior</button><span id="v16UsersPage"></span><button id="v16UsersNext" class="secondary" type="button">Siguiente</button></div>
  </div>
 </div>

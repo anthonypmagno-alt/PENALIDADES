@@ -1344,6 +1344,7 @@
     const V16_CONFIG = window.V16_CONFIG;
     let exoSupabaseClient = null;
     let exoAppStarted = false;
+    let exoPenalidadesPermission = {ver:false,ejecutar:false};
     let exoV2Baseline = null;
     const exoV2BaselineItemsById = new Map();
     const gateMessage = document.getElementById('moduleGateMessage');
@@ -1351,6 +1352,8 @@
       gateMessage.textContent = message || '';
       gateMessage.classList.toggle('error', Boolean(isError));
     };
+    const canExecutePenalidades = () => window.EXO_PENALIDADES_ROLE==='ADMINISTRADOR' || exoPenalidadesPermission.ejecutar===true;
+    const assertExecutePenalidades = () => { if(!canExecutePenalidades()) throw new Error('Tu usuario puede consultar Penalidades, pero no ejecutar cambios. Solicita el permiso a un administrador.'); };
     const cloneState = value => JSON.parse(JSON.stringify(value || {}));
     const syncBatchSize = 500;
     const syncGuideBatchSize = 1000;
@@ -1437,6 +1440,7 @@
           },
           saveSlaRates(period,pdv,multipliers){
             (async()=>{
+              assertExecutePenalidades();
               const pdvKey=String(pdv||'').trim().toUpperCase(),entries=(Array.isArray(multipliers)?multipliers:[]).map(item=>({monto_subtipo:Number(item.monto_subtipo),multiplicador:item.multiplicador==null?null:Number(item.multiplicador)}));
               const {data,error}=await exoSupabaseClient.rpc('penalidades_guardar_multiplicadores_sla',{p_periodo:period,p_pdv:pdvKey,p_multiplicadores:entries});
               if(error)throw new Error(`Multiplicadores SLA de ${pdvKey} · ${period}: ${error.message||error.details||error.code||String(error)}`);
@@ -1459,6 +1463,7 @@
           getFullAppState(){fetchFullState().then(successHandler).catch(failureHandler);return runner;},
           saveDecisionChanges(decisions){
             (async()=>{
+              assertExecutePenalidades();
               const totalBatches=Math.ceil(decisions.length/syncGuideBatchSize);
               for(let i=0;i<decisions.length;i+=syncGuideBatchSize){
                 const part=decisions.slice(i,i+syncGuideBatchSize);
@@ -1480,6 +1485,7 @@
             return runner;
           },
           saveAppState(snapshot){
+            if(!canExecutePenalidades()){failureHandler(new Error('Tu usuario puede consultar Penalidades, pero no ejecutar cambios. Solicita el permiso a un administrador.'));return runner;}
             if((snapshot.records||[]).some(record=>record.isSimulation)&&!exoV2SimulationSupport){failureHandler(new Error('Supabase todavía no tiene habilitado el guardado de simulaciones. Ejecuta SUPABASE_SQL/supabase_penalidades_simulaciones.sql y recarga el módulo.'));return runner;}
             const keyNorm=value=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9\u3400-\u9FFF]+/g,' ').trim().replace(/\s+/g,' ').replace(/ /g,'');
             const dbItemId=(record,item)=>{const prefix=`${record.id}::`;return String(item.id??'').startsWith(prefix)?String(item.id):prefix+String(item.id??'');};
@@ -1646,6 +1652,10 @@
       if(accessError)throw new Error(accessError.message||'No se pudo validar tu perfil en el portal.');
       const profile=accessData?.perfil;
       if(!profile||!['ADMINISTRADOR','ENCARGADO'].includes(profile.rol)){showModuleGate('Tu perfil no tiene acceso a Penalidades. Solicita acceso a un administrador.',true);return;}
+      const {data:moduleData,error:moduleError}=await exoSupabaseClient.rpc('v16_gestion_modulos_usuario',{p_accion:'obtener',p_payload:{}});
+      if(moduleError)throw new Error('No se pudieron cargar los permisos de módulos. Ejecuta el SQL actualizado de permisos y SLA. Detalle: '+moduleError.message);
+      exoPenalidadesPermission=moduleData?.permisos?.penalidades||{ver:false,ejecutar:false};
+      if(profile.rol!=='ADMINISTRADOR'&&!exoPenalidadesPermission.ver){showModuleGate('Tu usuario no tiene permiso para ver Penalidades. Solicita el acceso a un administrador.',true);return;}
       showModuleGate('');
       startPenalidadesModule(profile);
       exoSupabaseClient.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT')window.location.replace('./index.html');});

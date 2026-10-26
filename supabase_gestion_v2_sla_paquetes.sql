@@ -1,7 +1,125 @@
--- SLA de paquetes para Gestión de Guías V2.
+-- Permisos de módulos por usuario, precios SLA por distrito y cálculo SLA para Gestión de Guías V2.
 -- Ejecutar una sola vez en el mismo proyecto Supabase de Gestión de Guías.
 -- Usa tablas privadas nuevas. No modifica las fuentes ni storage.objects existentes.
+-- Es incremental: conserva rangos y datos SLA ya cargados.
 begin;
+
+-- Permisos por usuario: la administración de permisos solo la puede hacer un administrador.
+create table if not exists v16_private.gestion_modulos_usuario (
+  usuario text primary key check (length(btrim(usuario)) between 1 and 64),
+  permisos jsonb not null check (jsonb_typeof(permisos)='object'),
+  actualizado_por uuid references auth.users(id),
+  actualizado_en timestamptz not null default now()
+);
+alter table v16_private.gestion_modulos_usuario enable row level security;
+revoke all on table v16_private.gestion_modulos_usuario from public,anon,authenticated;
+
+create or replace function public.v16_gestion_sla_geo_clave(p_texto text)
+returns text language sql immutable security definer
+set search_path = ''
+as $$
+  select regexp_replace(
+    translate(upper(coalesce(p_texto,'')),
+      'ÁÀÄÂÉÈËÊÍÌÏÎÓÒÖÔÚÙÜÛÑÇ',
+      'AAAAEEEEIIIIOOOOUUUUNC'),
+    '[^A-Z0-9]+','','g')
+$$;
+
+create or replace function public.v16_gestion_modulo_permitido(
+  p_modulo text,p_accion text,p_perfil jsonb
+) returns boolean
+language plpgsql stable security definer
+set search_path = ''
+as $$
+declare
+  v_rol text := upper(coalesce(p_perfil->>'rol',''));
+  v_usuario text := lower(btrim(coalesce(p_perfil->>'usuario','')));
+  v_permisos jsonb;
+  v_item jsonb;
+begin
+  if auth.uid() is null then return false; end if;
+  if v_rol='ADMINISTRADOR' then return true; end if;
+  if p_modulo not in ('gestion','consulta_excel','estadisticas','gestion_v2','sla_paquetes','catalogo_comentarios','penalidades')
+     or p_accion not in ('ver','ejecutar') then return false; end if;
+  select u.permisos into v_permisos
+    from v16_private.gestion_modulos_usuario u where u.usuario=v_usuario;
+  if not found then return true; end if;
+  v_item := v_permisos->p_modulo;
+  if jsonb_typeof(v_item) is distinct from 'object'
+     or coalesce((v_item->>'ver')::boolean,false)=false then return false; end if;
+  if p_accion='ver' then return true; end if;
+  return coalesce((v_item->>'ejecutar')::boolean,false);
+exception when others then return false;
+end;
+$$;
+
+create or replace function public.v16_gestion_modulos_usuario(
+  p_accion text,p_payload jsonb default '{}'::jsonb
+) returns jsonb
+language plpgsql security definer
+set search_path = ''
+as $$
+declare
+  v_perfil jsonb;
+  v_rol text;
+  v_usuario text;
+  v_permisos jsonb;
+  v_modulo text;
+  v_item jsonb;
+  v_completo jsonb := jsonb_build_object(
+    'gestion',jsonb_build_object('ver',true,'ejecutar',true),
+    'consulta_excel',jsonb_build_object('ver',true,'ejecutar',true),
+    'estadisticas',jsonb_build_object('ver',true,'ejecutar',true),
+    'gestion_v2',jsonb_build_object('ver',true,'ejecutar',true),
+    'sla_paquetes',jsonb_build_object('ver',true,'ejecutar',true),
+    'catalogo_comentarios',jsonb_build_object('ver',true,'ejecutar',true),
+    'penalidades',jsonb_build_object('ver',true,'ejecutar',true)
+  );
+begin
+  if auth.uid() is null then raise exception 'Inicia sesión para administrar permisos.' using errcode='42501'; end if;
+  v_perfil := to_jsonb(v16_private.profile());
+  v_rol := upper(coalesce(v_perfil->>'rol',''));
+  if lower(btrim(coalesce(p_accion,'')))='obtener' then
+    v_usuario := lower(btrim(coalesce(v_perfil->>'usuario','')));
+  elsif lower(btrim(coalesce(p_accion,''))) in ('obtener_usuario','guardar_usuario') then
+    if v_rol<>'ADMINISTRADOR' then
+      raise exception 'Solo un administrador puede revisar o cambiar permisos de otros usuarios.' using errcode='42501';
+    end if;
+    v_usuario := lower(btrim(coalesce(p_payload->>'usuario','')));
+  else
+    raise exception 'Acción de permisos desconocida.' using errcode='22023';
+  end if;
+  if length(v_usuario) not between 1 and 64 then raise exception 'Usuario inválido.' using errcode='22023'; end if;
+
+  if lower(btrim(coalesce(p_accion,'')))='guardar_usuario' then
+    v_permisos := p_payload->'permisos';
+    if jsonb_typeof(v_permisos) is distinct from 'object' then
+      raise exception 'Envía los permisos de cada módulo.' using errcode='22023';
+    end if;
+    foreach v_modulo in array array['gestion','consulta_excel','estadisticas','gestion_v2','sla_paquetes','catalogo_comentarios','penalidades'] loop
+      v_item := v_permisos->v_modulo;
+      if jsonb_typeof(v_item) is distinct from 'object'
+         or jsonb_typeof(v_item->'ver') is distinct from 'boolean'
+         or jsonb_typeof(v_item->'ejecutar') is distinct from 'boolean' then
+        raise exception 'Completa los permisos de ver y ejecutar para el módulo %.',v_modulo using errcode='22023';
+      end if;
+      if coalesce((v_item->>'ejecutar')::boolean,false)
+         and not coalesce((v_item->>'ver')::boolean,false) then
+        raise exception 'Para ejecutar el módulo % también debe habilitarse Ver.',v_modulo using errcode='22023';
+      end if;
+    end loop;
+    insert into v16_private.gestion_modulos_usuario(usuario,permisos,actualizado_por,actualizado_en)
+    values (v_usuario,v_permisos,auth.uid(),now())
+    on conflict (usuario) do update set permisos=excluded.permisos,actualizado_por=auth.uid(),actualizado_en=now();
+  end if;
+
+  select u.permisos into v_permisos
+    from v16_private.gestion_modulos_usuario u where u.usuario=v_usuario;
+  if not found then v_permisos:=v_completo; end if;
+  if v_rol='ADMINISTRADOR' and v_usuario=lower(btrim(coalesce(v_perfil->>'usuario',''))) then v_permisos:=v_completo; end if;
+  return jsonb_build_object('usuario',v_usuario,'permisos',v_permisos);
+end;
+$$;
 
 create table if not exists v16_private.gestion_sla_cargas (
   id uuid primary key default gen_random_uuid(),
@@ -54,12 +172,47 @@ create table if not exists v16_private.gestion_sla_configuracion (
 insert into v16_private.gestion_sla_configuracion (id,umbral_horas,tarifa_porcentaje)
 values (1,48,90) on conflict (id) do nothing;
 
+create table if not exists v16_private.gestion_sla_rangos (
+  orden smallint primary key check (orden between 1 and 20),
+  desde_horas numeric(10,2) not null check (desde_horas between 0 and 100000),
+  hasta_horas numeric(10,2) check (hasta_horas is null or hasta_horas between 0 and 100000),
+  tarifa_porcentaje numeric(5,2) not null check (tarifa_porcentaje between 0 and 100),
+  actualizado_por uuid references auth.users(id),
+  actualizado_en timestamptz not null default now(),
+  check (hasta_horas is null or hasta_horas > desde_horas)
+);
+
+create table if not exists v16_private.gestion_sla_precios_distrito (
+  departamento_clave text not null,
+  provincia_clave text not null,
+  distrito_clave text not null check (length(distrito_clave)>0),
+  departamento text not null,
+  provincia text not null,
+  distrito text not null,
+  precio numeric(14,4) check (precio is null or precio between 0 and 9999999999.9999),
+  actualizado_por uuid references auth.users(id),
+  actualizado_en timestamptz not null default now(),
+  primary key (departamento_clave,provincia_clave,distrito_clave)
+);
+
+-- Migra el parámetro previo de umbral único a dos rangos, sin reemplazar rangos ya configurados.
+insert into v16_private.gestion_sla_rangos(orden,desde_horas,hasta_horas,tarifa_porcentaje)
+select 1,0,c.umbral_horas,0 from v16_private.gestion_sla_configuracion c
+where c.id=1 and not exists (select 1 from v16_private.gestion_sla_rangos)
+union all
+select 2,c.umbral_horas,null,c.tarifa_porcentaje from v16_private.gestion_sla_configuracion c
+where c.id=1 and not exists (select 1 from v16_private.gestion_sla_rangos);
+
 alter table v16_private.gestion_sla_cargas enable row level security;
 alter table v16_private.gestion_sla_paquetes enable row level security;
 alter table v16_private.gestion_sla_configuracion enable row level security;
+alter table v16_private.gestion_sla_rangos enable row level security;
+alter table v16_private.gestion_sla_precios_distrito enable row level security;
 revoke all on table v16_private.gestion_sla_cargas from public,anon,authenticated;
 revoke all on table v16_private.gestion_sla_paquetes from public,anon,authenticated;
 revoke all on table v16_private.gestion_sla_configuracion from public,anon,authenticated;
+revoke all on table v16_private.gestion_sla_rangos from public,anon,authenticated;
+revoke all on table v16_private.gestion_sla_precios_distrito from public,anon,authenticated;
 
 create or replace function public.v16_gestion_v2_sla_alcance(
   p_pdv text,p_area text,p_region text,p_perfil jsonb
@@ -123,12 +276,30 @@ declare
   v_filas jsonb;
   v_filas_recibidas integer;
   v_filas_esperadas integer;
+  v_rangos jsonb;
+  v_rango jsonb;
+  v_rangos_cantidad integer;
+  v_rango_orden integer;
+  v_desde numeric(10,2);
+  v_hasta numeric(10,2);
+  v_tarifa_rango numeric(5,2);
+  v_limite_previo numeric(10,2) := 0;
   v_limite integer;
   v_despues bigint;
   v_siguiente bigint;
   v_carga_anterior uuid;
   v_umbral numeric(10,2);
   v_tarifa numeric(5,2);
+  v_precio_item jsonb;
+  v_departamento text;
+  v_provincia text;
+  v_distrito text;
+  v_departamento_clave text;
+  v_provincia_clave text;
+  v_distrito_clave text;
+  v_precio numeric(14,4);
+  v_precio_text text;
+  v_precios_cantidad integer := 0;
 begin
   if auth.uid() is null then
     raise exception 'Inicia sesión para consultar el SLA.' using errcode='42501';
@@ -138,11 +309,37 @@ begin
   if v_rol not in ('ADMINISTRADOR','ENCARGADO') then
     raise exception 'El módulo SLA está disponible para administradores y encargados.' using errcode='42501';
   end if;
+  if not public.v16_gestion_modulo_permitido('sla_paquetes','ver',v_perfil) then
+    raise exception 'Tu usuario no tiene permiso para ver el módulo SLA.' using errcode='42501';
+  end if;
+  if v_accion in ('guardar_parametros','guardar_precios','iniciar_carga','guardar_bloque','publicar_carga','cancelar_carga')
+     and not public.v16_gestion_modulo_permitido('sla_paquetes','ejecutar',v_perfil) then
+    raise exception 'Tu usuario puede consultar el SLA, pero no ejecutar cambios.' using errcode='42501';
+  end if;
 
   if v_accion='config' then
     return jsonb_build_object(
       'umbral_horas',(select c.umbral_horas from v16_private.gestion_sla_configuracion c where c.id=1),
       'tarifa_porcentaje',(select c.tarifa_porcentaje from v16_private.gestion_sla_configuracion c where c.id=1),
+      'rangos',coalesce((select jsonb_agg(jsonb_build_object('orden',r.orden,'desde_horas',r.desde_horas,'hasta_horas',r.hasta_horas,'tarifa_porcentaje',r.tarifa_porcentaje) order by r.orden) from v16_private.gestion_sla_rangos r),'[]'::jsonb),
+      'precios',coalesce((
+        select jsonb_agg(jsonb_build_object(
+          'departamento',d.departamento,'provincia',d.provincia,'distrito',d.distrito,'precio',t.precio
+        ) order by d.departamento,d.provincia,d.distrito)
+        from (
+          select distinct p.departamento,p.provincia,p.distrito,
+            public.v16_gestion_sla_geo_clave(p.departamento) as departamento_clave,
+            public.v16_gestion_sla_geo_clave(p.provincia) as provincia_clave,
+            public.v16_gestion_sla_geo_clave(p.distrito) as distrito_clave
+          from v16_private.gestion_sla_paquetes p
+          join v16_private.gestion_sla_cargas c on c.id=p.carga_id and c.activa
+          where public.v16_gestion_v2_sla_alcance(p.pdv,p.area,p.region,v_perfil)
+        ) d
+        left join v16_private.gestion_sla_precios_distrito t
+          on t.departamento_clave=d.departamento_clave
+         and t.provincia_clave=d.provincia_clave
+         and t.distrito_clave=d.distrito_clave
+      ),'[]'::jsonb),
       'actualizado_en',(select c.actualizado_en from v16_private.gestion_sla_configuracion c where c.id=1),
       'dataset',(select jsonb_build_object('id',c.id,'archivo',c.archivo,'filas',c.filas_esperadas,'creado_en',c.creado_en)
                  from v16_private.gestion_sla_cargas c where c.activa)
@@ -151,21 +348,86 @@ begin
     if v_rol<>'ADMINISTRADOR' then
       raise exception 'Solo el administrador puede cambiar los parámetros SLA.' using errcode='42501';
     end if;
-    begin
-      v_umbral := nullif(p_payload->>'umbral_horas','')::numeric;
-      v_tarifa := nullif(p_payload->>'tarifa_porcentaje','')::numeric;
-    exception when others then
-      raise exception 'El umbral y la tarifa deben ser valores numéricos.' using errcode='22023';
-    end;
-    if v_umbral is null or v_umbral not between 1 and 8760
-       or v_tarifa is null or v_tarifa not between 0 and 100 then
-      raise exception 'El umbral debe estar entre 1 y 8760 horas y la tarifa entre 0 y 100 por ciento.' using errcode='22023';
+    v_rangos := p_payload->'rangos';
+    if jsonb_typeof(v_rangos) is distinct from 'array' then
+      raise exception 'Envía una lista de rangos SLA.' using errcode='22023';
     end if;
+    v_rangos_cantidad := jsonb_array_length(v_rangos);
+    if v_rangos_cantidad not between 1 and 20 then
+      raise exception 'Configura entre 1 y 20 rangos SLA.' using errcode='22023';
+    end if;
+    delete from v16_private.gestion_sla_rangos;
+    for v_rango,v_rango_orden in
+      select item.value,item.ordinality::integer
+      from jsonb_array_elements(v_rangos) with ordinality as item(value,ordinality)
+    loop
+      begin
+        v_desde := nullif(v_rango->>'desde_horas','')::numeric;
+        v_hasta := nullif(v_rango->>'hasta_horas','')::numeric;
+        v_tarifa_rango := nullif(v_rango->>'tarifa_porcentaje','')::numeric;
+      exception when others then
+        raise exception 'El rango % contiene valores que no son numéricos.' ,v_rango_orden using errcode='22023';
+      end;
+      if v_desde is null or v_desde not between 0 and 100000
+         or v_tarifa_rango is null or v_tarifa_rango not between 0 and 100 then
+        raise exception 'El inicio debe estar entre 0 y 100000 horas y la tarifa entre 0 y 100%% (rango %).' ,v_rango_orden using errcode='22023';
+      end if;
+      if v_desde<>v_limite_previo then
+        raise exception 'Los rangos deben iniciar donde termina el anterior; revise el rango %.' ,v_rango_orden using errcode='22023';
+      end if;
+      if v_rango_orden<v_rangos_cantidad and (v_hasta is null or v_hasta<=v_desde or v_hasta>100000) then
+        raise exception 'Cada rango intermedio necesita un límite final mayor a su inicio (rango %).' ,v_rango_orden using errcode='22023';
+      end if;
+      if v_rango_orden=v_rangos_cantidad and v_hasta is not null then
+        raise exception 'Deja sin límite superior el último rango.' using errcode='22023';
+      end if;
+      insert into v16_private.gestion_sla_rangos(orden,desde_horas,hasta_horas,tarifa_porcentaje,actualizado_por,actualizado_en)
+      values (v_rango_orden,v_desde,v_hasta,v_tarifa_rango,auth.uid(),now());
+      v_limite_previo := v_hasta;
+    end loop;
     update v16_private.gestion_sla_configuracion
-       set umbral_horas=v_umbral,tarifa_porcentaje=v_tarifa,
-           actualizado_por=auth.uid(),actualizado_en=now()
+       set actualizado_por=auth.uid(),actualizado_en=now()
      where id=1;
-    return jsonb_build_object('umbral_horas',v_umbral,'tarifa_porcentaje',v_tarifa,'actualizado_en',now());
+    return jsonb_build_object(
+      'rangos',coalesce((select jsonb_agg(jsonb_build_object('orden',r.orden,'desde_horas',r.desde_horas,'hasta_horas',r.hasta_horas,'tarifa_porcentaje',r.tarifa_porcentaje) order by r.orden) from v16_private.gestion_sla_rangos r),'[]'::jsonb),
+      'actualizado_en',now()
+    );
+  elsif v_accion='guardar_precios' then
+    if v_rol<>'ADMINISTRADOR' then
+      raise exception 'Solo el administrador puede cambiar los precios por distrito.' using errcode='42501';
+    end if;
+    if jsonb_typeof(p_payload->'precios') is distinct from 'array' then
+      raise exception 'Envía una lista de precios por distrito.' using errcode='22023';
+    end if;
+    if jsonb_array_length(p_payload->'precios')>10000 then
+      raise exception 'Envía hasta 10,000 precios por distrito.' using errcode='22023';
+    end if;
+    for v_precio_item in select value from jsonb_array_elements(p_payload->'precios') loop
+      v_departamento:=btrim(coalesce(v_precio_item->>'departamento',''));
+      v_provincia:=btrim(coalesce(v_precio_item->>'provincia',''));
+      v_distrito:=btrim(coalesce(v_precio_item->>'distrito',''));
+      v_precio_text:=nullif(btrim(coalesce(v_precio_item->>'precio','')),'');
+      begin v_precio:=v_precio_text::numeric;
+      exception when others then raise exception 'El precio del distrito % no es numérico.',v_distrito using errcode='22023'; end;
+      if length(v_departamento)>200 or length(v_provincia)>200 or length(v_distrito) not between 1 and 200
+         or public.v16_gestion_sla_geo_clave(v_distrito)=''
+         or (v_precio_text is not null and v_precio_text !~ '^[0-9]{1,10}([.][0-9]{1,4})?$')
+         or (v_precio is not null and v_precio not between 0 and 9999999999.9999) then
+        raise exception 'Revisa los nombres y el precio del distrito % (usa hasta 4 decimales).',v_distrito using errcode='22023';
+      end if;
+      v_departamento_clave:=public.v16_gestion_sla_geo_clave(v_departamento);
+      v_provincia_clave:=public.v16_gestion_sla_geo_clave(v_provincia);
+      v_distrito_clave:=public.v16_gestion_sla_geo_clave(v_distrito);
+      insert into v16_private.gestion_sla_precios_distrito(
+        departamento_clave,provincia_clave,distrito_clave,departamento,provincia,distrito,precio,actualizado_por,actualizado_en
+      ) values (
+        v_departamento_clave,v_provincia_clave,v_distrito_clave,v_departamento,v_provincia,v_distrito,v_precio,auth.uid(),now()
+      ) on conflict (departamento_clave,provincia_clave,distrito_clave) do update set
+        departamento=excluded.departamento,provincia=excluded.provincia,distrito=excluded.distrito,
+        precio=excluded.precio,actualizado_por=auth.uid(),actualizado_en=now();
+      v_precios_cantidad:=v_precios_cantidad+1;
+    end loop;
+    return jsonb_build_object('guardados',v_precios_cantidad);
   elsif v_accion='iniciar_carga' then
     if v_rol<>'ADMINISTRADOR' then
       raise exception 'Solo el administrador puede cargar el archivo SLA.' using errcode='42501';
@@ -282,7 +544,11 @@ end;
 $$;
 
 revoke all on function public.v16_gestion_v2_sla_alcance(text,text,text,jsonb) from public,anon,authenticated;
+revoke all on function public.v16_gestion_sla_geo_clave(text) from public,anon,authenticated;
+revoke all on function public.v16_gestion_modulo_permitido(text,text,jsonb) from public,anon,authenticated;
+revoke all on function public.v16_gestion_modulos_usuario(text,jsonb) from public,anon,authenticated;
 revoke all on function public.v16_gestion_v2_sla_paquetes(text,jsonb) from public,anon,authenticated;
+grant execute on function public.v16_gestion_modulos_usuario(text,jsonb) to authenticated;
 grant execute on function public.v16_gestion_v2_sla_paquetes(text,jsonb) to authenticated;
 
 notify pgrst, 'reload schema';

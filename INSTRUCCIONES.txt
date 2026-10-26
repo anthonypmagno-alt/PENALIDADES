@@ -193,5 +193,12 @@ PERMISOS POR USUARIO Y PRECIO SLA POR DISTRITO (26-10-2026)
 - En SLA de paquetes, el administrador puede definir hasta 20 rangos horarios y establecer una tarifa porcentual para cada uno. Los tramos son continuos: incluyen su hora inicial y excluyen la final; el tramo final queda abierto.
 - El administrador puede fijar el precio del paquete por departamento/provincia/distrito del archivo activo. El monto por guía es precio del distrito × tarifa del tramo SLA / 100, redondeado a dos decimales. El detalle muestra precio, tarifa y monto; el resumen muestra cantidad y monto por tramo. Los precios admiten hasta cuatro decimales.
 - Para habilitar la matriz de permisos, los precios y la validación del módulo SLA, ejecuta `supabase_gestion_v2_sla_paquetes.sql` actualizado en el proyecto Supabase de Gestión de Guías. Es incremental: mantiene las cargas y los rangos SLA existentes y no modifica `storage.objects`.
+- Si aparece `DELETE requires a WHERE clause` al guardar rangos, vuelve a ejecutar este SQL actualizado; la función ahora limita explícitamente el borrado a las filas de rangos que reemplaza.
 - Después de ese SQL, vuelve a ejecutar `supabase_gestion_v2_comentarios_catalogo.sql` para que el catálogo y las clasificaciones de comentarios también respeten la matriz de módulos. Este archivo conserva las opciones y clasificaciones existentes.
 - Publica el contenido completo del ZIP en la raíz del repositorio y vuelve a iniciar sesión para cargar los permisos. Si un usuario cambia de permisos mientras tiene la aplicación abierta, debe actualizar la pestaña.
+
+RESUMEN DE GESTIÓN V2 · DESGLOSE DE GUÍAS CRÍTICAS (26-10-2026)
+- La columna Brecha crítica se divide en En el PDV y No llegados al PDV; Cola larga crítica se divide en No devuelto y Por devolver.
+- El desglose aparece en los grupos y subtotales por comentario, Subtipo 2, Subtipo 1, PDV y total general.
+- La segunda hoja del Excel combinado (“Resumen subtipos”) contiene las mismas cuatro columnas.
+- No requiere ejecutar SQL. Reemplaza el contenido del repositorio con el ZIP actualizado y vuelve a abrir Gestión de guías V2.

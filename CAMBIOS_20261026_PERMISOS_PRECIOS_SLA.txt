@@ -13,6 +13,7 @@ SLA de paquetes
 - Fórmula: monto por guía = precio del distrito × tarifa SLA / 100. El monto por guía se redondea a dos decimales; el precio admite cuatro decimales.
 - El precio queda pendiente si falta el precio de un distrito cuando la tarifa es mayor que 0%. Las tarifas de 0% generan monto S/ 0.00.
 - Solo Administrador puede editar los rangos, importar la carga SLA y cambiar los precios.
+- Se corrigió el guardado de rangos para que la función SQL elimine explícitamente solo las filas de rangos anteriores antes de guardar la nueva configuración.
 
 Permisos
 - Solo Administrador puede asignar a cada usuario permisos independientes para ver y ejecutar los módulos.

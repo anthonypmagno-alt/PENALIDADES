@@ -1,0 +1,8 @@
+RESUMEN DE GESTIÓN V2 · DESGLOSE DE GUÍAS CRÍTICAS
+
+- Se desglosó Brecha crítica en “En el PDV” y “No llegados al PDV”.
+- Se desglosó Cola larga crítica en “No devuelto” y “Por devolver”.
+- El desglose se aplica a los grupos de comentario y a los subtotales por Subtipo 2, Subtipo 1, PDV y total general.
+- El Excel combinado mantiene el mismo desglose en la segunda hoja, “Resumen subtipos”.
+- Se amplió la tabla y se corrigió el ajuste de texto de los rótulos de subtotal para mejorar su lectura.
+- No requiere cambios de SQL. Reemplaza los archivos del ZIP y publica la nueva versión.

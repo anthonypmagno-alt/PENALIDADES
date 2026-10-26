@@ -356,7 +356,7 @@ begin
     if v_rangos_cantidad not between 1 and 20 then
       raise exception 'Configura entre 1 y 20 rangos SLA.' using errcode='22023';
     end if;
-    delete from v16_private.gestion_sla_rangos;
+    delete from v16_private.gestion_sla_rangos where orden is not null;
     for v_rango,v_rango_orden in
       select item.value,item.ordinality::integer
       from jsonb_array_elements(v_rangos) with ordinality as item(value,ordinality)

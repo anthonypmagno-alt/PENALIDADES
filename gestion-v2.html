@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=gestion-v2-fixes-20261024-total-prev-crit-1"></script>
+<script src="./bridge.js?v=20261026-sla-paquetes-1"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -301,6 +301,10 @@
 .comment-pdv-toggle:hover{background:#1e4978}.comment-pdv-arrow{width:14px;font-size:15px;font-weight:900}.comment-pdv-toggle strong{font-size:12px}.comment-pdv-count,.comment-pdv-badge{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;background:#e2e8f0;color:#1e293b;font-size:10px;font-weight:800}.comment-pdv-badge--preventive{background:#dcfce7;color:#166534}
 .comment-hierarchy-subtotal--pdv td{background:#dbeafe!important;color:#153e67;font-weight:900;border-top:3px solid #153e67!important;border-bottom:2px solid #153e67!important}
 @media(max-width:800px){.comment-pdv-toggle{gap:6px}.comment-pdv-badge{font-size:9px}}
+.sla-admin-tools{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:12px;margin-top:12px}.sla-admin-card{border:1px solid #dbe2ea;border-radius:10px;padding:14px;background:#f8fafc}.sla-admin-card h3{margin:0 0 12px;color:#1e3a5f;font-size:14px}.sla-parameter-grid{display:grid;grid-template-columns:1fr 1fr auto;align-items:end;gap:10px}.sla-parameter-grid label{margin:0;color:#334155;font-size:11px;font-weight:800}.sla-parameter-grid input{display:block;width:100%;height:38px;margin-top:5px;padding:8px;border:1px solid #cbd5e1;border-radius:7px;background:#fff}.sla-admin-card small{display:block;margin-top:9px;color:#64748b;line-height:1.4}.sla-upload-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.sla-upload-row input{max-width:100%;padding:7px;border:1px solid #cbd5e1;border-radius:7px;background:#fff}.sla-upload-row button{margin:0}.sla-admin-card progress{width:100%;height:14px;margin-top:10px}.sla-summary-cards{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;margin:14px 0}.sla-panel-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.sla-panel-actions{display:flex;gap:7px;flex-wrap:wrap}.sla-panel-actions button{margin:0}.sla-filters{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:12px}.sla-filters input,.sla-filters select{height:38px;min-width:210px;padding:8px;border:1px solid #cbd5e1;border-radius:7px;background:#fff}.sla-filters span{margin-left:auto;color:#64748b;font-size:11px;font-weight:700}.sla-summary-table{min-width:880px;width:100%;border-collapse:collapse}.sla-summary-table th{background:#153e67;color:#fff;text-align:center;white-space:normal}.sla-summary-table th.sla-class-group{background:#245a8d}.sla-summary-table td{vertical-align:middle}.sla-summary-table td.number{text-align:center;font-weight:800}.sla-summary-table tbody tr.sla-province-row td{background:#e2e8f0;font-weight:900;border-top:3px solid #153e67}.sla-summary-table tbody tr.sla-district-row td{background:#f1f5f9;font-weight:800}.sla-summary-table tbody tr.sla-guide-row td{background:#fff}.sla-summary-table tbody tr.sla-total-row td{background:#dbeafe;color:#153e67;font-weight:900;border-top:3px solid #153e67}.sla-group-toggle,.sla-detail-link,.sla-count-link{border:0;background:transparent;color:inherit;font:inherit;cursor:pointer}.sla-group-toggle{display:flex;align-items:center;gap:8px;width:100%;text-align:left;font-weight:inherit}.sla-group-toggle .sla-arrow{width:14px;font-size:14px}.sla-detail-link{color:#1452a8;text-decoration:underline;font-weight:800}.sla-count-link{min-width:44px;padding:3px;border-radius:5px;color:#1452a8}.sla-count-link:hover{background:#dbeafe}.sla-good{color:#166534!important}.sla-bad{color:#b42318!important}.sla-open{color:#92400e!important}.sla-detail-table{min-width:2360px;width:100%;table-layout:fixed}.sla-detail-table th{white-space:normal;line-height:1.25}.sla-detail-table td{font-size:10px;white-space:nowrap}.sla-class-badge{display:inline-block;padding:4px 7px;border-radius:999px;font-size:10px;font-weight:900;background:#dcfce7;color:#166534}.sla-class-badge.tarifa{background:#fee2e2;color:#991b1b}.sla-class-badge.sin-inicio,.sla-class-badge.inconsistente{background:#fef3c7;color:#92400e}.sla-destino-hito{white-space:normal;min-width:165px}.sla-empty{padding:18px!important;text-align:center;color:#64748b!important;font-weight:500!important}
+@media(max-width:900px){.sla-admin-tools{grid-template-columns:1fr}.sla-parameter-grid{grid-template-columns:1fr 1fr}.sla-parameter-grid button{grid-column:1/-1}.sla-summary-cards{grid-template-columns:repeat(2,minmax(130px,1fr))}.sla-filters input,.sla-filters select{flex:1;min-width:180px}.sla-filters span{width:100%;margin-left:0}}
+@media(max-width:560px){.sla-summary-cards{grid-template-columns:1fr 1fr}.sla-parameter-grid{grid-template-columns:1fr}.sla-parameter-grid button{grid-column:auto}.sla-panel-actions{width:100%}.sla-panel-actions button{flex:1}.sla-filters input,.sla-filters select{width:100%}}
+.sla-summary-table tbody tr.sla-row-selected td{box-shadow:inset 0 0 0 2px #1769e0}.sla-summary-table tbody tr.sla-district-row td:first-child{padding-left:28px}.sla-classification-col[hidden]{display:none!important}.sla-summary-table .sla-total-row .sla-classification-col{background:#bfdbfe!important}
 </style></head>
 <body>
   <section id="login" class="login">
@@ -321,7 +325,7 @@
     </div></header>
 
     <main>
-      <div class="view-tabs"><button id="tabGestion" data-view-tab="gestion" class="view-tab active" onclick="mostrarVista('gestion')">Gestión de guías V2</button><button id="tabExcel" data-view-tab="excel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabEstadisticas" data-view-tab="estadisticas" class="view-tab" onclick="mostrarVista('estadisticas')">📊 Estadísticas por PDV</button><button id="tabComentariosConfig" data-view-tab="comentarios" class="view-tab" onclick="mostrarVista('comentarios')">⚙️ Catálogo de comentarios</button><a data-modulo-v2="true" href="./index.html" class="view-tab">Volver a Gestión actual</a><a data-modulo-penalidades="true" href="./penalidades.html?v=20261015-sla-resumen-montos-7" class="view-tab">💰 Penalidades</a></div>
+      <div class="view-tabs"><button id="tabGestion" data-view-tab="gestion" class="view-tab active" onclick="mostrarVista('gestion')">Gestión de guías V2</button><button id="tabExcel" data-view-tab="excel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabEstadisticas" data-view-tab="estadisticas" class="view-tab" onclick="mostrarVista('estadisticas')">📊 Estadísticas por PDV</button><button id="tabSla" data-view-tab="sla" class="view-tab" onclick="mostrarVista('sla')">⏱️ SLA de paquetes</button><button id="tabComentariosConfig" data-view-tab="comentarios" class="view-tab" onclick="mostrarVista('comentarios')">⚙️ Catálogo de comentarios</button><a data-modulo-v2="true" href="./index.html" class="view-tab">Volver a Gestión actual</a><a data-modulo-penalidades="true" href="./penalidades.html?v=20261015-sla-resumen-montos-7" class="view-tab">💰 Penalidades</a></div>
       <div id="viewGestion" class="app-view">
       <section id="sourceUploadPanel" class="panel hidden">
         <div class="panel-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Carga de información operativa <span class="readonly-note">SOLO ADMINISTRADOR</span><button type="button" id="sourceUploadToggle" class="secondary" style="margin-left:auto" aria-expanded="true" aria-controls="sourceUploadContent" onclick="toggleCargaOperativa()">Ocultar carga</button></div>
@@ -432,6 +436,49 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
         <p class="source-note">Módulo independiente de Consulta desde Excel y Penalidades. Analiza la última consulta compartida; para cargar o actualizar guías, usa Consulta desde Excel.</p>
         <div id="statsModuleMount"></div>
       </div>
+      <div id="viewSla" class="app-view hidden">
+        <section class="panel">
+          <div class="panel-title">SLA de paquetes · llegada al PDV hasta la entrega</div>
+          <div class="panel-body">
+            <p class="source-note">El tiempo inicia en la llegada al PDV. Si falta ese evento, usa el hito anterior disponible: salida del CEDIS, llegada al CEDIS, salida del HUB o generación del dato. Si no existe hora de firma, calcula hasta ahora.</p>
+            <div id="slaEstado" class="source-note" role="status" aria-live="polite">Cargando información del SLA…</div>
+            <div id="slaAdminTools" class="sla-admin-tools hidden">
+              <section class="sla-admin-card">
+                <h3>Parámetros de clasificación</h3>
+                <div class="sla-parameter-grid"><label>Umbral (horas)<input id="slaUmbralHoras" type="number" min="1" max="8760" step="1" value="48"></label><label>Tarifa al superar el umbral (%)<input id="slaTarifaPorcentaje" type="number" min="0" max="100" step="0.01" value="90"></label><button type="button" class="success" id="slaGuardarParametros" onclick="SlaPaquetesV2.guardarParametros()">Guardar parámetros</button></div>
+                <small>Al alcanzar el umbral se asigna la tarifa configurada. Los cambios se comparten con todos los usuarios.</small>
+              </section>
+              <section class="sla-admin-card">
+                <h3>Actualizar archivo de monitoreo</h3>
+                <div class="sla-upload-row"><input id="slaArchivoInput" type="file" accept=".xlsx,.xls"><button type="button" class="small" id="slaImportarArchivo" onclick="SlaPaquetesV2.importarArchivo()">Cargar y publicar</button></div>
+                <small>La carga nueva reemplaza el conjunto activo cuando termina correctamente. Hoja: primera hoja del Excel. Se guardan solo guía, PDV, ubicación y los hitos usados para el SLA.</small>
+                <progress id="slaCargaProgreso" max="100" value="0" hidden></progress>
+              </section>
+            </div>
+          </div>
+        </section>
+        <div id="slaResumenCards" class="sla-summary-cards hidden">
+          <div class="excel-card"><b id="slaTotalPaquetes">0</b><span>Paquetes visibles</span></div>
+          <div class="excel-card success-card"><b id="slaEnPlazo">0</b><span>Dentro del umbral</span></div>
+          <div class="excel-card danger-card"><b id="slaTarifaAplicada">0</b><span>Tarifa aplicada</span></div>
+          <div class="excel-card warning-card"><b id="slaSinFirma">0</b><span>Sin firma · en curso</span></div>
+        </div>
+        <section class="panel">
+          <div class="panel-title sla-panel-title"><span>Resumen por provincia y distrito</span><div class="sla-panel-actions"><button type="button" class="secondary" onclick="SlaPaquetesV2.expandirTodo()">Expandir grupos</button><button type="button" class="secondary" onclick="SlaPaquetesV2.contraerTodo()">Contraer grupos</button><button id="slaToggleClasificacion" type="button" class="secondary" onclick="SlaPaquetesV2.alternarClasificacion()">Ocultar columnas de clasificación</button></div></div>
+          <div class="panel-body">
+            <div class="sla-filters"><input id="slaBuscar" type="search" placeholder="Buscar guía, PDV, provincia o distrito" oninput="SlaPaquetesV2.aplicarFiltros()"><select id="slaFiltroClasificacion" onchange="SlaPaquetesV2.aplicarFiltros()"><option value="">Todas las clasificaciones</option><option value="EN_SLA">Dentro del umbral</option><option value="TARIFA">Tarifa aplicada</option><option value="SIN_INICIO">Sin fecha de inicio</option><option value="INCONSISTENTE">Fecha inconsistente</option><option value="SIN_FIRMA">Sin firma · en curso</option></select><button type="button" class="secondary" onclick="SlaPaquetesV2.limpiarFiltros()">Limpiar filtros</button><span id="slaFiltroEstado" role="status"></span></div>
+            <div class="table-wrap"><table class="sla-summary-table"><thead><tr><th rowspan="2">PROVINCIA · DISTRITO</th><th rowspan="2">PAQUETES</th><th colspan="4" class="sla-class-group sla-classification-col">CLASIFICACIÓN SLA</th><th rowspan="2">SIN FIRMA</th></tr><tr><th class="sla-classification-col">Dentro del umbral</th><th class="sla-classification-col">Tarifa aplicada</th><th class="sla-classification-col">Sin inicio</th><th class="sla-classification-col">Fecha inconsistente</th></tr></thead><tbody id="slaResumenBody"><tr><td colspan="7">Carga un archivo para consultar el SLA de los paquetes.</td></tr></tbody></table></div>
+          </div>
+        </section>
+        <section id="slaDetallePanel" class="panel hidden">
+          <div class="panel-title sla-panel-title"><span id="slaDetalleTitulo">Detalle de paquetes</span><button type="button" class="secondary" onclick="SlaPaquetesV2.limpiarSeleccionDetalle()">Mostrar todo</button></div>
+          <div class="panel-body">
+            <div id="slaDetalleFiltro" class="source-note"></div>
+            <div class="table-wrap"><table class="sla-detail-table"><thead><tr><th>GUÍA</th><th>PDV</th><th>DEPARTAMENTO</th><th>PROVINCIA</th><th>DISTRITO</th><th>INICIO SLA · HITO USADO</th><th>FIN SLA · FIRMA / AHORA</th><th>GENERACIÓN</th><th>SALIDA HUB</th><th>LLEGADA CEDIS</th><th>SALIDA CEDIS</th><th>LLEGADA PDV</th><th>DESPACHO</th><th>FIRMA</th><th>PROBLEMA</th><th>RETORNO</th><th>DEVOLUCIÓN</th><th>HORAS SLA</th><th>CLASIFICACIÓN</th></tr></thead><tbody id="slaDetalleBody"></tbody></table></div>
+            <div class="excel-pagination"><button id="slaDetallePrev" class="secondary" onclick="SlaPaquetesV2.cambiarPagina(-1)">Anterior</button><span id="slaDetallePaginaInfo" class="excel-page-info"></span><button id="slaDetalleNext" class="secondary" onclick="SlaPaquetesV2.cambiarPagina(1)">Siguiente</button></div>
+          </div>
+        </section>
+      </div>
       <div id="viewComentariosConfig" class="app-view hidden">
         <section class="panel">
           <div class="panel-title">Configuración de comentarios de encargado</div>
@@ -526,16 +573,17 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     }).withFailureHandler(e=>{btn.disabled=false;btn.textContent="INGRESAR";mostrarErrorLogin(errorTexto(e));}).iniciarSesion(usuario,clave);
   }
 
-  function abrirApp(){document.body.classList.toggle("no-summary-comments",sesion.rol==="PDV");document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("userBadge").textContent=sesion.usuario+" · "+sesion.rol;document.getElementById("sourceUploadPanel").classList.toggle("hidden",sesion.rol!=="ADMINISTRADOR");document.getElementById("tabComentariosConfig").hidden=sesion.rol!=="ADMINISTRADOR";cargarCatalogoComentarios();const solicitada=location.hash.replace(/^#/,"");mostrarVista(["gestion","excel","estadisticas","comentarios"].includes(solicitada)&&(solicitada!=="comentarios"||sesion.rol==="ADMINISTRADOR")?solicitada:"gestion");cargarDatos();cargarConsultaCompartida();}
+  function abrirApp(){document.body.classList.toggle("no-summary-comments",sesion.rol==="PDV");document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("userBadge").textContent=sesion.usuario+" · "+sesion.rol;document.getElementById("sourceUploadPanel").classList.toggle("hidden",sesion.rol!=="ADMINISTRADOR");document.getElementById("tabComentariosConfig").hidden=sesion.rol!=="ADMINISTRADOR";document.getElementById("tabSla").hidden=!(["ADMINISTRADOR","ENCARGADO"].includes(sesion.rol));window.SlaPaquetesV2?.establecerRol(sesion.rol);cargarCatalogoComentarios();const solicitada=location.hash.replace(/^#/,"");mostrarVista(["gestion","excel","estadisticas","comentarios","sla"].includes(solicitada)&&(solicitada!=="comentarios"||sesion.rol==="ADMINISTRADOR")&&(solicitada!=="sla"||["ADMINISTRADOR","ENCARGADO"].includes(sesion.rol))?solicitada:"gestion");cargarDatos();cargarConsultaCompartida();}
   function mostrarLogin(){document.getElementById("login").classList.remove("hidden");document.getElementById("app").classList.add("hidden");}
   function mostrarErrorLogin(t){const e=document.getElementById("loginError");e.textContent=t;e.style.display="block";}
 
   function mostrarVista(vista){
-    const vistas={gestion:"viewGestion",excel:"viewExcel",estadisticas:"viewEstadisticas",comentarios:"viewComentariosConfig"};
-    if(!vistas[vista]||(vista==="comentarios"&&sesion?.rol!=="ADMINISTRADOR"))vista="gestion";
+    const vistas={gestion:"viewGestion",excel:"viewExcel",estadisticas:"viewEstadisticas",sla:"viewSla",comentarios:"viewComentariosConfig"};
+    if(!vistas[vista]||(vista==="comentarios"&&sesion?.rol!=="ADMINISTRADOR")||(vista==="sla"&&!(["ADMINISTRADOR","ENCARGADO"].includes(sesion?.rol))))vista="gestion";
     Object.entries(vistas).forEach(([clave,id])=>document.getElementById(id)?.classList.toggle("hidden",clave!==vista));
     document.querySelectorAll("[data-view-tab]").forEach(tab=>tab.classList.toggle("active",tab.dataset.viewTab===vista));
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
+    if(vista==="sla")window.SlaPaquetesV2?.alAbrir();
     if(vista==="comentarios")renderConfiguracionComentarios();
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
@@ -2051,4 +2099,4 @@ function actualizarClasificacionV2(){
  else{resumen=r.resumen;renderResumen();filtrar();}
 }
 setInterval(actualizarClasificacionV2,60000);
-</script><script src="./brecha-costos.js?v=20261019-modulo-estadisticas-independiente-1"></script><script src="./xlsx-resumen.js?v=20261024-v2-excel-3hojas-pdv-1"></script></body></html>
+</script><script src="./brecha-costos.js?v=20261019-modulo-estadisticas-independiente-1"></script><script src="./xlsx-resumen.js?v=20261024-v2-excel-3hojas-pdv-1"></script><script src="./sla-paquetes.js?v=20261026-sla-paquetes-1"></script></body></html>

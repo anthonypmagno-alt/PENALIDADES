@@ -309,6 +309,25 @@
 <style>
 .v16-module-permissions{grid-column:1/-1;border:1px solid #cbd5e1;border-radius:9px;padding:12px;background:#f8fafc;text-align:left}.v16-module-permissions>div:first-child strong,.v16-module-permission-editor-head strong{display:block;color:#17324d;font-size:13px}.v16-module-permissions small{display:block;color:#64748b;font-size:10px;margin-top:3px}.v16-module-permission-matrix{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px;margin-top:10px}.v16-module-permission-row{display:grid;grid-template-columns:minmax(130px,1fr) 62px 82px;align-items:center;gap:8px;padding:7px 8px;border:1px solid #e2e8f0;border-radius:7px;background:white;font-size:11px}.v16-module-permission-row>span{font-weight:700;color:#334155}.v16-module-permission-row label{display:flex;align-items:center;gap:4px;color:#475569;font-size:10px;white-space:nowrap}.v16-module-permission-editor-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.v16-module-permission-editor-head button{margin:0}
 </style>
+<style>
+.modal-comment{width:min(980px,calc(100vw - 30px));max-height:calc(100vh - 30px);overflow:auto;text-align:left}
+.modal-comment>label{margin:12px 0 6px}
+.comment-critical-modal-summary{margin:10px 0 14px;padding:10px;border:1px solid #dbe2ea;border-radius:9px;background:#f8fafc}
+.comment-critical-modal-title{margin-bottom:8px;color:#153e67;font-size:13px;font-weight:900}
+.comment-critical-modal-body{display:flex;flex-direction:column;gap:8px;max-height:38vh;overflow:auto}
+.comment-critical-modal-category{padding:8px;border:1px solid #dbe2ea;border-radius:8px;background:#fff}
+.comment-critical-modal-category--queue{border-left:4px solid #f97316}
+.comment-critical-modal-category--breach{border-left:4px solid #eab308}
+.comment-critical-modal-category-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;color:#17324d;font-size:12px}
+.comment-critical-modal-count{padding:3px 8px;border-radius:999px;background:#e2e8f0;font-weight:900}
+.comment-critical-modal-table-wrap{overflow:auto}
+.comment-critical-modal-table{width:100%;min-width:700px;border-collapse:collapse}
+.comment-critical-modal-table th,.comment-critical-modal-table td{padding:6px 7px;border:1px solid #dbe2ea;font-size:11px;text-align:left;white-space:normal}
+.comment-critical-modal-table th{background:#e8eef5;color:#334155}
+.comment-critical-modal-table td:last-child,.comment-critical-modal-table th:last-child{text-align:center;font-weight:800}
+.comment-critical-modal-empty{padding:10px;border:1px dashed #cbd5e1;border-radius:8px;background:#fff;color:#64748b;font-size:12px}
+@media(max-width:700px){.modal-comment{padding:16px}.comment-critical-modal-body{max-height:34vh}.comment-critical-modal-table{min-width:620px}}
+</style>
 </head>
 <body>
   <section id="login" class="login">
@@ -513,7 +532,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
   <div id="loading" class="loading"><div id="loadingText">Procesando...</div></div>
   <div id="toast" class="toast"></div>
   <div id="qrModal" class="modal" onclick="if(event.target===this)cerrarQR()"><div class="modal-card"><h3>CÓDIGO QR</h3><div id="qr"></div><div id="qrNumero" class="guide" style="margin-top:12px"></div><p id="qrDistrito" class="qr-district-label" hidden=""></p><button class="secondary" onclick="cerrarQR()">Cerrar</button></div></div>
-  <div id="commentModal" class="modal" onclick="if(event.target===this)cerrarComentario()"><div class="modal-card modal-comment"><h3 id="commentTitle">COMENTARIO DEL CASO</h3><textarea id="commentText" maxlength="2000" placeholder="Escriba un comentario sobre los casos del PDV..."></textarea><div id="commentMeta" class="comment-meta"></div><div class="modal-actions"><button class="secondary" onclick="cerrarComentario()">Cancelar</button><button id="btnSaveComment" class="small" onclick="guardarComentario()">Guardar comentario</button></div></div></div><div id="resumenImagenModal" class="modal" onclick="if(event.target===this)cerrarImagenesResumen()"><div class="modal-card resumen-imagen-modal"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div><h3 id="resumenImagenTitulo">IMÁGENES DEL PDV</h3><p class="resumen-imagen-help">Adjunta PNG, JPG o WebP de hasta 8 MB. Haz clic en una imagen para verla ampliada.</p></div><button type="button" class="secondary" onclick="cerrarImagenesResumen()">Cerrar</button></div><div class="resumen-imagen-upload"><label for="archivoImagenResumen" style="margin:0">Seleccionar imagen</label><input id="archivoImagenResumen" type="file" accept="image/png,image/jpeg,image/webp"><button type="button" id="btnSubirImagenResumen" class="small" onclick="subirImagenResumen()">Cargar imagen</button></div><div id="resumenImagenEstado" class="resumen-imagen-status" role="status" aria-live="polite"></div><div id="resumenImagenGrid" class="resumen-imagen-grid"></div></div></div><div id="imagenResumenLightbox" class="imagen-lightbox" onclick="if(event.target===this)cerrarImagenResumenAmpliada()"><button type="button" class="secondary" onclick="cerrarImagenResumenAmpliada()">Cerrar</button><img id="imagenResumenAmpliada" alt="Imagen del resumen"></div>
+  <div id="commentModal" class="modal" onclick="if(event.target===this)cerrarComentario()"><div class="modal-card modal-comment"><h3 id="commentTitle">COMENTARIO DEL CASO</h3><section id="commentCriticalSummary" class="comment-critical-modal-summary" aria-live="polite"><div class="comment-critical-modal-title">Clasificación de paquetes críticos</div><div id="commentCriticalSummaryBody" class="comment-critical-modal-body"></div></section><label for="commentText">Comentario del PDV</label><textarea id="commentText" maxlength="2000" placeholder="Escriba un comentario sobre los casos del PDV..."></textarea><div id="commentMeta" class="comment-meta"></div><div class="modal-actions"><button class="secondary" onclick="cerrarComentario()">Cancelar</button><button id="btnSaveComment" class="small" onclick="guardarComentario()">Guardar comentario</button></div></div></div><div id="resumenImagenModal" class="modal" onclick="if(event.target===this)cerrarImagenesResumen()"><div class="modal-card resumen-imagen-modal"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div><h3 id="resumenImagenTitulo">IMÁGENES DEL PDV</h3><p class="resumen-imagen-help">Adjunta PNG, JPG o WebP de hasta 8 MB. Haz clic en una imagen para verla ampliada.</p></div><button type="button" class="secondary" onclick="cerrarImagenesResumen()">Cerrar</button></div><div class="resumen-imagen-upload"><label for="archivoImagenResumen" style="margin:0">Seleccionar imagen</label><input id="archivoImagenResumen" type="file" accept="image/png,image/jpeg,image/webp"><button type="button" id="btnSubirImagenResumen" class="small" onclick="subirImagenResumen()">Cargar imagen</button></div><div id="resumenImagenEstado" class="resumen-imagen-status" role="status" aria-live="polite"></div><div id="resumenImagenGrid" class="resumen-imagen-grid"></div></div></div><div id="imagenResumenLightbox" class="imagen-lightbox" onclick="if(event.target===this)cerrarImagenResumenAmpliada()"><button type="button" class="secondary" onclick="cerrarImagenResumenAmpliada()">Cerrar</button><img id="imagenResumenAmpliada" alt="Imagen del resumen"></div>
   <div id="bulkModal" class="modal" onclick="if(event.target===this)cerrarGestionMasiva()"><div class="modal-card modal-bulk"><h3>GESTIÓN MASIVA</h3><div id="bulkModalCount" class="bulk-note"></div><div class="bulk-form"><label>SUBCAMPO 1</label><select id="bulkSubcampo1" onchange="actualizarOpcionesSubcampo2Masivo()" aria-label="Subcampo 1 para gestión masiva"></select><label>SUBCAMPO 2</label><select id="bulkSubcampo2" aria-label="Subcampo 2 para gestión masiva"></select><label>COMENTARIO PARA TODAS LAS GUÍAS</label><textarea id="bulkComment" maxlength="2000" placeholder="Ingrese el comentario que se registrará en todas las guías seleccionadas..."></textarea><div class="bulk-check-options"><label class="bulk-check-option"><input id="bulkCierre" type="checkbox" aria-label="Cerrar los casos seleccionados"><span><strong>Cierre de caso</strong><small>Marcado: finalizar los casos. Desmarcado: mantenerlos en proceso.</small></span></label><label class="bulk-check-option"><input id="bulkNotificacion" type="checkbox" aria-label="Mostrar el comentario al PDV"><span><strong>Notificación al PDV</strong><small>Marcado: mostrar el comentario. Desmarcado: mantenerlo oculto.</small></span></label></div></div><div class="modal-actions" style="margin-top:18px"><button class="secondary" onclick="cerrarGestionMasiva()">Cancelar</button><button id="btnSaveBulk" class="small" onclick="guardarGestionMasiva()">Aplicar a seleccionadas</button></div></div></div>
 
 <script>
@@ -1225,7 +1244,7 @@ function coincideFiltroResumen(x){return !seleccionesResumen().length||seleccion
 
 function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;if(!cumpleFiltrosGuiaResumen(x))return false;const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],pdv=seleccion.pdv,categoria=seleccion.categoria,criticas=["h720NoDevuelto","h720PorDevolver","mayor144EnPDV","mayor144NoLlegado"],preventivasCriticas=CATEGORIAS_PREVENTIVO_CRITICO_V2;return casos.some(c=>{if(pdv&&String(c.pdv||"")!==pdv)return false;const tipo=String(c.categoria||"");if(!categoria||categoria==="totalCasos"||categoria==="guiasUnicas")return true;if(categoria==="totalCritico")return criticas.includes(tipo);if(categoria==="totalPreventivoCritico")return preventivasCriticas.includes(tipo);return tipo===categoria||(categoria==="mayor144NoLlegado"&&tipo==="brecha144a168NoLlegado");});}
 
-  function abrirComentario(pdv){const x=(resumen.filas||[]).find(r=>r.pdv===pdv);if(!x)return;document.getElementById("commentModal").dataset.pdv=pdv;document.getElementById("commentTitle").textContent="COMENTARIO · "+pdv;document.getElementById("commentText").value=x.comentario||"";document.getElementById("commentMeta").textContent=x.comentarioFecha?("Último registro: "+x.comentarioFecha+" · "+(x.comentarioUsuario||"")):"Sin comentario previo";document.getElementById("commentModal").style.display="flex";setTimeout(()=>document.getElementById("commentText").focus(),50);}
+  function abrirComentario(pdv){const x=(resumen.filas||[]).find(r=>r.pdv===pdv);if(!x)return;document.getElementById("commentModal").dataset.pdv=pdv;document.getElementById("commentTitle").textContent="COMENTARIO · "+pdv;renderResumenCriticoComentarioModal(pdv);document.getElementById("commentText").value=x.comentario||"";document.getElementById("commentMeta").textContent=x.comentarioFecha?("Último registro: "+x.comentarioFecha+" · "+(x.comentarioUsuario||"")):"Sin comentario previo";document.getElementById("commentModal").style.display="flex";setTimeout(()=>document.getElementById("commentText").focus(),50);}
   function cerrarComentario(){document.getElementById("commentModal").style.display="none";}
   function guardarComentario(){
     const pdv=document.getElementById("commentModal").dataset.pdv||"",el=document.getElementById("commentText");if(!el.value.trim()){toast("Ingrese un comentario.",false);return;}
@@ -1325,6 +1344,38 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     guiasColaLargaNoDevuelto:contarGuiasCriticasDetalle(filas,["h720NoDevuelto"]),
     guiasColaLargaPorDevolver:contarGuiasCriticasDetalle(filas,["h720PorDevolver"])
   };}
+  const CLASIFICACIONES_CRITICAS_COMENTARIO=[
+    {categoria:"h720NoDevuelto",etiqueta:"Cola larga crítica en PDV",clase:"queue"},
+    {categoria:"h720PorDevolver",etiqueta:"Cola larga crítica por devolver",clase:"queue"},
+    {categoria:"mayor144EnPDV",etiqueta:"Brecha crítica en PDV",clase:"breach"},
+    {categoria:"mayor144NoLlegado",etiqueta:"Brecha crítica no llegados al PDV",clase:"breach"}
+  ];
+  function clavePdvCriticoComentario(pdv){return normalizarLocal(String(pdv||"").split("|")[0].replace(/\.PDV$/i,"").trim());}
+  function construirResumenCriticoComentarioPdv(pdv){
+    const pdvClave=clavePdvCriticoComentario(pdv),categorias=new Map(CLASIFICACIONES_CRITICAS_COMENTARIO.map(c=>[c.categoria,{...c,guias:new Set(),grupos:new Map()}])),vistos=new Map(CLASIFICACIONES_CRITICAS_COMENTARIO.map(c=>[c.categoria,new Set()]));
+    guias.filter(cumpleFiltrosGuiaResumen).forEach(x=>{
+      const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],guia=normalizarLocal(x.guia||"");
+      casos.forEach(c=>{
+        let categoria=String(c.categoria||"");if(categoria==="brecha144a168NoLlegado")categoria="mayor144NoLlegado";
+        const grupoCategoria=categorias.get(categoria);if(!grupoCategoria||clavePdvCriticoComentario(c.pdv||x.pdv)!==pdvClave)return;
+        const idGuia=(guia||"FILA:"+Number(x.fila))+"|"+pdvClave;if(vistos.get(categoria).has(idGuia))return;vistos.get(categoria).add(idGuia);grupoCategoria.guias.add(idGuia);
+        const subcampo1=String(x.subcampo1||"").trim()||"Sin Subtipo 1",subcampo2=String(x.subcampo2||"").trim()||"Sin Subtipo 2",borrador=valorBorradorRevision(x.fila,"comentarioGestionEncargado"),comentario=String(borrador===undefined?x.comentarioGestionEncargado||"":borrador).trim()||"Sin comentario del encargado",clave=JSON.stringify([claveComentarioDetalle(subcampo1),claveComentarioDetalle(subcampo2),claveComentarioDetalle(comentario)]);
+        if(!grupoCategoria.grupos.has(clave))grupoCategoria.grupos.set(clave,{subcampo1,subcampo2,comentario,guias:new Set()});grupoCategoria.grupos.get(clave).guias.add(idGuia);
+      });
+    });
+    return [...categorias.values()].map(c=>({...c,cantidad:c.guias.size,grupos:[...c.grupos.values()].map(g=>({...g,cantidad:g.guias.size})).filter(g=>g.cantidad>0).sort((a,b)=>a.subcampo1.localeCompare(b.subcampo1,"es")||a.subcampo2.localeCompare(b.subcampo2,"es")||a.comentario.localeCompare(b.comentario,"es"))})).filter(c=>c.cantidad>0);
+  }
+  function renderResumenCriticoComentarioModal(pdv){
+    const body=document.getElementById("commentCriticalSummaryBody");if(!body)return;body.replaceChildren();const categorias=construirResumenCriticoComentarioPdv(pdv);
+    if(!categorias.length){const vacio=document.createElement("div");vacio.className="comment-critical-modal-empty";vacio.textContent="No hay paquetes críticos para este PDV con los filtros actuales.";body.appendChild(vacio);return;}
+    categorias.forEach(cat=>{
+      const section=document.createElement("section"),head=document.createElement("div"),label=document.createElement("strong"),total=document.createElement("span"),wrap=document.createElement("div"),table=document.createElement("table"),thead=document.createElement("thead"),trHead=document.createElement("tr"),tbody=document.createElement("tbody");
+      section.className="comment-critical-modal-category comment-critical-modal-category--"+cat.clase;head.className="comment-critical-modal-category-head";label.textContent=cat.etiqueta+":";total.className="comment-critical-modal-count";total.textContent=num(cat.cantidad);head.append(label,total);
+      table.className="comment-critical-modal-table";["Subtipo 1","Subtipo 2","Comentario encargado","Conteo"].forEach(t=>{const th=document.createElement("th");th.textContent=t;trHead.appendChild(th);});thead.appendChild(trHead);table.append(thead,tbody);
+      cat.grupos.forEach(g=>{const tr=document.createElement("tr");[g.subcampo1,g.subcampo2,g.comentario,num(g.cantidad)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});tbody.appendChild(tr);});
+      wrap.className="comment-critical-modal-table-wrap";wrap.appendChild(table);section.append(head,wrap);body.appendChild(section);
+    });
+  }
   function crearIndicadoresCriticosDetalle(grupo){
     const indicadores=document.createElement("span");indicadores.className="comment-group-critical-counts";indicadores.setAttribute("aria-label","Recuento de guías críticas del grupo");
     const datos=[
@@ -2135,4 +2186,4 @@ function actualizarClasificacionV2(){
  else{resumen=r.resumen;renderResumen();filtrar();}
 }
 setInterval(actualizarClasificacionV2,60000);
-</script><script src="./brecha-costos.js?v=20261019-modulo-estadisticas-independiente-1"></script><script src="./xlsx-resumen.js?v=20261026-criticos-desglosados-v33"></script><script src="./sla-paquetes.js?v=20261026-sla-rangos-precios-permisos-v31"></script></body></html>
+</script><script src="./brecha-costos.js?v=20261019-modulo-estadisticas-independiente-1"></script><script src="./xlsx-resumen.js?v=20261027-comentario-clasificacion-criticos-v1"></script><script src="./sla-paquetes.js?v=20261026-sla-rangos-precios-permisos-v31"></script></body></html>

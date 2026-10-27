@@ -1,0 +1,13 @@
+GESTIÓN DE GUÍAS V2 — RESUMEN CRÍTICO EN COMENTARIO DEL PDV
+
+El botón verde de comentario en cada fila del resumen por PDV ahora abre el desglose de los paquetes críticos del PDV seleccionado antes del campo de comentario.
+
+El desglose muestra únicamente las clasificaciones con conteo mayor que cero:
+- Cola larga crítica en PDV.
+- Cola larga crítica por devolver.
+- Brecha crítica en PDV.
+- Brecha crítica no llegados al PDV.
+
+Cada clasificación presenta el conteo y una tabla por Subtipo 1, Subtipo 2, comentario encargado y conteo de guías. La tabla usa el comentario de gestión del encargado (comentarioGestionEncargado), separado del comentario del PDV que se sigue editando en la ventana.
+
+El conteo se realiza por guía única dentro del PDV y clasificación. Se respetan los filtros vigentes del resumen. Las preventivas no se incluyen como críticas. No se requiere cambio de SQL.

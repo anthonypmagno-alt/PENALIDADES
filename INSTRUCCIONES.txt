@@ -202,3 +202,7 @@ RESUMEN DE GESTIÓN V2 · DESGLOSE DE GUÍAS CRÍTICAS (26-10-2026)
 - El desglose aparece en los grupos y subtotales por comentario, Subtipo 2, Subtipo 1, PDV y total general.
 - La segunda hoja del Excel combinado (“Resumen subtipos”) contiene las mismas cuatro columnas.
 - No requiere ejecutar SQL. Reemplaza el contenido del repositorio con el ZIP actualizado y vuelve a abrir Gestión de guías V2.
+
+CAMBIO 2026-10-27 — DESGLOSE CRÍTICO EN LA VENTANA DE COMENTARIO
+
+En Gestión de Guías V2, al pulsar el botón verde de comentario de una fila de PDV, la ventana muestra primero las clasificaciones críticas de ese PDV. Las cuatro categorías (cola larga crítica en PDV, cola larga crítica por devolver, brecha crítica en PDV y brecha crítica no llegados al PDV) aparecen solo cuando su conteo es mayor que cero. Cada una se desglosa por Subtipo 1, Subtipo 2 y comentario del encargado, con conteo de guías. Debajo permanece el campo para editar el comentario del PDV. No requiere ejecutar SQL.

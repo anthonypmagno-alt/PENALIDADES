@@ -268,9 +268,10 @@
     });
     const htmlFilas = Array.from(tabla.rows || []);
     const filaCabecera = htmlFilas.find(f => String(f.parentElement?.tagName || "").toUpperCase() === "THEAD") || htmlFilas[0];
+    const columnasTabla = Array.from(filaCabecera?.cells || []).reduce((total, celda) => total + (celda.colSpan || 1), 0);
     const celdaCabeceraComentarios = filaCabecera?.cells?.[filaCabecera.cells.length - 1];
     const estiloComentarios = celdaCabeceraComentarios ? estiloDeCelda(celdaCabeceraComentarios) : {};
-    anchos.push(42);
+    anchos.push(42, 58);
     const filas = htmlFilas.map(fila => {
       const celdas = Array.from(fila.cells || []).map(celda => ({
         texto: String(celda.innerText || celda.textContent || "").replace(/\u00a0/g, " ").trim(),
@@ -281,17 +282,21 @@
       let altoPx = fila.getBoundingClientRect().height || 24;
       if (fila === filaCabecera) {
         celdas.push({ texto: "COMENTARIO", colspan: 1, rowspan: 3, estilo: estiloComentarios });
+        celdas.push({ texto: "CLASIFICACIÓN DE PAQUETES CRÍTICOS · SUBTIPOS Y COMENTARIO ENCARGADO", colspan: 1, rowspan: 3, estilo: estiloComentarios });
       } else if (String(fila.parentElement?.tagName || "").toUpperCase() === "THEAD") {
-        // La celda COMENTARIO de la primera fila ya cubre las tres filas del encabezado.
+        // Las dos columnas adicionales de resumen ya cubren las tres filas del encabezado.
       } else if (celdas.length === 1 && celdas[0].colspan >= 14) {
-        celdas[0].colspan = 15;
+        celdas[0].colspan = columnasTabla + 2;
       } else {
         const celdaComentario = Array.from(fila.cells || []).find(c => c.classList?.contains("comment-col"));
         const comentario = String(celdaComentario?.dataset?.excelComment || "").trim();
+        const resumenCritico = String(celdaComentario?.dataset?.excelCriticalSummary || "").trim();
         const estilo = celdaComentario ? estiloDeCelda(celdaComentario) : estiloComentarios;
         estilo.alignment = { ...estilo.alignment, horizontal: "left", vertical: "top", wrapText: true };
-        celdas.push({ texto: fila.classList?.contains("brecha-data-row") ? comentario : "", estilo });
+        celdas.push({ texto: comentario, estilo });
+        celdas.push({ texto: resumenCritico, estilo: { ...estilo, alignment: { ...estilo.alignment } } });
         if (comentario) altoPx = Math.max(altoPx, Math.min(545, Math.ceil(comentario.length / 58) * 18 + 8));
+        if (resumenCritico) altoPx = Math.max(altoPx, Math.min(545, Math.max(resumenCritico.split(/\n/).length, Math.ceil(resumenCritico.length / 72)) * 16 + 10));
       }
       return { altoPx, celdas };
     });

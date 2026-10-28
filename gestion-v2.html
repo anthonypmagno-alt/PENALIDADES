@@ -1351,20 +1351,27 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     {categoria:"mayor144NoLlegado",etiqueta:"Brecha crítica no llegados al PDV",clase:"breach"}
   ];
   function clavePdvCriticoComentario(pdv){return normalizarLocal(String(pdv||"").split("|")[0].replace(/\.PDV$/i,"").trim());}
-  function construirResumenCriticoComentarioPdv(pdv){
-    const pdvClave=clavePdvCriticoComentario(pdv),categorias=new Map(CLASIFICACIONES_CRITICAS_COMENTARIO.map(c=>[c.categoria,{...c,guias:new Set(),grupos:new Map()}])),vistos=new Map(CLASIFICACIONES_CRITICAS_COMENTARIO.map(c=>[c.categoria,new Set()]));
+  function construirResumenCriticoComentarioPorPdv(){
+    const pdvs=new Map(),categoriasPermitidas=new Set(CLASIFICACIONES_CRITICAS_COMENTARIO.map(c=>c.categoria));
     guias.filter(cumpleFiltrosGuiaResumen).forEach(x=>{
       const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],guia=normalizarLocal(x.guia||"");
       casos.forEach(c=>{
-        let categoria=String(c.categoria||"");if(categoria==="brecha144a168NoLlegado")categoria="mayor144NoLlegado";
-        const grupoCategoria=categorias.get(categoria);if(!grupoCategoria||clavePdvCriticoComentario(c.pdv||x.pdv)!==pdvClave)return;
-        const idGuia=(guia||"FILA:"+Number(x.fila))+"|"+pdvClave;if(vistos.get(categoria).has(idGuia))return;vistos.get(categoria).add(idGuia);grupoCategoria.guias.add(idGuia);
+        let categoria=String(c.categoria||"");if(categoria==="brecha144a168NoLlegado")categoria="mayor144NoLlegado";if(!categoriasPermitidas.has(categoria))return;
+        const pdv=String(c.pdv||x.pdv||"").split("|")[0].replace(/\.PDV$/i,"").trim()||"SIN PDV",pdvClave=clavePdvCriticoComentario(pdv);
+        if(!pdvs.has(pdvClave))pdvs.set(pdvClave,{pdv,categorias:new Map()});
+        const grupoPdv=pdvs.get(pdvClave);if(!grupoPdv.categorias.has(categoria))grupoPdv.categorias.set(categoria,{...CLASIFICACIONES_CRITICAS_COMENTARIO.find(z=>z.categoria===categoria),guias:new Set(),vistos:new Set(),grupos:new Map()});
+        const grupoCategoria=grupoPdv.categorias.get(categoria),idGuia=(guia||"FILA:"+Number(x.fila))+"|"+pdvClave;if(grupoCategoria.vistos.has(idGuia))return;grupoCategoria.vistos.add(idGuia);grupoCategoria.guias.add(idGuia);
         const subcampo1=String(x.subcampo1||"").trim()||"Sin Subtipo 1",subcampo2=String(x.subcampo2||"").trim()||"Sin Subtipo 2",borrador=valorBorradorRevision(x.fila,"comentarioGestionEncargado"),comentario=String(borrador===undefined?x.comentarioGestionEncargado||"":borrador).trim()||"Sin comentario del encargado",clave=JSON.stringify([claveComentarioDetalle(subcampo1),claveComentarioDetalle(subcampo2),claveComentarioDetalle(comentario)]);
         if(!grupoCategoria.grupos.has(clave))grupoCategoria.grupos.set(clave,{subcampo1,subcampo2,comentario,guias:new Set()});grupoCategoria.grupos.get(clave).guias.add(idGuia);
       });
     });
-    return [...categorias.values()].map(c=>({...c,cantidad:c.guias.size,grupos:[...c.grupos.values()].map(g=>({...g,cantidad:g.guias.size})).filter(g=>g.cantidad>0).sort((a,b)=>a.subcampo1.localeCompare(b.subcampo1,"es")||a.subcampo2.localeCompare(b.subcampo2,"es")||a.comentario.localeCompare(b.comentario,"es"))})).filter(c=>c.cantidad>0);
+    return new Map([...pdvs].map(([clave,p])=>[clave,CLASIFICACIONES_CRITICAS_COMENTARIO.map(def=>{
+      const c=p.categorias.get(def.categoria);if(!c||!c.guias.size)return null;
+      return {...c,cantidad:c.guias.size,grupos:[...c.grupos.values()].map(g=>({...g,cantidad:g.guias.size})).filter(g=>g.cantidad>0).sort((a,b)=>a.subcampo1.localeCompare(b.subcampo1,"es")||a.subcampo2.localeCompare(b.subcampo2,"es")||a.comentario.localeCompare(b.comentario,"es"))};
+    }).filter(Boolean)]));
   }
+  function construirResumenCriticoComentarioPdv(pdv){return construirResumenCriticoComentarioPorPdv().get(clavePdvCriticoComentario(pdv))||[];}
+  function textoResumenCriticoComentarioExcel(categorias){return (categorias||[]).map(cat=>[cat.etiqueta+": "+num(cat.cantidad),...cat.grupos.map(g=>"Subtipo 1: "+g.subcampo1+" | Subtipo 2: "+g.subcampo2+" | Comentario encargado: "+g.comentario+" | Conteo: "+num(g.cantidad))].join("\n")).join("\n\n");}
   function renderResumenCriticoComentarioModal(pdv){
     const body=document.getElementById("commentCriticalSummaryBody");if(!body)return;body.replaceChildren();const categorias=construirResumenCriticoComentarioPdv(pdv);
     if(!categorias.length){const vacio=document.createElement("div");vacio.className="comment-critical-modal-empty";vacio.textContent="No hay paquetes críticos para este PDV con los filtros actuales.";body.appendChild(vacio);return;}
@@ -1590,6 +1597,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
       const encabezados=["GUIAS A REVISAR","ENCARGADO","PDV","DEPARTAMENTO","PROVINCIA","DISTRITO","AREA ASIGNADA","FECHA Y HORA DE REVISIÓN","ESTADO DE REVISIÓN","TIPO DE REVISIÓN","COMENTARIO","SE CERRO EL CASO?","ÚLTIMA FECHA Y HORA DE OPERACIÓN","TIPO DE ESCANEO MÁS RECIENTE","COMENTARIO DE GESTIÓN · ENCARGADO","FECHA DEL COMENTARIO DE GESTIÓN"];
       const filas=filtradas.map(x=>[x.guia,x.encargado,x.pdv,x.dpto,x.prov,x.dsto,x.area,x.fecha,x.estado,x.tipo,x.comentario,x.cerro,x.ultimaOperacion,x.tipoEscaneoReciente,x.comentarioGestionEncargado,x.comentarioGestionActualizadoEn]);
       const anchos=[22,24,16,22,22,22,20,23,20,30,44,20,26,34,44,25];
+      const resumenCriticoPorPdv=construirResumenCriticoComentarioPorPdv();document.querySelectorAll("#resumenBody tr[data-excel-pdv]").forEach(fila=>{const celda=fila.querySelector(".comment-col");if(celda)celda.dataset.excelCriticalSummary=textoResumenCriticoComentarioExcel(resumenCriticoPorPdv.get(clavePdvCriticoComentario(fila.dataset.excelPdv))||[]);});
       const bytes=window.XlsxResumenV2.generarLibroDesdeTabla(tabla,{encabezados,filas,anchos},construirResumenComentarioExcel()),blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),url=URL.createObjectURL(blob),a=document.createElement("a");
       a.href=url;a.download="Gestion_Guias_V2_"+new Date().toISOString().replace(/[:.]/g,"-")+".xlsx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
       mostrarLoading(false);toast("Excel generado con tres hojas: Resumen V2, Resumen por subtipos y Detalle de guías.",true);
@@ -2144,6 +2152,7 @@ function celdaV2(valor,pdv,categoria,total=false){
 }
 function filaResumen(x,esTotal){
  const tr=document.createElement('tr');if(esTotal)tr.classList.add('total-row');
+ if(!esTotal)tr.dataset.excelPdv=String(x.pdv||'');
  tr.classList.toggle('summary-row-active',!esTotal&&filaResumenSeleccionada(x.pdv));
  const pdv=document.createElement('td');pdv.textContent=x.pdv;pdv.className='summary-clickable';pdv.classList.toggle('summary-selected',!esTotal&&celdaResumenSeleccionada(x.pdv,''));pdv.onclick=()=>esTotal?limpiarFiltroResumen(false):aplicarFiltroResumen(x.pdv,'');tr.append(pdv);
  const desp=document.createElement('td');desp.textContent=Number(x.despachosAyer||0)===0?'':num(x.despachosAyer);tr.append(desp);
@@ -2186,4 +2195,4 @@ function actualizarClasificacionV2(){
  else{resumen=r.resumen;renderResumen();filtrar();}
 }
 setInterval(actualizarClasificacionV2,60000);
-</script><script src="./brecha-costos.js?v=20261019-modulo-estadisticas-independiente-1"></script><script src="./xlsx-resumen.js?v=20261027-comentario-clasificacion-criticos-v1"></script><script src="./sla-paquetes.js?v=20261026-sla-rangos-precios-permisos-v31"></script></body></html>
+</script><script src="./brecha-costos.js?v=20261019-modulo-estadisticas-independiente-1"></script><script src="./xlsx-resumen.js?v=20261027-comentario-excel-criticos-v2"></script><script src="./sla-paquetes.js?v=20261026-sla-rangos-precios-permisos-v31"></script></body></html>

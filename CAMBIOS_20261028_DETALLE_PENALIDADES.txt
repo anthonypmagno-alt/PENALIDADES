@@ -1,0 +1,17 @@
+CAMBIO 2026-10-28 — CARGA DEL DETALLE DE PENALIDADES
+
+Al seleccionar una liquidación, el módulo carga sus guías por lotes desde Supabase.
+La respuesta del RPC ahora admite los formatos JSON de arreglo y los formatos
+envueltos habituales. Una respuesta inesperada ya no se convierte en silencio
+en una tabla vacía.
+
+Antes de mostrar el detalle, se compara la cantidad recibida con el total del
+resumen. Si hay diferencia, se conserva la liquidación y se muestra un mensaje
+con ambas cantidades; al seleccionar nuevamente la fila se reintenta la carga.
+Esto evita que un fallo o respuesta incompleta quede guardado en memoria como
+si el registro no tuviera penalidades.
+
+No requiere ejecutar SQL si la función `penalidades_obtener_items` ya está
+instalada. Si el aviso indica que el resumen tiene más filas que el detalle,
+ejecuta la versión actual de `supabase_penalidades_v2.sql` y vuelve a cargar la
+página; conserva los registros existentes.

@@ -1,0 +1,7 @@
+GESTIÓN DE GUÍAS V2 — CLASIFICACIONES CRÍTICAS EN EL EXCEL
+
+El Excel completo de Gestión V2 conserva la primera hoja del resumen por PDV y agrega al final las columnas COMENTARIO y CLASIFICACIÓN DE PAQUETES CRÍTICOS · SUBTIPOS Y COMENTARIO ENCARGADO.
+
+En cada fila de PDV, la columna de clasificación presenta únicamente las categorías con conteo mayor que cero: cola larga crítica en PDV, cola larga crítica por devolver, brecha crítica en PDV y brecha crítica no llegados al PDV. Cada categoría incluye el subtotal y sus grupos de Subtipo 1, Subtipo 2, comentario encargado y conteo.
+
+El detalle del Excel conserva también la columna COMENTARIO DE GESTIÓN · ENCARGADO por guía. Los subtotales por área y el total no reciben un desglose por PDV. No requiere SQL.

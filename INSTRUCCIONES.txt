@@ -206,3 +206,21 @@ RESUMEN DE GESTIÓN V2 · DESGLOSE DE GUÍAS CRÍTICAS (26-10-2026)
 CAMBIO 2026-10-27 — DESGLOSE CRÍTICO EN LA VENTANA DE COMENTARIO
 
 En Gestión de Guías V2, al pulsar el botón verde de comentario de una fila de PDV, la ventana muestra primero las clasificaciones críticas de ese PDV. Las cuatro categorías (cola larga crítica en PDV, cola larga crítica por devolver, brecha crítica en PDV y brecha crítica no llegados al PDV) aparecen solo cuando su conteo es mayor que cero. Cada una se desglosa por Subtipo 1, Subtipo 2 y comentario del encargado, con conteo de guías. Debajo permanece el campo para editar el comentario del PDV. No requiere ejecutar SQL.
+
+CAMBIO 2026-10-27 — CLASIFICACIONES CRÍTICAS EN EL EXCEL
+
+El Excel completo agrega en la primera hoja una columna “Clasificación de paquetes críticos · subtipos y comentario encargado” al lado del comentario del resumen. Cada PDV muestra sus categorías críticas, subtotales, Subtipo 1, Subtipo 2, comentario del encargado y conteo; las categorías con cero no se exportan. La hoja “Detalle guías” conserva el comentario de gestión del encargado por guía. No requiere SQL; publicar la carpeta completa del ZIP.
+
+CAMBIO 2026-10-28 — CARGA DEL DETALLE DE PENALIDADES
+- Al seleccionar una liquidación, el módulo normaliza la respuesta JSON del RPC de detalle y valida que la cantidad de guías recibidas coincida con el total mostrado en el resumen.
+- Si la respuesta llega incompleta o con un formato inesperado, no se presenta como una tabla vacía ni se guarda como detalle cargado. La fila se puede volver a seleccionar para reintentar; el mensaje muestra las cantidades recibidas y esperadas.
+- No requiere SQL si `penalidades_obtener_items` ya está instalada. Si persiste una diferencia, ejecuta la versión actual de `supabase_penalidades_v2.sql`; es incremental y conserva los registros.
+- Publica `index.html` y `penalidades.html` del ZIP actualizado; el enlace del módulo incluye un identificador de caché nuevo.
+
+CAMBIO 2026-10-28 — IMPORTACIÓN ACUMULATIVA DE PENALIDADES
+- Las cargas nuevas agregan guías y actualizan coincidencias. Las guías previas que no están en el Excel nuevo permanecen en el registro, junto con sus exoneraciones y motivos.
+- Una liquidación que no aparece en el Excel nuevo tampoco se elimina.
+- La sustitución completa se realiza solo desde “Actualizar liquidación”, con confirmación. El botón “Eliminar” es la única acción que borra una liquidación completa.
+- El guardado no borra liquidaciones ni guías solo porque falten en el estado local; evita que una carga nueva provoque eliminaciones accidentales.
+- No requiere SQL. Si las guías ya fueron borradas físicamente en Supabase, reimporta el Excel original para reconstruirlas; las decisiones previas solo se recuperan desde filas que sigan en Supabase o desde un respaldo.
+- Publica el contenido completo del ZIP actualizado.

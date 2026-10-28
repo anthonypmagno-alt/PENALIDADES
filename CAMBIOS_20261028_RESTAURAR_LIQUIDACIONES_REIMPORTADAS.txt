@@ -1,0 +1,17 @@
+CAMBIO 2026-10-28 — IMPORTACIÓN ACUMULATIVA DE PENALIDADES
+
+Al cargar Excel de penalidades, las guías nuevas se agregan y las que coinciden
+con una fila guardada se actualizan. Las guías anteriores que no estén en el
+archivo nuevo permanecen en el registro, junto con sus exoneraciones y motivos.
+También se preservan las filas de liquidaciones que no aparecen en el Excel.
+
+La sustitución completa de un periodo y PDV queda únicamente en la acción
+explícita “Actualizar liquidación”, que solicita confirmación antes de
+reemplazar las guías. El botón Eliminar sigue siendo la única forma de borrar
+un registro completo. El guardado ya no deduce eliminaciones por diferencias
+accidentales entre el resumen y el estado local. No requiere SQL.
+
+Una marca local antigua tampoco puede ocultar una fila que Supabase todavía
+devuelve. Si las guías ya fueron borradas físicamente, importa el Excel original
+para reconstruirlas; las decisiones anteriores solo se recuperan desde filas
+que sigan en Supabase o desde un respaldo.

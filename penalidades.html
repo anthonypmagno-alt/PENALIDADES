@@ -286,7 +286,7 @@
       </div>
       <div class="upload-grid">
         <article class="upload-card" id="cardPenalties">
-          <div><div class="upload-title">Liquidaciones de penalidades</div><div class="note">Puedes cargar varios Excel. Se crean registros por periodo y PDV desde “LISTA DETALLADA DE PENALIDAD”.</div></div>
+          <div><div class="upload-title">Liquidaciones de penalidades</div><div class="note">Puedes cargar varios Excel. Las cargas agregan penalidades nuevas y actualizan coincidencias sin quitar guías guardadas. Para sustituir deliberadamente una liquidación, usa “Actualizar liquidación” desde su detalle.</div></div>
           <div><label for="filePenalties">Agregar Excel(s)</label><input id="filePenalties" type="file" accept=".xlsx,.xls" multiple><div id="statePenalties" class="file-state">Sin archivos cargados</div></div>
         </article>
         <article class="upload-card" id="cardBreaches">
@@ -629,7 +629,7 @@
         else{if(cloudMode&&!state.records.every(record=>Array.isArray(record.items)))await ensureAllStoredRecordItemsLoaded();recordSummary.refreshed=refreshRecordsFromSources();}
         hydratePenaltySourceFromRecords();const slaBackfilled=backfillMissingSla();persist();updateSourceDiag();renderSummary();if(currentRecord())renderDetail();
         const importedCount=batch.reduce((sum,item)=>sum+item.rows.length,0),zoneSlaCount=slot==='zones'?batch[0].rows.filter(row=>txt(row.slaDays)!=='').length:null,guideDataCount=slot==='guides'?batch.reduce((sum,entry)=>sum+entry.rows.filter(row=>row.district&&row.province&&row.department&&row.scanType&&row.signature&&row.scanTime).length,0):0,linkedGuideCount=slot==='guides'?state.records.reduce((sum,record)=>sum+(record.items||[]).filter(item=>item.guideMatched).length,0):0;
-        const importedMessage=slot==='zones'?`${slotLabels[slot]} importada: ${fmtCount(importedCount)} filas; ${fmtCount(zoneSlaCount)} con “SLA ASIGNADO (DIAS)”.`:slot==='penalties'?`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas; ${fmtCount(recordSummary.created)} liquidaciones creadas y ${fmtCount(recordSummary.refreshed)} actualizadas.`:slot==='guides'?`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas; ${fmtCount(guideDataCount)} con destino, escaneo, firma y fecha completa; ${fmtCount(linkedGuideCount)} penalidades enlazadas en ${fmtCount(recordSummary.refreshed)} liquidaciones actualizadas.`:`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas.`;
+        const importedMessage=slot==='zones'?`${slotLabels[slot]} importada: ${fmtCount(importedCount)} filas; ${fmtCount(zoneSlaCount)} con “SLA ASIGNADO (DIAS)”.`:slot==='penalties'?`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas; ${fmtCount(recordSummary.created)} liquidaciones nuevas y ${fmtCount(recordSummary.refreshed)} existentes actualizadas. Se conservaron las guías previas; la sustitución completa se hace desde “Actualizar liquidación”.`:slot==='guides'?`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas; ${fmtCount(guideDataCount)} con destino, escaneo, firma y fecha completa; ${fmtCount(linkedGuideCount)} penalidades enlazadas en ${fmtCount(recordSummary.refreshed)} liquidaciones actualizadas.`:`${slotLabels[slot]}: ${fmtCount(files.length)} archivo(s), ${fmtCount(importedCount)} filas.`;
         notify(slaBackfilled?`${importedMessage} Se completó el SLA de ${fmtCount(slaBackfilled)} penalidades.`:importedMessage);
       }catch(err){$(stateBySlot[slot]).textContent='No se pudo importar: '+err.message;notify(err.message,true);}
       e.target.value='';
@@ -778,6 +778,12 @@
       for(const item of fresh){const old=previous.get(item.id);if(!old)continue;item.exemptionPercent=exemptionPercent(old);item.exonerated=item.exemptionPercent>0;item.retentionPercent=retentionPercent(old);item.reason=old.reason||'';item.manualZone=old.manualZone?{...old.manualZone}:null;if(item.manualZone)applyManualZone(item);item.modifiedAt=old.modifiedAt||'';if(!state.sources.guides?.rows?.length)for(const key of ['district','province','department','scanType','signature','scanTime'])if(old[key]!=null)item[key]=old[key];const hasRelevantBreach=!!state.sources.breaches?.rows?.some(row=>row.period===item.period);if(!hasRelevantBreach){for(const key of ['latestOperation','breachOperation','breachWaitHours','breachLastUpdate','breachMatched'])if(old[key]!=null)item[key]=old[key];if(old.breachMatched){item.breach=old.breach||item.breach;item.sla=old.sla||item.sla;}}if(!state.sources.zones?.rows?.length)for(const key of ['zoneName','zoneType','slaDays','zoneMatched','sourceZone'])if(old[key]!=null)item[key]=old[key];}
       return fresh;
     }
+    function mergeRecordItems(fresh,previousItems){
+      const refreshed=preserveDecisions(fresh,previousItems),refreshedById=new Map(refreshed.map(item=>[String(item.id),item])),merged=[],seen=new Set();
+      for(const previous of previousItems||[]){const id=String(previous.id||''),updated=refreshedById.get(id);merged.push(updated||previous);if(id)seen.add(id);}
+      for(const item of refreshed){const id=String(item.id||'');if(!seen.has(id)){merged.push(item);if(id)seen.add(id);}}
+      return merged;
+    }
     async function ensureAllStoredRecordItemsLoaded(){
       const pending=state.records.filter(record=>!Array.isArray(record.items));
       for(let i=0;i<pending.length;i+=3)await Promise.all(pending.slice(i,i+3).map(async record=>{record.items=await fetchStoredRecordItems(record.id);}));
@@ -785,7 +791,7 @@
     }
     function refreshRecordsFromSources(){
       if(!(state.sources.penalties?.rows||[]).length)return 0;const now=new Date().toISOString(),indexes={guides:buildGuideIndex(),breaches:buildBreachIndex(),zones:buildZoneIndex()};let refreshed=0;
-      for(const record of state.records){if(record.isSimulation)continue;const fresh=getRecordItems(record.period,record.pdv,indexes);if(!fresh.length)continue;record.items=preserveDecisions(fresh,record.items);record.sourceFiles=sourceFilesSnapshot();record.updatedAt=now;record.sourceSyncAt=now;refreshed++;}
+      for(const record of state.records){if(record.isSimulation)continue;const fresh=getRecordItems(record.period,record.pdv,indexes);if(!fresh.length)continue;record.items=mergeRecordItems(fresh,record.items);record.sourceFiles=sourceFilesSnapshot();record.updatedAt=now;record.sourceSyncAt=now;refreshed++;}
       return refreshed;
     }
     async function createRecordsFromPenaltySources(){
@@ -794,9 +800,21 @@
       const now=new Date().toISOString(),indexes={guides:buildGuideIndex(),breaches:buildBreachIndex(),zones:buildZoneIndex()};let created=0,refreshed=0;
       for(const group of groups.values()){
         const id=recordKey(group.period,group.pdv),deletedAt=timestampValue(state.deletedRecords?.[id]);
-        if(deletedAt&& !group.rows.some(row=>timestampValue(row.sourceImportedAt)>deletedAt))continue;
-        const fresh=getRecordItems(group.period,group.pdv,indexes),existing=state.records.find(record=>record.id===id);
-        if(existing){if(!Array.isArray(existing.items))existing.items=await fetchStoredRecordItems(existing.id);existing.items=preserveDecisions(fresh,existing.items);existing.sourceFiles=sourceFilesSnapshot();existing.updatedAt=now;existing.sourceSyncAt=now;refreshed++;}
+        const reimportedAfterDelete=deletedAt&&group.rows.some(row=>timestampValue(row.sourceImportedAt)>deletedAt);
+        if(deletedAt&&!reimportedAfterDelete)continue;
+        // Si se vuelve a importar el mismo periodo + PDV después de borrarlo,
+        // la nueva carga rehabilita ese registro. Mantener la marca local haría
+        // que Supabase lo volviera a ocultar al recargar, aunque la fila exista.
+        if(reimportedAfterDelete){state.deletedRecords=state.deletedRecords||{};delete state.deletedRecords[id];}
+        const fresh=getRecordItems(group.period,group.pdv,indexes);let existing=state.records.find(record=>record.id===id);
+        // La fila real puede seguir en Supabase aunque una marca local la haya
+        // ocultado del resumen. Recuperarla antes de refrescar conserva sus
+        // decisiones y evita que la nueva carga las reemplace por valores cero.
+        if(!existing&&reimportedAfterDelete&&cloudMode){
+          const remoteRecord=(exoV2Baseline?.records||[]).find(record=>record.id===id);
+          if(remoteRecord){existing={...remoteRecord,items:await fetchStoredRecordItems(id)};state.records.push(existing);}
+        }
+        if(existing){if(!Array.isArray(existing.items))existing.items=await fetchStoredRecordItems(existing.id);existing.items=mergeRecordItems(fresh,existing.items);existing.sourceFiles=sourceFilesSnapshot();existing.updatedAt=now;existing.sourceSyncAt=now;refreshed++;}
         else if(fresh.length){state.records.push({id,period:group.period,pdv:group.pdv,status:'pendiente',signatureRate:null,liquidationAmount:null,penaltyTotalAdjustment:null,createdAt:now,updatedAt:now,sourceSyncAt:now,sourceFiles:sourceFilesSnapshot(),items:fresh});created++;}
       }
       return {created,refreshed,groups:groups.size};
@@ -832,9 +850,16 @@
       currentRecordId=id;selectedIds.clear();matrixGuideSelection=null;dirty=false;$('detailPanel').hidden=false;
       $('detailHeading').innerHTML=`Detalle de penalidades <span class="badge">${escapeHtml(periodLabel(record.period))}</span> <span class="badge">${escapeHtml(record.pdv)}</span>`;
       renderSummary();$('detailPanel').scrollIntoView({behavior:'smooth',block:'start'});
-      if(!Array.isArray(record.items)){
+      const detailExpected=Number(record.summary?.count)||0;
+      const detailMissing=!Array.isArray(record.items)||(!record.isSimulation&&record.items.length===0&&detailExpected>0);
+      if(detailMissing){
         $('detailSubtitle').textContent='Cargando penalidades desde Supabase…';$('detailBody').innerHTML='<tr><td colspan="18" class="empty">Cargando detalle por lotes…</td></tr>';$('breakdownBody').innerHTML='';$('breachMatrixBody').innerHTML='';$('slaMatrixBody').innerHTML='';$('saveBtn').disabled=true;$('syncBtn').disabled=true;
-        try{record.items=await fetchStoredRecordItems(id);}
+        try{
+          const loadedItems=await fetchStoredRecordItems(id);
+          if(!Array.isArray(loadedItems))throw new Error('Supabase devolvió un detalle con formato no válido.');
+          if(detailExpected>0&&loadedItems.length!==detailExpected)throw new Error(`El resumen indica ${fmtCount(detailExpected)} penalidades, pero el detalle devolvió ${fmtCount(loadedItems.length)}. No se marcó como cargado; vuelve a seleccionar el registro para reintentar. Si se repite, actualiza la función penalidades_obtener_items del SQL de Penalidades.`);
+          record.items=loadedItems;
+        }
         catch(error){$('detailSubtitle').textContent='No se pudo cargar el detalle. Haz clic nuevamente en la liquidación para reintentar.';$('detailBody').innerHTML='<tr><td colspan="18" class="empty">No se pudo cargar este detalle.</td></tr>';notify(`No se pudo cargar el detalle desde Supabase: ${error?.message||error||''}`,true);return;}
         if(currentRecordId!==id)return;
       }
@@ -844,6 +869,7 @@
       const record=state.records.find(item=>item.id===id);if(!record)return;
       const label=`${periodLabel(record.period)} · ${record.pdv}${record.isSimulation?' · SIMULACIÓN':''}`;
       if(!confirm(`¿Eliminar el registro ${label}? Se borrarán sus decisiones y motivos guardados. Esta acción no se puede deshacer.`))return;
+      exoV2PendingDeletes.add(id);
       state.deletedRecords=state.deletedRecords||{};state.deletedRecords[id]=new Date().toISOString();state.records=state.records.filter(item=>item.id!==id);
       selectedRecordIds.delete(id);
       if(currentRecordId===id){currentRecordId=null;selectedIds.clear();dirty=false;$('detailPanel').hidden=true;}
@@ -876,7 +902,7 @@
       const old=currentRecord();if(!old)return;if(old.isSimulation){notify('La simulación conserva su propia copia. Para actualizar los datos, crea otra simulación desde la liquidación real.',true);return;}if(!Array.isArray(old.items)){notify('Espera a que termine de cargar el detalle antes de actualizar.',true);return;}if(!(state.sources.penalties?.rows||[]).length){notify('Carga al menos un Excel de penalidades antes de actualizar.',true);return;}
       if(!confirm('Se reemplazará la lista de penalidades del periodo y PDV con los archivos cargados. Las decisiones y motivos se conservarán cuando coincida la guía y la penalidad. ¿Continuar?'))return;
       const fresh=getRecordItems(old.period,old.pdv);if(!fresh.length){notify('Los archivos actuales no tienen penalidades para este periodo y PDV.',true);return;}
-      const syncTime=new Date().toISOString();old.items=preserveDecisions(fresh,old.items);old.sourceFiles=sourceFilesSnapshot();old.updatedAt=syncTime;old.sourceSyncAt=syncTime;dirty=false;selectedIds.clear();persist();renderDetail();renderSummary();notify('Registro actualizado desde los archivos.');
+      exoV2PendingReplaceRecords.add(old.id);const syncTime=new Date().toISOString();old.items=preserveDecisions(fresh,old.items);old.sourceFiles=sourceFilesSnapshot();old.updatedAt=syncTime;old.sourceSyncAt=syncTime;dirty=false;selectedIds.clear();persist();renderDetail();renderSummary();notify('Registro actualizado desde los archivos.');
     }
     function fullExemptionAmount(record){if(Array.isArray(record?.items))return sumMoney(record.items,exemptionAmount);return Number(record?.summary?.exempt)||0;}
     function recordTotals(record){
@@ -1317,10 +1343,20 @@
     function setAvailable(available){appReady=available;if($('importStateBtn'))$('importStateBtn').disabled=!available;if($('exportStateBtn'))$('exportStateBtn').disabled=!available;$('openCreateBtn').disabled=!available;$('saveBtn').disabled=!available;$('createGroupBtn').disabled=!available;$('groupNameInput').disabled=!available;$('bulkGroupSelect').disabled=!available;$('clearRecordSelectionBtn').disabled=!available||selectedRecordIds.size===0;for(const id of Object.values(inputBySlot))$(id).disabled=!available;updateRecordGroupSelectionControls(filteredRecords());}
     function stateHasData(value){return !!(value?.records?.length||value?.groups?.length||Object.keys(value?.deletedRecords||{}).length||Object.values(value?.sources||{}).some(source=>source?.rows?.length));}
     function mergeLocalDeletionTombstones(remote,local){
-      const merged={...remote,deletedRecords:{...(remote.deletedRecords||{})}},beforeCount=(remote.records||[]).length;let changed=false;
+      const merged={...remote,deletedRecords:{...(remote.deletedRecords||{})}};let changed=false;
       for(const [id,deletedAt] of Object.entries(local.deletedRecords||{}))if(timestampValue(deletedAt)>timestampValue(merged.deletedRecords[id])){merged.deletedRecords[id]=deletedAt;changed=true;}
-      merged.records=(remote.records||[]).filter(record=>{const deletedAt=timestampValue(merged.deletedRecords[record.id]);return !deletedAt||timestampValue(record.createdAt)>deletedAt;});
-      if(merged.records.length!==beforeCount)changed=true;return {state:merged,changed};
+      const remoteRecords=remote.records||[],remoteById=new Map(remoteRecords.map(record=>[record.id,record]));
+      for(const [id,deletedAt] of Object.entries(merged.deletedRecords)){
+        const record=remoteById.get(id);
+        if(record&&Math.max(timestampValue(record.createdAt),timestampValue(record.updatedAt))>timestampValue(deletedAt)){
+          delete merged.deletedRecords[id];changed=true;
+        }
+      }
+      // Supabase es la fuente de verdad: una fila que sigue allí no se oculta
+      // ni se convierte en una eliminación pendiente por un tombstone local.
+      // Esto evita que cargar otro archivo termine borrando originales antiguos.
+      merged.records=remoteRecords;
+      return {state:merged,changed};
     }
     function initializeView(){
       for(const record of state.records){record.status=liquidationStatusValue(record.status);record.signatureRate=signatureRateValue(record.signatureRate);record.liquidationAmount=liquidationAmountValue(record.liquidationAmount);record.penaltyTotalAdjustment=penaltyTotalAdjustmentValue(record.penaltyTotalAdjustment);}hydratePenaltySourceFromRecords();const slaBackfilled=backfillMissingSla();if(slaBackfilled){persist();notify(`Se actualizaron datos de Exportación y Zonificación en ${fmtCount(slaBackfilled)} penalidades guardadas.`);}updateSourceDiag();if(state.sources.penalties)setDefaultPeriodAndPdvs();renderSummary();
@@ -1347,6 +1383,8 @@
     let exoPenalidadesPermission = {ver:false,ejecutar:false};
     let exoV2Baseline = null;
     const exoV2BaselineItemsById = new Map();
+    const exoV2PendingDeletes = new Set();
+    const exoV2PendingReplaceRecords = new Set();
     const gateMessage = document.getElementById('moduleGateMessage');
     const showModuleGate = (message, isError=false) => {
       gateMessage.textContent = message || '';
@@ -1399,12 +1437,21 @@
         // Una respuesta sin error de PostgREST sigue siendo confirmación válida.
         return null;
       };
+      const normalizeItemsPage=data=>{
+        let value=data;
+        if(typeof value==='string'){
+          try{value=JSON.parse(value);}catch(error){throw new Error('Supabase devolvió texto que no se pudo interpretar como detalle JSON.');}
+        }
+        if(Array.isArray(value))return value;
+        for(const key of ['items','rows','data','result'])if(Array.isArray(value?.[key]))return value[key];
+        throw new Error('Supabase devolvió el detalle en un formato no reconocido; no se mostrará como una liquidación vacía.');
+      };
       const fetchItems=async recordKey=>{
         const items=[],pageSize=1000;let offset=0;
         while(true){
           const {data,error}=await exoSupabaseClient.rpc('penalidades_obtener_items',{p_record_key:recordKey,p_offset:offset,p_limit:pageSize});
           if(error)throw error;
-          const page=Array.isArray(data)?data:[];items.push(...page);
+          const page=normalizeItemsPage(data);items.push(...page);
           if(page.length<pageSize)break;
           offset+=pageSize;
         }
@@ -1492,7 +1539,9 @@
             const baseline=exoV2Baseline||{records:[],groups:[]};
             const baseRecords=new Map((baseline.records||[]).map(record=>[record.id,record]));
             const nextRecords=new Map((snapshot.records||[]).map(record=>[record.id,record]));
-            const deletedRecordKeys=[...baseRecords.keys()].filter(id=>!nextRecords.has(id));
+            // Una omisión del estado en memoria nunca basta para borrar en masa.
+            // Solo se eliminan registros tras la confirmación del botón Eliminar.
+            const deletedRecordKeys=[...exoV2PendingDeletes].filter(id=>baseRecords.has(id)&&!nextRecords.has(id));
             const deletedRecordSet=new Set(deletedRecordKeys);
             // Solo comparar propiedades que las RPC devuelven y guardan. La fila
             // también trae metadatos del Excel (sourceRow, dateISO, costRaw,
@@ -1504,7 +1553,8 @@
             const itemSignature=item=>stableJson(persistedItem(item));
             const baseItems=new Map();
             const baseItemValues=new Map();
-            for(const record of (baseline.records||[]))for(const item of(record.items||[])){const id=dbItemId(record,item),comparable=persistedItem({...item,id});baseItems.set(id,itemSignature({...item,id}));baseItemValues.set(id,comparable);}
+            const baseItemRecordKey=new Map();
+            for(const record of (baseline.records||[]))for(const item of(record.items||[])){const id=dbItemId(record,item),comparable=persistedItem({...item,id});baseItems.set(id,itemSignature({...item,id}));baseItemValues.set(id,comparable);baseItemRecordKey.set(id,record.id);}
             const decisionFields=new Set(['exemptionPercent','exonerated','retentionPercent','reason','modifiedAt']);
             const nextItems=new Map(), changedByRecord=[], decisionOnlyChanges=[],exportDataChanges=[];
             const decisionPayload=item=>({id:item.id,porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:exoRetentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||''});
@@ -1530,7 +1580,9 @@
               }
               if(changed.length)changedByRecord.push({record,changed});
             }
-            const deleted=[...baseItems.keys()].filter(id=>!nextItems.has(id)&&!deletedRecordKeys.some(recordKey=>id.startsWith(`${recordKey}::`)));
+            // Las filas omitidas solo se borran cuando el administrador confirmó
+            // “Actualizar liquidación”; las cargas normales son acumulativas.
+            const deleted=[...baseItems.keys()].filter(id=>{const recordKey=baseItemRecordKey.get(id);return !nextItems.has(id)&&!deletedRecordSet.has(recordKey)&&exoV2PendingReplaceRecords.has(recordKey);});
             const validStates=new Set(['pendiente','en_proceso','finalizado','notificado','en_revalidacion']);
             const normalizeStatus=value=>validStates.has(value)?value:'pendiente';
             const normalizedRate=value=>{if(value==null||String(value).trim()==='')return null;const rate=Number(value);return Number.isFinite(rate)?Math.round(Math.max(0,Math.min(100,rate))*100)/100:null;};
@@ -1615,6 +1667,7 @@
                 await saveRpc('grupos y asignaciones','penalidades_guardar_grupos',{p_grupos:snapshot.groups||[],p_asignaciones:assignments});
               }
               if(!exoV2Activated){await saveRpc('activación inicial del módulo','penalidades_activar_v2',undefined);exoV2Activated=true;}
+              exoV2PendingDeletes.clear();exoV2PendingReplaceRecords.clear();
               exoV2Baseline=cloneState(snapshot);exoV2BaselineItemsById.clear();for(const record of exoV2Baseline.records||[])for(const item of record.items||[])exoV2BaselineItemsById.set(String(item.id),item);
               document.getElementById('storageState').title='Última sincronización confirmada por Supabase';
               successHandler({ok:true,revision:Date.now()});

@@ -14,9 +14,15 @@
       { orden: 2, desde_horas: 48, hasta_horas: null, tarifa_porcentaje: 90 }
     ],
     dataset: null,
+    zoneRows: [],
+    zoneMap: new Map(),
+    zoneDataset: null,
+    zoneMigrationError: "",
     loadedAt: 0,
     loading: false,
-    expanded: new Set(),
+    expandedDepartments: new Set(),
+    expandedProvinces: new Set(),
+    selectedDepartment: "",
     selectedProvince: "",
     selectedDistrict: "",
     selectedClass: "",
@@ -60,6 +66,12 @@
     el.textContent = message;
     el.style.color = isError ? "#b42318" : "";
   }
+  function showZoneStatus(message, isError) {
+    var el = byId("slaZonaEstado");
+    if (!el) return;
+    el.textContent = message;
+    el.style.color = isError ? "#b42318" : "";
+  }
   function api() {
     if (!window.V16GestionSlaApi) throw new Error("No se cargó la conexión del módulo SLA. Actualiza la página.");
     return window.V16GestionSlaApi;
@@ -74,8 +86,9 @@
     out.departamento = safeText(row.departamento).trim();
     out.provincia = safeText(row.provincia).trim();
     out.distrito = safeText(row.distrito).trim();
-    out._provinceKey = keyText(out.departamento) + "|" + keyText(out.provincia);
-    out._districtKey = out._provinceKey + "|" + keyText(out.distrito || "SIN DISTRITO");
+    out._departmentKey = keyText(out.departamento) || "SIN DEPARTAMENTO";
+    out._provinceKey = out._departmentKey + "|" + (keyText(out.provincia) || "SIN PROVINCIA");
+    out._districtKey = out._provinceKey + "|" + (keyText(out.distrito) || "SIN DISTRITO");
     out._geoKey = geoKey(out.departamento, out.provincia, out.distrito);
     out._guideKey = keyText(out.guia) + "|" + keyText(out.pdv);
     return out;
@@ -111,6 +124,15 @@
       }).format(new Date(epoch));
     } catch (_) { return new Date(epoch).toLocaleString(); }
   }
+  function formatDateCompact(epoch) {
+    if (!epoch) return "—";
+    try {
+      return new Intl.DateTimeFormat("es-PE", {
+        timeZone: "America/Lima", year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", hour12: false
+      }).format(new Date(epoch)).replace(",", "");
+    } catch (_) { return new Date(epoch).toLocaleString(); }
+  }
   function calc(row, now) {
     var start = null;
     var label = "";
@@ -127,20 +149,25 @@
     var signed = !!row.firma;
     var end = signed ? row.firma : now;
     var hours = start ? (end - start) / 3600000 : null;
+    var zone = state.zoneMap.get(row._geoKey) || null;
+    var transferDays = zone && zone.sla_traslado_dias !== null && zone.sla_traslado_dias !== undefined ? Number(zone.sla_traslado_dias) : null;
+    var hoursFromTransfer = hours === null || transferDays === null ? null : Math.max(0, hours - transferDays * 24);
     var classification = "SIN_INICIO";
     if (start && hours < 0) classification = "INCONSISTENTE";
+    else if (start && !zone) classification = "SIN_ZONIFICACION";
+    else if (start && transferDays === null) classification = "SIN_SLA_TRASLADO";
     else if (start) {
       var range = (state.ranges || []).find(function (item) {
-        return hours >= Number(item.desde_horas) && (item.hasta_horas === null || item.hasta_horas === undefined || hours < Number(item.hasta_horas));
+        return hoursFromTransfer >= Number(item.desde_horas) && (item.hasta_horas === null || item.hasta_horas === undefined || hoursFromTransfer < Number(item.hasta_horas));
       });
       if (range) classification = "RANGO_" + range.orden;
       else classification = "INCONSISTENTE";
       var price = state.prices.has(row._geoKey) ? state.prices.get(row._geoKey) : null;
       var tariff = range ? Number(range.tarifa_porcentaje) : null;
       var amount = range && tariff === 0 ? 0 : range && price !== null ? Math.round((price * tariff / 100 + Number.EPSILON) * 100) / 100 : null;
-      return { start: start, startLabel: label, end: end, signed: signed, hours: hours, classification: classification, range: range || null, tariff: tariff, price: price, amount: amount };
+      return { start: start, startLabel: label, end: end, signed: signed, hours: hours, hoursFromTransfer: hoursFromTransfer, transferDays: transferDays, zone: zone, classification: classification, range: range || null, tariff: tariff, price: price, amount: amount };
     }
-    return { start: start, startLabel: label, end: end, signed: signed, hours: hours, classification: classification, range: null, tariff: null, price: state.prices.has(row._geoKey) ? state.prices.get(row._geoKey) : null, amount: null };
+    return { start: start, startLabel: label, end: end, signed: signed, hours: hours, hoursFromTransfer: hoursFromTransfer, transferDays: transferDays, zone: zone, classification: classification, range: null, tariff: null, price: state.prices.has(row._geoKey) ? state.prices.get(row._geoKey) : null, amount: null };
   }
   function classificationLabel(code) {
     var match = safeText(code).match(/^RANGO_(\d+)$/);
@@ -151,6 +178,8 @@
     if (code === "SIN_INICIO") return "Sin fecha de inicio";
     if (code === "INCONSISTENTE") return "Fecha inconsistente";
     if (code === "SIN_FIRMA") return "Sin firma · en curso";
+    if (code === "SIN_ZONIFICACION") return "Sin coincidencia en zonificación";
+    if (code === "SIN_SLA_TRASLADO") return "SLA traslado pendiente";
     return "Todas";
   }
   function formatMoney(value) {
@@ -165,13 +194,13 @@
     var from = Number(range.desde_horas);
     var to = range.hasta_horas === null || range.hasta_horas === undefined || range.hasta_horas === "" ? null : Number(range.hasta_horas);
     var tariff = Number(range.tarifa_porcentaje);
-    return to === null ? "≥ " + from + " h · Tarifa " + tariff + "%" : from + " ≤ h < " + to + " · Tarifa " + tariff + "%";
+    return to === null ? "≥ " + from + " h netas · Tarifa " + tariff + "%" : from + " ≤ h netas < " + to + " · Tarifa " + tariff + "%";
   }
   function rangeHeaderLabel(range) {
     var from = Number(range.desde_horas);
     var to = range.hasta_horas === null || range.hasta_horas === undefined || range.hasta_horas === "" ? null : Number(range.hasta_horas);
     var tariff = Number(range.tarifa_porcentaje);
-    return to === null ? "≥ " + from + " h · " + tariff + "%" : from + "–<" + to + " h · " + tariff + "%";
+    return to === null ? "≥ " + from + " h netas · " + tariff + "%" : from + "–<" + to + " h netas · " + tariff + "%";
   }
   function normalizedRanges(config) {
     var configured = config && Array.isArray(config.rangos) ? config.rangos : [];
@@ -208,6 +237,8 @@
     });
     options.push('<option value="SIN_INICIO">Sin fecha de inicio</option>');
     options.push('<option value="INCONSISTENTE">Fecha inconsistente</option>');
+    options.push('<option value="SIN_ZONIFICACION">Sin coincidencia en zonificación</option>');
+    options.push('<option value="SIN_SLA_TRASLADO">SLA traslado pendiente</option>');
     options.push('<option value="SIN_FIRMA">Sin firma · en curso</option>');
     select.innerHTML = options.join("");
     if (Array.prototype.some.call(select.options, function (option) { return option.value === current; })) select.value = current;
@@ -236,7 +267,7 @@
     return allRows().filter(function (row) { return matchesFilter(row, filters); });
   }
   function classCounts(rows) {
-    var result = { SIN_INICIO: 0, INCONSISTENTE: 0, SIN_FIRMA: 0, SIN_PRECIO: 0 };
+    var result = { SIN_INICIO: 0, INCONSISTENTE: 0, SIN_ZONIFICACION: 0, SIN_SLA_TRASLADO: 0, SIN_FIRMA: 0, SIN_PRECIO: 0 };
     (state.ranges || []).forEach(function (range) { result["RANGO_" + range.orden] = 0; });
     rows.forEach(function (row) {
       result[row._calc.classification] = (result[row._calc.classification] || 0) + 1;
@@ -260,15 +291,23 @@
     if (byId("slaTarifaAplicada")) byId("slaTarifaAplicada").textContent = conTarifa.toLocaleString("es-PE");
     if (byId("slaSinFirma")) byId("slaSinFirma").textContent = counts.SIN_FIRMA.toLocaleString("es-PE");
     if (byId("slaSinPrecio")) byId("slaSinPrecio").textContent = counts.SIN_PRECIO.toLocaleString("es-PE");
+    if (byId("slaSinZona")) byId("slaSinZona").textContent = (counts.SIN_ZONIFICACION + counts.SIN_SLA_TRASLADO).toLocaleString("es-PE");
   }
   function groupRows(rows) {
-    var provinces = new Map();
+    var departments = new Map();
     rows.forEach(function (row) {
-      var provinceKey = row._provinceKey || "SIN DEPARTAMENTO|SIN PROVINCIA";
-      var province = provinces.get(provinceKey);
+      var departmentKey = row._departmentKey || "SIN DEPARTAMENTO";
+      var department = departments.get(departmentKey);
+      if (!department) {
+        department = { key: departmentKey, nombre: row.departamento || "Sin departamento", rows: [], provinces: new Map() };
+        departments.set(departmentKey, department);
+      }
+      department.rows.push(row);
+      var provinceKey = row._provinceKey || departmentKey + "|SIN PROVINCIA";
+      var province = department.provinces.get(provinceKey);
       if (!province) {
-        province = { key: provinceKey, departamento: row.departamento || "Sin departamento", provincia: row.provincia || "Sin provincia", rows: [], districts: new Map() };
-        provinces.set(provinceKey, province);
+        province = { key: provinceKey, nombre: row.provincia || "Sin provincia", rows: [], districts: new Map() };
+        department.provinces.set(provinceKey, province);
       }
       province.rows.push(row);
       var districtKey = row._districtKey || provinceKey + "|SIN DISTRITO";
@@ -279,16 +318,17 @@
       }
       district.rows.push(row);
     });
-    return Array.from(provinces.values()).sort(function (a, b) {
-      return (a.provincia + a.departamento).localeCompare(b.provincia + b.departamento, "es");
-    }).map(function (province) {
-      province.districtList = Array.from(province.districts.values()).sort(function (a, b) { return a.nombre.localeCompare(b.nombre, "es"); });
-      return province;
+    return Array.from(departments.values()).sort(function (a, b) { return a.nombre.localeCompare(b.nombre, "es"); }).map(function (department) {
+      department.provinceList = Array.from(department.provinces.values()).sort(function (a, b) { return a.nombre.localeCompare(b.nombre, "es"); }).map(function (province) {
+        province.districtList = Array.from(province.districts.values()).sort(function (a, b) { return a.nombre.localeCompare(b.nombre, "es"); });
+        return province;
+      });
+      return department;
     });
   }
-  function districtRows(rows) {
+  function districtRows(rows, zoneRows) {
     var districts = new Map();
-    rows.forEach(function (row) {
+    (zoneRows || []).concat(rows || []).forEach(function (row) {
       if (!row.distrito) return;
       var key = row._geoKey;
       if (!districts.has(key)) districts.set(key, {
@@ -312,23 +352,25 @@
     });
     return { total: Math.round((total + Number.EPSILON) * 100) / 100, priced: priced, matching: matching };
   }
-  function actionButton(label, action, provinceKey, districtKey, classification, className, amount) {
+  function actionButton(label, departmentKey, provinceKey, districtKey, classification, className, amount) {
     var amountHtml = amount === undefined ? "" : '<small class="sla-count-amount">' + formatMoney(amount) + '</small>';
-    return '<button type="button" class="sla-count-link ' + (className || "") + '" data-sla-action="select" data-province="' + encodeURIComponent(provinceKey || "") + '" data-district="' + encodeURIComponent(districtKey || "") + '" data-class="' + encodeURIComponent(classification || "") + '" aria-label="Ver ' + escapeHtml(label) + ' paquetes">' + Number(label || 0).toLocaleString("es-PE") + amountHtml + '</button>';
+    return '<button type="button" class="sla-count-link ' + (className || "") + '" data-sla-action="select" data-department="' + encodeURIComponent(departmentKey || "") + '" data-province="' + encodeURIComponent(provinceKey || "") + '" data-district="' + encodeURIComponent(districtKey || "") + '" data-class="' + encodeURIComponent(classification || "") + '" aria-label="Ver ' + escapeHtml(label) + ' paquetes">' + Number(label || 0).toLocaleString("es-PE") + amountHtml + '</button>';
   }
-  function countCells(rows, provinceKey, districtKey) {
+  function countCells(rows, departmentKey, provinceKey, districtKey) {
     var c = classCounts(rows);
     var hidden = state.collapsedClasses ? " hidden" : "";
-    var html = '<td class="number">' + actionButton(rows.length, "select", provinceKey, districtKey, "", "") + '</td>';
+    var html = '<td class="number">' + actionButton(rows.length, departmentKey, provinceKey, districtKey, "", "") + '</td>';
     (state.ranges || []).forEach(function (range) {
       var code = "RANGO_" + range.orden;
       var total = amountTotal(rows, code);
       var amount = total.matching === 0 || total.priced === total.matching ? total.total : null;
-      html += '<td class="number sla-classification-col' + hidden + '">' + actionButton(c[code], "select", provinceKey, districtKey, code, Number(range.tarifa_porcentaje) > 0 ? "sla-bad" : "sla-good", amount) + '</td>';
+      html += '<td class="number sla-classification-col' + hidden + '">' + actionButton(c[code], departmentKey, provinceKey, districtKey, code, Number(range.tarifa_porcentaje) > 0 ? "sla-bad" : "sla-good", amount) + '</td>';
     });
-    html += '<td class="number sla-classification-col' + hidden + '">' + actionButton(c.SIN_INICIO, "select", provinceKey, districtKey, "SIN_INICIO", "sla-open") + '</td>' +
-      '<td class="number sla-classification-col' + hidden + '">' + actionButton(c.INCONSISTENTE, "select", provinceKey, districtKey, "INCONSISTENTE", "sla-open") + '</td>' +
-      '<td class="number">' + actionButton(c.SIN_FIRMA, "select", provinceKey, districtKey, "SIN_FIRMA", "sla-open") + '</td>';
+    html += '<td class="number sla-classification-col' + hidden + '">' + actionButton(c.SIN_INICIO, departmentKey, provinceKey, districtKey, "SIN_INICIO", "sla-open") + '</td>' +
+      '<td class="number sla-classification-col' + hidden + '">' + actionButton(c.INCONSISTENTE, departmentKey, provinceKey, districtKey, "INCONSISTENTE", "sla-open") + '</td>' +
+      '<td class="number sla-classification-col' + hidden + '">' + actionButton(c.SIN_ZONIFICACION, departmentKey, provinceKey, districtKey, "SIN_ZONIFICACION", "sla-open") + '</td>' +
+      '<td class="number sla-classification-col' + hidden + '">' + actionButton(c.SIN_SLA_TRASLADO, departmentKey, provinceKey, districtKey, "SIN_SLA_TRASLADO", "sla-open") + '</td>' +
+      '<td class="number">' + actionButton(c.SIN_FIRMA, departmentKey, provinceKey, districtKey, "SIN_FIRMA", "sla-open") + '</td>';
     return html;
   }
   function renderSummary(rows) {
@@ -337,25 +379,30 @@
     var classHeader = byId("slaClassificationGroup");
     var classHeaders = byId("slaClassificationHeaders");
     var ranges = state.ranges || [];
-    if (classHeader) classHeader.colSpan = ranges.length + 2;
+    if (classHeader) classHeader.colSpan = ranges.length + 4;
     if (classHeaders) {
       classHeaders.innerHTML = ranges.map(function (range) {
         return '<th class="sla-classification-col">' + escapeHtml(rangeHeaderLabel(range)) + '</th>';
-      }).join("") + '<th class="sla-classification-col">Sin inicio</th><th class="sla-classification-col">Fecha inconsistente</th>';
+      }).join("") + '<th class="sla-classification-col">Sin inicio</th><th class="sla-classification-col">Fecha inconsistente</th><th class="sla-classification-col">Sin zonificación</th><th class="sla-classification-col">SLA traslado pendiente</th>';
     }
     var groups = groupRows(rows);
     if (!groups.length) {
-      tbody.innerHTML = '<tr><td colspan="' + (ranges.length + 5) + '" class="sla-empty">No hay paquetes que coincidan con los filtros.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="' + (ranges.length + 7) + '" class="sla-empty">No hay paquetes que coincidan con los filtros.</td></tr>';
       return;
     }
     var html = "";
-    groups.forEach(function (province) {
-      var expanded = state.expanded.has(province.key);
-      var selected = state.selectedProvince === province.key && !state.selectedDistrict ? " sla-row-selected" : "";
-      html += '<tr class="sla-province-row' + selected + '"><td><button type="button" class="sla-group-toggle" data-sla-action="toggle-province" data-province="' + encodeURIComponent(province.key) + '" aria-expanded="' + String(expanded) + '"><span class="sla-arrow">' + (expanded ? "▾" : "▸") + '</span><span>' + escapeHtml(province.provincia) + ' · ' + escapeHtml(province.departamento) + '</span></button></td>' + countCells(province.rows, province.key, "") + '</tr>';
-      if (expanded) province.districtList.forEach(function (district) {
-        var districtSelected = state.selectedDistrict === district.key ? " sla-row-selected" : "";
-        html += '<tr class="sla-district-row' + districtSelected + '"><td><button type="button" class="sla-detail-link" data-sla-action="select" data-province="' + encodeURIComponent(province.key) + '" data-district="' + encodeURIComponent(district.key) + '" data-class="">↳ ' + escapeHtml(district.nombre) + '</button></td>' + countCells(district.rows, province.key, district.key) + '</tr>';
+    groups.forEach(function (department) {
+      var departmentExpanded = state.expandedDepartments.has(department.key);
+      var departmentSelected = state.selectedDepartment === department.key && !state.selectedProvince ? " sla-row-selected" : "";
+      html += '<tr class="sla-department-row' + departmentSelected + '"><td><button type="button" class="sla-group-toggle" data-sla-action="toggle-department" data-department="' + encodeURIComponent(department.key) + '" aria-expanded="' + String(departmentExpanded) + '"><span class="sla-arrow">' + (departmentExpanded ? "▾" : "▸") + '</span><span>' + escapeHtml(department.nombre) + '</span></button></td>' + countCells(department.rows, department.key, "", "") + '</tr>';
+      if (departmentExpanded) department.provinceList.forEach(function (province) {
+        var provinceExpanded = state.expandedProvinces.has(province.key);
+        var provinceSelected = state.selectedDepartment === department.key && state.selectedProvince === province.key && !state.selectedDistrict ? " sla-row-selected" : "";
+        html += '<tr class="sla-province-row' + provinceSelected + '"><td><button type="button" class="sla-group-toggle" data-sla-action="toggle-province" data-department="' + encodeURIComponent(department.key) + '" data-province="' + encodeURIComponent(province.key) + '" aria-expanded="' + String(provinceExpanded) + '"><span class="sla-arrow">' + (provinceExpanded ? "▾" : "▸") + '</span><span>' + escapeHtml(province.nombre) + '</span></button></td>' + countCells(province.rows, department.key, province.key, "") + '</tr>';
+        if (provinceExpanded) province.districtList.forEach(function (district) {
+          var districtSelected = state.selectedDistrict === district.key ? " sla-row-selected" : "";
+          html += '<tr class="sla-district-row' + districtSelected + '"><td><button type="button" class="sla-detail-link" data-sla-action="select" data-department="' + encodeURIComponent(department.key) + '" data-province="' + encodeURIComponent(province.key) + '" data-district="' + encodeURIComponent(district.key) + '" data-class="">↳ ' + escapeHtml(district.nombre) + '</button></td>' + countCells(district.rows, department.key, province.key, district.key) + '</tr>';
+        });
       });
     });
     var totals = classCounts(rows);
@@ -364,17 +411,20 @@
     ranges.forEach(function (range) {
       var total = amountTotal(rows, "RANGO_" + range.orden);
       var amount = total.matching === 0 || total.priced === total.matching ? total.total : null;
-      html += '<td class="number sla-classification-col' + hidden + '">' + actionButton(totals["RANGO_" + range.orden] || 0, "select", "", "", "RANGO_" + range.orden, Number(range.tarifa_porcentaje) > 0 ? "sla-bad" : "sla-good", amount) + '</td>';
+      html += '<td class="number sla-classification-col' + hidden + '">' + actionButton(totals["RANGO_" + range.orden] || 0, "", "", "", "RANGO_" + range.orden, Number(range.tarifa_porcentaje) > 0 ? "sla-bad" : "sla-good", amount) + '</td>';
     });
     html += '<td class="number sla-classification-col' + hidden + '">' + totals.SIN_INICIO.toLocaleString("es-PE") + '</td>' +
       '<td class="number sla-classification-col' + hidden + '">' + totals.INCONSISTENTE.toLocaleString("es-PE") + '</td>' +
+      '<td class="number sla-classification-col' + hidden + '">' + totals.SIN_ZONIFICACION.toLocaleString("es-PE") + '</td>' +
+      '<td class="number sla-classification-col' + hidden + '">' + totals.SIN_SLA_TRASLADO.toLocaleString("es-PE") + '</td>' +
       '<td class="number">' + totals.SIN_FIRMA.toLocaleString("es-PE") + '</td></tr>';
     tbody.innerHTML = html;
     var status = byId("slaFiltroEstado");
-    if (status) status.textContent = rows.length.toLocaleString("es-PE") + " paquetes · " + groups.length.toLocaleString("es-PE") + " provincias";
+    if (status) status.textContent = rows.length.toLocaleString("es-PE") + " paquetes · " + groups.length.toLocaleString("es-PE") + " departamentos";
   }
   function selectedRows(rows) {
     return rows.filter(function (row) {
+      if (state.selectedDepartment && row._departmentKey !== state.selectedDepartment) return false;
       if (state.selectedProvince && row._provinceKey !== state.selectedProvince) return false;
       if (state.selectedDistrict && row._districtKey !== state.selectedDistrict) return false;
       if (state.selectedClass === "SIN_FIRMA") return !row._calc.signed;
@@ -388,37 +438,72 @@
     if (!panel || !tbody) return;
     var filters = controlFilters();
     var rows = allRows().filter(function (row) { return matchesFilter(row, filters); });
-    rows = selectedRows(rows);
-    var hasSelection = !!(state.selectedProvince || state.selectedDistrict || state.selectedClass || filters.search || filters.classification);
+    rows = selectedRows(rows).sort(function (a, b) {
+      return (a.departamento + a.provincia + a.distrito + a.pdv + a.guia).localeCompare(b.departamento + b.provincia + b.distrito + b.pdv + b.guia, "es");
+    });
+    var hasSelection = !!(state.selectedDepartment || state.selectedProvince || state.selectedDistrict || state.selectedClass || filters.search || filters.classification);
     panel.classList.toggle("hidden", !hasSelection && !state.showAllDetail);
     if (!hasSelection && !state.showAllDetail) return;
     var title = byId("slaDetalleTitulo");
     if (title) {
       var parts = ["Detalle de paquetes"];
-      if (state.selectedProvince) {
-        var g = groupRows(state.rows).find(function (x) { return x.key === state.selectedProvince; });
-        if (g) parts.push(g.provincia + " · " + g.departamento);
-      }
-      if (state.selectedDistrict) parts.push(state.selectedDistrict.split("|").slice(-1)[0] || "Distrito");
+      var location = rows[0] || state.rows.find(function (row) {
+        return (!state.selectedDepartment || row._departmentKey === state.selectedDepartment) &&
+          (!state.selectedProvince || row._provinceKey === state.selectedProvince) &&
+          (!state.selectedDistrict || row._districtKey === state.selectedDistrict);
+      });
+      if (state.selectedDepartment && location) parts.push(location.departamento || "Sin departamento");
+      if (state.selectedProvince && location) parts.push(location.provincia || "Sin provincia");
+      if (state.selectedDistrict && location) parts.push(location.distrito || "Sin distrito");
       if (state.selectedClass) parts.push(classificationLabel(state.selectedClass));
       title.textContent = parts.join(" · ");
     }
     var note = byId("slaDetalleFiltro");
-    if (note) note.textContent = rows.length.toLocaleString("es-PE") + " guías/PDV. El tiempo se recalcula hasta ahora en los paquetes sin firma.";
+    if (note) note.textContent = rows.length.toLocaleString("es-PE") + " guías/PDV, agrupadas en orden Departamento › Provincia › Distrito. Las tarifas usan las horas transcurridas menos el SLA de traslado (en horas); antes de ese umbral se cuentan desde 0. Los paquetes sin firma se recalculan hasta ahora.";
     var pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
     state.page = Math.min(Math.max(1, state.page), pages);
     var from = (state.page - 1) * PAGE_SIZE;
     var pageRows = rows.slice(from, from + PAGE_SIZE);
     if (!pageRows.length) {
-      tbody.innerHTML = '<tr><td colspan="22" class="sla-empty">No hay registros para mostrar.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="15" class="sla-empty">No hay registros para mostrar.</td></tr>';
     } else {
+      var locationCounts = new Map();
+      rows.forEach(function (row) { locationCounts.set(row._geoKey, (locationCounts.get(row._geoKey) || 0) + 1); });
+      var previousLocation = null;
       tbody.innerHTML = pageRows.map(function (row) {
         var c = row._calc;
-        var badge = c.range ? (Number(c.range.tarifa_porcentaje) > 0 ? "tarifa" : "sin-tarifa") : c.classification === "SIN_INICIO" ? "sin-inicio" : c.classification === "INCONSISTENTE" ? "inconsistente" : "";
+        var badge = c.range ? (Number(c.range.tarifa_porcentaje) > 0 ? "tarifa" : "sin-tarifa") : c.classification === "SIN_INICIO" ? "sin-inicio" : c.classification === "INCONSISTENTE" ? "inconsistente" : c.classification.indexOf("SIN_") === 0 ? "sin-zona" : "";
         var hours = c.hours === null ? "—" : c.hours.toFixed(2) + " h";
+        var effectiveHours = c.hoursFromTransfer === null ? "—" : c.hoursFromTransfer.toFixed(2) + " h";
         var endLabel = c.signed ? "Firma" : "Ahora";
-        var values = [row.guia,row.pdv,row.departamento,row.provincia,row.distrito,(c.startLabel ? c.startLabel + " · " : "") + formatDate(c.start),endLabel + " · " + formatDate(c.end),formatDate(row.fecha_generacion),formatDate(row.salida_hub),formatDate(row.llegada_cedis),formatDate(row.salida_cedis),formatDate(row.llegada_pdv),formatDate(row.despacho),formatDate(row.firma),formatDate(row.problema),formatDate(row.retorno_almacen),formatDate(row.devolucion),hours,formatPrice(c.price),c.tariff === null ? "—" : c.tariff.toFixed(2) + "%",formatMoney(c.amount)];
-        return '<tr>' + values.map(function (value, index) { return '<td' + (index === 5 || index === 6 ? ' class="sla-destino-hito"' : "") + '>' + escapeHtml(value || "—") + '</td>'; }).join("") + '<td><span class="sla-class-badge ' + badge + '">' + escapeHtml(classificationLabel(c.classification)) + '</span></td></tr>';
+        var destination = '<div class="sla-destination"><strong>' + escapeHtml(row.departamento || "Sin departamento") + '</strong><span>' + escapeHtml(row.provincia || "Sin provincia") + ' › ' + escapeHtml(row.distrito || "Sin distrito") + '</span></div>';
+        var milestoneHtml = '<details class="sla-hitos"><summary>Ver hitos</summary><dl>' + events.map(function (entry) {
+          var value = row[entry[0]];
+          var rendered = value ? formatDateCompact(value) : "—";
+          return '<div><dt>' + escapeHtml(entry[1]) + '</dt><dd title="' + escapeHtml(value ? formatDate(value) : "Sin dato") + '">' + escapeHtml(rendered) + '</dd></div>';
+        }).join("") + '</dl></details>';
+        var locationHtml = "";
+        if (previousLocation !== row._geoKey) {
+          previousLocation = row._geoKey;
+          locationHtml = '<tr class="sla-detail-group-row"><td colspan="15">' + escapeHtml([row.departamento || "Sin departamento",row.provincia || "Sin provincia",row.distrito || "Sin distrito"].join(" › ")) + ' · ' + (locationCounts.get(row._geoKey) || 0).toLocaleString("es-PE") + ' paquetes</td></tr>';
+        }
+        var detailHtml = '<tr>' +
+          '<td class="sla-guide-cell" title="' + escapeHtml(row.guia) + '">' + escapeHtml(row.guia) + '</td>' +
+          '<td title="' + escapeHtml(row.pdv) + '">' + escapeHtml(row.pdv) + '</td>' +
+          '<td class="sla-destination-cell" title="' + escapeHtml([row.departamento,row.provincia,row.distrito].filter(Boolean).join(" › ")) + '">' + destination + '</td>' +
+          '<td title="' + escapeHtml(c.zone ? c.zone.tipo_zona || "Sin tipo" : "Sin coincidencia en zonificación") + '">' + escapeHtml(c.zone ? c.zone.tipo_zona || "Sin tipo" : "Sin match") + '</td>' +
+          '<td class="number" title="SLA de traslado en días">' + (c.zone && c.zone.sla_traslado_dias !== null ? escapeHtml(c.zone.sla_traslado_dias) + ' d' : '—') + '</td>' +
+          '<td class="number" title="SLA de reparto en días">' + (c.zone && c.zone.sla_reparto_dias !== null ? escapeHtml(c.zone.sla_reparto_dias) + ' d' : '—') + '</td>' +
+          '<td class="sla-time-cell" title="' + escapeHtml((c.startLabel ? c.startLabel + " · " : "") + formatDate(c.start)) + '"><strong>' + escapeHtml(c.startLabel || "Sin inicio") + '</strong><span>' + escapeHtml(formatDateCompact(c.start)) + '</span></td>' +
+          '<td class="sla-time-cell" title="' + escapeHtml(endLabel + " · " + formatDate(c.end)) + '"><strong>' + escapeHtml(endLabel) + '</strong><span>' + escapeHtml(formatDateCompact(c.end)) + '</span></td>' +
+          '<td class="number" title="Tiempo transcurrido desde el hito de inicio hasta la firma o hasta ahora">' + escapeHtml(hours) + '</td>' +
+          '<td class="number sla-net-hours" title="Horas transcurridas menos (SLA traslado × 24); este valor determina el rango y la tarifa">' + escapeHtml(effectiveHours) + '</td>' +
+          '<td class="number">' + escapeHtml(formatPrice(c.price)) + '</td>' +
+          '<td class="number">' + (c.tariff === null ? '—' : escapeHtml(c.tariff.toFixed(2) + "%")) + '</td>' +
+          '<td class="number">' + escapeHtml(formatMoney(c.amount)) + '</td>' +
+          '<td><span class="sla-class-badge ' + badge + '">' + escapeHtml(classificationLabel(c.classification)) + '</span></td>' +
+          '<td>' + milestoneHtml + '</td></tr>';
+        return locationHtml + detailHtml;
       }).join("");
     }
     var prev = byId("slaDetallePrev");
@@ -444,7 +529,7 @@
     state.ranges = normalizedRanges(state.config);
     state.prices = normalizedPrices(state.config);
     state.priceDrafts = new Map();
-    state.priceDistricts = districtRows(state.rows);
+    state.priceDistricts = districtRows(state.rows, state.zoneRows);
     renderPriceEditor();
   }
   async function loadAllPages() {
@@ -464,6 +549,42 @@
     }
     return { rows: rows, dataset: dataset };
   }
+  function normalizeZone(row) {
+    var out = {
+      departamento: safeText(row.departamento).trim(),
+      provincia: safeText(row.provincia).trim(),
+      distrito: safeText(row.distrito).trim(),
+      tipo_zona: safeText(row.tipo_zona).trim(),
+      sla_traslado_dias: row.sla_traslado_dias === null || row.sla_traslado_dias === undefined || row.sla_traslado_dias === "" ? null : Number(row.sla_traslado_dias),
+      sla_reparto_dias: row.sla_reparto_dias === null || row.sla_reparto_dias === undefined || row.sla_reparto_dias === "" ? null : Number(row.sla_reparto_dias)
+    };
+    out._geoKey = geoKey(out.departamento, out.provincia, out.distrito);
+    return out;
+  }
+  function applyZonification(rows, dataset) {
+    state.zoneRows = (rows || []).map(normalizeZone);
+    state.zoneMap = new Map();
+    state.zoneRows.forEach(function (row) { state.zoneMap.set(row._geoKey, row); });
+    state.zoneDataset = dataset || null;
+    state.zoneMigrationError = "";
+    showZoneStatus(state.zoneDataset ? "Zonificación activa: " + safeText(state.zoneDataset.archivo || "Excel") + " · " + state.zoneRows.length.toLocaleString("es-PE") + " distritos." : "Aún no se cargó la zonificación.", false);
+  }
+  async function loadAllZonification() {
+    var rows = [];
+    var cursor = 0;
+    var dataset = null;
+    for (;;) {
+      var page = await api().zonificacion("listar", { despues_id: cursor, limite: 1000 });
+      if (page && page.dataset) dataset = page.dataset;
+      var batch = Array.isArray(page && page.filas) ? page.filas : [];
+      rows = rows.concat(batch);
+      var next = Number(page && page.siguiente_id || cursor);
+      if (batch.length < 1000 || next <= cursor) break;
+      cursor = next;
+      if (rows.length > 50000) throw new Error("La zonificación supera el límite de lectura del módulo.");
+    }
+    return { rows: rows, dataset: dataset };
+  }
   async function alAbrir(force) {
     if (state.loading) return;
     if (!force && state.loadedAt && Date.now() - state.loadedAt < 20000) { renderAll(); return; }
@@ -474,18 +595,24 @@
       state.config = config || { umbral_horas: 48, tarifa_porcentaje: 90 };
       state.ranges = normalizedRanges(state.config);
       renderRangeEditor(state.ranges);
-      var result = await loadAllPages();
+      var loaded = await Promise.all([loadAllPages(), loadAllZonification().catch(function (error) {
+        state.zoneMigrationError = error && error.message || String(error);
+        return { rows: [], dataset: null };
+      })]);
+      var result = loaded[0];
+      applyZonification(loaded[1].rows, loaded[1].dataset);
       applyDataset(result.rows, config);
       state.dataset = result.dataset || config.dataset || null;
       state.loadedAt = Date.now();
       state.page = 1;
       if (!state.dataset) {
         state.rows = [];
-        showStatus("Aún no hay un archivo de SLA publicado. Un administrador puede cargar el Excel de monitoreo.", false);
+        showStatus("Aún no hay archivo de monitoreo. " + (state.zoneDataset ? "Zonificación activa: " + state.zoneRows.length.toLocaleString("es-PE") + " distritos." : state.zoneMigrationError ? "Ejecuta una vez supabase_gestion_v2_sla_zonificacion.sql para habilitar el archivo de zonificación." : "Falta cargar zonificación y monitoreo."), false);
       } else {
         var globalCount = Number(state.dataset.filas || 0);
         var visibleCount = state.rows.length;
-        showStatus("Archivo activo: " + safeText(state.dataset.archivo || "Monitoreo") + " · " + visibleCount.toLocaleString("es-PE") + " paquetes disponibles" + (globalCount > visibleCount ? " de " + globalCount.toLocaleString("es-PE") + " en la carga" : "") + ".", false);
+        var zoneSummary = state.zoneDataset ? " · Zonificación: " + safeText(state.zoneDataset.archivo || "Excel") + " · " + state.zoneRows.length.toLocaleString("es-PE") + " distritos" : " · Sin zonificación activa";
+        showStatus("Archivo activo: " + safeText(state.dataset.archivo || "Monitoreo") + " · " + visibleCount.toLocaleString("es-PE") + " paquetes disponibles" + (globalCount > visibleCount ? " de " + globalCount.toLocaleString("es-PE") + " en la carga" : "") + zoneSummary + (state.zoneMigrationError ? " · Ejecuta supabase_gestion_v2_sla_zonificacion.sql para activar la zonificación." : "."), false);
       }
       renderAll();
     } catch (error) {
@@ -636,6 +763,7 @@
   function clearFilters() {
     if (byId("slaBuscar")) byId("slaBuscar").value = "";
     if (byId("slaFiltroClasificacion")) byId("slaFiltroClasificacion").value = "";
+    state.selectedDepartment = "";
     state.selectedProvince = "";
     state.selectedDistrict = "";
     state.selectedClass = "";
@@ -644,6 +772,7 @@
     renderAll();
   }
   function clearSelection() {
+    state.selectedDepartment = "";
     state.selectedProvince = "";
     state.selectedDistrict = "";
     state.selectedClass = "";
@@ -652,22 +781,32 @@
     renderAll();
   }
   function expandAll() {
-    filteredRows().forEach(function (row) { state.expanded.add(row._provinceKey); });
+    filteredRows().forEach(function (row) {
+      state.expandedDepartments.add(row._departmentKey);
+      state.expandedProvinces.add(row._provinceKey);
+    });
     renderAll();
   }
-  function collapseAll() { state.expanded.clear(); renderAll(); }
+  function collapseAll() { state.expandedDepartments.clear(); state.expandedProvinces.clear(); renderAll(); }
   function toggleClasses() { state.collapsedClasses = !state.collapsedClasses; renderAll(); }
   function changePage(delta) { state.page += Number(delta || 0); renderDetail(); }
   function handleSummaryClick(event) {
     var button = event.target.closest("[data-sla-action]");
     if (!button) return;
     var action = button.getAttribute("data-sla-action");
+    var department = decodeURIComponent(button.getAttribute("data-department") || "");
     var province = decodeURIComponent(button.getAttribute("data-province") || "");
-    if (action === "toggle-province") {
-      if (state.expanded.has(province)) state.expanded.delete(province); else state.expanded.add(province);
+    if (action === "toggle-department") {
+      if (state.expandedDepartments.has(department)) state.expandedDepartments.delete(department); else state.expandedDepartments.add(department);
       renderSummary(filteredRows());
       return;
     }
+    if (action === "toggle-province") {
+      if (state.expandedProvinces.has(province)) state.expandedProvinces.delete(province); else state.expandedProvinces.add(province);
+      renderSummary(filteredRows());
+      return;
+    }
+    state.selectedDepartment = department;
     state.selectedProvince = province;
     state.selectedDistrict = decodeURIComponent(button.getAttribute("data-district") || "");
     state.selectedClass = decodeURIComponent(button.getAttribute("data-class") || "");
@@ -748,6 +887,69 @@
       return { rows: records, file: file, sheet: name };
     });
   }
+  function parseSlaDays(value, rowNumber, columnName) {
+    if (value === null || value === undefined || safeText(value).trim() === "") return null;
+    var parsed = typeof value === "number" ? value : Number(safeText(value).trim().replace(",", "."));
+    if (!isFinite(parsed) || parsed < 0 || parsed > 365) throw new Error("El valor de " + columnName + " de la fila " + rowNumber + " debe estar entre 0 y 365 días.");
+    return Math.round((parsed + Number.EPSILON) * 100) / 100;
+  }
+  function parseZonificationFile(file) {
+    return file.arrayBuffer().then(function (buffer) {
+      if (!window.XLSX) throw new Error("No está disponible el lector de Excel.");
+      var workbook = window.XLSX.read(buffer, { type: "array", cellDates: false, raw: true });
+      var sheetName = workbook.SheetNames && workbook.SheetNames[0];
+      if (!sheetName) throw new Error("El archivo no contiene hojas.");
+      var matrix = window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: null, raw: true, blankrows: false });
+      var headerRow = -1;
+      var columns = null;
+      for (var r = 0; r < Math.min(matrix.length, 35); r++) {
+        var headers = matrix[r];
+        var found = {
+          departamento: findHeaderIndex(headers, ["Departamento"]),
+          provincia: findHeaderIndex(headers, ["Provincia"]),
+          distrito: findHeaderIndex(headers, ["Distrito"]),
+          tipo_zona: findHeaderIndex(headers, ["Tipo de zona", "Tipo zona"]),
+          sla_traslado_dias: findHeaderIndex(headers, ["SLA traslado (días)", "SLA traslado dias", "SLA traslado"]),
+          sla_reparto_dias: findHeaderIndex(headers, ["SLA reparto (días)", "SLA reparto dias", "SLA reparto"])
+        };
+        if (found.departamento >= 0 && found.provincia >= 0 && found.distrito >= 0 && found.tipo_zona >= 0 && found.sla_traslado_dias >= 0 && found.sla_reparto_dias >= 0) {
+          headerRow = r;
+          columns = found;
+          break;
+        }
+      }
+      if (!columns) throw new Error("No se encontraron las columnas Departamento, Provincia, Distrito, Tipo de zona, SLA traslado (días) y SLA reparto (días) en la primera hoja.");
+      var unique = new Map();
+      for (var i = headerRow + 1; i < matrix.length; i++) {
+        var row = matrix[i];
+        var department = safeText(row[columns.departamento]).trim();
+        var province = safeText(row[columns.provincia]).trim();
+        var district = safeText(row[columns.distrito]).trim();
+        if (!department && !province && !district) continue;
+        if (!department || !province || !district) throw new Error("La fila " + (i + 1) + " tiene incompleta la ubicación Departamento / Provincia / Distrito.");
+        var item = {
+          departamento: department,
+          provincia: province,
+          distrito: district,
+          tipo_zona: safeText(row[columns.tipo_zona]).trim(),
+          sla_traslado_dias: parseSlaDays(row[columns.sla_traslado_dias], i + 1, "SLA traslado"),
+          sla_reparto_dias: parseSlaDays(row[columns.sla_reparto_dias], i + 1, "SLA reparto")
+        };
+        var key = geoKey(department, province, district);
+        var previous = unique.get(key);
+        if (previous) {
+          var same = keyText(previous.tipo_zona) === keyText(item.tipo_zona) && previous.sla_traslado_dias === item.sla_traslado_dias && previous.sla_reparto_dias === item.sla_reparto_dias;
+          if (!same) throw new Error("Hay dos asignaciones distintas para " + department + " / " + province + " / " + district + ". Corrige los duplicados antes de cargar.");
+          continue;
+        }
+        unique.set(key, item);
+      }
+      var rows = Array.from(unique.values());
+      if (!rows.length) throw new Error("No se encontraron distritos con SLA en el archivo.");
+      if (rows.length > 50000) throw new Error("El archivo supera el máximo de 50,000 distritos por carga.");
+      return { rows: rows, file: file, sheet: sheetName };
+    });
+  }
   function catalogMaps(catalog) {
     var map = new Map();
     (catalog || []).forEach(function (item) {
@@ -799,6 +1001,7 @@
       uploadId = "";
       if (progress) progress.value = 100;
       state.loadedAt = 0;
+      state.selectedDepartment = "";
       state.selectedProvince = "";
       state.selectedDistrict = "";
       state.selectedClass = "";
@@ -808,6 +1011,44 @@
     } catch (error) {
       if (uploadId) { try { await api().ejecutar("cancelar_carga", { carga_id: uploadId }); } catch (_) {} }
       showStatus("No se publicó el archivo; la carga activa se conserva. Detalle: " + (error && error.message || error), true);
+    } finally {
+      if (button) button.disabled = false;
+      if (progress) window.setTimeout(function () { progress.hidden = true; }, 1800);
+    }
+  }
+  async function importarZonificacion() {
+    if (state.role !== "ADMINISTRADOR") { showZoneStatus("Solo el administrador puede cargar la zonificación.", true); return; }
+    var input = byId("slaZonaArchivoInput");
+    var file = input && input.files && input.files[0];
+    if (!file) { showZoneStatus("Selecciona el Excel de zonificación.", true); return; }
+    var button = byId("slaZonaImportarArchivo");
+    var progress = byId("slaZonaCargaProgreso");
+    var uploadId = "";
+    if (button) button.disabled = true;
+    if (progress) { progress.hidden = false; progress.value = 0; }
+    showZoneStatus("Leyendo " + file.name + "…", false);
+    try {
+      var parsed = await parseZonificationFile(file);
+      showZoneStatus("Preparando " + parsed.rows.length.toLocaleString("es-PE") + " distritos…", false);
+      var start = await api().zonificacion("iniciar_carga", { archivo: file.name, filas: parsed.rows.length });
+      uploadId = safeText(start && start.id);
+      if (!uploadId) throw new Error("Supabase no devolvió el identificador de la carga de zonificación.");
+      var chunkSize = 250;
+      for (var i = 0; i < parsed.rows.length; i += chunkSize) {
+        var block = parsed.rows.slice(i, i + chunkSize);
+        await api().zonificacion("guardar_bloque", { carga_id: uploadId, filas: block });
+        if (progress) progress.value = Math.floor(Math.min(95, ((i + block.length) / parsed.rows.length) * 95));
+        showZoneStatus("Subiendo zonificación… " + Math.min(i + block.length, parsed.rows.length).toLocaleString("es-PE") + " de " + parsed.rows.length.toLocaleString("es-PE"), false);
+      }
+      await api().zonificacion("publicar_carga", { carga_id: uploadId });
+      uploadId = "";
+      if (progress) progress.value = 100;
+      state.loadedAt = 0;
+      await alAbrir(true);
+      showZoneStatus("Zonificación publicada: " + parsed.rows.length.toLocaleString("es-PE") + " distritos de " + file.name + ". Se aplicaron tipo de zona y SLA de traslado/reparto.", false);
+    } catch (error) {
+      if (uploadId) { try { await api().zonificacion("cancelar_carga", { carga_id: uploadId }); } catch (_) {} }
+      showZoneStatus("No se publicó la zonificación; la carga activa se conserva. Detalle: " + (error && error.message || error), true);
     } finally {
       if (button) button.disabled = false;
       if (progress) window.setTimeout(function () { progress.hidden = true; }, 1800);
@@ -834,7 +1075,8 @@
       showStatus("No se pudieron guardar los parámetros. Detalle: " + (error && error.message || error), true);
     } finally { if (button) button.disabled = false; }
   }
-  function selectFromSummary(province, district, classification) {
+  function selectFromSummary(department, province, district, classification) {
+    state.selectedDepartment = department || "";
     state.selectedProvince = province || "";
     state.selectedDistrict = district || "";
     state.selectedClass = classification || "";
@@ -860,6 +1102,7 @@
     alternarClasificacion: toggleClasses,
     cambiarPagina: changePage,
     importarArchivo: importarArchivo,
+    importarZonificacion: importarZonificacion,
     guardarParametros: guardarParametros,
     guardarPrecios: guardarPrecios,
     filtrarPrecios: filtrarPrecios,

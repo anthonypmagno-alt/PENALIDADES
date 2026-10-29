@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261026-sla-rangos-precios-permisos-v31"></script>
+<script src="./bridge.js?v=20261029-sla-zonificacion-traslado-detalle-v1"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -307,6 +307,34 @@
 .sla-summary-table tbody tr.sla-row-selected td{box-shadow:inset 0 0 0 2px #1769e0}.sla-summary-table tbody tr.sla-district-row td:first-child{padding-left:28px}.sla-classification-col[hidden]{display:none!important}.sla-summary-table .sla-total-row .sla-classification-col{background:#bfdbfe!important}
 </style>
 <style>
+.sla-zone-status{margin-top:9px;padding:8px 10px;border-radius:7px;background:#eef4ff;color:#23436b;font-size:11px;line-height:1.4}
+.sla-summary-cards{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}
+.sla-summary-table{min-width:1080px}
+.sla-summary-table tbody tr.sla-department-row td{background:#cbd5e1;font-weight:900;border-top:3px solid #153e67}
+.sla-summary-table tbody tr.sla-province-row td{background:#e8eef5;font-weight:850;border-top:2px solid #64748b}
+.sla-summary-table tbody tr.sla-district-row td{background:#f8fafc;font-weight:750;border-top:1px solid #cbd5e1}
+.sla-summary-table tbody tr.sla-province-row td:first-child{padding-left:30px}
+.sla-summary-table tbody tr.sla-district-row td:first-child{padding-left:50px}
+.sla-summary-table tbody tr.sla-row-selected td{box-shadow:inset 0 0 0 2px #1769e0}
+.sla-detail-wrap{overflow:auto;max-height:72vh}
+.sla-detail-table tbody tr.sla-detail-group-row td{background:#eaf1f8;border-top:2px solid #64748b;color:#153e67;font-weight:900;padding:7px 9px}
+.sla-detail-table{min-width:1674px;table-layout:fixed;border-collapse:collapse}
+.sla-detail-table th,.sla-detail-table td{box-sizing:border-box;overflow:hidden;text-overflow:ellipsis}
+.sla-detail-table th{padding:8px 5px;font-size:10px;line-height:1.25;vertical-align:middle}
+.sla-detail-table tbody td{padding:7px 6px;font-size:11px;line-height:1.35;white-space:normal;vertical-align:top}
+.sla-detail-table .sla-col-guide{width:128px}.sla-detail-table .sla-col-pdv{width:90px}.sla-detail-table .sla-col-destination{width:185px}.sla-detail-table .sla-col-zone{width:95px}.sla-detail-table .sla-col-days{width:75px}.sla-detail-table .sla-col-time{width:145px}.sla-detail-table .sla-col-hours{width:102px}.sla-detail-table .sla-col-price{width:115px}.sla-detail-table .sla-col-tariff{width:80px}.sla-detail-table .sla-col-amount{width:112px}.sla-detail-table .sla-col-class{width:120px}.sla-detail-table .sla-col-events{width:105px}
+.sla-guide-cell{font-weight:800;color:#153e67;overflow-wrap:anywhere}
+.sla-destination{display:flex;flex-direction:column;gap:3px;white-space:normal;overflow-wrap:anywhere}
+.sla-destination strong{color:#153e67}.sla-destination span{color:#475569}
+.sla-time-cell strong,.sla-time-cell span{display:block}.sla-time-cell strong{font-size:10px;color:#334155}.sla-time-cell span{white-space:nowrap;font-variant-numeric:tabular-nums}
+.sla-net-hours{font-weight:850;color:#153e67}
+.sla-detail-table tbody td:last-child{overflow:visible;position:relative}.sla-hitos{min-width:76px;position:relative}.sla-hitos summary{cursor:pointer;color:#1452a8;font-weight:800;white-space:nowrap}.sla-hitos[open] summary{margin-bottom:7px}
+.sla-hitos dl{position:absolute;right:0;top:18px;z-index:20;margin:0;display:grid;grid-template-columns:1fr;gap:4px;width:min(340px,70vw);max-height:340px;overflow:auto;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;box-shadow:0 10px 26px rgba(15,23,42,.2)}.sla-hitos dl>div{display:grid;grid-template-columns:1fr auto;gap:8px;padding:4px 5px;border:1px solid #e2e8f0;border-radius:5px;background:#f8fafc}
+.sla-hitos dt{font-size:10px;color:#475569}.sla-hitos dd{margin:0;font-size:10px;font-weight:750;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sla-class-badge.sin-zona{background:#ffedd5;color:#9a3412}
+@media(max-width:900px){.sla-summary-table{min-width:1080px}}
+</style>
+<style>
 .v16-module-permissions{grid-column:1/-1;border:1px solid #cbd5e1;border-radius:9px;padding:12px;background:#f8fafc;text-align:left}.v16-module-permissions>div:first-child strong,.v16-module-permission-editor-head strong{display:block;color:#17324d;font-size:13px}.v16-module-permissions small{display:block;color:#64748b;font-size:10px;margin-top:3px}.v16-module-permission-matrix{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px;margin-top:10px}.v16-module-permission-row{display:grid;grid-template-columns:minmax(130px,1fr) 62px 82px;align-items:center;gap:8px;padding:7px 8px;border:1px solid #e2e8f0;border-radius:7px;background:white;font-size:11px}.v16-module-permission-row>span{font-weight:700;color:#334155}.v16-module-permission-row label{display:flex;align-items:center;gap:4px;color:#475569;font-size:10px;white-space:nowrap}.v16-module-permission-editor-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.v16-module-permission-editor-head button{margin:0}
 </style>
 <style>
@@ -348,7 +376,7 @@
     </div></header>
 
     <main>
-      <div class="view-tabs"><button id="tabGestion" data-view-tab="gestion" data-module-key="gestion_v2" class="view-tab active" onclick="mostrarVista('gestion')">Gestión de guías V2</button><button id="tabExcel" data-view-tab="excel" data-module-key="consulta_excel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabEstadisticas" data-view-tab="estadisticas" data-module-key="estadisticas" class="view-tab" onclick="mostrarVista('estadisticas')">📊 Estadísticas por PDV</button><button id="tabSla" data-view-tab="sla" data-module-key="sla_paquetes" class="view-tab" onclick="mostrarVista('sla')">⏱️ SLA de paquetes</button><button id="tabComentariosConfig" data-view-tab="comentarios" data-module-key="catalogo_comentarios" class="view-tab" onclick="mostrarVista('comentarios')">⚙️ Catálogo de comentarios</button><a data-modulo-v2="true" data-module-key="gestion" href="./index.html" class="view-tab">Volver a Gestión actual</a><a data-modulo-penalidades="true" data-module-key="penalidades" href="./penalidades.html?v=20261026-sla-rangos-precios-permisos-v31" class="view-tab">💰 Penalidades</a></div>
+      <div class="view-tabs"><button id="tabGestion" data-view-tab="gestion" data-module-key="gestion_v2" class="view-tab active" onclick="mostrarVista('gestion')">Gestión de guías V2</button><button id="tabExcel" data-view-tab="excel" data-module-key="consulta_excel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabEstadisticas" data-view-tab="estadisticas" data-module-key="estadisticas" class="view-tab" onclick="mostrarVista('estadisticas')">📊 Estadísticas por PDV</button><button id="tabSla" data-view-tab="sla" data-module-key="sla_paquetes" class="view-tab" onclick="mostrarVista('sla')">⏱️ SLA de paquetes</button><button id="tabComentariosConfig" data-view-tab="comentarios" data-module-key="catalogo_comentarios" class="view-tab" onclick="mostrarVista('comentarios')">⚙️ Catálogo de comentarios</button><a data-modulo-v2="true" data-module-key="gestion" href="./index.html" class="view-tab">Volver a Gestión actual</a><a data-modulo-penalidades="true" data-module-key="penalidades" href="./penalidades.html?v=20261029-sla-zonificacion-traslado-detalle-v1" class="view-tab">💰 Penalidades</a></div>
       <div id="viewGestion" class="app-view">
       <section id="sourceUploadPanel" class="panel hidden">
         <div class="panel-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Carga de información operativa <span class="readonly-note">SOLO ADMINISTRADOR</span><button type="button" id="sourceUploadToggle" class="secondary" style="margin-left:auto" aria-expanded="true" aria-controls="sourceUploadContent" onclick="toggleCargaOperativa()">Ocultar carga</button></div>
@@ -463,21 +491,28 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
         <section class="panel">
           <div class="panel-title">SLA de paquetes · llegada al PDV hasta la entrega</div>
           <div class="panel-body">
-            <p class="source-note">El tiempo inicia en la llegada al PDV. Si falta ese evento, usa el hito anterior disponible: salida del CEDIS, llegada al CEDIS, salida del HUB o generación del dato. Si no existe hora de firma, calcula hasta ahora.</p>
+            <p class="source-note">El tiempo transcurrido inicia en la llegada al PDV. Si falta ese evento, usa el hito anterior disponible: salida del CEDIS, llegada al CEDIS, salida del HUB o generación del dato. Si no existe hora de firma, calcula hasta ahora. Para elegir rango y tarifa usa las horas transcurridas menos SLA traslado × 24; el SLA reparto se muestra como referencia.</p>
             <div id="slaEstado" class="source-note" role="status" aria-live="polite">Cargando información del SLA…</div>
             <div id="slaAdminTools" class="sla-admin-tools hidden">
               <section class="sla-admin-card">
                 <h3>Rangos y tarifas SLA</h3>
-                <div class="sla-range-help">Cada tramo incluye el límite inicial y excluye el final. Por ejemplo: 0 ≤ horas &lt; 48; 48 ≤ horas &lt; 72. El último tramo debe quedar sin límite superior.</div>
+                <div class="sla-range-help">Cada tramo incluye el límite inicial y excluye el final. Las horas para el rango se calculan como horas transcurridas menos SLA traslado × 24; el cómputo del rango parte de 0 al cumplir el SLA de traslado. El último tramo queda sin límite superior.</div>
                 <div class="table-wrap"><table class="sla-ranges-table"><thead><tr><th>Desde (h)</th><th>Hasta (h)</th><th>Tarifa (%)</th><th></th></tr></thead><tbody id="slaRangesEditor"></tbody></table></div>
                 <div class="sla-range-actions"><button type="button" class="secondary" onclick="SlaPaquetesV2.agregarRango()">Agregar rango</button><button type="button" class="success" id="slaGuardarParametros" onclick="SlaPaquetesV2.guardarParametros()">Guardar rangos</button></div>
-                <small>La tarifa se aplica según las horas transcurridas. Los rangos y porcentajes se comparten con todos los usuarios.</small>
+                <small>El SLA de reparto se muestra como referencia; el SLA de traslado desplaza el inicio de los rangos. Los rangos y tarifas se comparten con todos los usuarios.</small>
               </section>
               <section class="sla-admin-card">
                 <h3>Actualizar archivo de monitoreo</h3>
                 <div class="sla-upload-row"><input id="slaArchivoInput" type="file" accept=".xlsx,.xls"><button type="button" class="small" id="slaImportarArchivo" onclick="SlaPaquetesV2.importarArchivo()">Cargar y publicar</button></div>
                 <small>La carga nueva reemplaza el conjunto activo cuando termina correctamente. Hoja: primera hoja del Excel. Se guardan solo guía, PDV, ubicación y los hitos usados para el SLA.</small>
                 <progress id="slaCargaProgreso" max="100" value="0" hidden></progress>
+              </section>
+              <section class="sla-admin-card">
+                <h3>Actualizar zonificación</h3>
+                <div class="sla-upload-row"><input id="slaZonaArchivoInput" type="file" accept=".xlsx,.xls"><button type="button" class="small" id="slaZonaImportarArchivo" onclick="SlaPaquetesV2.importarZonificacion()">Cargar zonificación</button></div>
+                <div id="slaZonaEstado" class="sla-zone-status" role="status" aria-live="polite">Aún no se cargó la zonificación.</div>
+                <small>Lee la primera hoja y requiere Departamento, Provincia, Distrito, Tipo de zona, SLA traslado (días) y SLA reparto (días). Se relaciona con el monitoreo por Departamento + Provincia + Distrito. La carga reemplaza la zonificación activa al terminar correctamente, sin reemplazar el monitoreo.</small>
+                <progress id="slaZonaCargaProgreso" max="100" value="0" hidden></progress>
               </section>
               <section class="sla-admin-card sla-price-card">
                 <h3>Precio del paquete por distrito</h3>
@@ -495,19 +530,21 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
           <div class="excel-card danger-card"><b id="slaTarifaAplicada">0</b><span>Tarifa mayor a 0%</span></div>
           <div class="excel-card warning-card"><b id="slaSinFirma">0</b><span>Sin firma · en curso</span></div>
           <div class="excel-card warning-card"><b id="slaSinPrecio">0</b><span>Precio de distrito pendiente</span></div>
+          <div class="excel-card warning-card"><b id="slaSinZona">0</b><span>Sin zonificación / SLA traslado</span></div>
         </div>
         <section class="panel">
-          <div class="panel-title sla-panel-title"><span>Resumen por provincia y distrito</span><div class="sla-panel-actions"><button type="button" class="secondary" onclick="SlaPaquetesV2.expandirTodo()">Expandir grupos</button><button type="button" class="secondary" onclick="SlaPaquetesV2.contraerTodo()">Contraer grupos</button><button id="slaToggleClasificacion" type="button" class="secondary" onclick="SlaPaquetesV2.alternarClasificacion()">Ocultar columnas de clasificación</button></div></div>
+          <div class="panel-title sla-panel-title"><span>Resumen por Departamento › Provincia › Distrito</span><div class="sla-panel-actions"><button type="button" class="secondary" onclick="SlaPaquetesV2.expandirTodo()">Expandir grupos</button><button type="button" class="secondary" onclick="SlaPaquetesV2.contraerTodo()">Contraer grupos</button><button id="slaToggleClasificacion" type="button" class="secondary" onclick="SlaPaquetesV2.alternarClasificacion()">Ocultar columnas de clasificación</button></div></div>
           <div class="panel-body">
-            <div class="sla-filters"><input id="slaBuscar" type="search" placeholder="Buscar guía, PDV, provincia o distrito" oninput="SlaPaquetesV2.aplicarFiltros()"><select id="slaFiltroClasificacion" onchange="SlaPaquetesV2.aplicarFiltros()"><option value="">Todas las clasificaciones</option></select><button type="button" class="secondary" onclick="SlaPaquetesV2.limpiarFiltros()">Limpiar filtros</button><span id="slaFiltroEstado" role="status"></span></div>
-            <div class="table-wrap"><table class="sla-summary-table"><thead><tr><th rowspan="2">PROVINCIA · DISTRITO</th><th rowspan="2">PAQUETES</th><th id="slaClassificationGroup" colspan="2" class="sla-class-group sla-classification-col">CLASIFICACIÓN SLA</th><th rowspan="2">SIN FIRMA</th></tr><tr id="slaClassificationHeaders"><th class="sla-classification-col">Rangos configurados</th><th class="sla-classification-col">Sin inicio / revisar</th></tr></thead><tbody id="slaResumenBody"><tr><td colspan="7">Carga un archivo para consultar el SLA de los paquetes.</td></tr></tbody></table></div>
+            <div class="sla-filters"><input id="slaBuscar" type="search" placeholder="Buscar guía, PDV, departamento, provincia o distrito" oninput="SlaPaquetesV2.aplicarFiltros()"><select id="slaFiltroClasificacion" onchange="SlaPaquetesV2.aplicarFiltros()"><option value="">Todas las clasificaciones</option></select><button type="button" class="secondary" onclick="SlaPaquetesV2.limpiarFiltros()">Limpiar filtros</button><span id="slaFiltroEstado" role="status"></span></div>
+            <p class="sla-range-help">Los botones de conteo filtran el detalle. La ubicación se expande en el orden Departamento › Provincia › Distrito.</p>
+            <div class="table-wrap"><table class="sla-summary-table"><thead><tr><th rowspan="2">DEPARTAMENTO / PROVINCIA / DISTRITO</th><th rowspan="2">PAQUETES</th><th id="slaClassificationGroup" colspan="4" class="sla-class-group sla-classification-col">CLASIFICACIÓN SLA</th><th rowspan="2">SIN FIRMA</th></tr><tr id="slaClassificationHeaders"><th class="sla-classification-col">Rangos configurados</th><th class="sla-classification-col">Sin inicio / revisar</th><th class="sla-classification-col">Sin zonificación</th><th class="sla-classification-col">SLA traslado pendiente</th></tr></thead><tbody id="slaResumenBody"><tr><td colspan="9">Carga un archivo para consultar el SLA de los paquetes.</td></tr></tbody></table></div>
           </div>
         </section>
         <section id="slaDetallePanel" class="panel hidden">
           <div class="panel-title sla-panel-title"><span id="slaDetalleTitulo">Detalle de paquetes</span><button type="button" class="secondary" onclick="SlaPaquetesV2.limpiarSeleccionDetalle()">Mostrar todo</button></div>
           <div class="panel-body">
             <div id="slaDetalleFiltro" class="source-note"></div>
-            <div class="table-wrap"><table class="sla-detail-table"><thead><tr><th>GUÍA</th><th>PDV</th><th>DEPARTAMENTO</th><th>PROVINCIA</th><th>DISTRITO</th><th>INICIO SLA · HITO USADO</th><th>FIN SLA · FIRMA / AHORA</th><th>GENERACIÓN</th><th>SALIDA HUB</th><th>LLEGADA CEDIS</th><th>SALIDA CEDIS</th><th>LLEGADA PDV</th><th>DESPACHO</th><th>FIRMA</th><th>PROBLEMA</th><th>RETORNO</th><th>DEVOLUCIÓN</th><th>HORAS SLA</th><th>PRECIO/GUÍA (S/)</th><th>TARIFA (%)</th><th>MONTO SLA (S/)</th><th>CLASIFICACIÓN</th></tr></thead><tbody id="slaDetalleBody"></tbody></table></div>
+            <div class="table-wrap sla-detail-wrap"><table class="sla-detail-table"><colgroup><col class="sla-col-guide"><col class="sla-col-pdv"><col class="sla-col-destination"><col class="sla-col-zone"><col class="sla-col-days"><col class="sla-col-days"><col class="sla-col-time"><col class="sla-col-time"><col class="sla-col-hours"><col class="sla-col-hours"><col class="sla-col-price"><col class="sla-col-tariff"><col class="sla-col-amount"><col class="sla-col-class"><col class="sla-col-events"></colgroup><thead><tr><th>GUÍA</th><th>PDV</th><th>DESTINO<br>DEPARTAMENTO › PROVINCIA › DISTRITO</th><th>TIPO DE ZONA</th><th>SLA<br>TRASLADO</th><th>SLA<br>REPARTO</th><th>INICIO<br>HITO USADO</th><th>FIN<br>FIRMA / AHORA</th><th>HORAS<br>TOTALES</th><th>HORAS<br>DESDE SLA TRASLADO</th><th>PRECIO/GUÍA<br>(S/)</th><th>TARIFA</th><th>MONTO SLA<br>(S/)</th><th>CLASIFICACIÓN</th><th>HITOS</th></tr></thead><tbody id="slaDetalleBody"></tbody></table></div>
             <div class="excel-pagination"><button id="slaDetallePrev" class="secondary" onclick="SlaPaquetesV2.cambiarPagina(-1)">Anterior</button><span id="slaDetallePaginaInfo" class="excel-page-info"></span><button id="slaDetalleNext" class="secondary" onclick="SlaPaquetesV2.cambiarPagina(1)">Siguiente</button></div>
           </div>
         </section>
@@ -2195,4 +2232,4 @@ function actualizarClasificacionV2(){
  else{resumen=r.resumen;renderResumen();filtrar();}
 }
 setInterval(actualizarClasificacionV2,60000);
-</script><script src="./brecha-costos.js?v=20261019-modulo-estadisticas-independiente-1"></script><script src="./xlsx-resumen.js?v=20261027-comentario-excel-criticos-v2"></script><script src="./sla-paquetes.js?v=20261026-sla-rangos-precios-permisos-v31"></script></body></html>
+</script><script src="./brecha-costos.js?v=20261019-modulo-estadisticas-independiente-1"></script><script src="./xlsx-resumen.js?v=20261027-comentario-excel-criticos-v2"></script><script src="./sla-paquetes.js?v=20261029-sla-zonificacion-traslado-detalle-v1"></script></body></html>

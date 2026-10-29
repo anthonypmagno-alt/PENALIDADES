@@ -1,0 +1,36 @@
+GESTIÓN DE GUÍAS V2 · SLA DE PAQUETES
+Actualización 2026-10-29
+
+ZONIFICACIÓN
+- Se agregó una carga independiente del Excel de zonificación.
+- Lee la primera hoja y busca los encabezados Departamento, Provincia, Distrito,
+  Tipo de zona, SLA traslado (días) y SLA reparto (días).
+- Relaciona cada paquete por Departamento + Provincia + Distrito, normalizando
+  mayúsculas, tildes y signos.
+- El Excel de zonificación se almacena en Supabase y su publicación reemplaza
+  solamente la zonificación activa; el archivo de monitoreo queda separado.
+
+CÁLCULO DE RANGOS
+- Se conserva el tiempo transcurrido desde el hito inicial, que es la llegada
+  al PDV o el hito anterior disponible si no existe llegada al PDV.
+- Las horas que determinan la tarifa son:
+  horas netas = máximo de 0 y (horas transcurridas - SLA traslado en días × 24).
+- El SLA de reparto se muestra en el detalle como referencia; no desplaza los
+  rangos porque la regla solicitada usa SLA traslado.
+- Si no hay match geográfico o falta SLA traslado, el paquete queda visible con
+  estado pendiente y no se le asigna tarifa hasta corregir el dato.
+
+VISUALIZACIÓN
+- El resumen se contrae/expande en el orden Departamento > Provincia > Distrito.
+- El detalle se ordena y agrupa por la misma jerarquía; los hitos de monitoreo
+  quedan disponibles dentro de “Ver hitos” para evitar que las fechas se monten.
+- El detalle muestra tipo de zona, SLA traslado, SLA reparto, horas totales,
+  horas netas que determinan la tarifa, precio, tarifa y monto.
+
+SUPABASE
+- Ejecutar una sola vez el archivo supabase_gestion_v2_sla_zonificacion.sql.
+- Es un script incremental: crea tablas privadas y una función RPC nueva. No
+  modifica la carga del monitoreo, los precios, los rangos ni los datos de otros
+  módulos.
+- Después de ejecutar el script y publicar estos archivos, cargar el Excel de
+  zonificación desde el nuevo panel y luego cargar/consultar el monitoreo.

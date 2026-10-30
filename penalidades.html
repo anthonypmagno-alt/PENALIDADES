@@ -1556,9 +1556,10 @@
             const baseItemRecordKey=new Map();
             for(const record of (baseline.records||[]))for(const item of(record.items||[])){const id=dbItemId(record,item),comparable=persistedItem({...item,id});baseItems.set(id,itemSignature({...item,id}));baseItemValues.set(id,comparable);baseItemRecordKey.set(id,record.id);}
             const decisionFields=new Set(['exemptionPercent','exonerated','retentionPercent','reason','modifiedAt']);
-            const nextItems=new Map(), changedByRecord=[], decisionOnlyChanges=[],exportDataChanges=[];
+            const nextItems=new Map(), changedByRecord=[], decisionOnlyChanges=[],exportDataChanges=[],zoneDataChanges=[];
             const decisionPayload=item=>({id:item.id,porcentaje_exoneracion:item.exemptionPercent==null?(item.exonerated?100:0):(Number(item.exemptionPercent)||0),retencion_mejora_porcentaje:exoRetentionPercentValue(item.retentionPercent),motivo_decision:item.reason||'',modificado_en:item.modifiedAt||''});
-            const exportFields=new Set(['district','province','department','scanType','signature','scanTime','zoneType','zoneName','slaDays','zoneMatched']);
+            const exportFields=new Set(['district','province','department','scanType','signature','scanTime','zoneType','zoneName','slaDays','zoneMatched','manualZone']);
+            const zoneFields=new Set(['zoneType','zoneName','slaDays','zoneMatched','manualZone']);
             for(const record of(snapshot.records||[])){
               const changed=[];
               for(const item of(record.items||[])){
@@ -1573,6 +1574,7 @@
                 const onlyExportFieldsChanged=!!previous&&nonDecisionKeys.length>0&&nonDecisionKeys.every(key=>exportFields.has(key));
                 if(onlyExportFieldsChanged){
                   exportDataChanges.push({id,distrito:item.district||'',provincia:item.province||'',departamento:item.department||'',tipo_escaneo_reciente:item.scanType||'',estatus_firma:item.signature||'',fecha_hora_ultimo_escaneo:item.scanTime||'',tipo_zona:item.zoneType||'',zona:item.zoneName||'',sla_asignado_dias:String(item.slaDays??''),coincidencia_zona:!!item.zoneMatched});
+                  if(changedKeys.some(key=>zoneFields.has(key)))zoneDataChanges.push({id,tipo_zona:item.zoneType||'',zona:item.zoneName||'',sla_asignado_dias:String(item.slaDays??''),coincidencia_zona:!!item.zoneMatched,zona_manual:item.manualZone||null});
                   if(changedKeys.some(key=>decisionFields.has(key)))decisionOnlyChanges.push(decisionPayload({...item,id}));
                   continue;
                 }
@@ -1638,6 +1640,25 @@
                 const saved=await saveRpc(stage,'penalidades_actualizar_datos_exportacion',{p_guias:part});
                 const savedCount=getDecisionCount(saved);
                 if(savedCount!==null&&savedCount!==part.length)throw new Error(`${stage}: Supabase confirmó ${savedCount} de ${part.length} guías. No se marcaron como guardadas.`);
+                markSynced(part);
+              }
+              const zoneBatchCount=Math.ceil(zoneDataChanges.length/syncGuideBatchSize);
+              for(let i=0;i<zoneDataChanges.length;i+=syncGuideBatchSize){
+                const part=zoneDataChanges.slice(i,i+syncGuideBatchSize),stage=`zonificación por guía (lote ${Math.floor(i/syncGuideBatchSize)+1}/${zoneBatchCount})`;
+                let saved;
+                try{saved=await saveRpc(stage,'penalidades_actualizar_zonificacion',{p_guias:part});}
+                catch(error){
+                  const detail=error?.message||String(error||'Error sin detalle');
+                  if(/penalidades_actualizar_zonificacion|PGRST202|42883|schema cache|could not find the function/i.test(detail))throw new Error(`${stage}: falta instalar la función de persistencia en Supabase. Ejecuta supabase_penalidades_persistir_zonificacion.sql y vuelve a guardar. Detalle: ${detail}`);
+                  throw error;
+                }
+                if(typeof saved==='string'){try{saved=JSON.parse(saved);}catch(error){throw new Error(`${stage}: Supabase devolvió una respuesta que no se pudo validar.`);}}
+                if(!Array.isArray(saved)||saved.length!==part.length)throw new Error(`${stage}: Supabase no confirmó los datos de zona de todas las guías (${Array.isArray(saved)?saved.length:0} de ${part.length}). No se marcaron como guardadas. Ejecuta supabase_penalidades_persistir_zonificacion.sql y reintenta.`);
+                const savedById=new Map(saved.map(row=>[String(row?.id||''),row]));
+                for(const expected of part){
+                  const actual=savedById.get(String(expected.id));
+                  if(!actual||String(actual.tipo_zona??'')!==String(expected.tipo_zona??'')||String(actual.zona??'')!==String(expected.zona??'')||String(actual.sla_asignado_dias??'')!==String(expected.sla_asignado_dias??'')||Boolean(actual.coincidencia_zona)!==Boolean(expected.coincidencia_zona)||stableJson(actual.zona_manual??null)!==stableJson(expected.zona_manual??null))throw new Error(`${stage}: Supabase no devolvió la zona y SLA guardados para la guía ${expected.id}. No se marcó la sincronización como completa.`);
+                }
                 markSynced(part);
               }
               const decisionBatchCount=Math.ceil(decisionOnlyChanges.length/syncGuideBatchSize);

@@ -1,0 +1,5 @@
+GESTIÓN DE GUÍAS V2 · SLA DE PAQUETES
+
+Se agregó al detalle de paquetes el control “Mostrar u ocultar columnas”. Permite activar o desactivar cada una de las 15 columnas, conservar siempre al menos una visible y restaurarlas todas con “Mostrar todas”.
+
+La selección se conserva en el navegador utilizado mediante almacenamiento local. El encabezado y las filas de agrupación Departamento › Provincia › Distrito ajustan su ancho y combinación de celdas al número de columnas visibles. No requiere ejecutar SQL.

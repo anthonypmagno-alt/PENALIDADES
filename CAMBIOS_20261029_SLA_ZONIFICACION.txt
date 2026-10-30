@@ -5,8 +5,12 @@ ZONIFICACIÓN
 - Se agregó una carga independiente del Excel de zonificación.
 - Lee la primera hoja y busca los encabezados Departamento, Provincia, Distrito,
   Tipo de zona, SLA traslado (días) y SLA reparto (días).
-- Relaciona cada paquete por Departamento + Provincia + Distrito, normalizando
-  mayúsculas, tildes y signos.
+- Del monitoreo se toma el distrito. Provincia y departamento se obtienen de
+  zonificación al buscar por el nombre del distrito, normalizando mayúsculas,
+  tildes y signos. Reconoce SAPALLANCA/SAPALLANGA, SAN JUAN DE YSCOS/ISCOS y
+  RAYMONDI/RAIMONDI, conservando el texto original del distrito en el detalle.
+- Si un distrito aparece en varias provincias o departamentos, lo marca como
+  ambiguo y deja ubicación/SLA pendientes para evitar asignar una zona errónea.
 - El Excel de zonificación se almacena en Supabase y su publicación reemplaza
   solamente la zonificación activa; el archivo de monitoreo queda separado.
 

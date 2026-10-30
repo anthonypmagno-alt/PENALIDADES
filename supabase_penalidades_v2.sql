@@ -266,6 +266,55 @@ begin
   return v_count;
 end $$;
 
+-- Actualiza y devuelve los datos de zonificación de cada guía. El cliente
+-- compara esta respuesta con lo enviado antes de confirmar el guardado.
+create or replace function public.penalidades_actualizar_zonificacion(p_guias jsonb)
+returns jsonb language plpgsql security definer
+set search_path = pg_catalog, public
+as $$
+declare v_rows jsonb;
+begin
+  if not public.penalidades_usuario_autorizado() then
+    raise exception 'Cuenta no autorizada.' using errcode='42501';
+  end if;
+  if jsonb_typeof(p_guias) is distinct from 'array' or jsonb_array_length(p_guias)>1000 then
+    raise exception 'El lote de zonificación debe ser un arreglo de hasta 1000 guías.' using errcode='22023';
+  end if;
+  if exists(
+    select 1 from jsonb_array_elements(p_guias) as item(value)
+    where coalesce(item.value->>'id','')=''
+  ) then
+    raise exception 'Cada fila de zonificación debe incluir el id de la guía.' using errcode='22023';
+  end if;
+  if (select count(*) from jsonb_array_elements(p_guias)) <>
+     (select count(distinct item.value->>'id') from jsonb_array_elements(p_guias) as item(value)) then
+    raise exception 'El lote contiene ids de guía repetidos.' using errcode='22023';
+  end if;
+
+  with updated as (
+    update public.penalidades_guias g
+    set tipo_zona=coalesce(x.tipo_zona,''),
+        zona=coalesce(x.zona,''),
+        sla_asignado_dias=coalesce(x.sla_asignado_dias,''),
+        coincidencia_zona=coalesce(x.coincidencia_zona,false),
+        zona_manual=x.zona_manual,
+        actualizado_en=now()
+    from jsonb_to_recordset(p_guias) as x(
+      id text,tipo_zona text,zona text,sla_asignado_dias text,
+      coincidencia_zona boolean,zona_manual jsonb
+    )
+    where g.id=x.id
+    returning g.id,g.tipo_zona,g.zona,g.sla_asignado_dias,g.coincidencia_zona,g.zona_manual
+  )
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id',updated.id,'tipo_zona',updated.tipo_zona,'zona',updated.zona,
+    'sla_asignado_dias',updated.sla_asignado_dias,
+    'coincidencia_zona',updated.coincidencia_zona,'zona_manual',updated.zona_manual
+  ) order by updated.id),'[]'::jsonb)
+  into v_rows from updated;
+  return v_rows;
+end $$;
+
 create or replace function public.penalidades_guardar_decisiones(p_decisiones jsonb)
 returns jsonb language plpgsql security definer
 set search_path = pg_catalog, public
@@ -591,6 +640,7 @@ end $$;
 revoke all on function public.penalidades_usuario_autorizado() from public,anon,authenticated;
 revoke all on function public.penalidades_upsert_lote(jsonb,jsonb) from public,anon,authenticated;
 revoke all on function public.penalidades_actualizar_datos_exportacion(jsonb) from public,anon,authenticated;
+revoke all on function public.penalidades_actualizar_zonificacion(jsonb) from public,anon,authenticated;
 revoke all on function public.penalidades_guardar_decisiones(jsonb) from public,anon,authenticated;
 revoke all on function public.penalidades_listar_liquidaciones() from public,anon,authenticated;
 revoke all on function public.penalidades_actualizar_estados(jsonb) from public,anon,authenticated;
@@ -605,6 +655,7 @@ revoke all on function public.penalidades_guardar_grupos(jsonb,jsonb) from publi
 revoke all on function public.penalidades_borrar_liquidaciones_vacias() from public,anon,authenticated;
 grant execute on function public.penalidades_upsert_lote(jsonb,jsonb) to authenticated;
 grant execute on function public.penalidades_actualizar_datos_exportacion(jsonb) to authenticated;
+grant execute on function public.penalidades_actualizar_zonificacion(jsonb) to authenticated;
 grant execute on function public.penalidades_guardar_decisiones(jsonb) to authenticated;
 grant execute on function public.penalidades_listar_liquidaciones() to authenticated;
 grant execute on function public.penalidades_actualizar_estados(jsonb) to authenticated;

@@ -2,9 +2,20 @@
   "use strict";
 
   var PAGE_SIZE = 100;
+  var DETAIL_COLUMNS = [
+    ["guia", "Guía"], ["pdv", "PDV"], ["destino", "Destino · departamento / provincia / distrito"],
+    ["zona", "Tipo de zona"], ["traslado", "SLA traslado"], ["reparto", "SLA reparto"],
+    ["inicio", "Inicio · hito usado"], ["fin", "Fin · firma / ahora"], ["horas", "Horas totales"],
+    ["netas", "Horas desde SLA traslado"], ["precio", "Precio por guía"], ["tarifa", "Tarifa"],
+    ["monto", "Monto SLA"], ["clasificacion", "Clasificación"], ["hitos", "Hitos detallados"]
+  ];
+  var DETAIL_COLUMNS_STORAGE_KEY = "v16-sla-detalle-columnas-v1";
   var state = {
     role: "",
+    currentPdv: "",
     rows: [],
+    localMonitorRows: null,
+    localMonitorFileName: "",
     config: null,
     prices: new Map(),
     priceDrafts: new Map(),
@@ -16,6 +27,7 @@
     dataset: null,
     zoneRows: [],
     zoneMap: new Map(),
+    zoneDistrictMap: new Map(),
     zoneDataset: null,
     zoneMigrationError: "",
     loadedAt: 0,
@@ -28,6 +40,7 @@
     selectedClass: "",
     page: 1,
     collapsedClasses: false,
+    visibleDetailColumns: null,
     timer: null
   };
 
@@ -45,6 +58,70 @@
   ];
 
   function byId(id) { return document.getElementById(id); }
+  function allDetailColumnKeys() { return DETAIL_COLUMNS.map(function (entry) { return entry[0]; }); }
+  function visibleDetailColumnCount() {
+    return state.visibleDetailColumns ? state.visibleDetailColumns.size : DETAIL_COLUMNS.length;
+  }
+  function persistDetailColumns() {
+    try { window.localStorage.setItem(DETAIL_COLUMNS_STORAGE_KEY, JSON.stringify(Array.from(state.visibleDetailColumns || allDetailColumnKeys()))); } catch (_) {}
+  }
+  function updateDetailColumnStatus() {
+    var status = byId("slaColumnStatus");
+    if (status) status.textContent = visibleDetailColumnCount() + " de " + DETAIL_COLUMNS.length + " columnas visibles";
+  }
+  function updateDetailColumnPicker() {
+    var container = byId("slaColumnChecks");
+    if (container) {
+      container.innerHTML = DETAIL_COLUMNS.map(function (entry) {
+        var checked = !state.visibleDetailColumns || state.visibleDetailColumns.has(entry[0]);
+        return '<label><input type="checkbox" data-sla-column="' + entry[0] + '"' + (checked ? ' checked' : '') + ' onchange="SlaPaquetesV2.cambiarColumnaDetalle(\'' + entry[0] + '\',this.checked)"><span>' + escapeHtml(entry[1]) + '</span></label>';
+      }).join("");
+    }
+    updateDetailColumnStatus();
+  }
+  function loadDetailColumnPreferences() {
+    var visible = allDetailColumnKeys();
+    try {
+      var saved = JSON.parse(window.localStorage.getItem(DETAIL_COLUMNS_STORAGE_KEY) || "null");
+      if (Array.isArray(saved)) visible = saved.filter(function (key) { return allDetailColumnKeys().indexOf(key) >= 0; });
+    } catch (_) {}
+    if (!visible.length) visible = allDetailColumnKeys();
+    state.visibleDetailColumns = new Set(visible);
+    updateDetailColumnPicker();
+    applyDetailColumnVisibility();
+  }
+  function applyDetailColumnVisibility() {
+    if (!state.visibleDetailColumns) return;
+    var panel = byId("slaDetallePanel");
+    if (!panel) return;
+    Array.prototype.forEach.call(panel.querySelectorAll("[data-sla-col]"), function (cell) {
+      cell.hidden = !state.visibleDetailColumns.has(cell.getAttribute("data-sla-col"));
+    });
+    Array.prototype.forEach.call(panel.querySelectorAll(".sla-detail-group-row td, .sla-empty"), function (cell) {
+      cell.colSpan = visibleDetailColumnCount();
+    });
+    Array.prototype.forEach.call(panel.querySelectorAll("[data-sla-column]"), function (input) {
+      input.checked = state.visibleDetailColumns.has(input.getAttribute("data-sla-column"));
+    });
+    var table = panel.querySelector(".sla-detail-table");
+    var columnWidths = { guia: 128, pdv: 90, destino: 185, zona: 95, traslado: 75, reparto: 75, inicio: 145, fin: 145, horas: 102, netas: 102, precio: 115, tarifa: 80, monto: 112, clasificacion: 120, hitos: 105 };
+    if (table) table.style.minWidth = Array.from(state.visibleDetailColumns).reduce(function (total, key) { return total + (columnWidths[key] || 90); }, 0) + "px";
+    updateDetailColumnStatus();
+  }
+  function changeDetailColumn(key, visible) {
+    if (!state.visibleDetailColumns) state.visibleDetailColumns = new Set(allDetailColumnKeys());
+    if (allDetailColumnKeys().indexOf(key) < 0) return;
+    if (visible) state.visibleDetailColumns.add(key);
+    else if (state.visibleDetailColumns.size > 1) state.visibleDetailColumns.delete(key);
+    else state.visibleDetailColumns.add(key);
+    persistDetailColumns();
+    applyDetailColumnVisibility();
+  }
+  function showAllDetailColumns() {
+    state.visibleDetailColumns = new Set(allDetailColumnKeys());
+    persistDetailColumns();
+    applyDetailColumnVisibility();
+  }
   function safeText(value) { return String(value == null ? "" : value); }
   function escapeHtml(value) {
     return safeText(value).replace(/[&<>"']/g, function (ch) {
@@ -88,8 +165,8 @@
     out.distrito = safeText(row.distrito).trim();
     out._departmentKey = keyText(out.departamento) || "SIN DEPARTAMENTO";
     out._provinceKey = out._departmentKey + "|" + (keyText(out.provincia) || "SIN PROVINCIA");
-    out._districtKey = out._provinceKey + "|" + (keyText(out.distrito) || "SIN DISTRITO");
-    out._geoKey = geoKey(out.departamento, out.provincia, out.distrito);
+    out._districtKey = out._provinceKey + "|" + (keyText(row._zoneDistrict || out.distrito) || "SIN DISTRITO");
+    out._geoKey = row._zoningGeoKey || geoKey(out.departamento, out.provincia, out.distrito);
     out._guideKey = keyText(out.guia) + "|" + keyText(out.pdv);
     return out;
   }
@@ -326,16 +403,16 @@
       return department;
     });
   }
-  function districtRows(rows, zoneRows) {
+  function districtRows(rows) {
     var districts = new Map();
-    (zoneRows || []).concat(rows || []).forEach(function (row) {
-      if (!row.distrito) return;
+    (rows || []).forEach(function (row) {
+      if (!row.distrito || row._zoningMatch !== "MATCH") return;
       var key = row._geoKey;
       if (!districts.has(key)) districts.set(key, {
         key: key,
         departamento: row.departamento || "Sin departamento",
         provincia: row.provincia || "Sin provincia",
-        distrito: row.distrito || "Sin distrito"
+        distrito: row._zoneDistrict || row.distrito || "Sin distrito"
       });
     });
     return Array.from(districts.values()).sort(function (a, b) {
@@ -465,7 +542,7 @@
     var from = (state.page - 1) * PAGE_SIZE;
     var pageRows = rows.slice(from, from + PAGE_SIZE);
     if (!pageRows.length) {
-      tbody.innerHTML = '<tr><td colspan="15" class="sla-empty">No hay registros para mostrar.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="' + visibleDetailColumnCount() + '" class="sla-empty">No hay registros para mostrar.</td></tr>';
     } else {
       var locationCounts = new Map();
       rows.forEach(function (row) { locationCounts.set(row._geoKey, (locationCounts.get(row._geoKey) || 0) + 1); });
@@ -485,24 +562,24 @@
         var locationHtml = "";
         if (previousLocation !== row._geoKey) {
           previousLocation = row._geoKey;
-          locationHtml = '<tr class="sla-detail-group-row"><td colspan="15">' + escapeHtml([row.departamento || "Sin departamento",row.provincia || "Sin provincia",row.distrito || "Sin distrito"].join(" › ")) + ' · ' + (locationCounts.get(row._geoKey) || 0).toLocaleString("es-PE") + ' paquetes</td></tr>';
+          locationHtml = '<tr class="sla-detail-group-row"><td colspan="' + visibleDetailColumnCount() + '">' + escapeHtml([row.departamento || "Sin departamento",row.provincia || "Sin provincia",row.distrito || "Sin distrito"].join(" › ")) + ' · ' + (locationCounts.get(row._geoKey) || 0).toLocaleString("es-PE") + ' paquetes</td></tr>';
         }
         var detailHtml = '<tr>' +
-          '<td class="sla-guide-cell" title="' + escapeHtml(row.guia) + '">' + escapeHtml(row.guia) + '</td>' +
-          '<td title="' + escapeHtml(row.pdv) + '">' + escapeHtml(row.pdv) + '</td>' +
-          '<td class="sla-destination-cell" title="' + escapeHtml([row.departamento,row.provincia,row.distrito].filter(Boolean).join(" › ")) + '">' + destination + '</td>' +
-          '<td title="' + escapeHtml(c.zone ? c.zone.tipo_zona || "Sin tipo" : "Sin coincidencia en zonificación") + '">' + escapeHtml(c.zone ? c.zone.tipo_zona || "Sin tipo" : "Sin match") + '</td>' +
-          '<td class="number" title="SLA de traslado en días">' + (c.zone && c.zone.sla_traslado_dias !== null ? escapeHtml(c.zone.sla_traslado_dias) + ' d' : '—') + '</td>' +
-          '<td class="number" title="SLA de reparto en días">' + (c.zone && c.zone.sla_reparto_dias !== null ? escapeHtml(c.zone.sla_reparto_dias) + ' d' : '—') + '</td>' +
-          '<td class="sla-time-cell" title="' + escapeHtml((c.startLabel ? c.startLabel + " · " : "") + formatDate(c.start)) + '"><strong>' + escapeHtml(c.startLabel || "Sin inicio") + '</strong><span>' + escapeHtml(formatDateCompact(c.start)) + '</span></td>' +
-          '<td class="sla-time-cell" title="' + escapeHtml(endLabel + " · " + formatDate(c.end)) + '"><strong>' + escapeHtml(endLabel) + '</strong><span>' + escapeHtml(formatDateCompact(c.end)) + '</span></td>' +
-          '<td class="number" title="Tiempo transcurrido desde el hito de inicio hasta la firma o hasta ahora">' + escapeHtml(hours) + '</td>' +
-          '<td class="number sla-net-hours" title="Horas transcurridas menos (SLA traslado × 24); este valor determina el rango y la tarifa">' + escapeHtml(effectiveHours) + '</td>' +
-          '<td class="number">' + escapeHtml(formatPrice(c.price)) + '</td>' +
-          '<td class="number">' + (c.tariff === null ? '—' : escapeHtml(c.tariff.toFixed(2) + "%")) + '</td>' +
-          '<td class="number">' + escapeHtml(formatMoney(c.amount)) + '</td>' +
-          '<td><span class="sla-class-badge ' + badge + '">' + escapeHtml(classificationLabel(c.classification)) + '</span></td>' +
-          '<td>' + milestoneHtml + '</td></tr>';
+          '<td data-sla-col="guia" class="sla-guide-cell" title="' + escapeHtml(row.guia) + '">' + escapeHtml(row.guia) + '</td>' +
+          '<td data-sla-col="pdv" title="' + escapeHtml(row.pdv) + '">' + escapeHtml(row.pdv) + '</td>' +
+          '<td data-sla-col="destino" class="sla-destination-cell" title="' + escapeHtml([row.departamento,row.provincia,row.distrito].filter(Boolean).join(" › ")) + '">' + destination + '</td>' +
+          '<td data-sla-col="zona" title="' + escapeHtml(c.zone ? c.zone.tipo_zona || "Sin tipo" : "Sin coincidencia en zonificación") + '">' + escapeHtml(c.zone ? c.zone.tipo_zona || "Sin tipo" : "Sin match") + '</td>' +
+          '<td data-sla-col="traslado" class="number" title="SLA de traslado en días">' + (c.zone && c.zone.sla_traslado_dias !== null ? escapeHtml(c.zone.sla_traslado_dias) + ' d' : '—') + '</td>' +
+          '<td data-sla-col="reparto" class="number" title="SLA de reparto en días">' + (c.zone && c.zone.sla_reparto_dias !== null ? escapeHtml(c.zone.sla_reparto_dias) + ' d' : '—') + '</td>' +
+          '<td data-sla-col="inicio" class="sla-time-cell" title="' + escapeHtml((c.startLabel ? c.startLabel + " · " : "") + formatDate(c.start)) + '"><strong>' + escapeHtml(c.startLabel || "Sin inicio") + '</strong><span>' + escapeHtml(formatDateCompact(c.start)) + '</span></td>' +
+          '<td data-sla-col="fin" class="sla-time-cell" title="' + escapeHtml(endLabel + " · " + formatDate(c.end)) + '"><strong>' + escapeHtml(endLabel) + '</strong><span>' + escapeHtml(formatDateCompact(c.end)) + '</span></td>' +
+          '<td data-sla-col="horas" class="number" title="Tiempo transcurrido desde el hito de inicio hasta la firma o hasta ahora">' + escapeHtml(hours) + '</td>' +
+          '<td data-sla-col="netas" class="number sla-net-hours" title="Horas transcurridas menos (SLA traslado × 24); este valor determina el rango y la tarifa">' + escapeHtml(effectiveHours) + '</td>' +
+          '<td data-sla-col="precio" class="number">' + escapeHtml(formatPrice(c.price)) + '</td>' +
+          '<td data-sla-col="tarifa" class="number">' + (c.tariff === null ? '—' : escapeHtml(c.tariff.toFixed(2) + "%")) + '</td>' +
+          '<td data-sla-col="monto" class="number">' + escapeHtml(formatMoney(c.amount)) + '</td>' +
+          '<td data-sla-col="clasificacion"><span class="sla-class-badge ' + badge + '">' + escapeHtml(classificationLabel(c.classification)) + '</span></td>' +
+          '<td data-sla-col="hitos">' + milestoneHtml + '</td></tr>';
         return locationHtml + detailHtml;
       }).join("");
     }
@@ -512,6 +589,7 @@
     if (prev) prev.disabled = state.page <= 1;
     if (next) next.disabled = state.page >= pages;
     if (info) info.textContent = rows.length ? (from + 1).toLocaleString("es-PE") + "–" + Math.min(from + PAGE_SIZE, rows.length).toLocaleString("es-PE") + " de " + rows.length.toLocaleString("es-PE") : "0 resultados";
+    applyDetailColumnVisibility();
   }
   function renderAll() {
     updateFilterOptions();
@@ -524,12 +602,12 @@
     document.querySelectorAll("#viewSla .sla-classification-col").forEach(function (cell) { cell.hidden = state.collapsedClasses; });
   }
   function applyDataset(data, config) {
-    state.rows = (data || []).map(normalizeRow);
+    state.rows = resolveMonitoringGeography(data || []).map(normalizeRow);
     state.config = config || state.config || { umbral_horas: 48, tarifa_porcentaje: 90 };
     state.ranges = normalizedRanges(state.config);
     state.prices = normalizedPrices(state.config);
     state.priceDrafts = new Map();
-    state.priceDistricts = districtRows(state.rows, state.zoneRows);
+    state.priceDistricts = districtRows(state.rows);
     renderPriceEditor();
   }
   async function loadAllPages() {
@@ -564,10 +642,47 @@
   function applyZonification(rows, dataset) {
     state.zoneRows = (rows || []).map(normalizeZone);
     state.zoneMap = new Map();
-    state.zoneRows.forEach(function (row) { state.zoneMap.set(row._geoKey, row); });
+    state.zoneDistrictMap = new Map();
+    state.zoneRows.forEach(function (row) {
+      state.zoneMap.set(row._geoKey, row);
+      var districtKey = keyText(row.distrito);
+      if (!districtKey) return;
+      var candidates = state.zoneDistrictMap.get(districtKey) || [];
+      if (!candidates.some(function (candidate) { return candidate._geoKey === row._geoKey; })) candidates.push(row);
+      state.zoneDistrictMap.set(districtKey, candidates);
+    });
     state.zoneDataset = dataset || null;
     state.zoneMigrationError = "";
     showZoneStatus(state.zoneDataset ? "Zonificación activa: " + safeText(state.zoneDataset.archivo || "Excel") + " · " + state.zoneRows.length.toLocaleString("es-PE") + " distritos." : "Aún no se cargó la zonificación.", false);
+  }
+  function resolveMonitoringGeography(rows) {
+    var districtAliases = {
+      SAPALLANCA: "SAPALLANGA",
+      SANJUANDEYSCOS: "SAN JUAN DE ISCOS",
+      RAYMONDI: "RAIMONDI"
+    };
+    return (rows || []).map(function (source) {
+      var row = Object.assign({}, source);
+      var district = safeText(row.distrito).trim();
+      var districtKey = keyText(district);
+      var lookupDistrict = districtAliases[districtKey] || district;
+      var matches = state.zoneDistrictMap.get(keyText(lookupDistrict)) || [];
+      row.departamento = "";
+      row.provincia = "";
+      row.distrito = district;
+      if (matches.length === 1) {
+        row.departamento = matches[0].departamento;
+        row.provincia = matches[0].provincia;
+        row._zoneDistrict = matches[0].distrito;
+        row._zoningGeoKey = matches[0]._geoKey;
+        row._zoningMatch = "MATCH";
+      } else if (matches.length > 1) {
+        row._zoningMatch = "AMBIGUOUS";
+      } else {
+        row._zoningMatch = "MISSING";
+      }
+      return row;
+    });
   }
   async function loadAllZonification() {
     var rows = [];
@@ -594,35 +709,55 @@
       var config = await api().ejecutar("config", {});
       state.config = config || { umbral_horas: 48, tarifa_porcentaje: 90 };
       state.ranges = normalizedRanges(state.config);
-      renderRangeEditor(state.ranges);
-      var loaded = await Promise.all([loadAllPages(), loadAllZonification().catch(function (error) {
+      if (state.role !== "PDV") renderRangeEditor(state.ranges);
+      var isPdv = state.role === "PDV";
+      var loaded = await Promise.all([isPdv ? Promise.resolve({ rows: [], dataset: null }) : loadAllPages(), loadAllZonification().catch(function (error) {
         state.zoneMigrationError = error && error.message || String(error);
         return { rows: [], dataset: null };
       })]);
       var result = loaded[0];
       applyZonification(loaded[1].rows, loaded[1].dataset);
-      applyDataset(result.rows, config);
-      state.dataset = result.dataset || config.dataset || null;
+      if (isPdv) {
+        applyDataset(state.localMonitorRows || [], config);
+        state.dataset = state.localMonitorRows ? { local: true, archivo: state.localMonitorFileName, filas: state.rows.length } : null;
+        if (state.localMonitorRows) {
+          var localConfig = await api().ejecutar("config_pdv", {
+            distritos: state.priceDistricts.map(function (item) { return { departamento: item.departamento, provincia: item.provincia, distrito: item.distrito }; })
+          });
+          state.prices = normalizedPrices(localConfig);
+          state.config = Object.assign({}, config, { precios: localConfig && localConfig.precios || [] });
+        }
+      } else {
+        applyDataset(result.rows, config);
+        state.dataset = result.dataset || config.dataset || null;
+      }
       state.loadedAt = Date.now();
       state.page = 1;
       if (!state.dataset) {
         state.rows = [];
-        showStatus("Aún no hay archivo de monitoreo. " + (state.zoneDataset ? "Zonificación activa: " + state.zoneRows.length.toLocaleString("es-PE") + " distritos." : state.zoneMigrationError ? "Ejecuta una vez supabase_gestion_v2_sla_zonificacion.sql para habilitar el archivo de zonificación." : "Falta cargar zonificación y monitoreo."), false);
+        showStatus(isPdv ? "Carga el Excel de monitoreo para consultar únicamente el PDV de esta sesión. La información se procesa en este navegador y no se guarda ni comparte." : "Aún no hay archivo de monitoreo. " + (state.zoneDataset ? "Zonificación activa: " + state.zoneRows.length.toLocaleString("es-PE") + " distritos." : state.zoneMigrationError ? "Ejecuta una vez supabase_gestion_v2_sla_zonificacion.sql para habilitar el archivo de zonificación." : "Falta cargar zonificación y monitoreo."), false);
       } else {
         var globalCount = Number(state.dataset.filas || 0);
         var visibleCount = state.rows.length;
         var zoneSummary = state.zoneDataset ? " · Zonificación: " + safeText(state.zoneDataset.archivo || "Excel") + " · " + state.zoneRows.length.toLocaleString("es-PE") + " distritos" : " · Sin zonificación activa";
-        showStatus("Archivo activo: " + safeText(state.dataset.archivo || "Monitoreo") + " · " + visibleCount.toLocaleString("es-PE") + " paquetes disponibles" + (globalCount > visibleCount ? " de " + globalCount.toLocaleString("es-PE") + " en la carga" : "") + zoneSummary + (state.zoneMigrationError ? " · Ejecuta supabase_gestion_v2_sla_zonificacion.sql para activar la zonificación." : "."), false);
+        var localMatch = state.rows.filter(function (row) { return row._zoningMatch === "MATCH"; }).length;
+        var localAmbiguous = state.rows.filter(function (row) { return row._zoningMatch === "AMBIGUOUS"; }).length;
+        var localMissing = state.rows.filter(function (row) { return row._zoningMatch === "MISSING"; }).length;
+        var zoningSummary = localAmbiguous || localMissing ? " · Zonificación: " + localMatch.toLocaleString("es-PE") + " con match, " + localAmbiguous.toLocaleString("es-PE") + " ambiguos, " + localMissing.toLocaleString("es-PE") + " sin coincidencia" : "";
+        showStatus((isPdv ? "Archivo local: " : "Archivo activo: ") + safeText(state.dataset.archivo || "Monitoreo") + " · " + visibleCount.toLocaleString("es-PE") + " paquetes" + (isPdv ? " de " + safeText(state.currentPdv) + " · No guardado ni compartido" : globalCount > visibleCount ? " de " + globalCount.toLocaleString("es-PE") + " en la carga" : "") + zoneSummary + (state.zoneMigrationError ? " · Ejecuta supabase_gestion_v2_sla_zonificacion.sql para activar la zonificación." : "."), false);
       }
       renderAll();
     } catch (error) {
       showStatus("No se pudo cargar el módulo SLA. Verifica que ejecutaste supabase_gestion_v2_sla_paquetes.sql. Detalle: " + (error && error.message || error), true);
     } finally { state.loading = false; }
   }
-  function setRole(role) {
+  function setRole(role, pdv) {
     state.role = safeText(role).toUpperCase();
+    state.currentPdv = safeText(pdv).trim();
     var admin = byId("slaAdminTools");
     if (admin) admin.classList.toggle("hidden", state.role !== "ADMINISTRADOR");
+    var local = byId("slaPdvTools");
+    if (local) local.classList.toggle("hidden", state.role !== "PDV");
   }
   function renderPriceEditor() {
     var body = byId("slaPreciosEditor");
@@ -846,10 +981,7 @@
       var columns = {
         guia: findHeaderIndex(headers, ["Número de Guía", "Número de Guia", "Guía", "Tracking Number", "Tracking Number / 运单号"]),
         pdv: findHeaderIndex(headers, ["PDV de destino", "PDV destino", "Punto de venta de destino", "PDV"]),
-        departamento: findHeaderIndex(headers, ["Provincia de destino", "Departamento de destino"]),
-        provincia: findHeaderIndex(headers, ["Ciudad de destino", "Provincia de destino (ciudad)"]),
         distrito: findHeaderIndex(headers, ["Colonia de destino", "Distrito de destino"]),
-        region: findHeaderIndex(headers, ["Región de destino", "Region de destino"]),
         fecha_generacion: findHeaderIndex(headers, ["Fecha de generación de datos", "Fecha de generacion de datos", "Tiempo de entrada al sistema"]),
         salida_hub: findHeaderIndex(headers, ["Hora de salida del HUB", "Salida del HUB hacia el Cedis/Pdv", "Salida del HUB hacia el CEDIS/PDV"]),
         llegada_cedis: findHeaderIndex(headers, ["Tiempo de llegada al CEDIS", "Llegada del paquete al cedis"]),
@@ -861,7 +993,7 @@
         retorno_almacen: findHeaderIndex(headers, ["Hora de volver al almacén", "Hora de volver al almacen", "Escaneo de retorno del paquete"]),
         devolucion: findHeaderIndex(headers, ["Tiempo de devolución", "Tiempo de devolucion", "Tiempo de llegada al almacén de origen"])
       };
-      var fallback = { guia: 0, pdv: 3, departamento: 6, provincia: 7, distrito: 9, region: 5, fecha_generacion: 10, salida_hub: 12, llegada_cedis: 14, salida_cedis: 15, llegada_pdv: 16, despacho: 17, firma: 22, problema: 24, retorno_almacen: 26, devolucion: 28 };
+      var fallback = { guia: 0, pdv: 3, distrito: 9, fecha_generacion: 10, salida_hub: 12, llegada_cedis: 14, salida_cedis: 15, llegada_pdv: 16, despacho: 17, firma: 22, problema: 24, retorno_almacen: 26, devolucion: 28 };
       Object.keys(fallback).forEach(function (key) { if (columns[key] < 0) columns[key] = fallback[key]; });
       var records = [];
       var unique = new Map();
@@ -871,7 +1003,7 @@
         var pdv = safeText(row[columns.pdv]).trim();
         if (!guide || !pdv) continue;
         var record = { guia: guide, pdv: pdv };
-        ["departamento","provincia","distrito","region","fecha_generacion","salida_hub","llegada_cedis","salida_cedis","llegada_pdv","despacho","firma","problema","retorno_almacen","devolucion"].forEach(function (key) {
+        ["distrito","fecha_generacion","salida_hub","llegada_cedis","salida_cedis","llegada_pdv","despacho","firma","problema","retorno_almacen","devolucion"].forEach(function (key) {
           var value = row[columns[key]];
           if (key.indexOf("fecha_") === 0 || ["salida_hub","llegada_cedis","salida_cedis","llegada_pdv","despacho","firma","problema","retorno_almacen","devolucion"].indexOf(key) >= 0) {
             record[key] = parseDate(value);
@@ -963,12 +1095,24 @@
     return map;
   }
   async function importarArchivo() {
-    if (state.role !== "ADMINISTRADOR") { showStatus("Solo el administrador puede cargar el archivo SLA.", true); return; }
-    var input = byId("slaArchivoInput");
+    var isPdv = state.role === "PDV";
+    if (!isPdv && state.role !== "ADMINISTRADOR") { showStatus("Solo el administrador puede cargar el archivo SLA.", true); return; }
+    if (isPdv && !state.currentPdv) { showStatus("No se pudo identificar el PDV de esta sesión.", true); return; }
+    if (isPdv) {
+      if (!state.config) {
+        state.config = await api().ejecutar("config", {});
+        state.ranges = normalizedRanges(state.config);
+      }
+      if (!state.zoneRows.length) {
+        var zoning = await loadAllZonification();
+        applyZonification(zoning.rows, zoning.dataset);
+      }
+    }
+    var input = byId(isPdv ? "slaPdvArchivoInput" : "slaArchivoInput");
     var file = input && input.files && input.files[0];
     if (!file) { showStatus("Selecciona el archivo Excel de monitoreo.", true); return; }
-    var button = byId("slaImportarArchivo");
-    var progress = byId("slaCargaProgreso");
+    var button = byId(isPdv ? "slaPdvImportarArchivo" : "slaImportarArchivo");
+    var progress = byId(isPdv ? "slaPdvCargaProgreso" : "slaCargaProgreso");
     var uploadId = "";
     if (button) button.disabled = true;
     if (progress) { progress.hidden = false; progress.value = 0; }
@@ -984,9 +1128,39 @@
         return Object.assign({}, row, {
           pdv: match ? match.pdv : rawPdv.split("|")[0].trim(),
           area: match ? match.area : "",
-          region: match ? match.region : row.region
+          region: match ? match.region : ""
         });
       });
+      if (isPdv) {
+        var current = map.get(keyText(state.currentPdv));
+        var expectedPdv = current ? current.pdv : state.currentPdv;
+        parsed.rows = parsed.rows.filter(function (row) { return keyText(row.pdv) === keyText(expectedPdv); });
+        if (!parsed.rows.length) throw new Error("El archivo no contiene guías del PDV " + expectedPdv + ". No se cargaron ni guardaron datos.");
+        state.localMonitorRows = parsed.rows;
+        state.localMonitorFileName = file.name;
+        applyDataset(state.localMonitorRows, state.config);
+        state.dataset = { local: true, archivo: file.name, filas: state.rows.length };
+        var localConfig = await api().ejecutar("config_pdv", {
+          distritos: state.priceDistricts.map(function (item) { return { departamento: item.departamento, provincia: item.provincia, distrito: item.distrito }; })
+        });
+        state.prices = normalizedPrices(localConfig);
+        state.config = Object.assign({}, state.config, { precios: localConfig && localConfig.precios || [] });
+        state.loadedAt = Date.now();
+        state.page = 1;
+        state.selectedDepartment = "";
+        state.selectedProvince = "";
+        state.selectedDistrict = "";
+        state.selectedClass = "";
+        state.showAllDetail = false;
+        if (progress) progress.value = 100;
+        renderAll();
+        var matched = state.rows.filter(function (row) { return row._zoningMatch === "MATCH"; }).length;
+        var ambiguous = state.rows.filter(function (row) { return row._zoningMatch === "AMBIGUOUS"; }).length;
+        var missing = state.rows.filter(function (row) { return row._zoningMatch === "MISSING"; }).length;
+        showStatus("Archivo procesado solo en este navegador: " + state.rows.length.toLocaleString("es-PE") + " guías de " + expectedPdv + ". No se guardó ni compartió. Zonificación: " + matched.toLocaleString("es-PE") + " con match, " + ambiguous.toLocaleString("es-PE") + " ambiguos, " + missing.toLocaleString("es-PE") + " sin coincidencia.", false);
+        return;
+      }
+      parsed.rows = resolveMonitoringGeography(parsed.rows);
       var start = await api().ejecutar("iniciar_carga", { archivo: file.name, filas: parsed.rows.length });
       uploadId = safeText(start && start.id);
       if (!uploadId) throw new Error("Supabase no devolvió el identificador de carga.");
@@ -1010,7 +1184,12 @@
       showStatus("Carga publicada: " + parsed.rows.length.toLocaleString("es-PE") + " guías de " + file.name + ".", false);
     } catch (error) {
       if (uploadId) { try { await api().ejecutar("cancelar_carga", { carga_id: uploadId }); } catch (_) {} }
-      showStatus("No se publicó el archivo; la carga activa se conserva. Detalle: " + (error && error.message || error), true);
+      if (isPdv && state.localMonitorRows) {
+        renderAll();
+        showStatus("El archivo quedó visible en este navegador y no se guardó ni compartió. No se pudieron leer algunas tarifas compartidas. Detalle: " + (error && error.message || error), true);
+      } else {
+        showStatus("No se publicó el archivo; la carga activa se conserva. Detalle: " + (error && error.message || error), true);
+      }
     } finally {
       if (button) button.disabled = false;
       if (progress) window.setTimeout(function () { progress.hidden = true; }, 1800);
@@ -1084,6 +1263,7 @@
     state.showAllDetail = false;
   }
   function init() {
+    loadDetailColumnPreferences();
     var tbody = byId("slaResumenBody");
     if (tbody) tbody.addEventListener("click", handleSummaryClick);
     var pricesBody = byId("slaPreciosEditor");
@@ -1100,6 +1280,8 @@
     expandirTodo: expandAll,
     contraerTodo: collapseAll,
     alternarClasificacion: toggleClasses,
+    cambiarColumnaDetalle: changeDetailColumn,
+    mostrarTodasColumnas: showAllDetailColumns,
     cambiarPagina: changePage,
     importarArchivo: importarArchivo,
     importarZonificacion: importarZonificacion,

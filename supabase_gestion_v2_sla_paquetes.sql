@@ -306,23 +306,64 @@ begin
   end if;
   v_perfil := to_jsonb(v16_private.profile());
   v_rol := upper(coalesce(v_perfil->>'rol',''));
-  if v_rol not in ('ADMINISTRADOR','ENCARGADO') then
-    raise exception 'El módulo SLA está disponible para administradores y encargados.' using errcode='42501';
+  if v_rol not in ('ADMINISTRADOR','ENCARGADO','PDV') then
+    raise exception 'El módulo SLA está disponible para administradores, encargados y PDV autorizados.' using errcode='42501';
   end if;
   if not public.v16_gestion_modulo_permitido('sla_paquetes','ver',v_perfil) then
     raise exception 'Tu usuario no tiene permiso para ver el módulo SLA.' using errcode='42501';
+  end if;
+  if v_rol='PDV' and v_accion not in ('config','config_pdv') then
+    raise exception 'El usuario PDV solo puede consultar parámetros y precios del SLA.' using errcode='42501';
   end if;
   if v_accion in ('guardar_parametros','guardar_precios','iniciar_carga','guardar_bloque','publicar_carga','cancelar_carga')
      and not public.v16_gestion_modulo_permitido('sla_paquetes','ejecutar',v_perfil) then
     raise exception 'Tu usuario puede consultar el SLA, pero no ejecutar cambios.' using errcode='42501';
   end if;
 
-  if v_accion='config' then
+  if v_accion='config_pdv' then
+    if v_rol<>'PDV' then
+      raise exception 'La consulta local de precios solo está disponible para el usuario PDV.' using errcode='42501';
+    end if;
+    if jsonb_typeof(p_payload->'distritos') is distinct from 'array' then
+      raise exception 'Envía una lista de hasta 10,000 distritos de la consulta local.' using errcode='22023';
+    end if;
+    if jsonb_array_length(p_payload->'distritos')>10000 then
+      raise exception 'Envía una lista de hasta 10,000 distritos de la consulta local.' using errcode='22023';
+    end if;
+    if exists (
+      select 1
+      from jsonb_to_recordset(p_payload->'distritos') as d(departamento text,provincia text,distrito text)
+      where length(btrim(coalesce(d.departamento,''))) not between 1 and 200
+         or length(btrim(coalesce(d.provincia,''))) not between 1 and 200
+         or length(btrim(coalesce(d.distrito,''))) not between 1 and 200
+         or public.v16_gestion_sla_geo_clave(d.distrito)=''
+    ) then
+      raise exception 'Cada distrito de la consulta local debe tener departamento, provincia y distrito de zonificación.' using errcode='22023';
+    end if;
+    return jsonb_build_object(
+      'rangos',coalesce((select jsonb_agg(jsonb_build_object('orden',r.orden,'desde_horas',r.desde_horas,'hasta_horas',r.hasta_horas,'tarifa_porcentaje',r.tarifa_porcentaje) order by r.orden) from v16_private.gestion_sla_rangos r),'[]'::jsonb),
+      'precios',coalesce((
+        select jsonb_agg(jsonb_build_object('departamento',d.departamento,'provincia',d.provincia,'distrito',d.distrito,'precio',t.precio) order by d.departamento,d.provincia,d.distrito)
+        from (
+          select distinct btrim(x.departamento) as departamento,btrim(x.provincia) as provincia,btrim(x.distrito) as distrito,
+            public.v16_gestion_sla_geo_clave(x.departamento) as departamento_clave,
+            public.v16_gestion_sla_geo_clave(x.provincia) as provincia_clave,
+            public.v16_gestion_sla_geo_clave(x.distrito) as distrito_clave
+          from jsonb_to_recordset(p_payload->'distritos') as x(departamento text,provincia text,distrito text)
+        ) d
+        left join v16_private.gestion_sla_precios_distrito t
+          on t.departamento_clave=d.departamento_clave
+         and t.provincia_clave=d.provincia_clave
+         and t.distrito_clave=d.distrito_clave
+      ),'[]'::jsonb),
+      'dataset',null
+    );
+  elsif v_accion='config' then
     return jsonb_build_object(
       'umbral_horas',(select c.umbral_horas from v16_private.gestion_sla_configuracion c where c.id=1),
       'tarifa_porcentaje',(select c.tarifa_porcentaje from v16_private.gestion_sla_configuracion c where c.id=1),
       'rangos',coalesce((select jsonb_agg(jsonb_build_object('orden',r.orden,'desde_horas',r.desde_horas,'hasta_horas',r.hasta_horas,'tarifa_porcentaje',r.tarifa_porcentaje) order by r.orden) from v16_private.gestion_sla_rangos r),'[]'::jsonb),
-      'precios',coalesce((
+      'precios',case when v_rol='PDV' then '[]'::jsonb else coalesce((
         select jsonb_agg(jsonb_build_object(
           'departamento',d.departamento,'provincia',d.provincia,'distrito',d.distrito,'precio',t.precio
         ) order by d.departamento,d.provincia,d.distrito)
@@ -339,10 +380,10 @@ begin
           on t.departamento_clave=d.departamento_clave
          and t.provincia_clave=d.provincia_clave
          and t.distrito_clave=d.distrito_clave
-      ),'[]'::jsonb),
+      ),'[]'::jsonb) end,
       'actualizado_en',(select c.actualizado_en from v16_private.gestion_sla_configuracion c where c.id=1),
-      'dataset',(select jsonb_build_object('id',c.id,'archivo',c.archivo,'filas',c.filas_esperadas,'creado_en',c.creado_en)
-                 from v16_private.gestion_sla_cargas c where c.activa)
+      'dataset',case when v_rol='PDV' then null else (select jsonb_build_object('id',c.id,'archivo',c.archivo,'filas',c.filas_esperadas,'creado_en',c.creado_en)
+                 from v16_private.gestion_sla_cargas c where c.activa) end
     );
   elsif v_accion='guardar_parametros' then
     if v_rol<>'ADMINISTRADOR' then

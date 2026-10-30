@@ -1,0 +1,16 @@
+CORRECCIÓN: ZONIFICACIÓN GUARDADA POR GUÍA
+
+Problema
+- Después de importar Zonificación, Penalidades mostraba tipo de zona, zona y SLA asignado, pero el guardado podía confirmarse usando una función SQL anterior que no escribía esos campos.
+- Al reabrir la liquidación, el detalle volvía sin la zonificación.
+
+Corrección
+- La zonificación se persiste y confirma con la función `penalidades_actualizar_zonificacion`, por guía.
+- La respuesta del RPC se compara con los valores enviados. Si falta la función, un ID no coincide o los valores no se guardaron, se informa el error y la sincronización no se marca como completa.
+- `penalidades_obtener_items` devuelve las columnas almacenadas en `public.penalidades_guias` al reabrir el detalle.
+- Se agrega `supabase_penalidades_persistir_zonificacion.sql`, migración incremental que no borra ni reemplaza registros.
+
+Pasos de publicación
+1. Ejecutar una vez `supabase_penalidades_persistir_zonificacion.sql` en el proyecto Supabase usado por Penalidades.
+2. Publicar `index.html` y `penalidades.html` del ZIP.
+3. Cargar el Excel de zonificación, guardar y reabrir la liquidación para confirmar los datos.

@@ -5,7 +5,7 @@ Este paquete integra Penalidades dentro del portal principal. El index.html cons
 PUBLICAR EN GITHUB PAGES
 1. Descomprime el ZIP.
 2. En el repositorio que publicarás con GitHub Pages, carga el CONTENIDO de esta carpeta en la raíz (donde quedará index.html). No subas la carpeta contenedora como un nivel adicional.
-3. Conserva juntos index.html, config.js, bridge.js, gestion-v2.html, xlsx-resumen.js, pdv.html, pdv-v2.html, penalidades.html, process-worker.js, pdf-pdv.js y brecha-costos.js.
+3. Conserva juntos index.html, config.js, bridge.js, gestion-v2.html, xlsx-resumen.js, pdv.html, pdv-v2.html, penalidades.html, process-worker.js, pdf-pdv.js, brecha-costos.js, sla-paquetes.js y sla-paquetes.css.
 4. Espera a que GitHub Pages termine de publicar y abre la raíz del portal, por ejemplo https://TU-USUARIO.github.io/TU-REPOSITORIO/. Inicia sesión ahí y entra a la pestaña Penalidades. No abras un index.html independiente de Penalidades.
 
 ACTUALIZACION DE PENALIDADES (09-10-2026)
@@ -224,3 +224,16 @@ CAMBIO 2026-10-28 — IMPORTACIÓN ACUMULATIVA DE PENALIDADES
 - El guardado no borra liquidaciones ni guías solo porque falten en el estado local; evita que una carga nueva provoque eliminaciones accidentales.
 - No requiere SQL. Si las guías ya fueron borradas físicamente en Supabase, reimporta el Excel original para reconstruirlas; las decisiones previas solo se recuperan desde filas que sigan en Supabase o desde un respaldo.
 - Publica el contenido completo del ZIP actualizado.
+
+
+ACTUALIZACION SLA PARA PDV (29-10-2026)
+- En Gestión de Guías V2, el detalle toma el distrito del monitoreo y completa provincia/departamento desde zonificación. La tabla de precios solo presenta los distritos incluidos en el detalle que tienen coincidencia única.
+- En el portal PDV aparece la pestaña SLA si el usuario tiene permiso de visualización. Al cargar el Excel, se filtran las filas del PDV de la sesión y se procesan solo en el navegador. No se guardan ni comparten. Al recargar se debe volver a cargar el archivo.
+- En Supabase ejecuta una sola vez `supabase_gestion_v2_sla_pdv_local.sql` para habilitar la lectura PDV de rangos, tarifas solicitadas y zonificación. No modifica tablas ni cargas existentes.
+- Reemplaza el contenido completo del repositorio con el ZIP actualizado. El módulo conserva el control para mostrar u ocultar las columnas del detalle.
+
+CORRECCION DE PERSISTENCIA DE ZONIFICACION EN PENALIDADES (30-10-2026)
+- El guardado de zonas ahora usa una función propia que devuelve las columnas guardadas por guía: tipo de zona, zona, SLA asignado, coincidencia y asignación manual. El módulo compara la respuesta con los datos enviados y deja el guardado pendiente si Supabase no confirma los valores.
+- Al volver a abrir una liquidación, el RPC de detalle incluye tipo de zona, zona y SLA desde `public.penalidades_guias`; no requiere conservar el Excel de zonificación en el navegador.
+- En el mismo proyecto Supabase de Penalidades, ejecuta una sola vez `supabase_penalidades_persistir_zonificacion.sql`. Es incremental, no modifica ni elimina guías, liquidaciones o decisiones y no toca `storage.objects`.
+- Luego reemplaza `index.html` y `penalidades.html` por los del ZIP actualizado, publica y recarga el módulo. El acceso desde el portal usa `penalidades.html?v=20261030-zonificacion-persistente-1`. Vuelve a importar el Excel de zonificación, pulsa “Guardar cambios” y verifica que los valores sigan visibles al cerrar y abrir la liquidación.

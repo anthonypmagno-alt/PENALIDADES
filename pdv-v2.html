@@ -2,6 +2,7 @@
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
 <script src="./bridge.js?v=gestion-v2-fixes-20261024-total-prev-crit-1"></script>
+<link rel="stylesheet" href="./sla-paquetes.css?v=20261029-pdv-local-1">
   <base target="_top">
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Gestión de guías V2</title>
@@ -193,7 +194,7 @@
   <div id="app" class="hidden">
     <header><div class="header-inner"><div><div class="title">📋 Revisión de Guías PDV · V16</div><div class="subtitle">Resumen de casos y registro de observaciones</div></div><div class="actions"><span id="userBadge" class="badge"></span><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div></div></header>
     <main>
-      <div class="view-tabs"><button id="tabGestion" class="view-tab active" onclick="mostrarVista('gestion')">Gestión de guías V2</button><button id="tabExcel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><a data-modulo-v2="true" href="./pdv.html" class="view-tab">Volver a Gestión actual</a></div>
+      <div class="view-tabs"><button id="tabGestion" class="view-tab active" onclick="mostrarVista('gestion')">Gestión de guías V2</button><button id="tabExcel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabSla" class="view-tab" data-module-key="sla_paquetes" onclick="mostrarVista('sla')">⏱️ SLA de paquetes</button><a data-modulo-v2="true" href="./pdv.html" class="view-tab">Volver a Gestión actual</a></div>
       <div id="viewGestion" class="app-view">
       <div class="cards"><div class="card"><b id="total">0</b><span>Total</span></div><div class="card"><b id="pendientes">0</b><span>Pendientes</span></div><div class="card"><b id="proceso">0</b><span>En proceso</span></div><div class="card"><b id="finalizados">0</b><span>Finalizados</span></div></div>
 
@@ -208,6 +209,51 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
         <div class="bulk-toolbar"><div class="bulk-info"><b id="bulkCount">0 guías seleccionadas</b><br><span>Seleccione guías para copiar o imprimir.</span></div><div class="bulk-actions"><button class="secondary" onclick="seleccionarVisibles()">Seleccionar visibles</button><button class="secondary" onclick="copiarGuiasSeleccionadas('gestion')">Copiar guías seleccionadas</button><button class="secondary" onclick="limpiarSeleccion()">Limpiar selección</button><button id="btnPrintDetalleGestion" class="secondary" disabled="" onclick="verDetalleSeleccionadoGestion()">Imprimir detalle seleccionado</button><button id="btnPrintGestion" class="secondary" disabled="" onclick="verGuiasSeleccionadasGestion()">Imprimir guías seleccionadas</button></div></div>
         <div class="table-wrap"><table class="pdv-detail-table"><colgroup><col class="pdv-col-select"><col class="pdv-col-guide"><col class="pdv-col-pdv"><col class="pdv-col-destination"><col class="pdv-col-state"><col class="pdv-col-type"><col class="pdv-col-update"><col class="pdv-col-manager"></colgroup><thead><tr><th class="check-cell"><input id="checkAllVisible" class="check-all" type="checkbox" title="Seleccionar todas las guías visibles" onclick="toggleSeleccionVisibles(this.checked)"></th><th>GUÍA</th><th>PDV</th><th>DESTINO<br><small>Departamento · Provincia · Distrito</small></th><th>ESTADO</th><th>TIPO</th><th>ÚLTIMA ACTUALIZACIÓN Y ESCANEO MÁS RECIENTE</th><th>COMENTARIO DEL ENCARGADO</th></tr></thead><tbody id="guiasBody"></tbody></table></div>
       </section>
+      </div>
+
+<div id="viewSla" class="app-view hidden">
+        <section class="panel">
+          <div class="panel-title">SLA de paquetes · llegada al PDV hasta la entrega</div>
+          <div class="panel-body">
+            <p class="source-note">El tiempo transcurrido inicia en la llegada al PDV. Si falta ese evento, usa el hito anterior disponible: salida del CEDIS, llegada al CEDIS, salida del HUB o generación del dato. Si no existe hora de firma, calcula hasta ahora. Para elegir rango y tarifa usa las horas transcurridas menos SLA traslado × 24; el SLA reparto se muestra como referencia.</p>
+            <div id="slaEstado" class="source-note" role="status" aria-live="polite">
+            Cargando información del SLA…</div>
+            <div id="slaPdvTools" class="sla-pdv-tools hidden">
+              <section class="sla-admin-card">
+                <h3>Archivo de monitoreo del PDV</h3>
+                <p class="sla-range-help">Selecciona el Excel de monitoreo. Se usará el distrito del archivo y la provincia/departamento de zonificación. Solo se mostrarán guías del PDV de esta sesión. El archivo se procesa en este navegador, no se guarda ni se comparte; al recargar tendrás que cargarlo otra vez.</p>
+                <div class="sla-upload-row"><input id="slaPdvArchivoInput" type="file" accept=".xlsx,.xls"><button type="button" class="small" id="slaPdvImportarArchivo" onclick="SlaPaquetesV2.importarArchivo()">Procesar archivo</button></div>
+                <progress id="slaPdvCargaProgreso" max="100" value="0" hidden></progress>
+              </section>
+            </div>
+            
+          </div>
+        </section>
+        <div id="slaResumenCards" class="sla-summary-cards hidden">
+          <div class="excel-card"><b id="slaTotalPaquetes">0</b><span>Paquetes visibles</span></div>
+          <div class="excel-card success-card"><b id="slaEnPlazo">0</b><span>Tarifa 0%</span></div>
+          <div class="excel-card danger-card"><b id="slaTarifaAplicada">0</b><span>Tarifa mayor a 0%</span></div>
+          <div class="excel-card warning-card"><b id="slaSinFirma">0</b><span>Sin firma · en curso</span></div>
+          <div class="excel-card warning-card"><b id="slaSinPrecio">0</b><span>Precio de distrito pendiente</span></div>
+          <div class="excel-card warning-card"><b id="slaSinZona">0</b><span>Sin zonificación / SLA traslado</span></div>
+        </div>
+        <section class="panel">
+          <div class="panel-title sla-panel-title"><span>Resumen por Departamento › Provincia › Distrito</span><div class="sla-panel-actions"><button type="button" class="secondary" onclick="SlaPaquetesV2.expandirTodo()">Expandir grupos</button><button type="button" class="secondary" onclick="SlaPaquetesV2.contraerTodo()">Contraer grupos</button><button id="slaToggleClasificacion" type="button" class="secondary" onclick="SlaPaquetesV2.alternarClasificacion()">Ocultar columnas de clasificación</button></div></div>
+          <div class="panel-body">
+            <div class="sla-filters"><input id="slaBuscar" type="search" placeholder="Buscar guía, PDV, departamento, provincia o distrito" oninput="SlaPaquetesV2.aplicarFiltros()"><select id="slaFiltroClasificacion" onchange="SlaPaquetesV2.aplicarFiltros()"><option value="">Todas las clasificaciones</option></select><button type="button" class="secondary" onclick="SlaPaquetesV2.limpiarFiltros()">Limpiar filtros</button><span id="slaFiltroEstado" role="status"></span></div>
+            <p class="sla-range-help">Los botones de conteo filtran el detalle. La ubicación se expande en el orden Departamento › Provincia › Distrito.</p>
+            <div class="table-wrap"><table class="sla-summary-table"><thead><tr><th rowspan="2">DEPARTAMENTO / PROVINCIA / DISTRITO</th><th rowspan="2">PAQUETES</th><th id="slaClassificationGroup" colspan="4" class="sla-class-group sla-classification-col">CLASIFICACIÓN SLA</th><th rowspan="2">SIN FIRMA</th></tr><tr id="slaClassificationHeaders"><th class="sla-classification-col">Rangos configurados</th><th class="sla-classification-col">Sin inicio / revisar</th><th class="sla-classification-col">Sin zonificación</th><th class="sla-classification-col">SLA traslado pendiente</th></tr></thead><tbody id="slaResumenBody"><tr><td colspan="9">Carga un archivo para consultar el SLA de los paquetes.</td></tr></tbody></table></div>
+          </div>
+        </section>
+        <section id="slaDetallePanel" class="panel hidden">
+          <div class="panel-title sla-panel-title"><span id="slaDetalleTitulo">Detalle de paquetes</span><button type="button" class="secondary" onclick="SlaPaquetesV2.limpiarSeleccionDetalle()">Mostrar todo</button></div>
+          <div class="panel-body">
+            <div class="sla-detail-toolbar"><details id="slaColumnPicker" class="sla-column-picker"><summary>Mostrar u ocultar columnas</summary><div class="sla-column-picker-menu"><div class="sla-column-picker-actions"><button type="button" class="secondary" onclick="SlaPaquetesV2.mostrarTodasColumnas()">Mostrar todas</button></div><div id="slaColumnChecks" class="sla-column-checks"></div></div></details><span id="slaColumnStatus" role="status"></span></div>
+            <div id="slaDetalleFiltro" class="source-note"></div>
+            <div class="table-wrap sla-detail-wrap"><table class="sla-detail-table"><colgroup><col data-sla-col="guia" class="sla-col-guide"><col data-sla-col="pdv" class="sla-col-pdv"><col data-sla-col="destino" class="sla-col-destination"><col data-sla-col="zona" class="sla-col-zone"><col data-sla-col="traslado" class="sla-col-days"><col data-sla-col="reparto" class="sla-col-days"><col data-sla-col="inicio" class="sla-col-time"><col data-sla-col="fin" class="sla-col-time"><col data-sla-col="horas" class="sla-col-hours"><col data-sla-col="netas" class="sla-col-hours"><col data-sla-col="precio" class="sla-col-price"><col data-sla-col="tarifa" class="sla-col-tariff"><col data-sla-col="monto" class="sla-col-amount"><col data-sla-col="clasificacion" class="sla-col-class"><col data-sla-col="hitos" class="sla-col-events"></colgroup><thead><tr><th data-sla-col="guia">GUÍA</th><th data-sla-col="pdv">PDV</th><th data-sla-col="destino">DESTINO<br>DEPARTAMENTO › PROVINCIA › DISTRITO</th><th data-sla-col="zona">TIPO DE ZONA</th><th data-sla-col="traslado">SLA<br>TRASLADO</th><th data-sla-col="reparto">SLA<br>REPARTO</th><th data-sla-col="inicio">INICIO<br>HITO USADO</th><th data-sla-col="fin">FIN<br>FIRMA / AHORA</th><th data-sla-col="horas">HORAS<br>TOTALES</th><th data-sla-col="netas">HORAS<br>DESDE SLA TRASLADO</th><th data-sla-col="precio">PRECIO/GUÍA<br>(S/)</th><th data-sla-col="tarifa">TARIFA</th><th data-sla-col="monto">MONTO SLA<br>(S/)</th><th data-sla-col="clasificacion">CLASIFICACIÓN</th><th data-sla-col="hitos">HITOS</th></tr></thead><tbody id="slaDetalleBody"></tbody></table></div>
+            <div class="excel-pagination"><button id="slaDetallePrev" class="secondary" onclick="SlaPaquetesV2.cambiarPagina(-1)">Anterior</button><span id="slaDetallePaginaInfo" class="excel-page-info"></span><button id="slaDetalleNext" class="secondary" onclick="SlaPaquetesV2.cambiarPagina(1)">Siguiente</button></div>
+          </div>
+        </section>
       </div>
 
       <div id="viewExcel" class="app-view hidden">
@@ -280,11 +326,11 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     google.script.run.withSuccessHandler(r=>{b.disabled=false;b.textContent="INGRESAR";if(!r||!r.ok){mostrarErrorLogin(r&&r.mensaje?r.mensaje:"No se pudo iniciar sesión.");return}token=r.token;sessionStorage.setItem("tokenGuiasSupabaseReplica",token);if(r.rol!=="PDV"){window.top.location.href=APP_URL;return}sesion=r;abrirApp()}).withFailureHandler(e=>{b.disabled=false;b.textContent="INGRESAR";mostrarErrorLogin(errorTexto(e))}).iniciarSesion(u,c);
   }
 
-  function abrirApp(){document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("userBadge").textContent="PDV: "+sesion.usuario;mostrarVista("gestion");cargarDatos();cargarConsultaCompartida()}
+  function abrirApp(){document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("userBadge").textContent="PDV: "+sesion.usuario;window.SlaPaquetesV2?.establecerRol(sesion.rol,sesion.usuario);window.V16ModulePermissions?.apply();mostrarVista("gestion");cargarDatos();cargarConsultaCompartida()}
   function mostrarLogin(){document.getElementById("login").classList.remove("hidden");document.getElementById("app").classList.add("hidden")}
   function mostrarErrorLogin(t){const e=document.getElementById("loginError");e.textContent=t;e.style.display="block"}
 
-  function mostrarVista(vista){const esExcel=vista==="excel";document.getElementById("viewGestion").classList.toggle("hidden",esExcel);document.getElementById("viewExcel").classList.toggle("hidden",!esExcel);document.getElementById("tabGestion").classList.toggle("active",!esExcel);document.getElementById("tabExcel").classList.toggle("active",esExcel)}
+  function mostrarVista(vista){if(vista==="sla"&&window.V16ModulePermissions&&!window.V16ModulePermissions.canView("sla_paquetes"))vista="gestion";const esExcel=vista==="excel",esSla=vista==="sla";document.getElementById("viewGestion").classList.toggle("hidden",esExcel||esSla);document.getElementById("viewExcel").classList.toggle("hidden",!esExcel);document.getElementById("viewSla").classList.toggle("hidden",!esSla);document.getElementById("tabGestion").classList.toggle("active",!esExcel&&!esSla);document.getElementById("tabExcel").classList.toggle("active",esExcel);document.getElementById("tabSla").classList.toggle("active",esSla);if(esSla)window.SlaPaquetesV2?.alAbrir()}
 
   async function cargarArchivoExcel(evento){
     const archivo=evento&&evento.target&&evento.target.files?evento.target.files[0]:null;
@@ -1031,4 +1077,4 @@ function actualizarClasificacionV2(){
  else{resumen=r.resumen;renderResumen();filtrar();}
 }
 setInterval(actualizarClasificacionV2,60000);
-</script><script src="./brecha-costos.js?v=2"></script></body></html>
+</script><script src="./brecha-costos.js?v=2"></script><script src="./sla-paquetes.js?v=20261029-pdv-local-1"></script></body></html>

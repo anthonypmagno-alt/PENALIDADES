@@ -1,0 +1,9 @@
+GESTIÓN DE GUÍAS V2 · SLA PARA PDV Y UBICACIÓN DESDE ZONIFICACIÓN
+
+- El detalle usa únicamente el distrito del archivo de monitoreo. Provincia y departamento se asignan desde zonificación por coincidencia normalizada del distrito.
+- Los distritos con varios resultados en zonificación quedan marcados como ambiguos y no se asigna una provincia o departamento arbitrarios.
+- La tabla de precios del administrador muestra solo ubicaciones con distrito presente en el detalle cargado y match único en zonificación.
+- La pestaña SLA aparece también en el portal PDV cuando el usuario tiene permiso de visualización. PDV carga el Excel en su navegador y ve únicamente las guías correspondientes a su sesión.
+- El usuario PDV no puede leer la carga compartida de monitoreo, publicar archivos, cambiar tarifas ni precios. Su archivo local no se envía ni se guarda en Supabase y se descarta al recargar la página.
+- Para que PDV pueda leer los rangos, las tarifas de sus distritos cargados y la zonificación compartida, ejecutar una vez `supabase_gestion_v2_sla_pdv_local.sql` en el mismo proyecto Supabase. El script reemplaza solo dos funciones de lectura y no modifica tablas ni datos.
+- Se conserva el selector de columnas del detalle, incluyendo su preferencia por navegador.

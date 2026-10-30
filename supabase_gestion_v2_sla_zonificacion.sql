@@ -72,11 +72,14 @@ begin
   end if;
   v_perfil := to_jsonb(v16_private.profile());
   v_rol := upper(coalesce(v_perfil->>'rol',''));
-  if v_rol not in ('ADMINISTRADOR','ENCARGADO') then
-    raise exception 'El módulo SLA está disponible para administradores y encargados.' using errcode='42501';
+  if v_rol not in ('ADMINISTRADOR','ENCARGADO','PDV') then
+    raise exception 'El módulo SLA está disponible para administradores, encargados y PDV autorizados.' using errcode='42501';
   end if;
   if not public.v16_gestion_modulo_permitido('sla_paquetes','ver',v_perfil) then
     raise exception 'Tu usuario no tiene permiso para ver el módulo SLA.' using errcode='42501';
+  end if;
+  if v_rol='PDV' and v_accion<>'listar' then
+    raise exception 'El usuario PDV solo puede consultar la zonificación.' using errcode='42501';
   end if;
   if v_accion in ('iniciar_carga','guardar_bloque','publicar_carga','cancelar_carga')
      and (v_rol<>'ADMINISTRADOR' or not public.v16_gestion_modulo_permitido('sla_paquetes','ejecutar',v_perfil)) then

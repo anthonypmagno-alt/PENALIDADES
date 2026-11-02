@@ -1400,7 +1400,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
         if(!pdvs.has(pdvClave))pdvs.set(pdvClave,{pdv,categorias:new Map()});
         const grupoPdv=pdvs.get(pdvClave);if(!grupoPdv.categorias.has(categoria))grupoPdv.categorias.set(categoria,{...CLASIFICACIONES_CRITICAS_COMENTARIO.find(z=>z.categoria===categoria),guias:new Set(),vistos:new Set(),grupos:new Map()});
         const grupoCategoria=grupoPdv.categorias.get(categoria),idGuia=(guia||"FILA:"+Number(x.fila))+"|"+pdvClave;if(grupoCategoria.vistos.has(idGuia))return;grupoCategoria.vistos.add(idGuia);grupoCategoria.guias.add(idGuia);
-        const subcampo1=String(x.subcampo1||"").trim()||"Sin Subtipo 1",subcampo2=String(x.subcampo2||"").trim()||"Sin Subtipo 2",borrador=valorBorradorRevision(x.fila,"comentarioGestionEncargado"),comentario=String(borrador===undefined?x.comentarioGestionEncargado||"":borrador).trim()||"Sin comentario del encargado",clave=JSON.stringify([claveComentarioDetalle(subcampo1),claveComentarioDetalle(subcampo2),claveComentarioDetalle(comentario)]);
+        const subcampo1=String(x.subcampo1||"").trim()||"Sin Subtipo 1",subcampo2=String(x.subcampo2||"").trim()||"Sin Subtipo 2",borrador=valorBorradorRevision(x.fila,"comentario"),comentario=String(borrador===undefined?x.comentario||"":borrador).trim()||"Sin comentario del administrador",clave=JSON.stringify([claveComentarioDetalle(subcampo1),claveComentarioDetalle(subcampo2),claveComentarioDetalle(comentario)]);
         if(!grupoCategoria.grupos.has(clave))grupoCategoria.grupos.set(clave,{subcampo1,subcampo2,comentario,guias:new Set()});grupoCategoria.grupos.get(clave).guias.add(idGuia);
       });
     });
@@ -1410,14 +1410,14 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     }).filter(Boolean)]));
   }
   function construirResumenCriticoComentarioPdv(pdv){return construirResumenCriticoComentarioPorPdv().get(clavePdvCriticoComentario(pdv))||[];}
-  function textoResumenCriticoComentarioExcel(categorias){return (categorias||[]).map(cat=>[cat.etiqueta+": "+num(cat.cantidad),...cat.grupos.map(g=>"Subtipo 1: "+g.subcampo1+" | Subtipo 2: "+g.subcampo2+" | Comentario encargado: "+g.comentario+" | Conteo: "+num(g.cantidad))].join("\n")).join("\n\n");}
+  function textoResumenCriticoComentarioExcel(categorias){return (categorias||[]).map(cat=>[cat.etiqueta+": "+num(cat.cantidad),...cat.grupos.map(g=>"Subtipo 1: "+g.subcampo1+" | Subtipo 2: "+g.subcampo2+" | Comentario administrador: "+g.comentario+" | Conteo: "+num(g.cantidad))].join("\n")).join("\n\n");}
   function renderResumenCriticoComentarioModal(pdv){
     const body=document.getElementById("commentCriticalSummaryBody");if(!body)return;body.replaceChildren();const categorias=construirResumenCriticoComentarioPdv(pdv);
     if(!categorias.length){const vacio=document.createElement("div");vacio.className="comment-critical-modal-empty";vacio.textContent="No hay paquetes críticos para este PDV con los filtros actuales.";body.appendChild(vacio);return;}
     categorias.forEach(cat=>{
       const section=document.createElement("section"),head=document.createElement("div"),label=document.createElement("strong"),total=document.createElement("span"),wrap=document.createElement("div"),table=document.createElement("table"),thead=document.createElement("thead"),trHead=document.createElement("tr"),tbody=document.createElement("tbody");
       section.className="comment-critical-modal-category comment-critical-modal-category--"+cat.clase;head.className="comment-critical-modal-category-head";label.textContent=cat.etiqueta+":";total.className="comment-critical-modal-count";total.textContent=num(cat.cantidad);head.append(label,total);
-      table.className="comment-critical-modal-table";["Subtipo 1","Subtipo 2","Comentario encargado","Conteo"].forEach(t=>{const th=document.createElement("th");th.textContent=t;trHead.appendChild(th);});thead.appendChild(trHead);table.append(thead,tbody);
+      table.className="comment-critical-modal-table";["Subtipo 1","Subtipo 2","Comentario administrador","Conteo"].forEach(t=>{const th=document.createElement("th");th.textContent=t;trHead.appendChild(th);});thead.appendChild(trHead);table.append(thead,tbody);
       cat.grupos.forEach(g=>{const tr=document.createElement("tr");[g.subcampo1,g.subcampo2,g.comentario,num(g.cantidad)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});tbody.appendChild(tr);});
       wrap.className="comment-critical-modal-table-wrap";wrap.appendChild(table);section.append(head,wrap);body.appendChild(section);
     });

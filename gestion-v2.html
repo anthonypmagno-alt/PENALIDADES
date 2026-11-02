@@ -357,11 +357,12 @@
 .comment-critical-modal-table td:last-child,.comment-critical-modal-table th:last-child{text-align:center;font-weight:800}
 .comment-critical-modal-empty{padding:10px;border:1px dashed #cbd5e1;border-radius:8px;background:#fff;color:#64748b;font-size:12px}
 @media(max-width:700px){.modal-comment{padding:16px}.comment-critical-modal-body{max-height:34vh}.comment-critical-modal-table{min-width:620px}}
-</style><style id="v2-summary-full-width">
-#summaryTableWrapV2{display:block;width:100%;max-width:none;min-width:0;margin:0;overflow-x:auto;overflow-y:visible;scroll-padding-inline-start:0}
-#summaryTableWrapV2>#tablaResumenV2{display:table;width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;table-layout:fixed!important}
+</style><style id="v2-summary-compact-width">
+/* Resumen centrado y acotado para evitar que ocupe todo el panel. */
+#summaryTableWrapV2{display:block;width:100%;max-width:1100px;min-width:0;margin:0 auto;overflow-x:auto;overflow-y:visible;scroll-padding-inline-start:0}
+#summaryTableWrapV2>#tablaResumenV2{display:table;width:100%!important;max-width:1100px!important;min-width:0!important;margin:0 auto!important;table-layout:fixed!important}
 #tablaResumenV2 th,#tablaResumenV2 td{box-sizing:border-box;overflow-wrap:anywhere}
-@media(max-width:900px){#summaryTableWrapV2>#tablaResumenV2{width:1120px!important;min-width:1120px!important}}
+@media(max-width:900px){#summaryTableWrapV2>#tablaResumenV2{width:1120px!important;max-width:none!important;min-width:1120px!important}}
 </style>
 </head>
 <body>

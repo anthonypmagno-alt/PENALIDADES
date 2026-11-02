@@ -1,7 +1,7 @@
 ACTUALIZACIÓN PARA PDV: RESUMEN Y CONSULTA COMPARTIDA (02-11-2026)
 
 - El inicio de sesión PDV desde el portal y desde el enlace antiguo ahora dirige a `pdv-v2.html` con identificador de caché actualizado.
-- Se restauró el ancho anterior del resumen V2: centrado y limitado a 1100 px; en pantallas pequeñas conserva desplazamiento horizontal.
+- Se restauró el ancho anterior del resumen V2 en PDV y se limitó también la tabla de administrador/encargados a 1100 px, centrada; en pantallas pequeñas conserva desplazamiento horizontal.
 - En el portal PDV se muestra un acceso directo a “Clasificación de paquetes críticos”. Permite elegir el PDV autorizado y abre el cuadro agrupado por categoría, Subtipo 1, Subtipo 2 y comentario administrador.
 - El comentario administrador solo aparece al PDV cuando se marcó “Notificar / mostrar al PDV”. Los comentarios no compartidos aparecen como “Sin comentario compartido”.
 - Consulta desde Excel intenta cargar la consulta compartida al iniciar y vuelve a intentarlo al abrir la pestaña si aún no hay información. El botón “Cargar / actualizar consulta compartida” permite reintentar manualmente.
@@ -9,4 +9,4 @@ ACTUALIZACIÓN PARA PDV: RESUMEN Y CONSULTA COMPARTIDA (02-11-2026)
 - Si un usuario PDV no ve la pestaña o recibe un mensaje de permiso, un administrador debe habilitar “Consulta desde Excel → Ver” en la matriz de módulos de ese usuario. No requiere ejecutar SQL.
 - La tabla resumen del PDV conserva los mismos colores, divisores, resaltado crítico y subtotales que la vista de administrador/encargados.
 - Se restauraron los controles de selección de guías de Consulta desde Excel; la carga compartida ya no se detiene por `limpiarSeleccionExcel is not defined`.
-- Se actualizó la versión de caché de `bridge.js` y el enlace de acceso a `pdv-v2.html`. Publica el contenido completo del ZIP en la raíz del repositorio de GitHub Pages y vuelve a iniciar sesión.
+- Se actualizó la versión de caché de `bridge.js` y los enlaces de acceso a las vistas actualizadas de `pdv-v2.html` y `gestion-v2.html`. Publica el contenido completo del ZIP en la raíz del repositorio de GitHub Pages y vuelve a iniciar sesión.

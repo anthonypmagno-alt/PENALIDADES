@@ -315,7 +315,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
   </div>
 
 <script>
-  const APP_URL = new URL('./gestion-v2.html',location.href).href;
+  const APP_URL = new URL('./gestion-v2.html?v=20261102-resumen-compacto-4',location.href).href;
   let token=sessionStorage.getItem("tokenGuiasSupabaseReplica")||"",sesion=null,guias=[],filtradas=[],resumen={filas:[],total:{}},filtroResumenActivo=null;
   let excelRegistros=[],excelFiltrados=[],excelPagina=1,excelTrackNombre="",excelEnvioNombre="";
   const EXCEL_PAGE_SIZE=100,EXCEL_MAX_BYTES=30*1024*1024;

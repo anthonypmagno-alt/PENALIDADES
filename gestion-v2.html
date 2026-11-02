@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261102-pdv-compartido-3"></script>
+<script src="./bridge.js?v=20261102-pdv-compartido-4"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -649,7 +649,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
       btn.disabled=false;btn.textContent="INGRESAR";
       if(!r || !r.ok){mostrarErrorLogin(r&&r.mensaje?r.mensaje:"No se pudo iniciar sesión.");return;}
       token=r.token;sessionStorage.setItem("tokenGuiasSupabaseReplica",token);
-      if(r.rol === "PDV"){window.top.location.href=new URL('./pdv-v2.html',location.href).href;return;}
+      if(r.rol === "PDV"){window.top.location.href=new URL('./pdv-v2.html?v=20261102-pdv-resumen-compartido-4',location.href).href;return;}
       sesion=r;abrirApp();
     }).withFailureHandler(e=>{btn.disabled=false;btn.textContent="INGRESAR";mostrarErrorLogin(errorTexto(e));}).iniciarSesion(usuario,clave);
   }

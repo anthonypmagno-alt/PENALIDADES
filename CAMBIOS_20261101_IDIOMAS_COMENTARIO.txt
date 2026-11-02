@@ -1,0 +1,7 @@
+Selector de idioma en el cuadro de comentario del PDV
+
+- Añade un selector de idioma con Español, chino simplificado e inglés.
+- Traduce dentro del cuadro los encabezados, etiquetas, categorías críticas, botones, mensajes vacíos y estados de guardado.
+- La preferencia se conserva en el navegador.
+- Los comentarios, nombres de subtipo y demás datos operativos se muestran sin traducir ni modificar.
+- Mantiene el resumen agrupado por comentario administrador.

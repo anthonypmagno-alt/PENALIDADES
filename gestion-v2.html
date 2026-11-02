@@ -340,6 +340,7 @@
 </style>
 <style>
 .modal-comment{width:min(980px,calc(100vw - 30px));max-height:calc(100vh - 30px);overflow:auto;text-align:left}
+.comment-modal-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.comment-modal-heading h3{margin:0}.page-language-control{display:inline-flex;align-items:center;gap:7px;margin:0!important;color:#475569;font-size:12px;font-weight:700}.page-language-control select{min-width:130px;padding:7px 9px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#1e293b;font:inherit}.page-language-control--login{justify-content:center;margin:0 auto 18px!important}.page-language-control--header{color:#475569}.page-language-control--header select{min-width:120px}
 .modal-comment>label{margin:12px 0 6px}
 .comment-critical-modal-summary{margin:10px 0 14px;padding:10px;border:1px solid #dbe2ea;border-radius:9px;background:#f8fafc}
 .comment-critical-modal-title{margin-bottom:8px;color:#153e67;font-size:13px;font-weight:900}
@@ -361,7 +362,7 @@
 <body>
   <section id="login" class="login">
     <div class="login-card">
-      <div class="login-icon">🔐</div><h1>Portal de Gestión</h1>
+      <div class="login-icon">🔐</div><h1>Portal de Gestión</h1><label class="page-language-control page-language-control--login" for="pageLanguageLogin"><span>Idioma</span><select id="pageLanguageLogin" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label>
       <p>Acceso para encargados y administradores</p>
       <div class="field"><label>USUARIO</label><input id="usuario" autocomplete="username" onkeydown="loginEnter(event)"></div>
       <div class="field"><label>CONTRASEÑA</label><input id="contrasena" type="password" autocomplete="current-password" onkeydown="loginEnter(event)"></div>
@@ -373,7 +374,7 @@
   <div id="app" class="hidden">
     <header><div class="header-inner">
       <div><div class="title">📋 Revisión de Guías · V16</div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
-      <div class="actions"><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
+      <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
     <main>
@@ -571,12 +572,15 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
   <div id="loading" class="loading"><div id="loadingText">Procesando...</div></div>
   <div id="toast" class="toast"></div>
   <div id="qrModal" class="modal" onclick="if(event.target===this)cerrarQR()"><div class="modal-card"><h3>CÓDIGO QR</h3><div id="qr"></div><div id="qrNumero" class="guide" style="margin-top:12px"></div><p id="qrDistrito" class="qr-district-label" hidden=""></p><button class="secondary" onclick="cerrarQR()">Cerrar</button></div></div>
-  <div id="commentModal" class="modal" onclick="if(event.target===this)cerrarComentario()"><div class="modal-card modal-comment"><h3 id="commentTitle">COMENTARIO DEL CASO</h3><section id="commentCriticalSummary" class="comment-critical-modal-summary" aria-live="polite"><div class="comment-critical-modal-title">Clasificación de paquetes críticos</div><div id="commentCriticalSummaryBody" class="comment-critical-modal-body"></div></section><label for="commentText">Comentario del PDV</label><textarea id="commentText" maxlength="2000" placeholder="Escriba un comentario sobre los casos del PDV..."></textarea><div id="commentMeta" class="comment-meta"></div><div class="modal-actions"><button class="secondary" onclick="cerrarComentario()">Cancelar</button><button id="btnSaveComment" class="small" onclick="guardarComentario()">Guardar comentario</button></div></div></div><div id="resumenImagenModal" class="modal" onclick="if(event.target===this)cerrarImagenesResumen()"><div class="modal-card resumen-imagen-modal"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div><h3 id="resumenImagenTitulo">IMÁGENES DEL PDV</h3><p class="resumen-imagen-help">Adjunta PNG, JPG o WebP de hasta 8 MB. Haz clic en una imagen para verla ampliada.</p></div><button type="button" class="secondary" onclick="cerrarImagenesResumen()">Cerrar</button></div><div class="resumen-imagen-upload"><label for="archivoImagenResumen" style="margin:0">Seleccionar imagen</label><input id="archivoImagenResumen" type="file" accept="image/png,image/jpeg,image/webp"><button type="button" id="btnSubirImagenResumen" class="small" onclick="subirImagenResumen()">Cargar imagen</button></div><div id="resumenImagenEstado" class="resumen-imagen-status" role="status" aria-live="polite"></div><div id="resumenImagenGrid" class="resumen-imagen-grid"></div></div></div><div id="imagenResumenLightbox" class="imagen-lightbox" onclick="if(event.target===this)cerrarImagenResumenAmpliada()"><button type="button" class="secondary" onclick="cerrarImagenResumenAmpliada()">Cerrar</button><img id="imagenResumenAmpliada" alt="Imagen del resumen"></div>
+  <div id="commentModal" class="modal" onclick="if(event.target===this)cerrarComentario()"><div class="modal-card modal-comment"><div class="comment-modal-heading"><h3 id="commentTitle">COMENTARIO DEL CASO</h3></div><section id="commentCriticalSummary" class="comment-critical-modal-summary" aria-live="polite"><div id="commentCriticalModalTitle" class="comment-critical-modal-title">Clasificación de paquetes críticos</div><div id="commentCriticalSummaryBody" class="comment-critical-modal-body"></div></section><label id="commentPdvLabel" for="commentText">Comentario del PDV</label><textarea id="commentText" maxlength="2000" placeholder="Escriba un comentario sobre los casos del PDV..."></textarea><div id="commentMeta" class="comment-meta"></div><div class="modal-actions"><button id="btnCancelComment" class="secondary" onclick="cerrarComentario()">Cancelar</button><button id="btnSaveComment" class="small" onclick="guardarComentario()">Guardar comentario</button></div></div></div><div id="resumenImagenModal" class="modal" onclick="if(event.target===this)cerrarImagenesResumen()"><div class="modal-card resumen-imagen-modal"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div><h3 id="resumenImagenTitulo">IMÁGENES DEL PDV</h3><p class="resumen-imagen-help">Adjunta PNG, JPG o WebP de hasta 8 MB. Haz clic en una imagen para verla ampliada.</p></div><button type="button" class="secondary" onclick="cerrarImagenesResumen()">Cerrar</button></div><div class="resumen-imagen-upload"><label for="archivoImagenResumen" style="margin:0">Seleccionar imagen</label><input id="archivoImagenResumen" type="file" accept="image/png,image/jpeg,image/webp"><button type="button" id="btnSubirImagenResumen" class="small" onclick="subirImagenResumen()">Cargar imagen</button></div><div id="resumenImagenEstado" class="resumen-imagen-status" role="status" aria-live="polite"></div><div id="resumenImagenGrid" class="resumen-imagen-grid"></div></div></div><div id="imagenResumenLightbox" class="imagen-lightbox" onclick="if(event.target===this)cerrarImagenResumenAmpliada()"><button type="button" class="secondary" onclick="cerrarImagenResumenAmpliada()">Cerrar</button><img id="imagenResumenAmpliada" alt="Imagen del resumen"></div>
   <div id="bulkModal" class="modal" onclick="if(event.target===this)cerrarGestionMasiva()"><div class="modal-card modal-bulk"><h3>GESTIÓN MASIVA</h3><div id="bulkModalCount" class="bulk-note"></div><div class="bulk-form"><label>SUBCAMPO 1</label><select id="bulkSubcampo1" onchange="actualizarOpcionesSubcampo2Masivo()" aria-label="Subcampo 1 para gestión masiva"></select><label>SUBCAMPO 2</label><select id="bulkSubcampo2" aria-label="Subcampo 2 para gestión masiva"></select><label>COMENTARIO PARA TODAS LAS GUÍAS</label><textarea id="bulkComment" maxlength="2000" placeholder="Ingrese el comentario que se registrará en todas las guías seleccionadas..."></textarea><div class="bulk-check-options"><label class="bulk-check-option"><input id="bulkCierre" type="checkbox" aria-label="Cerrar los casos seleccionados"><span><strong>Cierre de caso</strong><small>Marcado: finalizar los casos. Desmarcado: mantenerlos en proceso.</small></span></label><label class="bulk-check-option"><input id="bulkNotificacion" type="checkbox" aria-label="Mostrar el comentario al PDV"><span><strong>Notificación al PDV</strong><small>Marcado: mostrar el comentario. Desmarcado: mantenerlo oculto.</small></span></label></div></div><div class="modal-actions" style="margin-top:18px"><button class="secondary" onclick="cerrarGestionMasiva()">Cancelar</button><button id="btnSaveBulk" class="small" onclick="guardarGestionMasiva()">Aplicar a seleccionadas</button></div></div></div>
 
 <script>
   const APP_URL = new URL('./gestion-v2.html',location.href).href;
   let token = sessionStorage.getItem("tokenGuiasSupabaseReplica") || "";
+  const IDIOMA_COMENTARIO_KEY="gestionV2ComentarioLanguage";
+  function idiomaComentarioInicial(){try{const guardado=localStorage.getItem(IDIOMA_COMENTARIO_KEY);return ["es","zh-CN","en"].includes(guardado)?guardado:"es";}catch(_){return "es";}}
+  let idiomaComentario=idiomaComentarioInicial();
   let sesion = null, guias = [], filtradas = [], filtradasParaResumenComentario = [], resumenBase = {filas:[],total:{}}, resumen = {filas:[],total:{}}, filtroResumenActivo = null, filtroComentarioJerarquiaActivo = null, soloNoFinalizadas = false, soloCriticos = false;
   let excelRegistros = [], excelFiltrados = [], excelPagina = 1, excelTrackNombre = "", excelEnvioNombre = "";
   const EXCEL_PAGE_SIZE = 100, EXCEL_MAX_BYTES = 30 * 1024 * 1024;
@@ -591,7 +595,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
   let catalogoComentariosDisponible=false,catalogoComentariosCargado=false,clasificacionesComentariosCargadas=false,subcampo1SeleccionadoConfig="ENTREGA",comentarioGestionEncargadoDisponible=false;
   const ETIQUETAS_RESUMEN={h120o168:"Cola Larga · 120 o 168H",h360NoDevuelto:"Cola Larga · 360H · No Devuelto",h360PorDevolver:"Cola Larga · 360H · Por Devolver",h720NoDevuelto:"Cola Larga · 720H · No Devuelto",h720PorDevolver:"Cola Larga · 720H · Por Devolver",brecha48NoLlegado:"Brecha · 48 a 120H · No llegados al PDV",brecha120NoLlegado:"Brecha · 120 a 144H · No llegados al PDV",brecha48a120:"Brecha · 48 a 120H",brecha120a144:"Brecha · 120 a 144H",mayor144EnPDV:"Brecha · >144H · En el PDV",mayor144NoLlegado:"Brecha · >144H · No llegado al PDV",totalCasos:"Total de casos",totalCritico:"Total crítico",totalPreventivoCritico:"Total de casos preventivos + críticos",guiasUnicas:"Guías únicas"};
 
-  document.addEventListener("DOMContentLoaded", restaurarSesion);
+  document.addEventListener("DOMContentLoaded",()=>{instalarTraductorPagina();restaurarSesion();});
   document.addEventListener("click", cerrarMultis);
 const excelSeleccion = new Set();
 function actualizarSeleccionExcel(){const el=document.getElementById('excelSelectedCount');if(el)el.textContent=excelSeleccion.size+' seleccionadas';}
@@ -645,7 +649,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     }).withFailureHandler(e=>{btn.disabled=false;btn.textContent="INGRESAR";mostrarErrorLogin(errorTexto(e));}).iniciarSesion(usuario,clave);
   }
 
-  function abrirApp(){document.body.classList.toggle("no-summary-comments",sesion.rol==="PDV");document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("userBadge").textContent=sesion.usuario+" · "+sesion.rol;document.getElementById("sourceUploadPanel").classList.toggle("hidden",sesion.rol!=="ADMINISTRADOR");document.getElementById("tabComentariosConfig").hidden=sesion.rol!=="ADMINISTRADOR";document.getElementById("tabSla").hidden=!(["ADMINISTRADOR","ENCARGADO"].includes(sesion.rol));window.SlaPaquetesV2?.establecerRol(sesion.rol);window.V16ModulePermissions?.apply();if(window.V16ModulePermissions?.canView("gestion_v2")||window.V16ModulePermissions?.canView("catalogo_comentarios"))cargarCatalogoComentarios();const solicitada=location.hash.replace(/^#/,"");mostrarVista(["gestion","excel","estadisticas","comentarios","sla"].includes(solicitada)&&(solicitada!=="comentarios"||sesion.rol==="ADMINISTRADOR")&&(solicitada!=="sla"||["ADMINISTRADOR","ENCARGADO"].includes(sesion.rol))?solicitada:"gestion");cargarDatos();cargarConsultaCompartida();}
+  function abrirApp(){document.body.classList.toggle("no-summary-comments",sesion.rol==="PDV");document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");actualizarBadgeUsuarioIdioma();document.getElementById("sourceUploadPanel").classList.toggle("hidden",sesion.rol!=="ADMINISTRADOR");document.getElementById("tabComentariosConfig").hidden=sesion.rol!=="ADMINISTRADOR";document.getElementById("tabSla").hidden=!(["ADMINISTRADOR","ENCARGADO"].includes(sesion.rol));window.SlaPaquetesV2?.establecerRol(sesion.rol);window.V16ModulePermissions?.apply();if(window.V16ModulePermissions?.canView("gestion_v2")||window.V16ModulePermissions?.canView("catalogo_comentarios"))cargarCatalogoComentarios();const solicitada=location.hash.replace(/^#/,"");mostrarVista(["gestion","excel","estadisticas","comentarios","sla"].includes(solicitada)&&(solicitada!=="comentarios"||sesion.rol==="ADMINISTRADOR")&&(solicitada!=="sla"||["ADMINISTRADOR","ENCARGADO"].includes(sesion.rol))?solicitada:"gestion");cargarDatos();cargarConsultaCompartida();}
   function mostrarLogin(){document.getElementById("login").classList.remove("hidden");document.getElementById("app").classList.add("hidden");}
   function mostrarErrorLogin(t){const e=document.getElementById("loginError");e.textContent=t;e.style.display="block";}
 
@@ -1283,13 +1287,13 @@ function coincideFiltroResumen(x){return !seleccionesResumen().length||seleccion
 
 function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;if(!cumpleFiltrosGuiaResumen(x))return false;const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],pdv=seleccion.pdv,categoria=seleccion.categoria,criticas=["h720NoDevuelto","h720PorDevolver","mayor144EnPDV","mayor144NoLlegado"],preventivasCriticas=CATEGORIAS_PREVENTIVO_CRITICO_V2;return casos.some(c=>{if(pdv&&String(c.pdv||"")!==pdv)return false;const tipo=String(c.categoria||"");if(!categoria||categoria==="totalCasos"||categoria==="guiasUnicas")return true;if(categoria==="totalCritico")return criticas.includes(tipo);if(categoria==="totalPreventivoCritico")return preventivasCriticas.includes(tipo);return tipo===categoria||(categoria==="mayor144NoLlegado"&&tipo==="brecha144a168NoLlegado");});}
 
-  function abrirComentario(pdv){const x=(resumen.filas||[]).find(r=>r.pdv===pdv);if(!x)return;document.getElementById("commentModal").dataset.pdv=pdv;document.getElementById("commentTitle").textContent="COMENTARIO · "+pdv;renderResumenCriticoComentarioModal(pdv);document.getElementById("commentText").value=x.comentario||"";document.getElementById("commentMeta").textContent=x.comentarioFecha?("Último registro: "+x.comentarioFecha+" · "+(x.comentarioUsuario||"")):"Sin comentario previo";document.getElementById("commentModal").style.display="flex";setTimeout(()=>document.getElementById("commentText").focus(),50);}
+  function abrirComentario(pdv){const x=(resumen.filas||[]).find(r=>r.pdv===pdv);if(!x)return;document.getElementById("commentModal").dataset.pdv=pdv;document.getElementById("commentText").value=x.comentario||"";aplicarIdiomaModalComentario();document.getElementById("commentModal").style.display="flex";setTimeout(()=>document.getElementById("commentText").focus(),50);}
   function cerrarComentario(){document.getElementById("commentModal").style.display="none";}
   function guardarComentario(){
-    const pdv=document.getElementById("commentModal").dataset.pdv||"",el=document.getElementById("commentText");if(!el.value.trim()){toast("Ingrese un comentario.",false);return;}
+    const pdv=document.getElementById("commentModal").dataset.pdv||"",el=document.getElementById("commentText"),t=textosComentarioActual();if(!el.value.trim()){toast(t.required,false);return;}
     cerrarComentario();
-    mostrarLoading(true,"Guardando comentario...");
-    google.script.run.withSuccessHandler(()=>{mostrarLoading(false);toast("Comentario guardado correctamente.",true);cargarDatos();}).withFailureHandler(manejarError).guardarComentarioResumen(token,{pdv:pdv,comentario:el.value.trim()});
+    mostrarLoading(true,t.saving);
+    google.script.run.withSuccessHandler(()=>{mostrarLoading(false);toast(t.saved,true);cargarDatos();}).withFailureHandler(manejarError).guardarComentarioResumen(token,{pdv:pdv,comentario:el.value.trim()});
   }
 
   let imagenesResumenPdvActual=null, imagenesResumenAreaActual="", imagenesResumenRegionActual="", imagenesResumenUsuarioActual="";
@@ -1389,6 +1393,577 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     {categoria:"mayor144EnPDV",etiqueta:"Brecha crítica en PDV",clase:"breach"},
     {categoria:"mayor144NoLlegado",etiqueta:"Brecha crítica no llegados al PDV",clase:"breach"}
   ];
+  const TEXTOS_COMENTARIO_UI={
+    es:{language:"Idioma",title:"COMENTARIO",classification:"Clasificación de paquetes críticos",categories:{h720NoDevuelto:"Cola larga crítica en PDV",h720PorDevolver:"Cola larga crítica por devolver",mayor144EnPDV:"Brecha crítica en PDV",mayor144NoLlegado:"Brecha crítica no llegados al PDV"},empty:"No hay paquetes críticos para este PDV con los filtros actuales.",sub1:"Subtipo 1",sub2:"Subtipo 2",adminComment:"Comentario administrador",count:"Conteo",noSub1:"Sin Subtipo 1",noSub2:"Sin Subtipo 2",noAdminComment:"Sin comentario del administrador",pdvComment:"Comentario del PDV",placeholder:"Escriba un comentario sobre los casos del PDV...",noPrevious:"Sin comentario previo",lastRecord:"Último registro",cancel:"Cancelar",save:"Guardar comentario",required:"Ingrese un comentario.",saving:"Guardando comentario...",saved:"Comentario guardado correctamente."},
+    "zh-CN":{language:"语言",title:"评论",classification:"关键包裹分类",categories:{h720NoDevuelto:"网点积压关键包裹",h720PorDevolver:"待退回的积压关键包裹",mayor144EnPDV:"网点追踪间隔关键包裹",mayor144NoLlegado:"尚未到达网点的追踪间隔关键包裹"},empty:"根据当前筛选条件，该网点没有关键包裹。",sub1:"子类型 1",sub2:"子类型 2",adminComment:"管理员评论",count:"数量",noSub1:"无子类型 1",noSub2:"无子类型 2",noAdminComment:"暂无管理员评论",pdvComment:"网点评论",placeholder:"填写有关此网点案例的评论…",noPrevious:"暂无评论",lastRecord:"最近记录",cancel:"取消",save:"保存评论",required:"请输入评论。",saving:"正在保存评论…",saved:"评论已成功保存。"},
+    en:{language:"Language",title:"COMMENT",classification:"Critical package classification",categories:{h720NoDevuelto:"Critical long-queue packages at PDV",h720PorDevolver:"Critical long-queue packages awaiting return",mayor144EnPDV:"Critical tracking gap at PDV",mayor144NoLlegado:"Critical tracking gap for packages not yet at PDV"},empty:"No critical packages for this PDV match the current filters.",sub1:"Subtype 1",sub2:"Subtype 2",adminComment:"Administrator comment",count:"Count",noSub1:"No subtype 1",noSub2:"No subtype 2",noAdminComment:"No administrator comment",pdvComment:"PDV comment",placeholder:"Enter a comment about this PDV's cases…",noPrevious:"No previous comment",lastRecord:"Last entry",cancel:"Cancel",save:"Save comment",required:"Enter a comment.",saving:"Saving comment…",saved:"Comment saved successfully."}
+  };
+  const PAGE_I18N_ROWS=[
+    ["Gestión de guías V2", "Guide Management V2", "V2 指南管理"],
+    ["Portal de Gestión", "Management Portal", "管理门户"],
+    ["Acceso para encargados y administradores", "Access for supervisors and administrators", "负责人和管理员登录"],
+    ["USUARIO", "USERNAME", "用户名"],
+    ["CONTRASEÑA", "PASSWORD", "密码"],
+    ["INGRESAR", "SIGN IN", "登录"],
+    ["📋 Revisión de Guías · V16", "📋 Guide Review · V16", "📋 指南审核 · V16"],
+    ["Seguimiento de Brecha, Cola Larga y respuestas de los PDV", "Tracking gaps, long queues, and PDV responses", "跟踪轨迹间隔、长队积压和 PDV 回复"],
+    ["👤 Usuarios", "👤 Users", "👤 用户"],
+    ["📥 Excel completo · 3 hojas", "📥 Full Excel · 3 sheets", "📥 完整 Excel · 3 个工作表"],
+    ["🔄 Actualizar", "🔄 Refresh", "🔄 刷新"],
+    ["Salir", "Log out", "退出"],
+    ["📤 Consulta desde Excel", "📤 Excel Lookup", "📤 Excel 查询"],
+    ["📊 Estadísticas por PDV", "📊 Statistics by PDV", "📊 PDV 统计"],
+    ["⏱️ SLA de paquetes", "⏱️ Package SLA", "⏱️ 包裹 SLA"],
+    ["⚙️ Catálogo de comentarios", "⚙️ Comment Catalog", "⚙️ 评论目录"],
+    ["Volver a Gestión actual", "Back to current management", "返回当前管理"],
+    ["💰 Penalidades", "💰 Penalties", "💰 罚款"],
+    ["Idioma", "Language", "语言"],
+    ["Carga de información operativa", "Operational data upload", "运营数据上传"],
+    ["SOLO ADMINISTRADOR", "ADMINISTRATORS ONLY", "仅管理员"],
+    ["Ocultar carga", "Hide uploads", "隐藏上传区"],
+    ["Migración inicial desde Google (opcional)", "Initial migration from Google (optional)", "从 Google 初始迁移（可选）"],
+    ["Solo en una réplica vacía. Seleccione el JSON privado generado por ExportarReplica.gs. No suba ese JSON a GitHub.", "Only for an empty replica. Select the private JSON created by ExportarReplica.gs. Do not upload it to GitHub.", "仅用于空白副本。请选择 ExportarReplica.gs 生成的私有 JSON。请勿上传到 GitHub。"],
+    ["💾 Guardar información cargada", "💾 Save uploaded data", "💾 保存已上传数据"],
+    ["Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada archivo reemplaza todos los datos anteriores de su fuente. Para Track Break y Cola Larga se guardan únicamente las regiones elegidas del nuevo archivo. Espere la confirmación antes de cerrar.", "Select the Excel files and click Save uploaded data. Sources without a selected file are kept. Each file replaces previous data for its source. For Track Break and Long Queue, only selected regions from the new file are saved. Wait for confirmation before closing.", "请选择 Excel 文件并点击“保存已上传数据”。未选择文件的数据源将保留。每个文件会替换其数据源的旧数据。Track Break 和长队积压仅保存新文件中所选地区。关闭前请等待确认。"],
+    ["PDV_LISTA — cargar primero", "PDV_LISTA — upload first", "PDV_LISTA — 请先上传"],
+    ["Sin verificar", "Not verified", "未验证"],
+    ["Cargar PDV_LISTA — cargar primero", "Upload PDV_LISTA — upload first", "上传 PDV_LISTA — 请先上传"],
+    ["Exportación de guías", "Guide export", "指南导出"],
+    ["Cargar Exportación de guías", "Upload guide export", "上传指南导出"],
+    ["Despachos ayer (opcional)", "Yesterday's dispatches (optional)", "昨日发货量（可选）"],
+    ["Cargar Despachos ayer (opcional)", "Upload yesterday's dispatches (optional)", "上传昨日发货量（可选）"],
+    ["Track break más informes", "Track Break and reports", "Track Break 和报告"],
+    ["Cargue PDV_LISTA y Exportación de guías antes de Track break.", "Upload PDV_LISTA and guide export before Track Break.", "请先上传 PDV_LISTA 和指南导出文件，再上传 Track Break。"],
+    ["Cargar Track break", "Upload Track Break", "上传 Track Break"],
+    ["COLA LARGA", "LONG QUEUE", "长队积压"],
+    ["Datos existentes en la hoja COLA LARGA.", "Existing data in the LONG QUEUE sheet.", "长队积压工作表中的现有数据。"],
+    ["Reemplazar COLA LARGA", "Replace LONG QUEUE", "替换长队积压数据"],
+    ["Regiones a importar", "Regions to import", "要导入的地区"],
+    ["Se borrarán los datos anteriores de esta fuente y se guardarán únicamente las regiones seleccionadas del nuevo archivo. Las regiones anteriores no seleccionadas también se eliminarán de esta fuente. Los comentarios y cierres se conservan.", "Previous data for this source will be deleted, and only selected regions from the new file will be saved. Other previous regions will also be removed. Comments and closures are kept.", "此数据源的旧数据将被删除，仅保存新文件中选定的地区。其他旧地区也将移除。评论和结案信息将保留。"],
+    ["Seleccionar todas", "Select all", "全选"],
+    ["Quitar selección", "Clear selection", "取消选择"],
+    ["Guardar e importar regiones seleccionadas", "Save and import selected regions", "保存并导入所选地区"],
+    ["Cancelar", "Cancel", "取消"],
+    ["Carga independiente:", "Independent upload:", "独立上传："],
+    ["puede actualizar una fuente sin reemplazar la otra. Los comentarios, cierres, estados y notificaciones guardados en GUIAS A REVISAR se conservan.", "you can update one source without replacing the other. Comments, closures, statuses, and notifications saved in GUIAS A REVISAR are kept.", "可以更新一个数据源而不替换另一个。GUIAS A REVISAR 中保存的评论、结案、状态和通知均会保留。"],
+    ["Guías visibles", "Visible guides", "可见指南"],
+    ["Pendientes", "Pending", "待处理"],
+    ["En proceso", "In progress", "处理中"],
+    ["Finalizados", "Completed", "已完成"],
+    ["Resumen de casos por PDV", "Case summary by PDV", "按 PDV 汇总案例"],
+    ["FILTRAR RESUMEN:", "FILTER SUMMARY:", "筛选汇总："],
+    ["Todas las regiones", "All regions", "所有地区"],
+    ["Todas las áreas", "All areas", "所有区域"],
+    ["Todos los encargados", "All supervisors", "所有负责人"],
+    ["Comentario principal · Administrador", "Main comment · Administrator", "主要评论 · 管理员"],
+    ["Comentario de gestión · Encargado", "Management comment · Supervisor", "管理评论 · 负责人"],
+    ["Solo no finalizadas", "Not completed only", "仅未完成"],
+    ["Solo casos críticos", "Critical cases only", "仅关键案例"],
+    ["Limpiar", "Clear", "清除"],
+    ["Descargar imagen del resumen", "Download summary image", "下载汇总图片"],
+    ["PNG · Filtros y grupos desplegados actuales", "PNG · Current filters and expanded groups", "PNG · 当前筛选条件和展开的分组"],
+    ["Descargar PNG", "Download PNG", "下载 PNG"],
+    ["Gestión de guías V2 · Fuentes y comentarios compartidos con Gestión actual. Clasificación calculada cada minuto.", "Guide Management V2 · Sources and comments are shared with current Management. Classification recalculates every minute.", "V2 指南管理 · 数据源和评论与当前管理共享。分类每分钟重新计算。"],
+    ["PDV", "PDV", "PDV"],
+    ["DESPACHOS AYER", "YESTERDAY\"S DISPATCHES", "昨日发货量"],
+    ["BRECHA DE TRAZABILIDAD", "TRACKING GAP", "轨迹间隔"],
+    ["TOTAL", "TOTAL", "总计"],
+    ["TOTAL CRÍTICO", "CRITICAL TOTAL", "关键总数"],
+    ["PREVENTIVOS", "PREVENTIVE", "预防性"],
+    ["+ CRÍTICOS", "+ CRITICAL", "+ 关键"],
+    ["GUÍAS ÚNICAS", "UNIQUE GUIDES", "唯一指南"],
+    ["No devuelto", "Not returned", "未退回"],
+    ["Por devolver", "Pending return", "待退回"],
+    ["En el PDV", "At the PDV", "在 PDV"],
+    ["No llegados al PDV", "Not arrived at PDV", "尚未到达 PDV"],
+    ["120 a <576 H", "120 to <576 h", "120 至 <576 小时"],
+    ["576 a <600 H", "576 to <600 h", "576 至 <600 小时"],
+    ["PREVENTIVO", "PREVENTIVE", "预防性"],
+    ["≥600 H", "≥600 h", "≥600 小时"],
+    ["≥25 días", "≥25 days", "≥25 天"],
+    ["≥48 y <96 H", "≥48 and <96 h", "≥48 且 <96 小时"],
+    ["96 a <120 H", "96 to <120 h", "96 至 <120 小时"],
+    ["≥120 H", "≥120 h", "≥120 小时"],
+    ["CRÍTICO", "CRITICAL", "关键"],
+    ["Resumen por Subtipo 1, Subtipo 2 y comentario administrador", "Summary by Subtype 1, Subtype 2, and administrator comment", "按子类型 1、子类型 2 和管理员评论汇总"],
+    ["Ocultar resumen", "Hide summary", "隐藏汇总"],
+    ["Mostrar resumen", "Show summary", "显示汇总"],
+    ["El agrupamiento usa el comentario del Administrador. Los subtipos se combinan por filas; selecciona “Ver guías” para cargar sus guías en el detalle.", "Groups use the administrator's comment. Subtypes are combined by row; select “View guides” to load them in the details.", "分组依据为管理员评论。子类型按行合并；选择“查看指南”可在详情中加载指南。"],
+    ["Mostrar todas las guías", "Show all guides", "显示所有指南"],
+    ["SELECCIÓN", "SELECT", "选择"],
+    ["SUBTIPO 1", "SUBTYPE 1", "子类型 1"],
+    ["SUBTIPO 2", "SUBTYPE 2", "子类型 2"],
+    ["COMENTARIO ADMINISTRADOR", "ADMINISTRATOR COMMENT", "管理员评论"],
+    ["GUÍAS", "GUIDES", "指南"],
+    ["BRECHA CRÍTICA", "CRITICAL TRACKING GAP", "关键轨迹间隔"],
+    ["COLA LARGA CRÍTICA", "CRITICAL LONG QUEUE", "关键长队积压"],
+    ["ACCIONES", "ACTIONS", "操作"],
+    ["EN EL PDV", "AT PDV", "在 PDV"],
+    ["NO LLEGADOS AL PDV", "NOT ARRIVED AT PDV", "尚未到达 PDV"],
+    ["NO DEVUELTO", "NOT RETURNED", "未退回"],
+    ["POR DEVOLVER", "PENDING RETURN", "待退回"],
+    ["Detalle de guías", "Guide details", "指南详情"],
+    ["Todos: actualizado / pendiente", "All: updated / pending", "全部：已更新 / 待处理"],
+    ["Todos los escaneos (Exportación)", "All scans (Guide export)", "所有扫描（指南导出）"],
+    ["Todos los escaneos recientes", "All recent scans", "所有最近扫描"],
+    ["Todos los PDV", "All PDVs", "所有 PDV"],
+    ["Todos los estados", "All statuses", "所有状态"],
+    ["Todos los tipos", "All types", "所有类型"],
+    ["Fecha de actualización · Exportación de guías", "Update date · Guide export", "更新时间 · 指南导出"],
+    ["Desde", "From", "从"],
+    ["Hasta", "To", "至"],
+    ["Limpiar fechas", "Clear dates", "清除日期"],
+    ["Días completos · Tiempo del escaneo más reciente", "Full days · Latest scan time", "完整天数 · 最近扫描时间"],
+    ["Tiempo de entrada · Exportación de guías", "Entry time · Guide export", "录入时间 · 指南导出"],
+    ["≥ 25 días", "≥25 days", "≥25 天"],
+    ["≥ 15 días", "≥15 days", "≥15 天"],
+    ["≥ 7 días", "≥7 days", "≥7 天"],
+    ["Corte respecto de ahora · Varias opciones unen resultados · El rango manual se aplica además", "Cutoff from now · Multiple choices combine results · Manual range also applies", "按当前时间计算 · 多选结果合并 · 同时应用手动范围"],
+    ["Limpiar entrada", "Clear entry time", "清除录入时间"],
+    ["Filtrar varias guías", "Filter multiple guides", "筛选多个指南"],
+    ["Pega la columna de Excel, una guía por línea", "Paste the Excel column, one guide per line", "粘贴 Excel 列，每行一个指南"],
+    ["Aplicar lista", "Apply list", "应用列表"],
+    ["Limpiar lista", "Clear list", "清除列表"],
+    ["También acepta espacios, comas y punto y coma. Coincidencia exacta; conserva los demás filtros.", "Spaces, commas, and semicolons are accepted. Exact match; other filters are kept.", "也接受空格、逗号和分号。精确匹配；保留其他筛选条件。"],
+    ["Sin filtro por lista de guías.", "No guide-list filter.", "未按指南列表筛选。"],
+    ["Limpiar filtros", "Clear filters", "清除筛选"],
+    ["La gestión masiva aplica comentario, cierre y notificación al PDV.", "Bulk management applies a comment, closure, and notification to the PDV.", "批量管理将为 PDV 应用评论、结案和通知。"],
+    ["Seleccionar visibles", "Select visible", "选择可见项"],
+    ["Copiar guías seleccionadas", "Copy selected guides", "复制所选指南"],
+    ["Limpiar selección", "Clear selection", "清除选择"],
+    ["Imprimir detalle seleccionado", "Print selected details", "打印所选详情"],
+    ["Imprimir guías seleccionadas", "Print selected guides", "打印所选指南"],
+    ["Gestionar seleccionadas", "Manage selected", "管理所选项"],
+    ["Ir a guía", "Go to guide", "前往指南"],
+    ["GUÍA", "GUIDE", "指南"],
+    ["ENCARGADO", "SUPERVISOR", "负责人"],
+    ["DESTINO", "DESTINATION", "目的地"],
+    ["Departamento · Provincia · Distrito", "Department · Province · District", "部门 · 省 · 区"],
+    ["ÁREA", "AREA", "区域"],
+    ["ESTADO", "STATUS", "状态"],
+    ["TIPO", "TYPE", "类型"],
+    ["ÚLTIMA ACTUALIZACIÓN Y ESCANEO MÁS RECIENTE", "LATEST UPDATE AND MOST RECENT SCAN", "最近更新和最近扫描"],
+    ["COMENTARIO ENCARGADO · ADMINISTRADOR", "SUPERVISOR · ADMINISTRATOR COMMENT", "负责人 · 管理员评论"],
+    ["COMENTARIO DE GESTIÓN · ENCARGADO", "MANAGEMENT COMMENT · SUPERVISOR", "管理评论 · 负责人"],
+    ["ACCIÓN", "ACTION", "操作"],
+    ["Consulta de actualización mediante archivo Excel", "Update lookup using an Excel file", "通过 Excel 文件查询更新情况"],
+    ["Volver a información compartida", "Return to shared data", "返回共享数据"],
+    ["Cargar Track break más informes", "Upload Track Break and reports", "上传 Track Break 和报告"],
+    ["Ningún archivo seleccionado", "No file selected", "未选择文件"],
+    ["Puede actualizar este archivo de forma independiente. El plazo se calcula desde el último escaneo + 48 horas.", "This file can be updated independently. The deadline is calculated from the last scan + 48 hours.", "此文件可单独更新。截止时间从上次扫描后 48 小时计算。"],
+    ["Se importarán únicamente las regiones seleccionadas, según el último punto de operación y PDV_LISTA.", "Only selected regions will be imported, based on the latest operation point and PDV_LISTA.", "仅导入所选地区，依据最近操作点和 PDV_LISTA。"],
+    ["Importar regiones seleccionadas", "Import selected regions", "导入所选地区"],
+    ["Actualiza empleado, destino y último escaneo sobre la consulta disponible. Puede cargarlo sin volver a subir Track Break.", "Updates the employee, destination, and latest scan in the current lookup. It can be uploaded without uploading Track Break again.", "更新当前查询中的员工、目的地和最近扫描。无需重新上传 Track Break。"],
+    ["Guías cargadas", "Loaded guides", "已加载指南"],
+    ["Plazo vencido", "Overdue", "已逾期"],
+    ["Vencen en 12 horas", "Due within 12 hours", "12 小时内到期"],
+    ["Plazo vigente", "On time", "未逾期"],
+    ["Ocultar resumen por PDV", "Hide summary by PDV", "隐藏按 PDV 汇总"],
+    ["Quitar filtro del resumen", "Remove summary filter", "清除汇总筛选"],
+    ["Resumen por PDV · vencimientos según filtros aplicados. Total de guías incluye también plazos mayores a 36 h y sin fecha.", "Summary by PDV · deadlines follow applied filters. Total guides also includes deadlines over 36 hours and undated guides.", "按 PDV 汇总 · 截止时间遵循已应用筛选。指南总数也包括超过 36 小时及无日期的项目。"],
+    ["Total de guías", "Total guides", "指南总数"],
+    ["Vencidos", "Overdue", "已逾期"],
+    ["Próximos a vencer · 12 h", "Due soon · 12 h", "即将到期 · 12 小时"],
+    ["0 a 12 h", "0 to 12 h", "0 至 12 小时"],
+    ["Próximos a vencer · 24 h", "Due soon · 24 h", "即将到期 · 24 小时"],
+    ["Más de 12 a 24 h", "Over 12 to 24 h", "超过 12 至 24 小时"],
+    ["Próximos a vencer · 36 h", "Due soon · 36 h", "即将到期 · 36 小时"],
+    ["Más de 24 a 36 h", "Over 24 to 36 h", "超过 24 至 36 小时"],
+    ["Seleccionar filtradas", "Select filtered", "选择筛选结果"],
+    ["Ver guías seleccionadas", "View selected guides", "查看所选指南"],
+    ["Descargar PDF por PDV (ZIP)", "Download PDF by PDV (ZIP)", "按 PDV 下载 PDF（ZIP）"],
+    ["Solo guías filtradas · Todas las páginas", "Filtered guides only · All pages", "仅筛选出的指南 · 所有页面"],
+    ["Descargar ZIP generado", "Download generated ZIP", "下载生成的 ZIP"],
+    ["Todos los últimos estados (Exportación)", "All latest statuses (Guide export)", "所有最近状态（指南导出）"],
+    ["Todas las siguientes paradas", "All next stops", "所有下一站"],
+    ["Todos los tipos de operación más reciente", "All latest operation types", "所有最近操作类型"],
+    ["Todos los últimos puntos de operación", "All latest operation points", "所有最近操作点"],
+    ["Todos los plazos", "All deadlines", "所有截止时间"],
+    ["Quitar archivos", "Remove files", "移除文件"],
+    ["Actualizar antes de mañana a las 10:00", "Update before 10:00 tomorrow", "请在明天 10:00 前更新"],
+    ["Incluye vencidos y próximos a vencer ·", "Includes overdue and upcoming deadlines ·", "包括已逾期和即将到期 ·"],
+    ["ÚLTIMO PUNTO DE OPERACIÓN", "LATEST OPERATION POINT", "最近操作点"],
+    ["TIPO DE OPERACIÓN MÁS RECIENTE", "LATEST OPERATION TYPE", "最近操作类型"],
+    ["ÚLTIMO TIPO DE PROBLEMA", "LATEST PROBLEM TYPE", "最近问题类型"],
+    ["FECHA Y HORA DE ÚLTIMA ACTUALIZACIÓN", "LAST UPDATE DATE AND TIME", "最近更新时间"],
+    ["ÚLTIMO TIEMPO SIN ACTUALIZACIÓN", "TIME SINCE LAST UPDATE", "距上次更新时长"],
+    ["PLAZO PARA ACTUALIZAR (+48 H)", "UPDATE DEADLINE (+48 H)", "更新截止时间（+48 小时）"],
+    ["Anterior", "Previous", "上一页"],
+    ["Siguiente", "Next", "下一页"],
+    ["Módulo independiente de Consulta desde Excel y Penalidades. Analiza la última consulta compartida; para cargar o actualizar guías, usa Consulta desde Excel.", "This module is separate from Excel Lookup and Penalties. It analyzes the latest shared lookup; use Excel Lookup to upload or update guides.", "此模块独立于 Excel 查询和罚款。它分析最近共享查询；如需上传或更新指南，请使用 Excel 查询。"],
+    ["SLA de paquetes · llegada al PDV hasta la entrega", "Package SLA · arrival at PDV to delivery", "包裹 SLA · 从到达 PDV 至交付"],
+    ["El tiempo transcurrido inicia en la llegada al PDV. Si falta ese evento, usa el hito anterior disponible: salida del CEDIS, llegada al CEDIS, salida del HUB o generación del dato. Si no existe hora de firma, calcula hasta ahora. Para elegir rango y tarifa usa las horas transcurridas menos SLA traslado × 24; el SLA reparto se muestra como referencia.", "Elapsed time starts at arrival at the PDV. If missing, use the previous available milestone: departure from CEDIS, arrival at CEDIS, departure from HUB, or data generation. Without a signature time, calculate up to now. Ranges and rates use elapsed hours minus transfer SLA × 24; delivery SLA is shown for reference.", "经过时间从到达 PDV 开始。如果缺少该事件，则使用上一个可用节点：离开 CEDIS、到达 CEDIS、离开 HUB 或数据生成时间。没有签收时间时计算至当前时间。区间和费率按经过小时数减去转运 SLA × 24 计算；派送 SLA 仅供参考。"],
+    ["Cargando información del SLA…", "Loading SLA data…", "正在加载 SLA 数据…"],
+    ["Rangos y tarifas SLA", "SLA ranges and rates", "SLA 区间和费率"],
+    ["Cada tramo incluye el límite inicial y excluye el final. Las horas para el rango se calculan como horas transcurridas menos SLA traslado × 24; el cómputo del rango parte de 0 al cumplir el SLA de traslado. El último tramo queda sin límite superior.", "Each range includes its lower limit and excludes its upper limit. Range hours equal elapsed hours minus transfer SLA × 24; the range starts at 0 when transfer SLA is met. The final range has no upper limit.", "每个区间包含起始边界但不包含结束边界。区间小时数等于经过小时数减去转运 SLA × 24；达到转运 SLA 后从 0 开始计算。最后一个区间没有上限。"],
+    ["Desde (h)", "From (h)", "起始（小时）"],
+    ["Hasta (h)", "To (h)", "结束（小时）"],
+    ["Tarifa (%)", "Rate (%)", "费率（%）"],
+    ["Agregar rango", "Add range", "添加区间"],
+    ["Guardar rangos", "Save ranges", "保存区间"],
+    ["El SLA de reparto se muestra como referencia; el SLA de traslado desplaza el inicio de los rangos. Los rangos y tarifas se comparten con todos los usuarios.", "Delivery SLA is shown for reference; transfer SLA shifts the start of ranges. Ranges and rates are shared with all users.", "派送 SLA 仅供参考；转运 SLA 会调整区间起点。区间和费率对所有用户共享。"],
+    ["Actualizar archivo de monitoreo", "Update monitoring file", "更新监控文件"],
+    ["Cargar y publicar", "Upload and publish", "上传并发布"],
+    ["La carga nueva reemplaza el conjunto activo cuando termina correctamente. Hoja: primera hoja del Excel. Se guardan guía, PDV, distrito y los hitos usados para el SLA; provincia y departamento se completan desde zonificación.", "The upload replaces the active dataset when completed. Sheet: first sheet of the Excel file. Guide, PDV, district, and SLA milestones are saved; province and department are filled from zoning.", "上传成功后将替换当前数据集。工作表：Excel 第一个工作表。保存指南、PDV、区和 SLA 节点；省和部门信息从区域规划补充。"],
+    ["Actualizar zonificación", "Update zoning", "更新区域规划"],
+    ["Cargar zonificación", "Upload zoning", "上传区域规划"],
+    ["Aún no se cargó la zonificación.", "Zoning has not been uploaded yet.", "尚未上传区域规划。"],
+    ["Lee la primera hoja y requiere Departamento, Provincia, Distrito, Tipo de zona, SLA traslado (días) y SLA reparto (días). Se relaciona con el monitoreo por Departamento + Provincia + Distrito. La carga reemplaza la zonificación activa al terminar correctamente, sin reemplazar el monitoreo.", "Reads the first sheet and requires Department, Province, District, Zone type, Transfer SLA (days), and Delivery SLA (days). It matches monitoring by Department + Province + District. A successful upload replaces zoning without replacing monitoring.", "读取第一个工作表，需要部门、省、区、区域类型、转运 SLA（天）和派送 SLA（天）。通过部门 + 省 + 区匹配监控数据。上传成功后替换区域规划，不替换监控数据。"],
+    ["Precio del paquete por distrito", "Package price by district", "按区设置包裹价格"],
+    ["Monto estimado por guía = precio del distrito × tarifa del rango SLA. Si el precio está vacío, el monto queda pendiente.", "Estimated amount per guide = district price × SLA range rate. If price is blank, the amount remains pending.", "每个指南预估金额 = 区域价格 × SLA 区间费率。价格为空时金额待定。"],
+    ["Departamento", "Department", "部门"],
+    ["Provincia", "Province", "省"],
+    ["Distrito", "District", "区"],
+    ["Precio por guía (S/)", "Price per guide (S/)", "每个指南价格（S/）"],
+    ["Guardar precios", "Save prices", "保存价格"],
+    ["Paquetes visibles", "Visible packages", "可见包裹"],
+    ["Tarifa 0%", "0% rate", "0% 费率"],
+    ["Tarifa mayor a 0%", "Rate above 0%", "费率高于 0%"],
+    ["Sin firma · en curso", "Unsigned · in progress", "未签收 · 处理中"],
+    ["Precio de distrito pendiente", "District price pending", "区域价格待定"],
+    ["Sin zonificación / SLA traslado", "No zoning / transfer SLA", "无区域规划 / 转运 SLA"],
+    ["Resumen por Departamento › Provincia › Distrito", "Summary by Department › Province › District", "按部门 › 省 › 区汇总"],
+    ["Expandir grupos", "Expand groups", "展开分组"],
+    ["Contraer grupos", "Collapse groups", "折叠分组"],
+    ["Ocultar columnas de clasificación", "Hide classification columns", "隐藏分类列"],
+    ["Todas las clasificaciones", "All classifications", "所有分类"],
+    ["Los botones de conteo filtran el detalle. La ubicación se expande en el orden Departamento › Provincia › Distrito.", "Count buttons filter details. Location expands in the order Department › Province › District.", "点击数量按钮可筛选详情。位置按部门 › 省 › 区顺序展开。"],
+    ["DEPARTAMENTO / PROVINCIA / DISTRITO", "DEPARTMENT / PROVINCE / DISTRICT", "部门 / 省 / 区"],
+    ["PAQUETES", "PACKAGES", "包裹"],
+    ["CLASIFICACIÓN SLA", "SLA CLASSIFICATION", "SLA 分类"],
+    ["SIN FIRMA", "UNSIGNED", "未签收"],
+    ["Rangos configurados", "Configured ranges", "已配置区间"],
+    ["Sin inicio / revisar", "No start / review", "无起始时间 / 请检查"],
+    ["Sin zonificación", "No zoning", "无区域规划"],
+    ["SLA traslado pendiente", "Transfer SLA pending", "转运 SLA 待定"],
+    ["Detalle de paquetes", "Package details", "包裹详情"],
+    ["Mostrar todo", "Show all", "显示全部"],
+    ["Mostrar u ocultar columnas", "Show or hide columns", "显示或隐藏列"],
+    ["Mostrar todas", "Show all", "全部显示"],
+    ["DEPARTAMENTO › PROVINCIA › DISTRITO", "DEPARTMENT › PROVINCE › DISTRICT", "部门 › 省 › 区"],
+    ["TIPO DE ZONA", "ZONE TYPE", "区域类型"],
+    ["TRASLADO", "TRANSFER", "转运"],
+    ["REPARTO", "DELIVERY", "派送"],
+    ["INICIO", "START", "开始"],
+    ["HITO USADO", "MILESTONE USED", "使用的节点"],
+    ["FIN", "END", "结束"],
+    ["FIRMA / AHORA", "SIGNATURE / NOW", "签收 / 当前"],
+    ["HORAS", "HOURS", "小时"],
+    ["TOTALES", "TOTAL", "总计"],
+    ["DESDE SLA TRASLADO", "SINCE TRANSFER SLA", "转运 SLA 起算"],
+    ["PRECIO/GUÍA", "PRICE/GUIDE", "价格/指南"],
+    ["TARIFA", "RATE", "费率"],
+    ["MONTO SLA", "SLA AMOUNT", "SLA 金额"],
+    ["CLASIFICACIÓN", "CLASSIFICATION", "分类"],
+    ["HITOS", "MILESTONES", "节点"],
+    ["Configuración de comentarios de encargado", "Supervisor comment settings", "负责人评论设置"],
+    ["Configura las opciones compartidas de Subcampo 1 y las opciones dependientes de Subcampo 2. Los cambios se aplican a todos los usuarios.", "Configure shared Subtype 1 options and dependent Subtype 2 options. Changes apply to all users.", "配置共享的子字段 1 选项和关联的子字段 2 选项。更改将应用于所有用户。"],
+    ["Cargando el catálogo compartido…", "Loading shared catalog…", "正在加载共享目录…"],
+    ["Subcampo 1", "Subtype 1", "子字段 1"],
+    ["Agregar", "Add", "添加"],
+    ["Opciones de Subcampo 2", "Subtype 2 options", "子字段 2 选项"],
+    ["Asociadas a Subcampo 1", "Linked to Subtype 1", "关联至子字段 1"],
+    ["Guardar configuración", "Save settings", "保存设置"],
+    ["Solo el administrador puede guardar cambios.", "Only the administrator can save changes.", "仅管理员可以保存更改。"],
+    ["Procesando...", "Processing...", "正在处理…"],
+    ["CÓDIGO QR", "QR CODE", "二维码"],
+    ["Cerrar", "Close", "关闭"],
+    ["COMENTARIO DEL CASO", "CASE COMMENT", "案例评论"],
+    ["Clasificación de paquetes críticos", "Critical package classification", "关键包裹分类"],
+    ["Comentario del PDV", "PDV comment", "PDV 评论"],
+    ["Guardar comentario", "Save comment", "保存评论"],
+    ["IMÁGENES DEL PDV", "PDV IMAGES", "PDV 图片"],
+    ["Adjunta PNG, JPG o WebP de hasta 8 MB. Haz clic en una imagen para verla ampliada.", "Attach PNG, JPG, or WebP images up to 8 MB. Click an image to enlarge it.", "可上传最大 8 MB 的 PNG、JPG 或 WebP 图片。点击图片可放大查看。"],
+    ["Seleccionar imagen", "Choose image", "选择图片"],
+    ["Cargar imagen", "Upload image", "上传图片"],
+    ["GESTIÓN MASIVA", "BULK MANAGEMENT", "批量管理"],
+    ["SUBCAMPO 1", "SUBFIELD 1", "子字段 1"],
+    ["SUBCAMPO 2", "SUBFIELD 2", "子字段 2"],
+    ["COMENTARIO PARA TODAS LAS GUÍAS", "COMMENT FOR ALL GUIDES", "所有指南的评论"],
+    ["Cierre de caso", "Close case", "结案"],
+    ["Marcado: finalizar los casos. Desmarcado: mantenerlos en proceso.", "Checked: close cases. Unchecked: keep them in progress.", "勾选：结案。未勾选：保持处理中。"],
+    ["Notificación al PDV", "Notify PDV", "通知 PDV"],
+    ["Marcado: mostrar el comentario. Desmarcado: mantenerlo oculto.", "Checked: show the comment. Unchecked: keep it hidden.", "勾选：显示评论。未勾选：保持隐藏。"],
+    ["Aplicar a seleccionadas", "Apply to selected", "应用于所选项"],
+    ["Generar PDF: penalidades y QR", "Generate PDF: penalties and QR codes", "生成 PDF：罚款和二维码"],
+    ["Cargar / cambiar portada", "Upload / change cover", "上传 / 更换封面"],
+    ["Quitar portada", "Remove cover", "移除封面"],
+    ["Guías seleccionadas", "Selected guides", "所选指南"],
+    ["Imprimir / Guardar PDF", "Print / Save PDF", "打印 / 保存 PDF"],
+    ["Detalle de la selección activa. Se muestran los comentarios guardados.", "Details for the active selection. Saved comments are shown.", "当前选择的详情。显示已保存的评论。"],
+    ["Administración de usuarios", "User administration", "用户管理"],
+    ["Usuario", "User", "用户"],
+    ["Sin espacios ni tildes.", "No spaces or accent marks.", "不能包含空格或重音符号。"],
+    ["Contraseña", "Password", "密码"],
+    ["Mínimo 10 caracteres.", "At least 10 characters.", "至少 10 个字符。"],
+    ["Rol", "Role", "角色"],
+    ["Encargado", "Supervisor", "负责人"],
+    ["Administrador — acceso completo", "Administrator — full access", "管理员 — 完全访问权限"],
+    ["Asignar por", "Assign by", "分配方式"],
+    ["PDV específicos", "Specific PDVs", "指定 PDV"],
+    ["Áreas", "Areas", "区域"],
+    ["Regiones", "Regions", "地区"],
+    ["Alcance", "Scope", "范围"],
+    ["Accesos a módulos", "Module access", "模块访问权限"],
+    ["Define qué puede ver y ejecutar este usuario. El administrador conserva acceso completo.", "Choose what this user can view and do. The administrator keeps full access.", "设置此用户可以查看和执行的内容。管理员保留完整访问权限。"],
+    ["Crear usuario", "Create user", "创建用户"],
+    ["Permisos del usuario:", "User permissions:", "用户权限："],
+    ["Los cambios se aplican al iniciar sesión o actualizar su página.", "Changes apply when the user signs in or refreshes the page.", "更改将在用户登录或刷新页面后生效。"],
+    ["Guardar permisos", "Save permissions", "保存权限"],
+    ["Cerrar editor", "Close editor", "关闭编辑器"],
+    ["Usuarios registrados", "Registered users", "已注册用户"],
+    ["Buscar usuario", "Search user", "搜索用户"],
+    ["Buscar / actualizar", "Search / refresh", "搜索 / 刷新"],
+    ["Módulos", "Modules", "模块"],
+    ["CON COMENTARIO", "WITH COMMENT", "有评论"],
+    ["SIN COMENTARIO", "NO COMMENT", "无评论"],
+    ["PENDIENTE", "PENDING", "待处理"],
+    ["EN PROCESO", "IN PROGRESS", "处理中"],
+    ["FINALIZADO", "COMPLETED", "已完成"],
+    ["VENCIDO", "OVERDUE", "已逾期"],
+    ["VIGENTE", "ON TIME", "未逾期"],
+    ["POR VENCER", "DUE SOON", "即将到期"],
+    ["Ver guías", "View guides", "查看指南"],
+    ["Mostrando guías", "Showing guides", "正在显示指南"],
+    ["Agregar comentario", "Add comment", "添加评论"],
+    ["Buscar guía en el detalle...", "Search guide details...", "搜索指南详情…"],
+    ["No hay guías que coincidan con los filtros actuales.", "No guides match the current filters.", "没有指南符合当前筛选条件。"],
+    ["No hay guías para mostrar. Selecciona un comentario en el resumen o ajusta los filtros.", "No guides to show. Select a comment in the summary or adjust the filters.", "没有可显示的指南。请在汇总中选择评论或调整筛选条件。"],
+    ["No existen PDV para los filtros seleccionados.", "No PDVs match the selected filters.", "没有 PDV 符合所选筛选条件。"],
+    ["Sin fecha de actualización", "No update date", "无更新时间"],
+    ["Sin tipo de escaneo", "No scan type", "无扫描类型"],
+    ["Sin comentario del administrador", "No administrator comment", "无管理员评论"],
+    ["Sin comentario de gestión", "No management comment", "无管理评论"],
+    ["Sin Subtipo 1", "No Subtype 1", "无子类型 1"],
+    ["Sin Subtipo 2", "No Subtype 2", "无子类型 2"],
+    ["Sin información", "No information", "无信息"],
+    ["Sin problema registrado", "No problem recorded", "未记录问题"],
+    ["Copiar comentario del administrador", "Copy administrator comment", "复制管理员评论"],
+    ["Mostrar las guías de este comentario en el detalle", "Show this comment's guides in details", "在详情中显示此评论的指南"],
+    ["Eliminar", "Delete", "删除"],
+    ["Buscar", "Search", "搜索"],
+    ["Editar Subcampo 1", "Edit Subtype 1", "编辑子字段 1"],
+    ["Editar opción de Subcampo 2", "Edit Subtype 2 option", "编辑子字段 2 选项"],
+    ["Quitar Subcampo 1", "Remove Subtype 1", "移除子字段 1"],
+    ["Quitar opción", "Remove option", "移除选项"],
+    ["Nuevo valor, por ejemplo: TRASLADO", "New value, for example: TRANSFER", "新值，例如：转运"],
+    ["Nueva opción", "New option", "新选项"],
+    ["Repartidor:", "Courier:", "配送员："],
+    ["Distrito:", "District:", "区："],
+    ["Último estado:", "Latest status:", "最近状态："],
+    ["No se pudieron cargar los comentarios de gestión del encargado. Verifica la instalación de supabase_gestion_v2_comentario_encargado.sql y los permisos de la cuenta.", "Could not load supervisor management comments. Check the supabase_gestion_v2_comentario_encargado.sql installation and account permissions.", "无法加载负责人的管理评论。请检查 supabase_gestion_v2_comentario_encargado.sql 是否已安装及账户权限。"],
+    ["No se pudo cargar el catálogo. Ejecuta una vez el SQL supabase_gestion_v2_comentarios_catalogo.sql en el mismo proyecto Supabase.", "Could not load the catalog. Run supabase_gestion_v2_comentarios_catalogo.sql once in the same Supabase project.", "无法加载目录。请在同一 Supabase 项目中执行一次 supabase_gestion_v2_comentarios_catalogo.sql。"],
+    ["Configuración guardada y compartida con todos los usuarios.", "Settings saved and shared with all users.", "设置已保存并与所有用户共享。"],
+    ["Preparando PDF de las guías filtradas…", "Preparing PDF for filtered guides…", "正在为筛选出的指南生成 PDF…"],
+    ["No se pudo cargar el lector de Excel.", "Could not load the Excel reader.", "无法加载 Excel 读取器。"],
+    ["Seleccione un archivo XLSX o XLS válido.", "Select a valid XLSX or XLS file.", "请选择有效的 XLSX 或 XLS 文件。"],
+    ["El archivo supera el límite de 30 MB.", "The file exceeds the 30 MB limit.", "文件超过 30 MB 限制。"],
+    ["No existe una guía para copiar.", "There is no guide to copy.", "没有可复制的指南。"],
+    ["No se pudo copiar la guía.", "Could not copy the guide.", "无法复制指南。"],
+    ["PREVENTIVA", "PREVENTIVE", "预防性"],
+    ["Estado", "Status", "状态"],
+    ["Español", "Spanish", "西班牙语"],
+    ["简体中文", "Simplified Chinese", "简体中文"],
+    ["English", "English", "英语"],
+    ["Carga un archivo para consultar el SLA de los paquetes.", "Upload a file to view package SLA.", "上传文件以查看包裹 SLA。"],
+    ["No hay paquetes que coincidan con los filtros.", "No packages match the filters.", "没有符合筛选条件的包裹。"],
+    ["No hay registros para mostrar.", "No records to display.", "没有可显示的记录。"],
+    ["No hay distritos disponibles para editar.", "No districts are available to edit.", "没有可编辑的区。"],
+    ["Sin fecha de inicio", "No start date", "无开始日期"],
+    ["Fecha inconsistente", "Inconsistent date", "日期不一致"],
+    ["Sin coincidencia en zonificación", "No match in zoning", "分区中无匹配项"],
+    ["Sin departamento", "No department", "无部门"],
+    ["Sin provincia", "No province", "无省份"],
+    ["Sin distrito", "No district", "无区"],
+    ["Sin tipo", "No type", "无类型"],
+    ["Sin match", "No match", "无匹配项"],
+    ["Sin dato", "No data", "无数据"],
+    ["Sin definir", "Undefined", "未定义"],
+    ["Sin inicio", "No start", "无开始"],
+    ["Sin tipo de problema registrado", "No problem type recorded", "未记录问题类型"],
+    ["Sin tipo de operación", "No operation type", "无操作类型"],
+    ["Sin tipo de interrupción", "No interruption type", "无中断类型"],
+    ["Sin PDV", "No PDV", "无 PDV"],
+    ["Sin encargado", "No supervisor", "无负责人"],
+    ["Sin zona asignada", "No zone assigned", "未分配区域"],
+    ["Pendiente", "Pending", "待处理"],
+    ["Firma", "Signature", "签收"],
+    ["Ahora", "Now", "现在"],
+    ["Todas", "All", "全部"],
+    ["TOTAL GENERAL", "GRAND TOTAL", "总计"],
+    ["TOTAL · suma por PDV", "TOTAL · sum by PDV", "总计 · 按 PDV 汇总"],
+    ["Ver hitos", "View events", "查看节点"],
+    ["Generación del dato", "Data generated", "数据生成"],
+    ["Salida del HUB", "Hub departure", "离开 HUB"],
+    ["Llegada al CEDIS", "Arrival at CEDIS", "到达 CEDIS"],
+    ["Salida del CEDIS", "CEDIS departure", "离开 CEDIS"],
+    ["Llegada al PDV", "Arrival at PDV", "到达 PDV"],
+    ["Despacho / enrutamiento", "Dispatch / routing", "分拣 / 路由"],
+    ["Firma / entrega", "Signature / delivery", "签收 / 交付"],
+    ["Registro del problema", "Problem recorded", "问题记录"],
+    ["Retorno al almacén", "Return to warehouse", "退回仓库"],
+    ["Llegada al almacén de origen", "Arrival at origin warehouse", "到达始发仓库"],
+    ["Guías por tipo de operación más reciente", "Guides by latest operation type", "按最近操作类型统计指南"],
+    ["Guías por problema más recurrente", "Guides by most frequent problem", "按最常见问题统计指南"],
+    ["Monto estimado de multa por PDV", "Estimated penalty amount by PDV", "按 PDV 统计的预估罚款"],
+    ["Interrupciones por operación más reciente", "Interruptions by latest operation", "按最近操作统计中断"],
+    ["Brechas o problemas más recurrentes", "Most frequent gaps or problems", "最常见的间隔或问题"],
+    ["Multa acumulada por PDV (S/)", "Accumulated penalty by PDV (S/)", "按 PDV 累计罚款 (S/)"],
+    ["Cargando configuración compartida de Supabase…", "Loading shared settings from Supabase…", "正在从 Supabase 加载共享设置…"],
+    ["Configuración compartida cargada desde Supabase.", "Shared settings loaded from Supabase.", "已从 Supabase 加载共享设置。"],
+    ["No hay cambios de precio por guardar.", "There are no price changes to save.", "没有需要保存的价格更改。"],
+    ["Precios por distrito guardados y compartidos.", "District prices saved and shared.", "区价格已保存并共享。"],
+    ["Solo el administrador puede cambiar el precio por distrito.", "Only an administrator can change district prices.", "只有管理员可以更改区价格。"],
+    ["Cada precio debe ser mayor o igual a cero y tener hasta 4 decimales.", "Each price must be zero or greater and have up to 4 decimal places.", "每个价格必须大于或等于零，且最多保留 4 位小数。"],
+    ["El primer rango debe comenzar en 0 horas.", "The first range must start at 0 hours.", "第一个范围必须从 0 小时开始。"],
+    ["Debe quedar al menos un rango.", "At least one range must remain.", "至少保留一个范围。"],
+    ["Completa las horas y la tarifa antes de agregar otro rango.", "Enter the hours and rate before adding another range.", "添加其他范围前，请填写小时数和费率。"],
+    ["Cada rango intermedio necesita un límite final mayor a su inicio.", "Each intermediate range needs an upper limit greater than its start.", "每个中间范围的上限都必须大于起始值。"],
+    ["Corrige el límite del último rango antes de agregar otro.", "Correct the last range's upper limit before adding another.", "添加其他范围前，请先修正最后一个范围的上限。"],
+    ["El rango supera el máximo de horas permitido.", "The range exceeds the maximum allowed hours.", "该范围超过允许的最大小时数。"],
+    ["Deja vacío el límite final del último rango para cubrir las horas mayores.", "Leave the last range's upper limit empty to cover higher hours.", "请将最后一个范围的上限留空，以涵盖更长时数。"],
+    ["Los rangos deben ser continuos y no solaparse.", "Ranges must be continuous and must not overlap.", "范围必须连续且不得重叠。"],
+    ["No se cargó la conexión del módulo SLA. Actualiza la página.", "The SLA module connection did not load. Refresh the page.", "SLA 模块连接未加载。请刷新页面。"],
+    ["No se encontraron filas con guía y PDV.", "No rows with a guide and PDV were found.", "未找到包含指南和 PDV 的行。"],
+    ["El archivo supera el máximo de 100,000 guías por carga.", "The file exceeds the limit of 100,000 guides per upload.", "文件超过每次上传 100,000 条指南的上限。"],
+    ["No se encontraron distritos con SLA en el archivo.", "No districts with SLA data were found in the file.", "文件中未找到包含 SLA 数据的区。"],
+    ["El archivo supera el máximo de 50,000 distritos por carga.", "The file exceeds the limit of 50,000 districts per upload.", "文件超过每次上传 50,000 个区的上限。"],
+    ["No se pudo identificar el PDV de esta sesión.", "Could not identify the PDV for this session.", "无法识别此会话的 PDV。"],
+    ["Falta cargar zonificación y monitoreo.", "Zoning and monitoring data must be uploaded.", "请先上传分区数据和监控数据。"],
+    ["La carga supera el límite de lectura del módulo.", "The upload exceeds this module's reading limit.", "上传数据超过此模块的读取限制。"],
+    ["La zonificación supera el límite de lectura del módulo.", "The zoning data exceeds this module's reading limit.", "分区数据超过此模块的读取限制。"],
+    ["No está disponible el lector de Excel.", "The Excel reader is unavailable.", "Excel 读取器不可用。"],
+    ["No se encontró la fila de encabezados del monitoreo. Verifica que sea el archivo de exportación de guías.", "The monitoring header row was not found. Check that this is the guide export file.", "未找到监控文件的标题行。请确认这是指南导出文件。"],
+    ["No se encontraron las columnas Departamento, Provincia, Distrito, Tipo de zona, SLA traslado (días) y SLA reparto (días) en la primera hoja.", "The first sheet is missing one or more required columns: Department, Province, District, Zone type, Transfer SLA (days), and Delivery SLA (days).", "第一页缺少必要列：部门、省、区、区域类型、转运 SLA（天）和派送 SLA（天）。"],
+    ["Supabase no devolvió el identificador de carga.", "Supabase did not return an upload ID.", "Supabase 未返回上传 ID。"],
+    ["Supabase no devolvió el identificador de la carga de zonificación.", "Supabase did not return a zoning upload ID.", "Supabase 未返回分区数据上传 ID。"],
+    ["Selecciona el Excel de zonificación.", "Select the zoning Excel file.", "请选择分区 Excel 文件。"],
+    ["Solo el administrador puede cargar la zonificación.", "Only an administrator can upload zoning data.", "只有管理员可以上传分区数据。"],
+    ["Solo el administrador puede cargar el archivo SLA.", "Only an administrator can upload the SLA file.", "只有管理员可以上传 SLA 文件。"],
+    ["No se pudieron guardar los parámetros.", "Could not save the parameters.", "无法保存参数。"],
+    ["No se pudo publicar la carga.", "Could not publish the upload.", "无法发布上传内容。"]
+  ];
+  const PAGE_I18N={en:Object.create(null),"zh-CN":Object.create(null)},PAGE_I18N_REVERSE={en:new Map(),"zh-CN":new Map()};
+  PAGE_I18N_ROWS.forEach(([es,en,zh])=>{PAGE_I18N.en[es]=en;PAGE_I18N["zh-CN"][es]=zh;PAGE_I18N_REVERSE.en.set(en,es);PAGE_I18N_REVERSE["zh-CN"].set(zh,es);});
+  const PAGE_I18N_PREFIX_ROWS=[
+    ["Archivo local: ","Local file: ","本地文件："],
+    ["Archivo activo: ","Active file: ","当前文件："],
+    ["Carga publicada: ","Upload published: ","上传已发布："],
+    ["Carga local lista: ","Local upload ready: ","本地上传已就绪："],
+    ["Leyendo ","Reading ","正在读取："],
+    ["Reconociendo PDV y preparando ","Recognizing PDV and preparing ","正在识别 PDV 并准备："],
+    ["Subiendo el archivo SLA… ","Uploading SLA file… ","正在上传 SLA 文件… "],
+    ["Subiendo zonificación… ","Uploading zoning… ","正在上传分区数据… "],
+    ["Zonificación publicada: ","Zoning published: ","分区数据已发布："],
+    ["Zonificación activa: ","Active zoning: ","当前分区："],
+    ["Aún no hay archivo de monitoreo. ","No monitoring file has been uploaded yet. ","尚未上传监控文件。"],
+    ["Encargado · ","Supervisor · ","负责人 · "],
+    ["Zona · ","Zone · ","区域 · "],
+    ["No se pudo cargar el módulo SLA. Verifica que ejecutaste supabase_gestion_v2_sla_paquetes.sql. Detalle: ","Could not load the SLA module. Verify that supabase_gestion_v2_sla_paquetes.sql was run. Details: ","无法加载 SLA 模块。请确认已运行 supabase_gestion_v2_sla_paquetes.sql。详情："],
+    ["No se pudieron guardar los precios. Detalle: ","Could not save prices. Details: ","无法保存价格。详情："],
+    ["No se pudieron guardar los parámetros. Detalle: ","Could not save parameters. Details: ","无法保存参数。详情："],
+    ["No se publicó el archivo; la carga activa se conserva. Detalle: ","The file was not published; the active upload is unchanged. Details: ","文件未发布；当前数据仍保持不变。详情："],
+    ["No se publicó la zonificación; la carga activa se conserva. Detalle: ","Zoning was not published; the active data is unchanged. Details: ","分区数据未发布；当前数据仍保持不变。详情："],
+    ["El archivo quedó visible en este navegador y no se guardó ni compartió. No se pudieron leer algunas tarifas compartidas. Detalle: ","The file is visible in this browser but was not saved or shared. Some shared rates could not be read. Details: ","文件仅在此浏览器中可见，未保存或共享。无法读取部分共享费率。详情："],
+    ["No se pudieron guardar los precios. ","Could not save prices. ","无法保存价格。"],
+    ["No se pudieron guardar los parámetros. ","Could not save parameters. ","无法保存参数。"]
+  ];
+  function normalizarTextoPaginaI18n(v){return String(v==null?"":v).replace(/\s+/g," ").trim();}
+  function traducirTextoDinamicoPagina(texto,idioma){
+    const t=normalizarTextoPaginaI18n(texto),en=idioma==="en";let m;
+    if((m=t.match(/^(\d[\d,.]*)\s+guías? seleccionadas?$/i)))return en?m[1]+" guides selected":"已选择 "+m[1]+" 个指南";
+    if((m=t.match(/^(\d[\d,.]*)\s+seleccionadas?$/i)))return en?m[1]+" selected":"已选择 "+m[1]+" 项";
+    if((m=t.match(/^(\d[\d,.]*)\s+guías?$/i)))return en?m[1]+" guides":m[1]+" 个指南";
+    if((m=t.match(/^(\d[\d,.]*)\s+imágenes?$/i)))return en?m[1]+" images":m[1]+" 张图片";
+    if((m=t.match(/^Página (\d+) de (\d+) · ([\d,.]+) guías?$/i)))return en?"Page "+m[1]+" of "+m[2]+" · "+m[3]+" guides":"第 "+m[1]+" / "+m[2]+" 页 · "+m[3]+" 个指南";
+    if((m=t.match(/^(\d+) PDV visibles(?: · (.*))?$/i))){let suffix=m[2]||"";if(en){const words={"Regiones":"Regions","área":"areas","áreas":"areas","encargado":"supervisor","encargados":"supervisors","comentario encargado":"supervisor comment","comentario de gestión del encargado":"supervisor management comment","no finalizadas":"not completed","solo casos críticos":"critical cases only"};suffix=suffix.split(" · ").map(x=>{const p=x.split(":");if(p.length>1)return (words[p[0]]||p[0])+": "+p.slice(1).join(":");const q=x.match(/^(\d+) (área|áreas|encargado|encargados)$/);return q?q[1]+" "+words[q[2]]:(words[x]||x);}).join(" · ");return m[1]+" visible PDVs"+(suffix?" · "+suffix:"");}return m[1]+" 个可见 PDV"+(suffix?" · "+suffix:"");}
+    if((m=t.match(/^(\d+) PDV · (\d+) Subtipos 1 · (\d+) Subtipos 2 · (\d+) grupos de comentario · (\d+) guías$/i)))return en?m[1]+" PDVs · "+m[2]+" Subtype 1 groups · "+m[3]+" Subtype 2 groups · "+m[4]+" comment groups · "+m[5]+" guides":m[1]+" 个 PDV · "+m[2]+" 个子类型 1 · "+m[3]+" 个子类型 2 · "+m[4]+" 个评论组 · "+m[5]+" 个指南";
+    if((m=t.match(/^([▸▾] )?ÁREA · (.+) · (\d+) PDV$/i)))return (m[1]||"")+(en?"AREA · "+m[2]+" · "+m[3]+" PDVs":"区域 · "+m[2]+" · "+m[3]+" 个 PDV");
+    if((m=t.match(/^([▸▾] )?REGIÓN · (.+) · (\d+) PDV$/i)))return (m[1]||"")+(en?"REGION · "+m[2]+" · "+m[3]+" PDVs":"地区 · "+m[2]+" · "+m[3]+" 个 PDV");
+    if((m=t.match(/^(\d+) guías únicas · (\d+) encontradas en los datos disponibles · (\d+) visibles con todos los filtros · (\d+) no encontradas\.$/i)))return en?m[1]+" unique guides · "+m[2]+" found in available data · "+m[3]+" visible with all filters · "+m[4]+" not found.":m[1]+" 个唯一指南 · "+m[2]+" 个在可用数据中找到 · "+m[3]+" 个在全部筛选条件下可见 · "+m[4]+" 个未找到。";
+    if((m=t.match(/^(\d[\d,.]*)\s+paquetes? · (\d[\d,.]*)\s+departamentos?$/i)))return en?m[1]+" packages · "+m[2]+" departments":m[1]+" 个包裹 · "+m[2]+" 个部门";
+    if((m=t.match(/^(\d[\d,.]*)\s+paquetes?$/i)))return en?m[1]+" packages":m[1]+" 个包裹";
+    if((m=t.match(/^(\d[\d,.]*)\s+filas?$/i)))return en?m[1]+" rows":m[1]+" 行";
+    if((m=t.match(/^(\d[\d,.]*)\s+resultados?$/i)))return en?m[1]+" results":m[1]+" 个结果";
+    if((m=t.match(/^(\d+) de (\d+) columnas visibles$/i)))return en?m[1]+" of "+m[2]+" columns visible":m[1]+" / "+m[2]+" 列可见";
+    if((m=t.match(/^Ver (\d[\d,.]*) paquetes?$/i)))return en?"View "+m[1]+" packages":"查看 "+m[1]+" 个包裹";
+    if((m=t.match(/^Rango (\d+)$/i)))return en?"Range "+m[1]:"范围 "+m[1];
+    if((m=t.match(/^Revisa la hora inicial del rango (\d+)\.$/i)))return en?"Check the start hour for range "+m[1]+".":"请检查范围 "+m[1]+" 的起始小时。";
+    if((m=t.match(/^Revisa el límite final del rango (\d+)\.$/i)))return en?"Check the upper limit for range "+m[1]+".":"请检查范围 "+m[1]+" 的上限。";
+    if((m=t.match(/^La tarifa del rango (\d+) debe estar entre 0 y 100%\.$/i)))return en?"The rate for range "+m[1]+" must be between 0 and 100%.":"范围 "+m[1]+" 的费率必须在 0 到 100% 之间。";
+    if((m=t.match(/^Los rangos deben ser continuos y no solaparse\. El rango (\d+) debe iniciar donde termina el anterior\.$/i)))return en?"Ranges must be continuous and must not overlap. Range "+m[1]+" must start where the previous range ends.":"范围必须连续且不得重叠。范围 "+m[1]+" 必须从上一个范围的终点开始。";
+    if((m=t.match(/^Simular exoneración · (\d[\d,.]*) guías en este PDV$/i)))return en?"Simulate exemption · "+m[1]+" guides at this PDV":"模拟豁免 · 此 PDV 的 "+m[1]+" 条指南";
+    if((m=t.match(/^([\d,.]+)[–-]([\d,.]+) de ([\d,.]+)$/)))return en?m[1]+"–"+m[2]+" of "+m[3]:m[1]+"–"+m[2]+" / "+m[3];
+    if((m=t.match(/^(.+) · (\d[\d,.]*) paquetes?$/i)))return m[1]+" · "+m[2]+(en?" packages":" 个包裹");
+    if((m=t.match(/^Cargando paquetes SLA…\s*(\d[\d,.]*)\s+filas?$/i)))return en?"Loading SLA packages… "+m[1]+" rows":"正在加载 SLA 包裹… "+m[1]+" 行";
+    if((m=t.match(/^≥\s*(\d+(?:[.,]\d+)?) h netas · Tarifa (\d+(?:[.,]\d+)?)%$/i)))return en?"≥ "+m[1]+" net h · Rate "+m[2]+"%":"≥ "+m[1]+" 净小时 · 费率 "+m[2]+"%";
+    if((m=t.match(/^(\d+(?:[.,]\d+)?) ≤ h netas < (\d+(?:[.,]\d+)?) · Tarifa (\d+(?:[.,]\d+)?)%$/i)))return en?m[1]+" ≤ net h < "+m[2]+" · Rate "+m[3]+"%":m[1]+" ≤ 净小时 < "+m[2]+" · 费率 "+m[3]+"%";
+    if((m=t.match(/^≥\s*(\d+(?:[.,]\d+)?) h netas · (\d+(?:[.,]\d+)?)%$/i)))return en?"≥ "+m[1]+" net h · "+m[2]+"%":"≥ "+m[1]+" 净小时 · "+m[2]+"%";
+    if((m=t.match(/^(\d+(?:[.,]\d+)?)[–-]<\s*(\d+(?:[.,]\d+)?) h netas · (\d+(?:[.,]\d+)?)%$/i)))return en?m[1]+"–<"+m[2]+" net h · "+m[3]+"%":m[1]+"–<"+m[2]+" 净小时 · "+m[3]+"%";
+    if((m=t.match(/^(\d[\d,.]*) guías\/PDV, agrupadas en orden Departamento › Provincia › Distrito\. Las tarifas usan las horas transcurridas menos el SLA de traslado \(en horas\); antes de ese umbral se cuentan desde 0\. Los paquetes sin firma se recalculan hasta ahora\.$/i)))return en?m[1]+" guides/PDV are shown in Department › Province › District order. Rates use elapsed hours minus the transfer SLA (in hours); the range starts at 0 after that threshold. Packages without a signature are recalculated up to now.":m[1]+" 个指南/PDV，按部门 › 省 › 区顺序显示。费率按已用小时数减去转运 SLA（小时）计算；达到该门槛后范围从 0 开始。未签收的包裹会重新计算至当前时间。";
+    return null;
+  }
+  function traducirFrasePagina(texto,idioma){
+    if(idioma==="es")return texto;
+    const pre=(String(texto).match(/^\s*/)||[""])[0],post=(String(texto).match(/\s*$/)||[""])[0],key=normalizarTextoPaginaI18n(texto),base=PAGE_I18N_REVERSE[idioma]?.get(key)||key,exact=PAGE_I18N[idioma]?.[base],dynamic=exact===undefined?traducirTextoDinamicoPagina(base,idioma):null;
+    let out=exact===undefined?dynamic:exact;
+    if(out===null){const prefix=PAGE_I18N_PREFIX_ROWS.find(row=>base.startsWith(row[0]));if(prefix)out=prefix[idioma==="en"?1:2]+base.slice(prefix[0].length);}
+    return out===null?texto:pre+out+post;
+  }
+  const PAGE_I18N_TEXT_BASE=new WeakMap(),PAGE_I18N_TEXT_APPLIED=new WeakMap(),PAGE_I18N_ATTR_BASE=new WeakMap(),PAGE_I18N_ATTR_APPLIED=new WeakMap();
+  function paginaI18nNoTraducirTexto(el){
+    if(!el)return true;
+    if(el.closest('script,style,textarea,[contenteditable="true"],[data-i18n-ignore],#userBadge,#commentModal,.guide,.type-cell,.update-cell,.manager-note-display,.obs,.hierarchy-comment-cell,.hierarchy-category-cell,.qr-guide-label,.qr-rider-label,.qr-district-label,.qr-status-label,.sla-guide-cell,[data-sla-col="pdv"]'))return true;
+    if(el.closest("#excelBody")&&!el.closest(".excel-guide-actions button,.qr,.copy-guide,.deadline-badge"))return true;
+    if(el.closest("#v16UsersRows")&&!el.closest("button"))return true;
+    if(el.tagName==="OPTION"&&el.closest("[data-page-language]"))return true;
+    if(el.closest("#resumenBody")&&el.closest("td")&&!el.closest("button.region-toggle,.area-subtotal-nested,.region-subtotal,.total-row"))return true;
+    if(el.closest("#comentarioJerarquiaBody")&&el.closest(".hierarchy-comment-cell,.hierarchy-category-cell"))return true;
+    if(el.closest("#resumenImagenGrid .resumen-imagen-name,#resumenImagenGrid .resumen-imagen-meta"))return true;
+    return false;
+  }
+  function traducirNodoTextoPagina(node){
+    const el=node.parentElement;if(!el||paginaI18nNoTraducirTexto(el))return;
+    const actual=node.nodeValue||"",aplicado=PAGE_I18N_TEXT_APPLIED.get(node);let base;
+    if(aplicado===actual&&PAGE_I18N_TEXT_BASE.has(node))base=PAGE_I18N_TEXT_BASE.get(node);
+    else{const norm=normalizarTextoPaginaI18n(actual),rev=PAGE_I18N_REVERSE[idiomaComentario]?.get(norm);base=rev||actual;PAGE_I18N_TEXT_BASE.set(node,base);}
+    const translated=traducirFrasePagina(base,idiomaComentario);if(translated!==actual){PAGE_I18N_TEXT_APPLIED.set(node,translated);node.nodeValue=translated;}else PAGE_I18N_TEXT_APPLIED.set(node,actual);
+  }
+  function traducirAtributosPagina(el){
+    if(!el||el.closest('script,style,[data-i18n-ignore]'))return;
+    if(paginaI18nNoTraducirTexto(el))return;
+    if(el.tagName==="OPTION"&&el.closest("[data-page-language]"))return;
+    const attrs=["placeholder","title","aria-label","data-placeholder"],bases=PAGE_I18N_ATTR_BASE.get(el)||Object.create(null),applied=PAGE_I18N_ATTR_APPLIED.get(el)||Object.create(null);
+    attrs.forEach(a=>{if(!el.hasAttribute(a))return;const actual=el.getAttribute(a);let base;if(applied[a]===actual&&Object.prototype.hasOwnProperty.call(bases,a))base=bases[a];else{const norm=normalizarTextoPaginaI18n(actual),rev=PAGE_I18N_REVERSE[idiomaComentario]?.get(norm);base=rev||actual;bases[a]=base;}const translated=traducirFrasePagina(base,idiomaComentario);if(translated!==actual){applied[a]=translated;el.setAttribute(a,translated);}else applied[a]=actual;});
+    PAGE_I18N_ATTR_BASE.set(el,bases);PAGE_I18N_ATTR_APPLIED.set(el,applied);
+  }
+  function traducirSubarbolPagina(root){
+    if(!root)return;if(root.nodeType===Node.TEXT_NODE){traducirNodoTextoPagina(root);return;}
+    if(root.nodeType===Node.ELEMENT_NODE)traducirAtributosPagina(root);
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;while((node=walker.nextNode()))traducirNodoTextoPagina(node);
+    if(root.querySelectorAll)root.querySelectorAll("*").forEach(traducirAtributosPagina);
+  }
+  function traducirPaginaCompleta(root){if(root)traducirSubarbolPagina(root);}
+  function instalarTraductorPagina(){
+    document.documentElement.lang=idiomaComentario;document.querySelectorAll("[data-page-language]").forEach(x=>x.value=idiomaComentario);document.title=idiomaComentario==="en"?"Guide Management V2":idiomaComentario==="zh-CN"?"指南管理 V2":"Gestión de guías V2";if(idiomaComentario!=="es")traducirPaginaCompleta(document.body);
+    if(window.MutationObserver){const observer=new MutationObserver(records=>{if(idiomaComentario==="es")return;records.forEach(r=>{if(r.type==="characterData")traducirNodoTextoPagina(r.target);else if(r.type==="attributes")traducirAtributosPagina(r.target);else r.addedNodes.forEach(traducirSubarbolPagina);});});observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["placeholder","title","aria-label","data-placeholder"]});}
+  }
+  function textosComentarioActual(){return TEXTOS_COMENTARIO_UI[idiomaComentario]||TEXTOS_COMENTARIO_UI.es;}
+  function etiquetaRolIdioma(rol){const r=String(rol||"").toLocaleUpperCase("es");if(r==="ADMINISTRADOR")return idiomaComentario==="en"?"Administrator":idiomaComentario==="zh-CN"?"管理员":r;if(r==="ENCARGADO")return idiomaComentario==="en"?"Supervisor":idiomaComentario==="zh-CN"?"负责人":r;if(r==="PDV")return idiomaComentario==="zh-CN"?"网点":r;return r;}
+  function actualizarBadgeUsuarioIdioma(){if(!sesion)return;const badge=document.getElementById("userBadge");if(badge)badge.textContent=sesion.usuario+" · "+etiquetaRolIdioma(sesion.rol);}
+  function cambiarIdiomaComentario(valor){idiomaComentario=["es","zh-CN","en"].includes(valor)?valor:"es";try{localStorage.setItem(IDIOMA_COMENTARIO_KEY,idiomaComentario);}catch(_){}document.documentElement.lang=idiomaComentario;document.querySelectorAll("[data-page-language]").forEach(x=>x.value=idiomaComentario);document.title=idiomaComentario==="en"?"Guide Management V2":idiomaComentario==="zh-CN"?"指南管理 V2":"Gestión de guías V2";actualizarBadgeUsuarioIdioma();traducirPaginaCompleta(document.body);aplicarIdiomaModalComentario();}
+  function aplicarIdiomaModalComentario(){
+    const t=textosComentarioActual(),modal=document.getElementById("commentModal"),pdv=String(modal?.dataset.pdv||"");
+    document.getElementById("commentTitle").textContent=t.title+(pdv?" · "+pdv:"");
+    document.getElementById("commentCriticalModalTitle").textContent=t.classification;
+    document.getElementById("commentPdvLabel").textContent=t.pdvComment;
+    document.getElementById("commentText").placeholder=t.placeholder;
+    document.getElementById("btnCancelComment").textContent=t.cancel;
+    document.getElementById("btnSaveComment").textContent=t.save;
+    const x=(resumen.filas||[]).find(r=>String(r.pdv)===pdv);
+    document.getElementById("commentMeta").textContent=x?.comentarioFecha?(t.lastRecord+": "+x.comentarioFecha+" · "+(x.comentarioUsuario||"")):t.noPrevious;
+    if(pdv)renderResumenCriticoComentarioModal(pdv);
+  }
   function clavePdvCriticoComentario(pdv){return normalizarLocal(String(pdv||"").split("|")[0].replace(/\.PDV$/i,"").trim());}
   function construirResumenCriticoComentarioPorPdv(){
     const pdvs=new Map(),categoriasPermitidas=new Set(CLASIFICACIONES_CRITICAS_COMENTARIO.map(c=>c.categoria));
@@ -1412,13 +1987,13 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function construirResumenCriticoComentarioPdv(pdv){return construirResumenCriticoComentarioPorPdv().get(clavePdvCriticoComentario(pdv))||[];}
   function textoResumenCriticoComentarioExcel(categorias){return (categorias||[]).map(cat=>[cat.etiqueta+": "+num(cat.cantidad),...cat.grupos.map(g=>"Subtipo 1: "+g.subcampo1+" | Subtipo 2: "+g.subcampo2+" | Comentario administrador: "+g.comentario+" | Conteo: "+num(g.cantidad))].join("\n")).join("\n\n");}
   function renderResumenCriticoComentarioModal(pdv){
-    const body=document.getElementById("commentCriticalSummaryBody");if(!body)return;body.replaceChildren();const categorias=construirResumenCriticoComentarioPdv(pdv);
-    if(!categorias.length){const vacio=document.createElement("div");vacio.className="comment-critical-modal-empty";vacio.textContent="No hay paquetes críticos para este PDV con los filtros actuales.";body.appendChild(vacio);return;}
+    const body=document.getElementById("commentCriticalSummaryBody");if(!body)return;body.replaceChildren();const categorias=construirResumenCriticoComentarioPdv(pdv),t=textosComentarioActual();
+    if(!categorias.length){const vacio=document.createElement("div");vacio.className="comment-critical-modal-empty";vacio.textContent=t.empty;body.appendChild(vacio);return;}
     categorias.forEach(cat=>{
       const section=document.createElement("section"),head=document.createElement("div"),label=document.createElement("strong"),total=document.createElement("span"),wrap=document.createElement("div"),table=document.createElement("table"),thead=document.createElement("thead"),trHead=document.createElement("tr"),tbody=document.createElement("tbody");
-      section.className="comment-critical-modal-category comment-critical-modal-category--"+cat.clase;head.className="comment-critical-modal-category-head";label.textContent=cat.etiqueta+":";total.className="comment-critical-modal-count";total.textContent=num(cat.cantidad);head.append(label,total);
-      table.className="comment-critical-modal-table";["Subtipo 1","Subtipo 2","Comentario administrador","Conteo"].forEach(t=>{const th=document.createElement("th");th.textContent=t;trHead.appendChild(th);});thead.appendChild(trHead);table.append(thead,tbody);
-      cat.grupos.forEach(g=>{const tr=document.createElement("tr");[g.subcampo1,g.subcampo2,g.comentario,num(g.cantidad)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});tbody.appendChild(tr);});
+      section.className="comment-critical-modal-category comment-critical-modal-category--"+cat.clase;head.className="comment-critical-modal-category-head";label.textContent=(t.categories[cat.categoria]||cat.etiqueta)+":";total.className="comment-critical-modal-count";total.textContent=num(cat.cantidad);head.append(label,total);
+      table.className="comment-critical-modal-table";[t.sub1,t.sub2,t.adminComment,t.count].forEach(texto=>{const th=document.createElement("th");th.textContent=texto;trHead.appendChild(th);});thead.appendChild(trHead);table.append(thead,tbody);
+      cat.grupos.forEach(g=>{const tr=document.createElement("tr"),valores=[g.subcampo1==="Sin Subtipo 1"?t.noSub1:g.subcampo1,g.subcampo2==="Sin Subtipo 2"?t.noSub2:g.subcampo2,g.comentario==="Sin comentario del administrador"?t.noAdminComment:g.comentario,num(g.cantidad)];valores.forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});tbody.appendChild(tr);});
       wrap.className="comment-critical-modal-table-wrap";wrap.appendChild(table);section.append(head,wrap);body.appendChild(section);
     });
   }

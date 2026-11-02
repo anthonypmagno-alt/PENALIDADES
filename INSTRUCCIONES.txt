@@ -237,3 +237,11 @@ CORRECCION DE PERSISTENCIA DE ZONIFICACION EN PENALIDADES (30-10-2026)
 - Al volver a abrir una liquidación, el RPC de detalle incluye tipo de zona, zona y SLA desde `public.penalidades_guias`; no requiere conservar el Excel de zonificación en el navegador.
 - En el mismo proyecto Supabase de Penalidades, ejecuta una sola vez `supabase_penalidades_persistir_zonificacion.sql`. Es incremental, no modifica ni elimina guías, liquidaciones o decisiones y no toca `storage.objects`.
 - Luego reemplaza `index.html` y `penalidades.html` por los del ZIP actualizado, publica y recarga el módulo. El acceso desde el portal usa `penalidades.html?v=20261030-zonificacion-persistente-1`. Vuelve a importar el Excel de zonificación, pulsa “Guardar cambios” y verifica que los valores sigan visibles al cerrar y abrir la liquidación.
+
+ACTUALIZACIÓN PDV: RESUMEN Y CONSULTA COMPARTIDA (02-11-2026)
+- Las rutas de inicio de sesión PDV desde `index.html` y el portal PDV antiguo redirigen a `pdv-v2.html` con una versión de caché nueva.
+- El resumen de Gestión V2 ocupa el ancho del panel; en móviles/tablets mantiene desplazamiento horizontal para conservar legibilidad.
+- El portal PDV tiene un acceso directo al cuadro de clasificación crítica, agrupado por tipo, Subtipo 1, Subtipo 2 y comentario administrador. El comentario solo se muestra si fue marcado para notificación al PDV.
+- Consulta desde Excel carga automáticamente la consulta compartida y permite reintentar con “Cargar / actualizar consulta compartida”. Los mensajes distinguen falta de permiso, publicación sin registros para el PDV/región y errores de carga.
+- Si la cuenta PDV no tiene acceso, habilita “Consulta desde Excel → Ver” en Usuarios. No requiere SQL.
+- Publica el ZIP completo en la raíz de GitHub Pages y vuelve a iniciar sesión para usar la actualización.

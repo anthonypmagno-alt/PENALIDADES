@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=gestion-v2-fixes-20261024-total-prev-crit-1"></script>
+<script src="./bridge.js?v=20261102-pdv-compartido-3"></script>
 <link rel="stylesheet" href="./sla-paquetes.css?v=20261029-pdv-local-1">
   <base target="_top">
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -182,6 +182,42 @@
 .summary-table tbody td.summary-preventive-critical.summary-selected{background:#93c5fd!important;color:#0f3d7a!important}
 .summary-table tbody tr.summary-row-active td.summary-preventive-critical:not(.summary-selected){background:#fde68a!important;color:#78350f!important}
 .summary-table tbody tr.area-subtotal-nested td.summary-preventive-critical,.summary-table tbody tr.region-subtotal td.summary-preventive-critical{background:#fef3c7!important;color:#92400e!important}
+</style>
+<style id="pdv-v2-resumen-criticos-y-ancho">
+/* El resumen ocupa el ancho útil del portal; en pantallas pequeñas conserva columnas legibles con scroll. */
+.summary-table#tablaResumenV2{width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;table-layout:fixed!important}
+#tablaResumenV2 th,#tablaResumenV2 td{min-width:0!important;box-sizing:border-box;padding-left:4px!important;padding-right:4px!important;overflow-wrap:anywhere}
+#tablaResumenV2 thead th{font-size:clamp(8px,.72vw,11px);line-height:1.2}
+#tablaResumenV2 .comment-col{width:6%;min-width:62px!important}
+.critical-summary-card{width:min(1000px,96vw);max-height:90vh;overflow:auto;text-align:left!important}
+.critical-summary-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+.critical-summary-head h3{margin:0;color:#153e67}
+.critical-summary-note{margin:0 0 12px;padding:9px 11px;border-radius:7px;background:#eff6ff;color:#334155;font-size:12px;line-height:1.4}
+.critical-summary-category{margin:10px 0;padding:10px;border:1px solid #cbd5e1;border-left:4px solid #d97706;border-radius:8px;background:#fff}
+.critical-summary-category--breach{border-left-color:#dc2626}
+.critical-summary-category-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;color:#1e293b;font-weight:800}
+.critical-summary-count{min-width:30px;padding:4px 8px;border-radius:999px;background:#e2e8f0;text-align:center;font-size:12px}
+.critical-summary-table-wrap{overflow:auto}
+.critical-summary-table{width:100%;min-width:620px;border-collapse:collapse}
+.critical-summary-table th,.critical-summary-table td{border:1px solid #cbd5e1;padding:7px 8px;text-align:left;font-size:12px;vertical-align:top;white-space:normal}
+.critical-summary-table th{background:#e2e8f0;color:#1e293b}
+.critical-summary-table td:last-child,.critical-summary-table th:last-child{text-align:right;width:78px;font-weight:800}
+.critical-summary-empty{padding:20px;text-align:center;color:#64748b;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px}
+.btn-critical-summary{border:0;border-radius:6px;padding:5px 7px;background:#e8f1ff;color:#1452a8;font-size:12px;font-weight:800;cursor:pointer}
+.btn-critical-summary:hover{background:#dbeafe}
+.pdv-critical-summary-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0;padding:10px 12px;border:1px solid #bfdbfe;border-radius:9px;background:#eff6ff;color:#1e3a5f}
+.pdv-critical-summary-toolbar>div:first-child strong,.pdv-critical-summary-toolbar>div:first-child small{display:block}
+.pdv-critical-summary-toolbar>div:first-child small{margin-top:3px;color:#475569;font-size:11px}
+.pdv-critical-summary-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pdv-critical-summary-actions label{margin:0;font-size:12px;font-weight:800}
+.pdv-critical-summary-actions select{min-width:150px;max-width:min(320px,55vw);padding:7px 9px;border:1px solid #cbd5e1;border-radius:6px;background:#fff}
+.pdv-critical-summary-actions button:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:900px){.summary-table#tablaResumenV2{min-width:1120px!important}.critical-summary-card{width:calc(100vw - 20px);padding:14px}}
+</style><style id="v2-summary-full-width">
+#summaryTableWrapV2{display:block;width:100%;max-width:none;min-width:0;margin:0;overflow-x:auto;overflow-y:visible;scroll-padding-inline-start:0}
+#summaryTableWrapV2>#tablaResumenV2{display:table;width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;table-layout:fixed!important}
+#tablaResumenV2 th,#tablaResumenV2 td{box-sizing:border-box;overflow-wrap:anywhere}
+@media(max-width:900px){#summaryTableWrapV2>#tablaResumenV2{width:1120px!important;min-width:1120px!important}}
 </style></head>
 <body>
   <section id="login" class="login"><div class="login-card">
@@ -194,13 +230,13 @@
   <div id="app" class="hidden">
     <header><div class="header-inner"><div><div class="title">📋 Revisión de Guías PDV · V16</div><div class="subtitle">Resumen de casos y registro de observaciones</div></div><div class="actions"><span id="userBadge" class="badge"></span><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div></div></header>
     <main>
-      <div class="view-tabs"><button id="tabGestion" class="view-tab active" onclick="mostrarVista('gestion')">Gestión de guías V2</button><button id="tabExcel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabSla" class="view-tab" data-module-key="sla_paquetes" onclick="mostrarVista('sla')">⏱️ SLA de paquetes</button><a data-modulo-v2="true" href="./pdv.html" class="view-tab">Volver a Gestión actual</a></div>
+      <div class="view-tabs"><button id="tabGestion" class="view-tab active" onclick="mostrarVista('gestion')">Gestión de guías V2</button><button id="tabExcel" class="view-tab" data-module-key="consulta_excel" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabSla" class="view-tab" data-module-key="sla_paquetes" onclick="mostrarVista('sla')">⏱️ SLA de paquetes</button><a data-modulo-v2="true" href="./pdv.html" class="view-tab">Volver a Gestión actual</a></div>
       <div id="viewGestion" class="app-view">
       <div class="cards"><div class="card"><b id="total">0</b><span>Total</span></div><div class="card"><b id="pendientes">0</b><span>Pendientes</span></div><div class="card"><b id="proceso">0</b><span>En proceso</span></div><div class="card"><b id="finalizados">0</b><span>Finalizados</span></div></div>
 
-      <section class="panel"><div class="panel-title">Resumen de Brecha y Cola Larga <span class="readonly-note">SOLO LECTURA</span></div><div class="resumen-imagen-toolbar"><button type="button" class="secondary" id="btnImagenResumen" onclick="descargarImagenResumen()">Descargar imagen del resumen</button><small>PNG · Filtros y grupos desplegados actuales</small><span id="estadoImagenResumen" role="status"></span><a id="enlaceImagenResumen" hidden="">Descargar PNG</a></div><div id="gestionV2Status" style="padding: 12px; background: rgb(239, 246, 255); color: rgb(30, 64, 175); border-radius: 8px; margin: 12px 0px;">Gestión de guías V2 · Fuentes y comentarios compartidos con Gestión actual. Clasificación calculada cada minuto.</div><div class="table-wrap"><table class="summary-table" id="tablaResumenV2"><colgroup><col style="width:10%"><col style="width:6%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:5%"><col style="width:5%"><col style="width:7%"><col style="width:5%"><col style="width:5%"></colgroup>
+      <section class="panel"><div class="panel-title">Resumen de Brecha y Cola Larga <span class="readonly-note">SOLO LECTURA</span></div><div class="resumen-imagen-toolbar"><button type="button" class="secondary" id="btnImagenResumen" onclick="descargarImagenResumen()">Descargar imagen del resumen</button><small>PNG · Filtros y grupos desplegados actuales</small><span id="estadoImagenResumen" role="status"></span><a id="enlaceImagenResumen" hidden="">Descargar PNG</a></div><div id="gestionV2Status" style="padding: 12px; background: rgb(239, 246, 255); color: rgb(30, 64, 175); border-radius: 8px; margin: 12px 0px;">Gestión de guías V2 · Fuentes y comentarios compartidos con Gestión actual. Clasificación calculada cada minuto.</div><div id="pdvCriticalSummaryToolbar" class="pdv-critical-summary-toolbar hidden"><div><strong>Clasificación de paquetes críticos</strong><small>Consulta por categoría, subtipo y comentario administrador.</small></div><div class="pdv-critical-summary-actions"><label for="pdvCriticalSummarySelect">PDV</label><select id="pdvCriticalSummarySelect" aria-label="PDV para el resumen de paquetes críticos"></select><button type="button" class="btn-critical-summary" id="btnAbrirResumenCriticoPdv" onclick="abrirResumenCriticoPdv(document.getElementById('pdvCriticalSummarySelect').value)">Ver clasificación</button></div></div><div class="table-wrap" id="summaryTableWrapV2"><table class="summary-table" id="tablaResumenV2"><colgroup><col style="width:10%"><col style="width:6%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:5%"><col style="width:5%"><col style="width:7%"><col style="width:5%"><col style="width:5%"></colgroup>
         
-        <thead><tr><th rowspan="3">PDV</th><th rowspan="3">DESPACHOS AYER</th><th colspan="6">COLA LARGA</th><th colspan="6">BRECHA DE TRAZABILIDAD</th><th rowspan="3">TOTAL</th><th rowspan="3" class="summary-critical">TOTAL CRÍTICO</th><th rowspan="3" class="summary-preventive-critical" title="Suma de los casos preventivos y críticos">PREVENTIVOS<br>+ CRÍTICOS</th><th rowspan="3">GUÍAS ÚNICAS</th><th rowspan="3">💬</th></tr><tr><th colspan="3">No devuelto</th><th colspan="3">Por devolver</th><th colspan="3">En el PDV</th><th colspan="3">No llegados al PDV</th></tr><tr><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th></tr></thead>
+        <thead><tr><th rowspan="3">PDV</th><th rowspan="3">DESPACHOS AYER</th><th colspan="6">COLA LARGA</th><th colspan="6">BRECHA DE TRAZABILIDAD</th><th rowspan="3">TOTAL</th><th rowspan="3" class="summary-critical">TOTAL CRÍTICO</th><th rowspan="3" class="summary-preventive-critical" title="Suma de los casos preventivos y críticos">PREVENTIVOS<br>+ CRÍTICOS</th><th rowspan="3">GUÍAS ÚNICAS</th><th rowspan="3" title="Abrir el detalle de paquetes críticos">CRÍTICOS<br>📋</th></tr><tr><th colspan="3">No devuelto</th><th colspan="3">Por devolver</th><th colspan="3">En el PDV</th><th colspan="3">No llegados al PDV</th></tr><tr><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th></tr></thead>
         <tbody id="resumenBody"></tbody>
       </table></div></section>
 
@@ -260,7 +296,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
         <section class="panel">
           <div class="panel-title">Consulta de actualización mediante archivo Excel</div>
           <div class="panel-body">
-            <div id="consultaEstado" class="source-note" role="status"></div><button class="secondary" onclick="cargarConsultaCompartida()">Volver a información compartida</button><div class="excel-upload"><input id="excelFile" class="excel-file-input" type="file" accept=".xlsx,.xls" onchange="cargarArchivoExcel(event)"><label class="excel-file-label" for="excelFile">Cargar Track break más informes</label><div><div id="excelFileName" class="excel-file-name">Ningún archivo seleccionado</div><div class="excel-file-help">Puede actualizar este archivo de forma independiente. El plazo se calcula desde el último escaneo + 48 horas.</div></div></div>
+            <div id="consultaEstado" class="source-note" role="status"></div><button id="btnCargarConsultaCompartida" class="secondary" onclick="cargarConsultaCompartida()">🔄 Cargar / actualizar consulta compartida</button><div class="excel-upload"><input id="excelFile" class="excel-file-input" type="file" accept=".xlsx,.xls" onchange="cargarArchivoExcel(event)"><label class="excel-file-label" for="excelFile">Cargar Track break más informes</label><div><div id="excelFileName" class="excel-file-name">Ningún archivo seleccionado</div><div class="excel-file-help">Puede actualizar este archivo de forma independiente. El plazo se calcula desde el último escaneo + 48 horas.</div></div></div>
             <div id="excelRegionImport" class="hidden" style="padding:16px;border:1px solid #cbd5e1;border-radius:8px;margin:12px 0"><b>Regiones a importar</b><p>Se importarán únicamente las regiones seleccionadas, según el último punto de operación y PDV_LISTA.</p><div id="excelRegionOptions"></div><button class="secondary" type="button" onclick="seleccionarTodasRegionesExcel(true)">Seleccionar todas</button> <button class="secondary" type="button" onclick="seleccionarTodasRegionesExcel(false)">Quitar selección</button> <button type="button" onclick="importarRegionesExcel()">Importar regiones seleccionadas</button></div>
 <div id="excelEnvioUpload" class="excel-upload"><input id="excelEnvioFile" class="excel-file-input" type="file" accept=".xlsx,.xls" onchange="cargarArchivoGuiasEnvio(event)"><label class="excel-file-label" for="excelEnvioFile">Cargar Exportación de guías</label><div><div id="excelEnvioFileName" class="excel-file-name">Ningún archivo seleccionado</div><div class="excel-file-help">Actualiza empleado, destino y último escaneo sobre la consulta disponible. Puede cargarlo sin volver a subir Track Break.</div></div></div>
             <div id="excelMessage" class="excel-message hidden"></div>
@@ -280,6 +316,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
 
   <div id="loading" class="loading"><div id="loadingText">Procesando...</div></div><div id="toast" class="toast"></div>
   <div id="qrModal" class="modal" onclick="if(event.target===this)cerrarQR()"><div class="modal-card"><h3>CÓDIGO QR</h3><div id="qr"></div><div id="qrNumero" class="guide" style="margin-top:12px"></div><p id="qrDistrito" class="qr-district-label" hidden=""></p><button class="secondary" style="margin-top:15px" onclick="cerrarQR()">Cerrar</button></div></div>
+  <div id="criticalSummaryModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="criticalSummaryTitle" onclick="if(event.target===this)cerrarResumenCriticoPdv()"><div class="modal-card critical-summary-card"><div class="critical-summary-head"><h3 id="criticalSummaryTitle">Clasificación de paquetes críticos</h3><button type="button" class="secondary" onclick="cerrarResumenCriticoPdv()">Cerrar</button></div><p id="criticalSummaryNote" class="critical-summary-note"></p><div id="criticalSummaryBody" class="critical-summary-body"></div></div></div>
   </div>
 
 <script>
@@ -330,7 +367,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
   function mostrarLogin(){document.getElementById("login").classList.remove("hidden");document.getElementById("app").classList.add("hidden")}
   function mostrarErrorLogin(t){const e=document.getElementById("loginError");e.textContent=t;e.style.display="block"}
 
-  function mostrarVista(vista){if(vista==="sla"&&window.V16ModulePermissions&&!window.V16ModulePermissions.canView("sla_paquetes"))vista="gestion";const esExcel=vista==="excel",esSla=vista==="sla";document.getElementById("viewGestion").classList.toggle("hidden",esExcel||esSla);document.getElementById("viewExcel").classList.toggle("hidden",!esExcel);document.getElementById("viewSla").classList.toggle("hidden",!esSla);document.getElementById("tabGestion").classList.toggle("active",!esExcel&&!esSla);document.getElementById("tabExcel").classList.toggle("active",esExcel);document.getElementById("tabSla").classList.toggle("active",esSla);if(esSla)window.SlaPaquetesV2?.alAbrir()}
+  function mostrarVista(vista){if(vista==="sla"&&window.V16ModulePermissions&&!window.V16ModulePermissions.canView("sla_paquetes"))vista="gestion";if(vista==="excel"&&window.V16ModulePermissions&&!window.V16ModulePermissions.canView("consulta_excel")){toast("El administrador debe habilitar el permiso Ver para Consulta desde Excel.",false);vista="gestion"}const esExcel=vista==="excel",esSla=vista==="sla";document.getElementById("viewGestion").classList.toggle("hidden",esExcel||esSla);document.getElementById("viewExcel").classList.toggle("hidden",!esExcel);document.getElementById("viewSla").classList.toggle("hidden",!esSla);document.getElementById("tabGestion").classList.toggle("active",!esExcel&&!esSla);document.getElementById("tabExcel").classList.toggle("active",esExcel);document.getElementById("tabSla").classList.toggle("active",esSla);if(esExcel&&!excelRegistros.length&&!consultaCompartidaCargando&&!excelTrackNombre&&!trackPendienteExcel.length)cargarConsultaCompartida();if(esSla)window.SlaPaquetesV2?.alAbrir()}
 
   async function cargarArchivoExcel(evento){
     const archivo=evento&&evento.target&&evento.target.files?evento.target.files[0]:null;
@@ -475,7 +512,7 @@ async function leerFilasArchivoExcel(archivo,usarFormatoVisible,tipo){
   }
   function cambiarPaginaExcel(delta){const paginas=Math.max(1,Math.ceil(excelFiltrados.length/EXCEL_PAGE_SIZE)),nueva=Math.min(paginas,Math.max(1,excelPagina+delta));if(nueva===excelPagina)return;excelPagina=nueva;renderExcel();document.querySelector(".excel-table").scrollIntoView({behavior:"smooth",block:"start"})}
   function mostrarMensajeExcel(texto,correcto,ocultar){const mensaje=document.getElementById("excelMessage");if(ocultar||!texto){mensaje.className="excel-message hidden";mensaje.textContent="";return}mensaje.className="excel-message "+(correcto?"ok":"bad");mensaje.textContent=texto}
-  function limpiarArchivoExcel(silencioso){exportacionConsultaMapa=null;reiniciarRegionesExcel();filtroPdvPlazoExcel=null;excelBaseResumen=[];["excelUltimoEstado","excelSiguienteParada","excelActualizacion","excelOperacion","excelUltimoPunto","excelArea","excelEncargado","excelDeadlineFilter"].forEach(limpiarFiltroExcelMultiple);consultaVersion++;estadoConsulta("Archivos retirados de esta sesión. La consulta compartida sigue guardada.");limpiarSeleccionExcel();excelRegistros=[];excelFiltrados=[];excelPagina=1;excelTrackNombre="";excelEnvioNombre="";const archivo=document.getElementById("excelFile");if(archivo)archivo.value="";const envio=document.getElementById("excelEnvioFile");if(envio)envio.value="";const nombre=document.getElementById("excelFileName");if(nombre)nombre.textContent="Ningún archivo seleccionado";const nombreEnvio=document.getElementById("excelEnvioFileName");if(nombreEnvio)nombreEnvio.textContent="Ningún archivo seleccionado";const bloqueEnvio=document.getElementById("excelEnvioUpload");if(bloqueEnvio)bloqueEnvio.classList.remove("hidden");const buscar=document.getElementById("excelSearch");if(buscar)buscar.value="";const resultados=document.getElementById("excelResults");if(resultados)resultados.classList.add("hidden");if(document.getElementById("excelMessage"))mostrarMensajeExcel("",false,true);if(!silencioso)toast("Archivos retirados de la consulta.",true)}
+  function limpiarArchivoExcel(silencioso){exportacionConsultaMapa=null;consultaCompartidaCargando=false;const botonConsulta=document.getElementById("btnCargarConsultaCompartida");if(botonConsulta){botonConsulta.disabled=false;botonConsulta.removeAttribute("aria-busy");botonConsulta.textContent="🔄 Cargar / actualizar consulta compartida"}reiniciarRegionesExcel();filtroPdvPlazoExcel=null;excelBaseResumen=[];["excelUltimoEstado","excelSiguienteParada","excelActualizacion","excelOperacion","excelUltimoPunto","excelArea","excelEncargado","excelDeadlineFilter"].forEach(limpiarFiltroExcelMultiple);consultaVersion++;estadoConsulta("Archivos retirados de esta sesión. La consulta compartida sigue guardada.");limpiarSeleccionExcel();excelRegistros=[];excelFiltrados=[];excelPagina=1;excelTrackNombre="";excelEnvioNombre="";const archivo=document.getElementById("excelFile");if(archivo)archivo.value="";const envio=document.getElementById("excelEnvioFile");if(envio)envio.value="";const nombre=document.getElementById("excelFileName");if(nombre)nombre.textContent="Ningún archivo seleccionado";const nombreEnvio=document.getElementById("excelEnvioFileName");if(nombreEnvio)nombreEnvio.textContent="Ningún archivo seleccionado";const bloqueEnvio=document.getElementById("excelEnvioUpload");if(bloqueEnvio)bloqueEnvio.classList.remove("hidden");const buscar=document.getElementById("excelSearch");if(buscar)buscar.value="";const resultados=document.getElementById("excelResults");if(resultados)resultados.classList.add("hidden");if(document.getElementById("excelMessage"))mostrarMensajeExcel("",false,true);if(!silencioso)toast("Archivos retirados de la consulta.",true)}
 
   function cargarDatos(regionesImportadas,forzar){mostrarLoading(true,"Cargando información...");google.script.run.withSuccessHandler(r=>{mostrarLoading(false);mostrarEstadoV2(r.v2);sesion=r.sesion;guias=Array.isArray(r.guias)?r.guias:[];resumen=r.resumen||{filas:[],total:{}};seleccionadas.clear();cargarFiltrosPDV();renderResumen();filtrar()}).withFailureHandler(manejarError).obtenerDatosPortal(token,forzar===true)}
 
@@ -550,12 +587,12 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function mostrarLoading(si,t){document.getElementById("loadingText").textContent=t||"Procesando...";document.getElementById("loading").style.display=si?"flex":"none"}function manejarError(e){mostrarLoading(false);const t=errorTexto(e);toast(t,false);if(/sesión|sesion/i.test(t)){limpiarSesion();mostrarLogin()}}
   function toast(t,ok){const e=document.getElementById("toast");e.textContent=t;e.className="toast "+(ok?"ok":"bad");e.style.display="block";clearTimeout(e._timer);e._timer=setTimeout(()=>e.style.display="none",4200)}function errorTexto(e){return e&&e.message?e.message:"Ocurrió un error."}function num(v){return Number(v||0).toLocaleString("es-PE")}
   function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}function escJs(v){return String(v||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/[\r\n]/g," ")}
-let consultaVersion=0;
+let consultaVersion=0,consultaCompartidaCargando=false;
 let exportacionConsultaMapa=null;
 function conservarExportacionConsulta(){if(!exportacionConsultaMapa&&excelRegistros.length)exportacionConsultaMapa=new Map(excelRegistros.map(x=>[claveGuiaExcel(x.guia),{...x}]));}
 
 function estadoConsulta(t){const el=document.getElementById('consultaEstado');if(el)el.textContent=t;}
-function iniciarCargaLocalConsulta(){consultaVersion++;limpiarSeleccionExcel();estadoConsulta('Actualizando el archivo seleccionado...');}
+function iniciarCargaLocalConsulta(){consultaVersion++;consultaCompartidaCargando=false;const boton=document.getElementById('btnCargarConsultaCompartida');if(boton){boton.disabled=false;boton.removeAttribute('aria-busy')}limpiarSeleccionExcel();estadoConsulta('Actualizando el archivo seleccionado...');}
 function recibirConsulta(r,compartida){filtroPdvPlazoExcel=null;
  document.getElementById('excelEnvioUpload').classList.remove('hidden');
  excelRegistros=(r.registros||[]).map(x=>{const fecha=x.fechaUltimaActualizacion?new Date(x.fechaUltimaActualizacion):null;const plazo=x.plazo?new Date(x.plazo):(fecha&&!isNaN(fecha.getTime())?new Date(fecha.getTime()+48*60*60*1000):null);return{...x,fechaUltimaActualizacion:fecha,plazo};});
@@ -571,12 +608,26 @@ function recibirConsulta(r,compartida){filtroPdvPlazoExcel=null;
  estadoConsulta((regionesImportadasExcel?'Regiones: '+regionesImportadasExcel.join(', ')+' · ':'')+(compartida?'Consulta compartida guardada':'Consulta temporal del PDV — no guardada')+' · '+excelRegistros.length+' guías'+(meta?' · '+meta:'')+(r.omitidas?' · '+r.omitidas+' filas sin coincidencia o fuera de su alcance, omitidas.':''));
 }
 function cargarConsultaCompartida(){
+ if(consultaCompartidaCargando)return;
  exportacionConsultaMapa=null;
  trackPendienteExcel=[];document.getElementById('excelRegionImport').classList.add('hidden');
- const version=++consultaVersion,actualToken=token;estadoConsulta('Buscando la consulta compartida...');
- google.script.run.withSuccessHandler(r=>{if(version!==consultaVersion||token!==actualToken)return;
-  recibirConsulta(r,true);if(!(r.registros||[]).length)estadoConsulta('No hay una consulta compartida disponible para su usuario. Puede cargar sus archivos.');
- }).withFailureHandler(e=>{if(version===consultaVersion)estadoConsulta('No se pudo recuperar la consulta: '+errorTexto(e));}).obtenerConsultaExcel(token,regionesImportadasExcel);
+ const version=++consultaVersion,actualToken=token,boton=document.getElementById('btnCargarConsultaCompartida');consultaCompartidaCargando=true;
+ if(boton){boton.disabled=true;boton.setAttribute('aria-busy','true');boton.textContent='Cargando consulta compartida…'}
+ estadoConsulta('Buscando la consulta compartida para este PDV...');
+ const finalizar=()=>{if(version!==consultaVersion)return;consultaCompartidaCargando=false;if(boton){boton.disabled=false;boton.removeAttribute('aria-busy');boton.textContent='🔄 Cargar / actualizar consulta compartida'}};
+ google.script.run.withSuccessHandler(r=>{
+  if(version!==consultaVersion||token!==actualToken)return;
+  finalizar();
+  try{
+   if(!r||!Array.isArray(r.registros))throw new Error('El servidor no devolvió una lista de guías.');
+   recibirConsulta(r,true);
+   if(!r.registros.length)estadoConsulta('No hay una consulta compartida disponible para este PDV. Confirma que la publicación esté guardada y que incluya su PDV o región.');
+  }catch(error){document.getElementById('excelResults').classList.add('hidden');estadoConsulta('La consulta compartida llegó, pero no se pudo mostrar: '+errorTexto(error));console.error('No se pudo presentar la consulta compartida:',error);}
+ }).withFailureHandler(e=>{
+  if(version!==consultaVersion||token!==actualToken)return;
+  finalizar();const detalle=errorTexto(e),permiso=/permiso|autorizad/i.test(detalle);
+  estadoConsulta(permiso?'Tu usuario necesita el permiso Ver en Consulta desde Excel. Solicítalo al administrador.':'No se pudo recuperar la consulta compartida: '+detalle);
+ }).obtenerConsultaExcel(token,regionesImportadasExcel);
 }
 let regionesImportadasExcel=null,trackPendienteExcel=[];
 function reiniciarRegionesExcel(){
@@ -785,6 +836,7 @@ function renderResumen(){
  });
  if(admin&&resumen.total)body.appendChild(filaResumen(resumen.total,true));
  if(!filas.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=cols;td.textContent='No existen PDV para los filtros seleccionados.';tr.appendChild(td);body.appendChild(tr);}
+ actualizarSelectorResumenCriticoPdv(filas);
 }
 
 function subtotalGrupoResumen(items,nombre,admin,clase){
@@ -1038,6 +1090,62 @@ async function descargarImagenResumen(){
 Object.assign(ETIQUETAS_RESUMEN,{h720NoDevuelto:'Cola larga · ≥600 H · No devuelto',h360NoDevuelto:'Cola larga · 120 a <576 H · No devuelto',h576a600NoDevuelto:'Cola larga · 576 a <600 H · Preventivo · No devuelto',h720PorDevolver:'Cola larga · ≥600 H · Por devolver',h360PorDevolver:'Cola larga · 120 a <576 H · Por devolver',h576a600PorDevolver:'Cola larga · 576 a <600 H · Preventivo · Por devolver',brecha48a120:'Brecha · ≥48 y <96 H · En el PDV',brecha96a120:'Brecha · 96 a <120 H · Preventivo · En el PDV',mayor144EnPDV:'Brecha · ≥120 H · En el PDV',brecha48NoLlegado:'Brecha · ≥48 y <96 H · No llegados',brecha96NoLlegado:'Brecha · 96 a <120 H · Preventivo · No llegados',mayor144NoLlegado:'Brecha · ≥120 H · No llegados',totalPreventivoCritico:'Total de casos preventivos + críticos'});
 const CATEGORIAS_PREVENTIVO_CRITICO_V2=['h576a600NoDevuelto','h576a600PorDevolver','brecha96a120','brecha96NoLlegado','h720NoDevuelto','h720PorDevolver','mayor144EnPDV','mayor144NoLlegado'];
 function totalPreventivoCriticoV2(x){return CATEGORIAS_PREVENTIVO_CRITICO_V2.reduce((n,k)=>n+Number(x?.[k]||0),0)}
+const CATEGORIAS_CRITICAS_PDV=[
+ {categoria:'h720NoDevuelto',etiqueta:'Cola larga crítica en PDV',clase:'queue'},
+ {categoria:'h720PorDevolver',etiqueta:'Cola larga crítica por devolver',clase:'queue'},
+ {categoria:'mayor144EnPDV',etiqueta:'Brecha crítica en PDV',clase:'breach'},
+ {categoria:'mayor144NoLlegado',etiqueta:'Brecha crítica no llegados al PDV',clase:'breach'}
+];
+function clavePdvCriticoPdv(valor){return String(valor||'').split('|')[0].replace(/\.PDV$/i,'').trim().toLocaleUpperCase('es');}
+function comentarioAdminVisiblePdv(x){const v=x?.comentarioVisiblePDV;return v===true||String(v||'').trim().toUpperCase()==='SI'||String(v||'').trim().toLowerCase()==='true';}
+function construirResumenCriticoPdv(pdv){
+ const objetivo=clavePdvCriticoPdv(pdv),porCategoria=new Map(CATEGORIAS_CRITICAS_PDV.map(c=>[c.categoria,{...c,guias:new Set(),grupos:new Map()}]));
+ for(const x of (guias||[])){
+  if(clavePdvCriticoPdv(x.pdv)!==objetivo)continue;
+  if(String(x.fr||'').trim().toUpperCase().replace(/\s+/g,'')==='TRUE-TRUE')continue;
+  const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],guia=String(x.guia||'').trim().toUpperCase()||'FILA:'+String(x.fila||'');
+  for(const caso of casos){
+   let categoria=String(caso.categoria||'');if(categoria==='brecha144a168NoLlegado')categoria='mayor144NoLlegado';
+   const datos=porCategoria.get(categoria);if(!datos)continue;
+   if(caso.pdv&&clavePdvCriticoPdv(caso.pdv)!==objetivo)continue;
+   const idGuia=guia+'|'+objetivo;datos.guias.add(idGuia);
+   const subcampo1=String(x.subcampo1||'').trim()||'Sin Subtipo 1',subcampo2=String(x.subcampo2||'').trim()||'Sin Subtipo 2';
+   const comentario=comentarioAdminVisiblePdv(x)?(String(x.comentario||'').trim()||'Sin comentario del administrador'):'Sin comentario compartido';
+   const clave=JSON.stringify([subcampo1,subcampo2,comentario]);
+   if(!datos.grupos.has(clave))datos.grupos.set(clave,{subcampo1,subcampo2,comentario,guias:new Set()});
+   datos.grupos.get(clave).guias.add(idGuia);
+  }
+ }
+ return [...porCategoria.values()].map(c=>({...c,cantidad:c.guias.size,grupos:[...c.grupos.values()].map(g=>({...g,cantidad:g.guias.size})).filter(g=>g.cantidad>0).sort((a,b)=>a.subcampo1.localeCompare(b.subcampo1,'es')||a.subcampo2.localeCompare(b.subcampo2,'es')||a.comentario.localeCompare(b.comentario,'es'))})).filter(c=>c.cantidad>0);
+}
+function abrirResumenCriticoPdv(pdv){
+ const body=document.getElementById('criticalSummaryBody'),titulo=document.getElementById('criticalSummaryTitle'),nota=document.getElementById('criticalSummaryNote');if(!body)return;
+ titulo.textContent='Clasificación de paquetes críticos · '+String(pdv||'');
+ nota.textContent='El conteo incluye los casos críticos del PDV. El comentario del administrador se muestra cuando está marcado «Notificar / mostrar al PDV»; si no, aparece como «Sin comentario compartido».';
+ body.replaceChildren();const categorias=construirResumenCriticoPdv(pdv);
+ if(!categorias.length){const vacio=document.createElement('div');vacio.className='critical-summary-empty';vacio.textContent='No hay paquetes críticos para este PDV con la información cargada.';body.appendChild(vacio);}
+ categorias.forEach(cat=>{
+  const section=document.createElement('section'),head=document.createElement('div'),label=document.createElement('strong'),count=document.createElement('span'),wrap=document.createElement('div'),table=document.createElement('table'),thead=document.createElement('thead'),trHead=document.createElement('tr'),tbody=document.createElement('tbody');
+  section.className='critical-summary-category critical-summary-category--'+cat.clase;head.className='critical-summary-category-head';label.textContent=cat.etiqueta+':';count.className='critical-summary-count';count.textContent=num(cat.cantidad);head.append(label,count);
+  table.className='critical-summary-table';['Subtipo 1','Subtipo 2','Comentario administrador','Conteo'].forEach(texto=>{const th=document.createElement('th');th.textContent=texto;trHead.appendChild(th)});thead.appendChild(trHead);table.append(thead,tbody);
+  cat.grupos.forEach(g=>{const tr=document.createElement('tr');[g.subcampo1,g.subcampo2,g.comentario,num(g.cantidad)].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td)});tbody.appendChild(tr)});
+  wrap.className='critical-summary-table-wrap';wrap.appendChild(table);section.append(head,wrap);body.appendChild(section);
+ });
+ document.getElementById('criticalSummaryModal').style.display='flex';
+}
+function cerrarResumenCriticoPdv(){const modal=document.getElementById('criticalSummaryModal');if(modal)modal.style.display='none'}
+function actualizarSelectorResumenCriticoPdv(filas){
+ const toolbar=document.getElementById('pdvCriticalSummaryToolbar'),select=document.getElementById('pdvCriticalSummarySelect'),button=document.getElementById('btnAbrirResumenCriticoPdv');
+ if(!toolbar||!select||!button)return;
+ const esPdv=sesion?.rol==='PDV';toolbar.classList.toggle('hidden',!esPdv);if(!esPdv)return;
+ const valores=[...new Map((filas||[]).map(x=>[clavePdvCriticoPdv(x.pdv),String(x.pdv||'').trim()])).values()].filter(Boolean);
+ select.replaceChildren();
+ if(valores.length!==1){const op=document.createElement('option');op.value='';op.textContent=valores.length?'Selecciona un PDV':'No hay PDV disponibles';select.appendChild(op)}
+ valores.forEach(v=>{const op=document.createElement('option');op.value=v;op.textContent=v;select.appendChild(op)});
+ const preferido=valores.find(v=>clavePdvCriticoPdv(v)===clavePdvCriticoPdv(sesion?.usuario))||(valores.length===1?valores[0]:'');
+ if(preferido)select.value=preferido;
+ button.disabled=!select.value;select.onchange=()=>{button.disabled=!select.value};
+}
 function celdaV2(valor,pdv,categoria,total=false){
  const td=document.createElement('td');td.className='number';td.textContent=Number(valor||0)===0?'':num(valor);
  if(['h576a600NoDevuelto','h576a600PorDevolver','brecha96a120','brecha96NoLlegado'].includes(categoria))td.classList.add('preventive-cell');
@@ -1053,7 +1161,9 @@ function filaResumen(x,esTotal){
  const desp=document.createElement('td');desp.textContent=Number(x.despachosAyer||0)===0?'':num(x.despachosAyer);tr.append(desp);
  for(const k of [...COLUMNAS_V2,'total','totalCritico','totalPreventivoCritico','guiasUnicas'])tr.append(celdaV2(k==='totalPreventivoCritico'?totalPreventivoCriticoV2(x):x[k],x.pdv,k==='total'?'totalCasos':k,esTotal));
  const comentario=document.createElement('td');comentario.className='comment-col';
- if(!esTotal&&['ADMINISTRADOR','ENCARGADO'].includes(sesion?.rol)&&typeof abrirComentario==='function'){
+ if(!esTotal&&sesion?.rol==='PDV'){
+  const b=document.createElement('button');b.type='button';b.className='btn-critical-summary';b.textContent='📋 Ver';b.title='Ver clasificación de paquetes críticos de '+String(x.pdv||'');b.setAttribute('aria-label',b.title);b.onclick=()=>abrirResumenCriticoPdv(x.pdv);comentario.append(b);
+ }else if(!esTotal&&['ADMINISTRADOR','ENCARGADO'].includes(sesion?.rol)&&typeof abrirComentario==='function'){
   const b=document.createElement('button');b.className='btn-comment'+(x.comentario?' has-comment':'');b.textContent='💬';b.title='Comentario del PDV';b.onclick=()=>abrirComentario(x.pdv);comentario.append(b);
  }tr.append(comentario);return tr;
 }

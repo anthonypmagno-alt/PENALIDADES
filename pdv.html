@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=gestion-v2-fixes-20261023-3"></script>
+<script src="./bridge.js?v=20261102-pdv-compartido-3"></script>
   <base target="_top">
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Portal PDV · V16</title>
@@ -119,7 +119,7 @@
   <div id="app" class="hidden">
     <header><div class="header-inner"><div><div class="title">📋 Revisión de Guías PDV · V16</div><div class="subtitle">Resumen de casos y registro de observaciones</div></div><div class="actions"><span id="userBadge" class="badge"></span><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div></div></header>
     <main>
-      <div class="view-tabs"><button id="tabGestion" class="view-tab active" onclick="mostrarVista('gestion')">📋 Gestión de guías</button><button id="tabExcel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><a data-modulo-v2="true" href="./pdv-v2.html?v=20261023-comentario-encargado-1" class="view-tab">Gestión de guías V2</a></div>
+      <div class="view-tabs"><button id="tabGestion" class="view-tab active" onclick="mostrarVista('gestion')">📋 Gestión de guías</button><button id="tabExcel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><a data-modulo-v2="true" href="./pdv-v2.html?v=20261102-pdv-resumen-compartido-2" class="view-tab">Gestión de guías V2</a></div>
       <div id="viewGestion" class="app-view">
       <div class="cards"><div class="card"><b id="total">0</b><span>Total</span></div><div class="card"><b id="pendientes">0</b><span>Pendientes</span></div><div class="card"><b id="proceso">0</b><span>En proceso</span></div><div class="card"><b id="finalizados">0</b><span>Finalizados</span></div></div>
 
@@ -140,7 +140,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
         <section class="panel">
           <div class="panel-title">Consulta de actualización mediante archivo Excel</div>
           <div class="panel-body">
-            <div id="consultaEstado" class="source-note" role="status"></div><button class="secondary" onclick="cargarConsultaCompartida()">Volver a información compartida</button><div class="excel-upload"><input id="excelFile" class="excel-file-input" type="file" accept=".xlsx,.xls" onchange="cargarArchivoExcel(event)"><label class="excel-file-label" for="excelFile">Cargar Track break más informes</label><div><div id="excelFileName" class="excel-file-name">Ningún archivo seleccionado</div><div class="excel-file-help">Puede actualizar este archivo de forma independiente. El plazo se calcula desde el último escaneo + 48 horas.</div></div></div>
+            <div id="consultaEstado" class="source-note" role="status"></div><button class="secondary" onclick="cargarConsultaCompartida()">🔄 Cargar / actualizar consulta compartida</button><div class="excel-upload"><input id="excelFile" class="excel-file-input" type="file" accept=".xlsx,.xls" onchange="cargarArchivoExcel(event)"><label class="excel-file-label" for="excelFile">Cargar Track break más informes</label><div><div id="excelFileName" class="excel-file-name">Ningún archivo seleccionado</div><div class="excel-file-help">Puede actualizar este archivo de forma independiente. El plazo se calcula desde el último escaneo + 48 horas.</div></div></div>
             <div id="excelRegionImport" class="hidden" style="padding:16px;border:1px solid #cbd5e1;border-radius:8px;margin:12px 0"><b>Regiones a importar</b><p>Se importarán únicamente las regiones seleccionadas, según el último punto de operación y PDV_LISTA.</p><div id="excelRegionOptions"></div><button class="secondary" type="button" onclick="seleccionarTodasRegionesExcel(true)">Seleccionar todas</button> <button class="secondary" type="button" onclick="seleccionarTodasRegionesExcel(false)">Quitar selección</button> <button type="button" onclick="importarRegionesExcel()">Importar regiones seleccionadas</button></div>
 <div id="excelEnvioUpload" class="excel-upload"><input id="excelEnvioFile" class="excel-file-input" type="file" accept=".xlsx,.xls" onchange="cargarArchivoGuiasEnvio(event)"><label class="excel-file-label" for="excelEnvioFile">Cargar Exportación de guías</label><div><div id="excelEnvioFileName" class="excel-file-name">Ningún archivo seleccionado</div><div class="excel-file-help">Actualiza empleado, destino y último escaneo sobre la consulta disponible. Puede cargarlo sin volver a subir Track Break.</div></div></div>
             <div id="excelMessage" class="excel-message hidden"></div>
@@ -200,13 +200,13 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
 
   function restaurarSesion(){
     if(!token){mostrarLogin();return}mostrarLoading(true,"Validando sesión...");
-    google.script.run.withSuccessHandler(r=>{mostrarLoading(false);if(!r||!r.ok){limpiarSesion();mostrarLogin();return}if(r.rol!=="PDV"){window.top.location.href=APP_URL;return}sesion=r;abrirApp()}).withFailureHandler(()=>{mostrarLoading(false);limpiarSesion();mostrarLogin()}).obtenerSesion(token);
+    google.script.run.withSuccessHandler(r=>{mostrarLoading(false);if(!r||!r.ok){limpiarSesion();mostrarLogin();return}if(r.rol==="PDV"){window.top.location.href=new URL("./pdv-v2.html?v=20261102-pdv-resumen-compartido-2",location.href).href;return}window.top.location.href=APP_URL;return}).withFailureHandler(()=>{mostrarLoading(false);limpiarSesion();mostrarLogin()}).obtenerSesion(token);
   }
 
   function iniciarLogin(){
     const u=document.getElementById("usuario").value.trim(),c=document.getElementById("contrasena").value,b=document.getElementById("btnLogin");document.getElementById("loginError").style.display="none";
     if(!u||!c){mostrarErrorLogin("Ingrese usuario y contraseña.");return}b.disabled=true;b.textContent="VALIDANDO...";
-    google.script.run.withSuccessHandler(r=>{b.disabled=false;b.textContent="INGRESAR";if(!r||!r.ok){mostrarErrorLogin(r&&r.mensaje?r.mensaje:"No se pudo iniciar sesión.");return}token=r.token;sessionStorage.setItem("tokenGuiasSupabaseReplica",token);if(r.rol!=="PDV"){window.top.location.href=APP_URL;return}sesion=r;abrirApp()}).withFailureHandler(e=>{b.disabled=false;b.textContent="INGRESAR";mostrarErrorLogin(errorTexto(e))}).iniciarSesion(u,c);
+    google.script.run.withSuccessHandler(r=>{b.disabled=false;b.textContent="INGRESAR";if(!r||!r.ok){mostrarErrorLogin(r&&r.mensaje?r.mensaje:"No se pudo iniciar sesión.");return}token=r.token;sessionStorage.setItem("tokenGuiasSupabaseReplica",token);if(r.rol==="PDV"){window.top.location.href=new URL("./pdv-v2.html?v=20261102-pdv-resumen-compartido-2",location.href).href;return}window.top.location.href=APP_URL;return}).withFailureHandler(e=>{b.disabled=false;b.textContent="INGRESAR";mostrarErrorLogin(errorTexto(e))}).iniciarSesion(u,c);
   }
 
   function abrirApp(){document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("userBadge").textContent="PDV: "+sesion.usuario;mostrarVista("gestion");cargarDatos();cargarConsultaCompartida()}

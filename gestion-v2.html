@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261029-sla-zonificacion-traslado-detalle-v1"></script>
+<script src="./bridge.js?v=20261102-pdv-compartido-3"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -357,6 +357,11 @@
 .comment-critical-modal-table td:last-child,.comment-critical-modal-table th:last-child{text-align:center;font-weight:800}
 .comment-critical-modal-empty{padding:10px;border:1px dashed #cbd5e1;border-radius:8px;background:#fff;color:#64748b;font-size:12px}
 @media(max-width:700px){.modal-comment{padding:16px}.comment-critical-modal-body{max-height:34vh}.comment-critical-modal-table{min-width:620px}}
+</style><style id="v2-summary-full-width">
+#summaryTableWrapV2{display:block;width:100%;max-width:none;min-width:0;margin:0;overflow-x:auto;overflow-y:visible;scroll-padding-inline-start:0}
+#summaryTableWrapV2>#tablaResumenV2{display:table;width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;table-layout:fixed!important}
+#tablaResumenV2 th,#tablaResumenV2 td{box-sizing:border-box;overflow-wrap:anywhere}
+@media(max-width:900px){#summaryTableWrapV2>#tablaResumenV2{width:1120px!important;min-width:1120px!important}}
 </style>
 </head>
 <body>
@@ -420,7 +425,7 @@
           <button type="button" class="secondary" onclick="limpiarFiltrosResumen()">Limpiar</button>
           <span id="summaryToolbarStatus" class="summary-toolbar-status"></span>
         </div>
-        <div class="resumen-imagen-toolbar"><button type="button" class="secondary" id="btnImagenResumen" onclick="descargarImagenResumen()">Descargar imagen del resumen</button><small>PNG · Filtros y grupos desplegados actuales</small><span id="estadoImagenResumen" role="status"></span><a id="enlaceImagenResumen" hidden="">Descargar PNG</a></div><div id="gestionV2Status" style="padding: 12px; background: rgb(239, 246, 255); color: rgb(30, 64, 175); border-radius: 8px; margin: 12px 0px;">Gestión de guías V2 · Fuentes y comentarios compartidos con Gestión actual. Clasificación calculada cada minuto.</div><div class="table-wrap"><table id="tablaResumenV2" class="summary-table"><colgroup><col style="width:10%"><col style="width:6%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:5%"><col style="width:5%"><col style="width:7%"><col style="width:5%"><col style="width:5%"></colgroup>
+        <div class="resumen-imagen-toolbar"><button type="button" class="secondary" id="btnImagenResumen" onclick="descargarImagenResumen()">Descargar imagen del resumen</button><small>PNG · Filtros y grupos desplegados actuales</small><span id="estadoImagenResumen" role="status"></span><a id="enlaceImagenResumen" hidden="">Descargar PNG</a></div><div id="gestionV2Status" style="padding: 12px; background: rgb(239, 246, 255); color: rgb(30, 64, 175); border-radius: 8px; margin: 12px 0px;">Gestión de guías V2 · Fuentes y comentarios compartidos con Gestión actual. Clasificación calculada cada minuto.</div><div class="table-wrap" id="summaryTableWrapV2"><table id="tablaResumenV2" class="summary-table"><colgroup><col style="width:10%"><col style="width:6%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:4.75%"><col style="width:5%"><col style="width:5%"><col style="width:7%"><col style="width:5%"><col style="width:5%"></colgroup>
           
           <thead><tr><th rowspan="3">PDV</th><th rowspan="3">DESPACHOS AYER</th><th colspan="6">COLA LARGA</th><th colspan="6">BRECHA DE TRAZABILIDAD</th><th rowspan="3">TOTAL</th><th rowspan="3" class="summary-critical">TOTAL CRÍTICO</th><th rowspan="3" class="summary-preventive-critical" title="Suma de los casos preventivos y críticos">PREVENTIVOS<br>+ CRÍTICOS</th><th rowspan="3">GUÍAS ÚNICAS</th><th rowspan="3">💬 / 🖼</th></tr><tr><th colspan="3">No devuelto</th><th colspan="3">Por devolver</th><th colspan="3">En el PDV</th><th colspan="3">No llegados al PDV</th></tr><tr><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>120 a &lt;576 H</th><th class="preventive-column">576 a &lt;600 H<br>PREVENTIVO</th><th>≥600 H<br>≥25 días</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th><th>≥48 y &lt;96 H</th><th class="preventive-column">96 a &lt;120 H<br>PREVENTIVO</th><th>≥120 H<br>CRÍTICO</th></tr></thead><tbody id="resumenBody"></tbody>
         </table></div>
@@ -1841,7 +1846,9 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     ["Solo el administrador puede cargar la zonificación.", "Only an administrator can upload zoning data.", "只有管理员可以上传分区数据。"],
     ["Solo el administrador puede cargar el archivo SLA.", "Only an administrator can upload the SLA file.", "只有管理员可以上传 SLA 文件。"],
     ["No se pudieron guardar los parámetros.", "Could not save the parameters.", "无法保存参数。"],
-    ["No se pudo publicar la carga.", "Could not publish the upload.", "无法发布上传内容。"]
+    ["No se pudo publicar la carga.", "Could not publish the upload.", "无法发布上传内容。"],
+    ["Escribe un comentario de gestión antes de guardar.", "Enter a management comment before saving.", "保存前请输入管理评论。"],
+    ["Comentario de gestión eliminado.", "Management comment deleted.", "管理评论已删除。"]
   ];
   const PAGE_I18N={en:Object.create(null),"zh-CN":Object.create(null)},PAGE_I18N_REVERSE={en:new Map(),"zh-CN":new Map()};
   PAGE_I18N_ROWS.forEach(([es,en,zh])=>{PAGE_I18N.en[es]=en;PAGE_I18N["zh-CN"][es]=zh;PAGE_I18N_REVERSE.en.set(en,es);PAGE_I18N_REVERSE["zh-CN"].set(zh,es);});
@@ -2193,9 +2200,9 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     const x=guias.find(g=>Number(g.fila)===Number(fila)),el=document.getElementById("comentario-gestion-"+fila),b=document.getElementById("guardar-comentario-gestion-"+fila);if(!x||!el||!b)return;
     if(sesion?.rol!=="ENCARGADO"){toast("Solo el encargado puede guardar este comentario.",false);return;}
     if(!comentarioGestionEncargadoDisponible||!window.V16GestionComentariosEncargadoApi){toast("Activa el SQL supabase_gestion_v2_comentario_encargado.sql y vuelve a cargar.",false);return;}
-    const comentario=el.value.trim();if(comentario.length>2000){toast("El comentario admite hasta 2000 caracteres.",false);return;}
+    const comentario=el.value.trim(),comentarioAnterior=String(x.comentarioGestionEncargado||"").trim();if(comentario.length>2000){toast("El comentario admite hasta 2000 caracteres.",false);return;}if(!comentario&&!comentarioAnterior){toast("Escribe un comentario de gestión antes de guardar.",false);el.focus();return;}
     b.disabled=true;b.textContent="Guardando…";
-    try{const r=await window.V16GestionComentariosEncargadoApi.guardar({guia:x.guia,pdv:x.pdv,area:x.area,region:x.region,comentario,esperadoActualizadoEn:x.comentarioGestionActualizadoEn||null});x.comentarioGestionEncargado=String(r.comentario||"");x.comentarioGestionActualizadoEn=r.actualizado_en||null;actualizarChipResumen();borrarCamposBorradorRevision(fila,["comentarioGestionEncargado"]);toast("Comentario de gestión guardado.",true);filtrar();}
+    try{const r=await window.V16GestionComentariosEncargadoApi.guardar({guia:x.guia,pdv:x.pdv,area:x.area,region:x.region,comentario,esperadoActualizadoEn:x.comentarioGestionActualizadoEn||null});x.comentarioGestionEncargado=String(r.comentario||"");x.comentarioGestionActualizadoEn=r.actualizado_en||null;actualizarChipResumen();borrarCamposBorradorRevision(fila,["comentarioGestionEncargado"]);toast(comentario?"Comentario de gestión guardado.":"Comentario de gestión eliminado.",true);filtrar();}
     catch(e){toast(errorTexto(e),false);}
     finally{const actual=document.getElementById("guardar-comentario-gestion-"+fila);if(actual){actual.disabled=false;actual.textContent="Guardar comentario";}}
   }

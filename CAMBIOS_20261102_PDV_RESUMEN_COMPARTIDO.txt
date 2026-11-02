@@ -1,0 +1,10 @@
+ACTUALIZACIÓN PARA PDV: RESUMEN Y CONSULTA COMPARTIDA (02-11-2026)
+
+- El inicio de sesión PDV desde el portal y desde el enlace antiguo ahora dirige a `pdv-v2.html` con identificador de caché actualizado.
+- El resumen V2 ocupa el ancho disponible del panel y queda alineado al inicio. En pantallas pequeñas conserva un ancho mínimo y desplazamiento horizontal para que los encabezados sigan legibles.
+- En el portal PDV se muestra un acceso directo a “Clasificación de paquetes críticos”. Permite elegir el PDV autorizado y abre el cuadro agrupado por categoría, Subtipo 1, Subtipo 2 y comentario administrador.
+- El comentario administrador solo aparece al PDV cuando se marcó “Notificar / mostrar al PDV”. Los comentarios no compartidos aparecen como “Sin comentario compartido”.
+- Consulta desde Excel intenta cargar la consulta compartida al iniciar y vuelve a intentarlo al abrir la pestaña si aún no hay información. El botón “Cargar / actualizar consulta compartida” permite reintentar manualmente.
+- El estado de carga informa si la consulta compartida no está publicada para el PDV/región, si la cuenta necesita permiso o si hubo un error al recuperar o mostrar los datos.
+- Si un usuario PDV no ve la pestaña o recibe un mensaje de permiso, un administrador debe habilitar “Consulta desde Excel → Ver” en la matriz de módulos de ese usuario. No requiere ejecutar SQL.
+- Se actualizó la versión de caché de `bridge.js`. Publica el contenido completo del ZIP en la raíz del repositorio de GitHub Pages y vuelve a iniciar sesión.

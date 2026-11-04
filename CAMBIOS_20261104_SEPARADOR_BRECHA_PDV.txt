@@ -1,0 +1,7 @@
+CORRECCIÓN DEL SEPARADOR ENTRE “EN EL PDV” Y “NO LLEGADOS AL PDV”
+
+Se ajustaron las posiciones de los bordes verticales del resumen de Gestión de guías V2 luego de agregar la columna informativa “<48 H” dentro de “En el PDV”. La línea divisoria ahora queda después de las cuatro columnas de “En el PDV” y antes de “No llegados al PDV”, también en encabezados, filas y subtotales.
+
+La columna “<48 H · INFORMATIVO” conserva su tratamiento: se puede seleccionar para filtrar las guías, pero no se suma a los totales.
+
+No se requiere ejecutar SQL. Publica el contenido completo del ZIP en la raíz del repositorio y recarga la pestaña. La referencia de caché de bridge.js es 20261104-separador-brecha-pdv-1.

@@ -1,0 +1,7 @@
+CORRECCIÓN DE CARGA DE GUÍAS MENORES A 48 HORAS EN GESTIÓN V2
+
+El importador de Track Break descartaba las filas cuya duración inicial era menor de 48 horas. Ahora V2 conserva esas guías de En el PDV como candidatas y recalcula su tiempo desde “Último tiempo de funcionamiento” al abrir/actualizar la vista.
+
+La columna “<48 H · INFORMATIVO” muestra las guías que todavía no llegan a 48 horas. Al pasar el umbral, las guías cambian al rango de brecha correspondiente. Las informativas no se suman al total, total crítico, preventivos + críticos ni guías únicas. Los casos de No llegados al PDV conservan su lógica actual.
+
+No se requiere ejecutar SQL. Publica el contenido completo del ZIP en la raíz del repositorio y recarga la pestaña. La referencia de caché de bridge.js es 20261104-brecha-menor48-carga-completa-1.

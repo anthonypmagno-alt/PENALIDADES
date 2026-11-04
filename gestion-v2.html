@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261102-pdv-compartido-4"></script>
+<script src="./bridge.js?v=20261103-alcance-usuario-1"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -1710,6 +1710,18 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     ["Áreas", "Areas", "区域"],
     ["Regiones", "Regions", "地区"],
     ["Alcance", "Scope", "范围"],
+    ["Editar alcance", "Edit scope", "编辑访问范围"],
+    ["Alcance del usuario:", "User access scope:", "用户访问范围："],
+    ["PDV", "PDV", "服务点"],
+    ["Seleccione el PDV", "Select the PDV", "选择服务点"],
+    ["Puede combinar PDV, áreas y regiones. Use Ctrl (Windows) o Cmd (Mac) para varias opciones.", "You can combine PDVs, areas, and regions. Use Ctrl (Windows) or Cmd (Mac) to select multiple options.", "您可以组合选择服务点、区域和地区。按 Ctrl（Windows）或 Cmd（Mac）可多选。"],
+    ["Seleccione el único PDV autorizado para esta cuenta.", "Select the only PDV authorized for this account.", "选择此帐户唯一获准的服务点。"],
+    ["Seleccione exactamente un PDV para esta cuenta.", "Select exactly one PDV for this account.", "请为此帐户准确选择一个服务点。"],
+    ["Asigne al menos un PDV, área o región al encargado.", "Assign at least one PDV, area, or region to the supervisor.", "请至少为负责人分配一个服务点、区域或地区。"],
+    ["Sin alcance asignado", "No access scope assigned", "未分配访问范围"],
+    ["Guardar alcance", "Save scope", "保存访问范围"],
+    ["Alcance de", "Access scope for", "的访问范围"],
+    ["guardado correctamente.", "saved successfully.", "已成功保存。"],
     ["Accesos a módulos", "Module access", "模块访问权限"],
     ["Define qué puede ver y ejecutar este usuario. El administrador conserva acceso completo.", "Choose what this user can view and do. The administrator keeps full access.", "设置此用户可以查看和执行的内容。管理员保留完整访问权限。"],
     ["Crear usuario", "Create user", "创建用户"],
@@ -2684,7 +2696,15 @@ function toggleCargaOperativa(){
    </div>
    <button id="v16CreateUser" class="success" type="submit">Crear usuario</button>
   </form>
-  <section id="v16ModulePermEditor" class="v16-module-permissions hidden">
+   <section id="v16ScopeEditor" class="v16-module-permissions hidden">
+    <div class="v16-module-permission-editor-head"><div><strong>Alcance del usuario: <span id="v16ScopeUser"></span></strong><small>Rol: <span id="v16ScopeRole"></span></small></div><div><button id="v16SaveUserScope" type="button" class="success">Guardar alcance</button> <button id="v16CancelUserScope" type="button" class="secondary">Cerrar editor</button></div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:12px">
+     <label id="v16EditScopePdvLabel">PDV<select id="v16EditScopePdvs" style="display:block;width:100%;margin-top:5px" multiple size="6"></select></label>
+     <label id="v16EditScopeAreaLabel">Áreas<select id="v16EditScopeAreas" style="display:block;width:100%;margin-top:5px" multiple size="6"></select></label>
+     <label id="v16EditScopeRegionLabel">Regiones<select id="v16EditScopeRegions" style="display:block;width:100%;margin-top:5px" multiple size="6"></select></label>
+    </div><small id="v16EditScopeHint"></small>
+   </section>
+   <section id="v16ModulePermEditor" class="v16-module-permissions hidden">
    <div class="v16-module-permission-editor-head"><div><strong>Permisos del usuario: <span id="v16ModulePermUsername"></span></strong><small>Los cambios se aplican al iniciar sesión o actualizar su página.</small></div><div><button id="v16SaveModulePerms" type="button" class="success">Guardar permisos</button> <button id="v16CancelModulePerms" type="button" class="secondary">Cerrar editor</button></div></div>
    <div id="v16ModulePermissionsEditor" class="v16-module-permission-matrix"></div>
   </section>

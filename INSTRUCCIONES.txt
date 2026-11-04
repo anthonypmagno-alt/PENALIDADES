@@ -8,6 +8,12 @@ PUBLICAR EN GITHUB PAGES
 3. Conserva juntos index.html, config.js, bridge.js, gestion-v2.html, xlsx-resumen.js, pdv.html, pdv-v2.html, penalidades.html, process-worker.js, pdf-pdv.js, brecha-costos.js, sla-paquetes.js y sla-paquetes.css.
 4. Espera a que GitHub Pages termine de publicar y abre la raíz del portal, por ejemplo https://TU-USUARIO.github.io/TU-REPOSITORIO/. Inicia sesión ahí y entra a la pestaña Penalidades. No abras un index.html independiente de Penalidades.
 
+EDICION DEL ALCANCE DE USUARIOS (03-11-2026)
+- En Administración de usuarios, los usuarios PDV y Encargado ahora tienen el botón “Editar alcance” junto al alcance actual.
+- En un usuario Encargado se pueden asignar varios PDV, áreas y regiones; las selecciones actuales aparecen marcadas y se conservan hasta que se guarde el cambio. Una cuenta PDV debe tener exactamente un PDV. Los administradores mantienen acceso a todos los PDV.
+- Antes de publicar, ejecuta una sola vez `supabase_gestion_v2_editar_alcance_usuario.sql` en SQL Editor del mismo proyecto Supabase. Crea una función RPC nueva, valida el rol y el catálogo, registra el cambio y no modifica las tablas ni las políticas de Storage.
+- Luego publica el contenido completo del ZIP en la raíz de GitHub Pages. Se actualizó el número de versión de `bridge.js` para evitar que el navegador use la copia anterior.
+
 ACTUALIZACION DE PENALIDADES (09-10-2026)
 - El filtro “Brecha (columna E)” permite seleccionar uno o varios valores de la columna E (Brecha) del Excel de penalidades.
 - La descarga Excel del detalle incluye GUIA, PENALIDAD, PDV, PORCENTAJE DE EXONERACION, MONTO FINAL (S/), MOTIVO DE DECISION y MONTO INICIAL DE PENALIDAD (S/) como última columna. El archivo descargado termina en _MONTO_INICIAL.xlsx.

@@ -1,0 +1,12 @@
+EDICION DEL ALCANCE DE USUARIOS
+
+La lista de Administración de usuarios ahora incluye “Editar alcance” junto al alcance de cuentas PDV y Encargado.
+
+El editor carga y marca las asignaciones actuales. Para un PDV permite seleccionar exactamente un punto de venta. Para un Encargado permite combinar asignaciones de PDV, áreas y regiones. El guardado actualiza solo las tres columnas de alcance y deja intactos rol, estado, permisos de módulos y credenciales. Los administradores conservan acceso completo.
+
+Para habilitar el guardado, ejecutar una sola vez en el SQL Editor del mismo proyecto Supabase:
+supabase_gestion_v2_editar_alcance_usuario.sql
+
+El SQL crea un RPC nuevo con autorización de administrador, validación contra PDV_LISTA y registro de auditoría. No modifica tablas, liquidaciones, permisos de Storage ni funciones de otros módulos.
+
+Después, publicar el contenido completo del ZIP en la raíz del repositorio GitHub Pages. El parámetro de caché de bridge.js cambia a 20261103-alcance-usuario-1.

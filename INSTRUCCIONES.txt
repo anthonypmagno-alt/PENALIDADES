@@ -14,6 +14,11 @@ EDICION DEL ALCANCE DE USUARIOS (03-11-2026)
 - Antes de publicar, ejecuta una sola vez `supabase_gestion_v2_editar_alcance_usuario.sql` en SQL Editor del mismo proyecto Supabase. Crea una función RPC nueva, valida el rol y el catálogo, registra el cambio y no modifica las tablas ni las políticas de Storage.
 - Luego publica el contenido completo del ZIP en la raíz de GitHub Pages. Se actualizó el número de versión de `bridge.js` para evitar que el navegador use la copia anterior.
 
+CONTEO INFORMATIVO DE BRECHA MENOR A 48 H (04-11-2026)
+- Se agregó una primera columna informativa “<48 H” dentro del grupo “En el PDV”. Cuenta las guías cuyo último tiempo de funcionamiento está entre 0 y menos de 48 horas.
+- Este indicador se mantiene fuera del Total, Total crítico, Preventivos + críticos y Guías únicas existentes. No requiere SQL.
+- Publica el contenido completo de este ZIP en la raíz del repositorio. La versión de `bridge.js` cambia a `20261104-brecha-menor48-1` para forzar su actualización.
+
 ACTUALIZACION DE PENALIDADES (09-10-2026)
 - El filtro “Brecha (columna E)” permite seleccionar uno o varios valores de la columna E (Brecha) del Excel de penalidades.
 - La descarga Excel del detalle incluye GUIA, PENALIDAD, PDV, PORCENTAJE DE EXONERACION, MONTO FINAL (S/), MOTIVO DE DECISION y MONTO INICIAL DE PENALIDAD (S/) como última columna. El archivo descargado termina en _MONTO_INICIAL.xlsx.

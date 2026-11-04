@@ -1,0 +1,7 @@
+CONTEO INFORMATIVO DE GUIAS CON BRECHA MENOR A 48 HORAS
+
+Se agregó la columna “<48 H · INFORMATIVO” como primera columna del grupo “En el PDV” en el resumen de Gestión de guías V2. Cuenta guías con un último tiempo de funcionamiento desde 0 hasta menos de 48 horas.
+
+Las celdas mantienen el filtro hacia el detalle. El valor no se agrega al total de casos, total crítico, preventivos + críticos ni guías únicas.
+
+No se requiere ejecutar SQL. Publica el contenido completo del ZIP en la raíz del repositorio y recarga la pestaña. La referencia de caché de bridge.js es 20261104-brecha-menor48-1.

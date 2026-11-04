@@ -383,7 +383,8 @@ function a4(e){if(e==null||String(e).trim()==="")return NaN;let t=String(e).trim
    if(!enPDV&&!noLlegado)continue;
    let categoria,etiqueta;
    if(Number.isFinite(horasBrecha)){
-    if(horasBrecha<48)continue;
+    if(horasBrecha<0)continue;
+    if(horasBrecha<48){if(enPDV)agregar(caso.pdv,"brechaMenor48EnPDV","BRECHA\n<48 H · INFORMATIVO\nEn el PDV");continue;}
     if(horasBrecha<96){categoria=enPDV?"brecha48a120":"brecha48NoLlegado";etiqueta="≥48 y <96 H"}
     else if(horasBrecha<120){categoria=enPDV?"brecha96a120":"brecha96NoLlegado";etiqueta="96 a <120 H · PREVENTIVO"}
     else{categoria=enPDV?"mayor144EnPDV":"mayor144NoLlegado";etiqueta="≥120 H"}

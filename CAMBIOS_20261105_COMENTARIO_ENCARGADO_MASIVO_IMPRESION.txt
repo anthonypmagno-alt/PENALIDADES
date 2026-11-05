@@ -1,0 +1,13 @@
+Gestión de Guías V2 — comentario de gestión del encargado
+Fecha: 2026-11-05
+
+Cambios
+- Se añadió el botón “Comentario de gestión masivo”, visible para el rol ENCARGADO.
+- Permite guardar un mismo comentario en las guías seleccionadas sin modificar el comentario del administrador, los subcampos, el cierre o las notificaciones.
+- Los guardados se procesan en grupos pequeños y cada guía conserva la validación de acceso y control de cambios concurrentes de la función Supabase existente.
+- Si una guía falla, se informa cuáles requieren revisión; las guías fallidas permanecen seleccionadas para reintentar.
+- “Imprimir detalle seleccionado” ahora incluye columnas separadas para el comentario principal (administrador o PDV) y el comentario de gestión del encargado.
+- Se actualizó el enlace del módulo V2 en index.html para invalidar la versión anterior en GitHub Pages.
+
+Base de datos
+- No requiere SQL adicional: utiliza la función existente v16_gestion_v2_guardar_comentario_encargado.

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261107-estado-exportacion-1"></script>
+<script src="./bridge.js?v=20261107-estado-exportacion-fix-2"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -786,6 +786,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     mostrarLoading(true,"Validando y cargando "+tipo+"...");
     try{
       const filas=await leerFilasArchivoExcel(archivo,true,tipo);
+      if(tipo==="EXPORTACION GUIAS")validarEstadosArchivoExportacion(filas);
       if(['TRACK BREAK','COLA LARGA'].includes(tipo)){prepararRegionesFuente(tipo,archivo.name,filas,input);return;}
       google.script.run.withSuccessHandler(r=>{
         mostrarLoading(false);input.value="";renderEstadoFuentes(r&&r.estadoFuentes?r.estadoFuentes:null);
@@ -848,7 +849,7 @@ async function guardarInformacionCargada(){
  try{
   if(archivos.length&&typeof XLSX==='undefined')throw new Error('No se pudo cargar el lector de Excel.');
   // Validate all local files before sending the first source to the server.
-  for(const x of archivos){actual=x.tipo;if(!/\.(xlsx|xls)$/i.test(x.archivo.name)||x.archivo.size>EXCEL_MAX_BYTES)throw new Error('Archivo XLSX/XLS inválido o mayor de 30 MB: '+x.archivo.name);mostrarLoading(true,'Leyendo '+x.tipo+'…');lecturas.push({...x,filas:await leerFilasArchivoExcel(x.archivo,true,x.tipo)});}
+  for(const x of archivos){actual=x.tipo;if(!/\.(xlsx|xls)$/i.test(x.archivo.name)||x.archivo.size>EXCEL_MAX_BYTES)throw new Error('Archivo XLSX/XLS inválido o mayor de 30 MB: '+x.archivo.name);mostrarLoading(true,'Leyendo '+x.tipo+'…');const filas=await leerFilasArchivoExcel(x.archivo,true,x.tipo);if(x.tipo==="EXPORTACION GUIAS")validarEstadosArchivoExportacion(filas);lecturas.push({...x,filas});}
   for(const x of lecturas){actual=x.tipo;estado.textContent='Guardando '+x.tipo+'…';let entrada={tipo:x.tipo,nombreArchivo:x.archivo.name,filas:x.filas,diferirProcesamiento:true};
    if(['TRACK BREAK','COLA LARGA'].includes(x.tipo)){const elegidas=await elegirRegionesGuardado(x.tipo,x.filas);Object.assign(entrada,elegidas);elegidas.regiones.forEach(r=>regionesGuardadas.add(r));}
    mostrarLoading(true,'Guardando '+x.tipo+' en Google Sheets…');const r=await rpcFuentesGuardar('cargarFuenteOperativa',token,entrada);if(!r||!r.ok)throw new Error('El servidor no confirmó el guardado.');
@@ -934,6 +935,20 @@ async function leerFilasArchivoExcel(archivo,usarFormatoVisible,tipo){
  if(tipo==="DESPACHOS AYER"?(despachoResumen||despachoExportacion):requeridas.every(h=>headers.includes(h)))candidatas.push(filas);}
  if(candidatas.length!==1){const mensaje=tipo==="DESPACHOS AYER"?'No se encontró una hoja con "Número de Guía" y "Punto de entrega" (o "Punto de escaneo más reciente"), ni una tabla con "NOMBRE SIMPLE" y "DESPACHOS AYER".':"No se encontró una hoja de detalle con las columnas requeridas.";throw new Error(candidatas.length?"Hay varias hojas de detalle compatibles; deje una sola hoja de detalle en el archivo.":mensaje);}
  const filas=candidatas[0];return tipo==="DESPACHOS AYER"?agruparDespachosAyer(filas):filas;
+}
+
+function validarEstadosArchivoExportacion(filas){
+ const encabezados=Array.isArray(filas?.[0])?filas[0]:[];
+ const alternativas=["Último estado","Estado más reciente","Último estado de la guía","Estado actual"];
+ const indice=buscarColumnaExcel(encabezados,alternativas);
+ if(indice<0)throw new Error('No se encontró la columna "Último estado" en Exportación de guías. Revise que el Excel sea el archivo de exportación completo y no otro reporte. Encabezados encontrados: '+encabezados.slice(0,15).filter(Boolean).join(', '));
+ let conEstado=0;const opciones=new Set();
+ for(let i=1;i<filas.length;i++){
+  const valor=String(filas[i]?.[indice]??'').trim();
+  if(valor){conEstado++;opciones.add(valor);}
+ }
+ if(!conEstado)throw new Error('La columna "'+encabezados[indice]+'" existe, pero todas sus filas están vacías. No se reemplazó la fuente.');
+ return {conEstado,estados:opciones.size,total:filas.length-1};
 }
 
 function resumirConteoDespachos(filas){const datos=(filas||[]).slice(1);return{pdvs:datos.length,guias:datos.reduce((s,f)=>s+Number(f[1]||0),0)};}

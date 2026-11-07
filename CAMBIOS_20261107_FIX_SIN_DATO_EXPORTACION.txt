@@ -1,0 +1,33 @@
+GESTIÓN DE GUÍAS V2 — CORRECCIÓN DE "SIN DATO" EN ÚLTIMO ESTADO (EXPORTACIÓN)
+Fecha: 07/11/2026
+
+CAUSA RAÍZ
+La interfaz y el motor legado bridge.js leían la columna "Último estado", pero la carga actual de la plataforma usa process-worker.js para generar los registros que se publican en Supabase. Ese worker NO copiaba ultimoEstadoExportacion de los datos de la exportación. Por eso, incluso volviendo a cargar el archivo Excel, el filtro recibía valores vacíos y mostraba "SIN DATO".
+
+ARCHIVOS MODIFICADOS
+1. process-worker.js (corrección principal): añade ultimoEstadoExportacion al registro generado y lee el valor de "Último estado" en el Excel (también acepta "Estado más reciente", "Último estado de la guía" y "Estado actual").
+2. bridge.js: mantiene alineada la lógica de lectura de estados fuera del worker y cambia la versión de la URL del worker para invalidar caché.
+3. gestion-v2.html: cambia versión de bridge.js para invalidar caché, comprueba que el archivo de exportación contenga el encabezado de estado y al menos un valor antes de permitir la carga. Esto se aplica tanto al botón individual de Exportación como a Guardar información cargada.
+
+PARA PUBLICAR
+Sustituir esos tres archivos en la raíz del repositorio GitHub, conservando los nombres originales. No requiere ejecución SQL ni modificación manual de Supabase.
+
+PASO OBLIGATORIO TRAS PUBLICAR
+1. Recargar el navegador con Ctrl + Shift + R.
+2. Ingresar con el rol administrador a Gestión V2.
+3. Volver a seleccionar y cargar el Excel completo de Exportación de guías mediante "Cargar Exportación de guías". Esto reprocesa los registros con el nuevo campo.
+4. Confirmar que la carga terminó y que la tabla de resumen muestra estados reales. Si usas el botón "Guardar información cargada", deja el archivo seleccionado y pulsa Guardar: sin un archivo seleccionado no se reprocesan los datos.
+
+COMPORTAMIENTO ESPERADO
+Las guías presentes en la exportación con estado no vacío podrán seleccionarse por su estado real. "SIN DATO" seguirá apareciendo correctamente para aquellas guías que no estén en la exportación cargada o tengan ese campo vacío.
+
+PRUEBAS REALIZADAS
+- Sintaxis de bridge.js, process-worker.js y scripts integrados de gestion-v2.html: OK.
+- Ejecución del worker completo con fuentes PDV, Track Break y Exportación sintéticas: OK.
+- Preservación de estado en registro final publicado por worker: OK.
+- Encabezados Último estado, Estado más reciente, Último estado de la guía y Estado actual: OK.
+- Selección de fila de exportación más reciente para guías repetidas: OK.
+- Validación del Excel: reconoce datos y rechaza ausencia de columna o columna completamente vacía: OK.
+
+LÍMITES
+No se ha realizado una prueba contra tu instancia de Supabase y tus archivos de exportación reales. La confirmación final debe realizarse después del despliegue.

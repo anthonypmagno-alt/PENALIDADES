@@ -1,0 +1,7 @@
+1. Ejecuta supabase_gestion_v2_depurar_comentarios.sql en SQL Editor del proyecto correcto.
+2. Sube el contenido de PENALIDADES-main a GitHub.
+3. Actualiza TODAS las fuentes operativas de todas las regiones antes de depurar.
+4. En Gestión V2 > Configuración de comentarios (Administrador), pulsa Analizar comentarios antiguos.
+5. Descarga respaldo CSV y confirma las guías ausentes.
+6. La eliminación archiva cada comentario en v16_private.gestion_comentarios_encargado_archivo.
+ADVERTENCIA: ausencia en la carga no significa eliminación definitiva de una guía. La depuración NO elimina logs de Supabase ni reduce el contador de log ingestion.

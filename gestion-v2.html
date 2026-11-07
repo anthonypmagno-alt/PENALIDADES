@@ -571,6 +571,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
               <section class="comment-catalog-card"><h3>Subcampo 1</h3><div id="comentarioSubcampo1Lista"></div><div class="comment-catalog-add"><input id="nuevoSubcampo1" maxlength="100" placeholder="Nuevo valor, por ejemplo: TRASLADO"><button type="button" class="secondary" onclick="agregarSubcampo1Config()">Agregar</button></div></section>
               <section class="comment-catalog-card"><h3>Opciones de Subcampo 2</h3><label for="comentarioParentConfig">Asociadas a Subcampo 1</label><select id="comentarioParentConfig" onchange="seleccionarSubcampo1Config(this.value)"></select><div id="comentarioSubcampo2Lista"></div><div class="comment-catalog-add"><input id="nuevoSubcampo2" maxlength="100" placeholder="Nueva opción"><button type="button" class="secondary" onclick="agregarSubcampo2Config()">Agregar</button></div></section>
             </div>
+            <section class="comment-catalog-card" id="depuracionComentariosPanel" style="margin-top:16px"><h3>Depuración de comentarios de gestión</h3><p class="source-note">Solo administrador. Compara los comentarios de encargado con el universo completo de guías cargado en Gestión V2 (sin aplicar filtros). Los registros ausentes pueden ser guías finalizadas; se recomienda conservar el respaldo.</p><button type="button" class="secondary" onclick="previsualizarDepuracionComentarios()">🔎 Analizar comentarios antiguos</button><div id="depuracionComentariosEstado" class="source-note" aria-live="polite">Actualiza la información antes de analizar.</div><div id="depuracionComentariosAcciones" class="hidden" style="margin-top:10px"><button type="button" class="secondary" onclick="descargarRespaldoDepuracion()">📥 Descargar respaldo CSV</button> <button type="button" class="danger" onclick="ejecutarDepuracionComentarios()">🗑️ Eliminar comentarios ausentes</button></div></section>
             <div id="comentarioCatalogoActions" class="comment-catalog-actions hidden"><button id="guardarCatalogoComentariosBtn" type="button" class="success" onclick="guardarCatalogoComentarios()">Guardar configuración</button><span>Solo el administrador puede guardar cambios.</span></div>
           </div>
         </section>
@@ -1151,6 +1152,52 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     }).withFailureHandler(manejarError).obtenerDatosPortal(token,forzar===true);
   }
 
+  let depuracionPendiente=[];
+  const claveDepuracion=(g,p)=>String(g||'').trim().toUpperCase()+'|'+String(p||'').trim().toUpperCase();
+  async function previsualizarDepuracionComentarios(){
+    const estado=document.getElementById('depuracionComentariosEstado'),acciones=document.getElementById('depuracionComentariosAcciones');
+    acciones.classList.add('hidden');depuracionPendiente=[];
+    if(sesion?.rol!=='ADMINISTRADOR')return toast('Solo administrador.',false);
+    if(!Array.isArray(guias)||!guias.length)return toast('No hay guías cargadas. Actualiza Gestión V2.',false);
+    if(comentarioGestionEncargadoDisponible!==true)return toast('No se pudieron cargar todos los comentarios. Actualiza la página.',false);
+    estado.textContent='Consultando comentarios...';
+    try{
+      const existentes=new Set(guias.map(g=>claveDepuracion(g.guia,g.pdv)));
+      const comentarios=await window.v16DepuracionComentarios.listar();
+      depuracionPendiente=comentarios.filter(c=>!existentes.has(claveDepuracion(c.guia,c.pdv)));
+      estado.textContent=`Guías activas cargadas: ${guias.length}. Comentarios registrados: ${comentarios.length}. Comentarios ausentes: ${depuracionPendiente.length}. Se respaldarán en Supabase antes de eliminarlos. Esta comparación depende de que la carga operativa sea completa.`;
+      acciones.classList.toggle('hidden',!depuracionPendiente.length);
+    }catch(e){estado.textContent='Error: '+e.message;toast(e.message,false)}
+  }
+  function descargarRespaldoDepuracion(){
+    if(!depuracionPendiente.length)return;
+    const cols=['guia','pdv','area','region','comentario','actualizado_en'];
+    const csv='\uFEFF'+[cols.join(';'),...depuracionPendiente.map(r=>cols.map(k=>'"'+String(r[k]??'').replaceAll('"','""')+'"').join(';'))].join('\r\n');
+    const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    const a=document.createElement('a');a.href=url;a.download='respaldo_comentarios_ausentes_'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
+  }
+  async function ejecutarDepuracionComentarios(){
+    if(sesion?.rol!=='ADMINISTRADOR'||!depuracionPendiente.length)return;
+    const cantidad=depuracionPendiente.length;
+    if(!confirm(`Se eliminarán hasta ${cantidad} comentarios de encargado que NO aparecen en la carga actual. Los registros se archivarán en Supabase. ¿Confirmas que cargaste TODAS las regiones, PDV y fuentes vigentes?`))return;
+    const confirmacion=prompt(`Para confirmar escribe ELIMINAR ${cantidad}`);
+    if(confirmacion!==`ELIMINAR ${cantidad}`)return;
+    const estado=document.getElementById('depuracionComentariosEstado');
+    const boton=document.querySelector('#depuracionComentariosAcciones button.danger');boton.disabled=true;
+    let eliminados=0,omitidos=0;
+    try{
+      for(let i=0;i<depuracionPendiente.length;i+=100){
+        const lote=depuracionPendiente.slice(i,i+100).map(c=>({guia:c.guia,pdv:c.pdv,actualizado_en:c.actualizado_en}));
+        const r=await window.v16DepuracionComentarios.depurar(lote);
+        eliminados+=Number(r?.eliminados||0);omitidos+=Number(r?.omitidos||0);
+        estado.textContent=`Procesados ${Math.min(i+100,cantidad)}/${cantidad}. Eliminados: ${eliminados}; omitidos por cambios: ${omitidos}.`;
+      }
+      depuracionPendiente=[];document.getElementById('depuracionComentariosAcciones').classList.add('hidden');
+      estado.textContent=`Depuración finalizada. Eliminados y archivados: ${eliminados}. Omitidos por cambios recientes: ${omitidos}. Actualiza la tabla.`;
+      toast('Depuración terminada. '+eliminados+' comentarios archivados y eliminados.',true);
+    }catch(e){estado.textContent='Proceso interrumpido: '+e.message+'. Algunos lotes anteriores pueden haberse completado. Actualiza y vuelve a analizar.';toast(e.message,false)}
+    finally{boton.disabled=false}
+  }
   function actualizarEstadoComentarioGestion(error){
     const el=document.getElementById("comentarioGestionEstado");if(!el)return;
     if(comentarioGestionEncargadoDisponible){el.className="source-note";el.textContent="Comentario encargado · Administrador: solo lectura para el encargado. Comentario de gestión · Encargado: campo independiente por guía y PDV.";return;}

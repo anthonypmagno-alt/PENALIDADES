@@ -1325,12 +1325,12 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     const comentario=!esTotal&&puedeComentar?`<button class="btn-comment ${x.comentario?'has-comment':''}" title="${x.comentario?'Ver o actualizar comentario':'Agregar comentario'}" onclick="abrirComentario('${escJs(x.pdv)}')">💬</button><button type="button" class="btn-image" title="Ver o cargar imágenes de ${esc(x.pdv)}" aria-label="Ver o cargar imágenes de ${esc(x.pdv)}" onclick="abrirImagenesResumen('${escJs(x.pdv)}')">🖼</button>`:"";
     const pdvFiltro=esTotal?"":String(x.pdv||""),pdvActivo=!esTotal&&celdaResumenSeleccionada(pdvFiltro,'');
     if(!esTotal&&filaResumenSeleccionada(pdvFiltro))tr.classList.add("summary-row-active");
-    const celdaPdv=esTotal?`<td><b>${esc(x.pdv)}</b></td>`:`<td class="summary-clickable${pdvActivo?' summary-selected':''}" title="Filtrar todas las guías de ${esc(x.pdv)}" onclick="aplicarFiltroResumen('${escJs(pdvFiltro)}','')"><b>${esc(x.pdv)}</b></td>`;
+    const celdaPdv=esTotal?`<td><b>${esc(x.pdv)}</b></td>`:`<td class="summary-clickable${pdvActivo?' summary-selected':''}" title="Filtrar todas las guías de ${esc(x.pdv)}" data-resumen-pdv="${esc(pdvFiltro)}" data-resumen-categoria="" onclick="aplicarFiltroResumen('${escJs(pdvFiltro)}','')"><b>${esc(x.pdv)}</b></td>`;
     tr.innerHTML=`${celdaPdv}<td>${num(x.despachosAyer||0)}</td>${celdaNumeroResumen(x.h120o168,pdvFiltro,"h120o168",esTotal)}${celdaNumeroResumen(x.h360NoDevuelto,pdvFiltro,"h360NoDevuelto",esTotal)}${celdaNumeroResumen(x.h360PorDevolver,pdvFiltro,"h360PorDevolver",esTotal)}${celdaNumeroResumen(x.h720NoDevuelto,pdvFiltro,"h720NoDevuelto",esTotal)}${celdaNumeroResumen(x.h720PorDevolver,pdvFiltro,"h720PorDevolver",esTotal)}${celdaNumeroResumen(x.brecha48a120,pdvFiltro,"brecha48a120",esTotal)}${celdaNumeroResumen(x.brecha48NoLlegado,pdvFiltro,"brecha48NoLlegado",esTotal)}${celdaNumeroResumen(x.brecha120a144,pdvFiltro,"brecha120a144",esTotal)}${celdaNumeroResumen(x.brecha120NoLlegado,pdvFiltro,"brecha120NoLlegado",esTotal)}${celdaNumeroResumen(x.mayor144EnPDV,pdvFiltro,"mayor144EnPDV",esTotal)}${celdaNumeroResumen(Number(x.mayor144NoLlegado||0)+Number(x.brecha144a168NoLlegado||0),pdvFiltro,"mayor144NoLlegado",esTotal)}${celdaNumeroResumen(x.total,pdvFiltro,"totalCasos",esTotal)}${celdaNumeroResumen(x.totalCritico,pdvFiltro,"totalCritico",esTotal,"summary-critical")}${celdaNumeroResumen(x.guiasUnicas,pdvFiltro,"guiasUnicas",esTotal)}<td class="comment-col image-comment-col">${comentario}</td>`;
     return tr;
   }
 
-  function celdaNumeroResumen(valor,pdv,categoria,esTotal,claseExtra){const n=Number(valor||0),extra=claseExtra?" "+claseExtra:"",punto=esTotal?"":String(pdv||""),tipo=String(categoria||""),activo=celdaResumenSeleccionada(punto,tipo);if(n===0)return `<td class="number zero-value${extra}">0</td>`;const accion=!punto&&!tipo?"limpiarFiltroResumen(true)":`aplicarFiltroResumen('${escJs(punto)}','${escJs(tipo)}')`;const titulo=!punto&&!tipo?"Mostrar todas las guías":`Filtrar: ${esc(etiquetaFiltroResumen(punto,tipo))}`;return `<td class="number summary-clickable${extra}${activo?' summary-selected':''}" title="${titulo}" onclick="${accion}">${num(n)}</td>`;}
+  function celdaNumeroResumen(valor,pdv,categoria,esTotal,claseExtra){const n=Number(valor||0),extra=claseExtra?" "+claseExtra:"",punto=esTotal?"":String(pdv||""),tipo=String(categoria||""),activo=celdaResumenSeleccionada(punto,tipo);if(n===0)return `<td class="number zero-value${extra}">0</td>`;const accion=!punto&&!tipo?"limpiarFiltroResumen(true)":`aplicarFiltroResumen('${escJs(punto)}','${escJs(tipo)}')`;const titulo=!punto&&!tipo?"Mostrar todas las guías":`Filtrar: ${esc(etiquetaFiltroResumen(punto,tipo))}`;return `<td class="number summary-clickable${extra}${activo?' summary-selected':''}" title="${titulo}" data-resumen-pdv="${esc(punto)}" data-resumen-categoria="${esc(tipo)}" onclick="${accion}">${num(n)}</td>`;}
   function etiquetaFiltroResumen(pdv,categoria){const tipo=ETIQUETAS_RESUMEN[categoria]||"Todos los casos";if(pdv&&categoria)return pdv+" · "+tipo;if(pdv)return pdv+" · Todos los casos";if(categoria)return "Todos los PDV · "+tipo;return "Todos los casos";}
   
   
@@ -1343,7 +1343,17 @@ function aplicarFiltroResumen(pdv,categoria){
  const actuales=seleccionesResumen();
  const nuevas=celdaResumenSeleccionada(pdv,categoria)?actuales.filter(s=>s.pdv!==pdv||s.categoria!==categoria):[...actuales,{pdv,categoria}];
  filtroResumenActivo=nuevas.length?nuevas:null;
- actualizarChipResumen();renderResumen();filtrar();
+ actualizarChipResumen();actualizarSeleccionResumenLigera();filtrar();
+}
+function actualizarSeleccionResumenLigera(){
+ const body=document.getElementById("resumenBody");if(!body)return;
+ body.querySelectorAll(".summary-clickable[data-resumen-pdv]").forEach(c=>{
+  const pdv=c.dataset.resumenPdv||"",categoria=c.dataset.resumenCategoria||"";
+  c.classList.toggle("summary-selected",celdaResumenSeleccionada(pdv,categoria));
+ });
+ body.querySelectorAll("tr.brecha-data-row, tr:not(.region-heading):not(.area-heading-nested):not(.area-subtotal-nested):not(.region-subtotal)").forEach(tr=>{
+  const celda=tr.querySelector("td[data-resumen-pdv]");if(celda)tr.classList.toggle("summary-row-active",filaResumenSeleccionada(celda.dataset.resumenPdv||""));
+ });
 }
 function limpiarFiltroResumen(desplazar){
  filtroResumenActivo=null;actualizarChipResumen();renderResumen();filtrar();
@@ -2240,7 +2250,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function renderGuias(){actualizarEstadoListaGuias('gestion');
     const body=document.getElementById("guiasBody");enlazarBorradoresRevision();body.replaceChildren();
     if(!filtradas.length){body.innerHTML='<tr><td colspan="12" style="padding:35px;color:#64748b">No hay guías para mostrar. Selecciona un comentario en el resumen o ajusta los filtros.</td></tr>';actualizarContextoEdicionRevision();actualizarBarraSeleccion();return;}
-    filtradas.forEach(x=>body.appendChild(crearFilaGuia(x)));
+    const fragmento=document.createDocumentFragment();filtradas.forEach(x=>fragmento.appendChild(crearFilaGuia(x)));body.appendChild(fragmento);
     actualizarContextoEdicionRevision();actualizarBarraSeleccion();
   }
   function sincronizarCasillasGruposComentario(){
@@ -2264,9 +2274,9 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function sincronizarCasillasSeleccion(){document.querySelectorAll("#guiasBody .row-check").forEach(casilla=>{const fila=Number(casilla.dataset.fila),marcada=seleccionadas.has(fila);casilla.checked=marcada;const tr=document.getElementById("row-"+fila);if(tr)tr.classList.toggle("row-selected",marcada);});}
   function seleccionActual(){return guias.filter(x=>seleccionadas.has(Number(x.fila))).map(x=>({fila:Number(x.fila),guia:String(x.guia||"")}));}
   function actualizarBarraSeleccion(){
-    const seleccion=seleccionActual(),visibles=filtradas.filter(x=>seleccionadas.has(Number(x.fila))).length,totalVisibles=filtradas.length;
-    document.getElementById("bulkCount").textContent=seleccion.length+" guía"+(seleccion.length===1?" seleccionada":"s seleccionadas")+(seleccion.length!==visibles?" · "+visibles+" visibles":"");
-    const manage=document.getElementById("btnBulkManage");if(manage){manage.hidden=sesion?.rol!=="ADMINISTRADOR";manage.disabled=!seleccion.length;}const managerComment=document.getElementById("btnBulkManagerComment");if(managerComment){managerComment.hidden=sesion?.rol!=="ENCARGADO";managerComment.disabled=!seleccion.length||!comentarioGestionEncargadoDisponible;}const roleHelp=document.getElementById("bulkRoleHelp");if(roleHelp)roleHelp.textContent=sesion?.rol==="ENCARGADO"?"La acción masiva del encargado actualiza solo su comentario de gestión.":"La gestión masiva aplica comentario, cierre y notificación al PDV.";document.getElementById("btnPrintGestion").disabled=!seleccion.length;document.getElementById("btnPrintDetalleGestion").disabled=!seleccion.length;
+    const cantidadSeleccionada=seleccionadas.size,visibles=filtradas.filter(x=>seleccionadas.has(Number(x.fila))).length,totalVisibles=filtradas.length;
+    document.getElementById("bulkCount").textContent=cantidadSeleccionada+" guía"+(cantidadSeleccionada===1?" seleccionada":"s seleccionadas")+(cantidadSeleccionada!==visibles?" · "+visibles+" visibles":"");
+    const manage=document.getElementById("btnBulkManage");if(manage){manage.hidden=sesion?.rol!=="ADMINISTRADOR";manage.disabled=!cantidadSeleccionada;}const managerComment=document.getElementById("btnBulkManagerComment");if(managerComment){managerComment.hidden=sesion?.rol!=="ENCARGADO";managerComment.disabled=!cantidadSeleccionada||!comentarioGestionEncargadoDisponible;}const roleHelp=document.getElementById("bulkRoleHelp");if(roleHelp)roleHelp.textContent=sesion?.rol==="ENCARGADO"?"La acción masiva del encargado actualiza solo su comentario de gestión.":"La gestión masiva aplica comentario, cierre y notificación al PDV.";document.getElementById("btnPrintGestion").disabled=!cantidadSeleccionada;document.getElementById("btnPrintDetalleGestion").disabled=!cantidadSeleccionada;
     const check=document.getElementById("checkAllVisible");if(check){check.checked=Boolean(totalVisibles&&visibles===totalVisibles);check.indeterminate=Boolean(visibles&&visibles<totalVisibles);check.disabled=!totalVisibles;}
   }
   function abrirGestionMasiva(){const cantidad=seleccionActual().length;if(sesion?.rol!=="ADMINISTRADOR"){toast("La gestión masiva del comentario principal está reservada al administrador.",false);return;}if(!cantidad){toast("Seleccione al menos una guía.",false);return;}document.getElementById("bulkModalCount").textContent="La gestión se aplicará a "+cantidad+" guía"+(cantidad===1?" seleccionada.":"s seleccionadas.");document.getElementById("bulkComment").value="";document.getElementById("bulkCierre").checked=false;document.getElementById("bulkNotificacion").checked=false;document.getElementById("bulkSubcampo1").innerHTML=opcionesSubcampo1Html("");document.getElementById("bulkSubcampo1").disabled=!catalogoComentariosDisponible;actualizarOpcionesSubcampo2Masivo();document.getElementById("bulkModal").style.display="flex";setTimeout(()=>document.getElementById("bulkComment").focus(),50);}

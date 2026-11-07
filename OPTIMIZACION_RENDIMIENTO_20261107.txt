@@ -1,0 +1,7 @@
+Optimización conservadora de Gestión V2
+- Al seleccionar una celda del resumen, se actualiza el resaltado de las celdas existentes sin reconstruir toda la tabla resumen.
+- Las filas del detalle se preparan en un DocumentFragment antes de incorporarlas al DOM.
+- El contador de selección utiliza el Set de filas seleccionadas, sin volver a recorrer todas las guías para contar.
+- Se conservan filtros, agrupaciones, costos de brecha, Consulta desde Excel, autenticación y funciones SQL.
+- No se ha validado el rendimiento con datos reales en el navegador; probar primero en una rama de GitHub.
+- Si aún hay lentitud, perfilar renderResumenComentarioEncargado/renderGuias con Chrome Performance y considerar paginación del detalle.

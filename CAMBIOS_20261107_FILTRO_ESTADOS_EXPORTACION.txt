@@ -1,0 +1,37 @@
+GESTIÓN V2 – FILTRO ÚLTIMO ESTADO DE EXPORTACIÓN
+Fecha: 2026-11-07
+
+CAMBIOS
+1. Nuevo filtro de selección múltiple en "Resumen de casos por PDV": "Todos los estados (Exportación)".
+2. Las opciones se generan a partir de la columna "Último estado" del Excel Exportación de guías.
+   Si la columna no existe o un registro no tiene valor, se clasifica "SIN DATO".
+3. El filtro recalcula los conteos del resumen y restringe las guías visibles en Detalle.
+   Conserva los filtros de región, área, encargado, comentarios, casos críticos y no finalizadas.
+4. Al pulsar Limpiar en el resumen se elimina también la selección de estados.
+5. El motor incorpora `ultimoEstadoExportacion` sin confundirlo con el tipo de escaneo más reciente.
+6. Optimización: los valores de filtros del resumen se capturan una sola vez por aplicación,
+   evitando lectura repetitiva del DOM para cada guía.
+7. Se cambia la versión de bridge.js en la referencia HTML para forzar actualización de caché.
+
+ARCHIVOS DE CÓDIGO MODIFICADOS
+- gestion-v2.html
+- bridge.js
+
+PARA PUBLICAR
+- Sustituir ambos archivos en GitHub por los del ZIP adjunto, conservando sus nombres.
+- Si el sistema aún no muestra estados (solo "SIN DATO"), volver a cargar la fuente
+  "Exportación de guías" desde el rol administrador para regenerar la información
+  procesada con el nuevo campo. No se requiere ejecutar SQL.
+- Usar Ctrl+Shift+R después del despliegue.
+
+PRUEBAS
+- Sintaxis de bridge.js y de los scripts integrados en gestion-v2.html: correcta.
+- Filtros de estado único, estado múltiple, estado sin dato, región y FR TRUE-TRUE: correctos.
+- Prueba aislada de selección en 30 000 registros sintéticos: correcta.
+- No se pudo ejecutar una prueba de navegación real en este entorno (bloqueo del navegador).
+  Conviene validar en GitHub con los datos reales antes de dar por cerrado el cambio.
+
+NOTA
+El campo "Último estado" de Exportación y el campo "Tipo de escaneo más reciente"
+son distintos. Este nuevo filtro usa el primero; el segundo ya tiene su propio filtro
+independiente en el Detalle de guías.

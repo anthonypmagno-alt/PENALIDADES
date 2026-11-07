@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261107-comentarios-concurrencia-1"></script>
+<script src="./bridge.js?v=20261107-estado-exportacion-1"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -424,6 +424,7 @@
           <span class="summary-toolbar-title">FILTRAR RESUMEN:</span>
           <div class="multi-filter" id="sRegion"><button type="button" id="sRegionButton" class="multi-trigger" onclick="toggleMulti('sRegion',event)" aria-label="Filtrar por región"><span id="sRegionLabel">Todas las regiones</span><span>▾</span></button><div id="sRegionMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="sArea"><button type="button" id="sAreaButton" class="multi-trigger" onclick="toggleMulti('sArea',event)"><span id="sAreaLabel">Todas las áreas</span><span>▾</span></button><div id="sAreaMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
           <div class="multi-filter" id="sEncargado"><button type="button" id="sEncargadoButton" class="multi-trigger" onclick="toggleMulti('sEncargado',event)"><span id="sEncargadoLabel">Todos los encargados</span><span>▾</span></button><div id="sEncargadoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
+          <div class="multi-filter" id="sEstadoExportacion"><button type="button" id="sEstadoExportacionButton" class="multi-trigger" onclick="toggleMulti('sEstadoExportacion',event)" aria-label="Filtrar resumen por último estado de exportación" title="Usa la columna Último estado del Excel Exportación de guías"><span id="sEstadoExportacionLabel">Todos los estados (Exportación)</span><span>▾</span></button><div id="sEstadoExportacionMenu" class="multi-menu" data-placeholder="Todos los estados (Exportación)" onclick="event.stopPropagation()"></div></div>
           <div class="multi-filter" id="sComentarioEncargado"><button type="button" id="sComentarioEncargadoButton" class="multi-trigger" onclick="toggleMulti('sComentarioEncargado',event)"><span id="sComentarioEncargadoLabel">Comentario principal · Administrador</span><span>▾</span></button><div id="sComentarioEncargadoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
           <div class="multi-filter" id="sComentarioPDV"><button type="button" id="sComentarioPDVButton" class="multi-trigger" onclick="toggleMulti('sComentarioPDV',event)"><span id="sComentarioPDVLabel">Comentario de gestión · Encargado</span><span>▾</span></button><div id="sComentarioPDVMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
           <button type="button" id="btnSoloNoFinalizadas" class="summary-toggle" aria-pressed="false" onclick="alternarSoloNoFinalizadas()">Solo no finalizadas</button>
@@ -1224,7 +1225,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
 
   function enfocarResumenImportado(regiones){
     const elegidas=new Set(regiones.map(normalizarLocal));
-    ['sArea','sEncargado','sComentarioEncargado','sComentarioPDV','fArea','fEncargado','fPdv','fEstado','fComentario','fTipo','fEscaneo','fEscaneoExportacion','fActualizacion'].forEach(id=>{
+    ['sArea','sEncargado','sEstadoExportacion','sComentarioEncargado','sComentarioPDV','fArea','fEncargado','fPdv','fEstado','fComentario','fTipo','fEscaneo','fEscaneoExportacion','fActualizacion'].forEach(id=>{
       document.querySelectorAll('#'+id+'Menu input[type=checkbox]').forEach(x=>x.checked=false);actualizarEtiquetaMulti(id);
     });
     ['sRegion','fRegion'].forEach(id=>{
@@ -1238,6 +1239,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
  llenarMulti("sRegion",guias.map(x=>x.region),"Todas las regiones",cambiarFiltrosResumen);
     llenarMulti("sArea",(resumenBase.filas||[]).map(x=>x.area),"Todas las áreas",cambiarAreasResumen);
     actualizarOpcionesEncargadoResumen();
+    llenarMulti("sEstadoExportacion",guias.map(valorEstadoExportacion),"Todos los estados (Exportación)",aplicarFiltrosResumen);
     llenarMulti("sComentarioEncargado",["CON COMENTARIO","SIN COMENTARIO"],"Comentario principal · Administrador",cambiarFiltrosResumen);
     llenarMulti("sComentarioPDV",["CON COMENTARIO","SIN COMENTARIO"],"Comentario de gestión · Encargado",cambiarFiltrosResumen);
     actualizarBotonNoFinalizadas();actualizarBotonSoloCriticos();
@@ -1254,7 +1256,8 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   }
 
   function aplicarFiltrosResumen(conservarSeleccion){
-    const guiasPermitidas=guias.filter(cumpleFiltrosGuiaResumen);
+    const filtrosActivos=prepararFiltrosGuiaResumen();
+    const guiasPermitidas=guias.filter(x=>cumpleFiltrosGuiaResumen(x,filtrosActivos));
     filasPermitidasResumen=new Set(guiasPermitidas.map(x=>Number(x.fila)));
     const resumenCalculado=construirResumenGuiasCliente(guiasPermitidas);
     resumen=soloCriticos?recalcularResumenVisible(resumenCalculado.filas.filter(x=>Number(x.totalCritico||0)>0)):resumenCalculado;
@@ -1262,15 +1265,29 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     renderResumen();actualizarEstadoFiltrosResumen();filtrar();
   }
 
-  function cumpleFiltrosGuiaResumen(x){
- if(valoresMulti("sRegion").length&&!valoresMulti("sRegion").includes(String(x.region||"")))return false;
-    const areas=valoresMulti("sArea"),encargados=valoresMulti("sEncargado"),comentariosEncargado=valoresMulti("sComentarioEncargado"),comentariosPDV=valoresMulti("sComentarioPDV");
+  function valorEstadoExportacion(x){return normalizarLocal(x?.ultimoEstadoExportacion)||"SIN DATO";}
+  function prepararFiltrosGuiaResumen(){
+    // Capturar los menús una sola vez por cambio de filtros, no por cada guía.
+    return {
+      estadosExportacion:new Set(valoresMulti("sEstadoExportacion")),
+      regiones:new Set(valoresMulti("sRegion")),
+      areas:new Set(valoresMulti("sArea")),
+      encargados:new Set(valoresMulti("sEncargado")),
+      comentariosAdmin:new Set(valoresMulti("sComentarioEncargado")),
+      comentariosGestion:new Set(valoresMulti("sComentarioPDV")),
+      noFinalizadas:soloNoFinalizadas
+    };
+  }
+  function cumpleFiltrosGuiaResumen(x,f){
+    if(f.estadosExportacion.size&&!f.estadosExportacion.has(valorEstadoExportacion(x)))return false;
+    if(f.regiones.size&&!f.regiones.has(String(x.region||"")))return false;
     if(normalizarLocal(x.fr).replace(/\s+/g,"")==="TRUE-TRUE")return false;
-    if(soloNoFinalizadas&&estado(x)==="FINALIZADO")return false;
-    if(areas.length&&!areas.includes(String(x.area||"")))return false;
-    if(encargados.length&&!encargados.includes(String(x.encargado||"")))return false;
-    const estadoEncargado=String(x.comentario||"").trim()?"CON COMENTARIO":"SIN COMENTARIO",estadoPDV=String(x.comentarioGestionEncargado||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";
-    return (!comentariosEncargado.length||comentariosEncargado.includes(estadoEncargado))&&(!comentariosPDV.length||comentariosPDV.includes(estadoPDV));
+    if(f.noFinalizadas&&estado(x)==="FINALIZADO")return false;
+    if(f.areas.size&&!f.areas.has(String(x.area||"")))return false;
+    if(f.encargados.size&&!f.encargados.has(String(x.encargado||"")))return false;
+    const estadoAdmin=String(x.comentario||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";
+    const estadoGestion=String(x.comentarioGestionEncargado||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";
+    return (!f.comentariosAdmin.size||f.comentariosAdmin.has(estadoAdmin))&&(!f.comentariosGestion.size||f.comentariosGestion.has(estadoGestion));
   }
 
   function construirResumenGuiasCliente(registros){
@@ -1313,8 +1330,8 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   function actualizarBotonNoFinalizadas(){const b=document.getElementById("btnSoloNoFinalizadas");b.classList.toggle("active",soloNoFinalizadas);b.setAttribute("aria-pressed",soloNoFinalizadas?"true":"false");b.textContent=soloNoFinalizadas?"✓ Solo no finalizadas":"Solo no finalizadas";}
   function alternarSoloCriticos(){soloCriticos=!soloCriticos;actualizarBotonSoloCriticos();aplicarFiltrosResumen();}
   function actualizarBotonSoloCriticos(){const b=document.getElementById("btnSoloCriticos");if(!b)return;b.classList.toggle("active",soloCriticos);b.setAttribute("aria-pressed",soloCriticos?"true":"false");b.textContent=soloCriticos?"✓ Solo casos críticos":"Solo casos críticos";}
-  function limpiarFiltrosResumen(){olvidarRegionesGestion();document.querySelectorAll("#sRegionMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("sRegion");["sArea","sEncargado","sComentarioEncargado","sComentarioPDV"].forEach(id=>document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false));soloNoFinalizadas=false;soloCriticos=false;actualizarEtiquetaMulti("sArea");actualizarOpcionesEncargadoResumen();["sEncargado","sComentarioEncargado","sComentarioPDV"].forEach(actualizarEtiquetaMulti);actualizarBotonNoFinalizadas();actualizarBotonSoloCriticos();cerrarMultis();aplicarFiltrosResumen();}
-  function actualizarEstadoFiltrosResumen(){const areas=valoresMulti("sArea"),encargados=valoresMulti("sEncargado"),ce=valoresMulti("sComentarioEncargado"),cp=valoresMulti("sComentarioPDV"),partes=[];const regiones=valoresMulti("sRegion");if(regiones.length)partes.push("Regiones: "+regiones.join(", "));if(areas.length)partes.push(areas.length+" área"+(areas.length===1?"":"s"));if(encargados.length)partes.push(encargados.length+" encargado"+(encargados.length===1?"":"s"));if(ce.length)partes.push("comentario encargado");if(cp.length)partes.push("comentario de gestión del encargado");if(soloNoFinalizadas)partes.push("no finalizadas");if(soloCriticos)partes.push("solo casos críticos");document.getElementById("summaryToolbarStatus").textContent=`${(resumen.filas||[]).length} PDV visibles${partes.length?" · "+partes.join(" · "):""}`;}
+  function limpiarFiltrosResumen(){olvidarRegionesGestion();document.querySelectorAll("#sRegionMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("sRegion");["sArea","sEncargado","sEstadoExportacion","sComentarioEncargado","sComentarioPDV"].forEach(id=>document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false));soloNoFinalizadas=false;soloCriticos=false;actualizarEtiquetaMulti("sArea");actualizarOpcionesEncargadoResumen();["sEncargado","sEstadoExportacion","sComentarioEncargado","sComentarioPDV"].forEach(actualizarEtiquetaMulti);actualizarBotonNoFinalizadas();actualizarBotonSoloCriticos();cerrarMultis();aplicarFiltrosResumen();}
+  function actualizarEstadoFiltrosResumen(){const areas=valoresMulti("sArea"),encargados=valoresMulti("sEncargado"),ce=valoresMulti("sComentarioEncargado"),cp=valoresMulti("sComentarioPDV"),ee=valoresMulti("sEstadoExportacion"),partes=[];const regiones=valoresMulti("sRegion");if(regiones.length)partes.push("Regiones: "+regiones.join(", "));if(areas.length)partes.push(areas.length+" área"+(areas.length===1?"":"s"));if(encargados.length)partes.push(encargados.length+" encargado"+(encargados.length===1?"":"s"));if(ce.length)partes.push("comentario encargado");if(cp.length)partes.push("comentario de gestión del encargado");if(ee.length)partes.push(ee.length===1?"Estado exportación: "+ee[0]:ee.length+" estados exportación");if(soloNoFinalizadas)partes.push("no finalizadas");if(soloCriticos)partes.push("solo casos críticos");document.getElementById("summaryToolbarStatus").textContent=`${(resumen.filas||[]).length} PDV visibles${partes.length?" · "+partes.join(" · "):""}`;}
   function normalizarLocal(v){return String(v==null?"":v).normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toUpperCase();}
 
   function renderResumenAnterior(){
@@ -1473,11 +1490,11 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     };
     return {cumpleEntrada,cumpleFecha};
   }
-  function filtrar(){const escaneosExportacion=valoresMulti('fEscaneoExportacion');const actualizaciones=valoresMulti('fActualizacion');const escaneosRecientes=valoresMulti("fEscaneo");const regionesGestion=valoresMulti("fRegion");
+  function filtrar(){const estadosExportacionResumen=valoresMulti('sEstadoExportacion');const escaneosExportacion=valoresMulti('fEscaneoExportacion');const actualizaciones=valoresMulti('fActualizacion');const escaneosRecientes=valoresMulti("fEscaneo");const regionesGestion=valoresMulti("fRegion");
     const {cumpleEntrada,cumpleFecha}=crearPredicadosFechasGestion();
     const q=document.getElementById("buscar").value.trim().toLowerCase(),areas=valoresMulti("fArea"),encargados=valoresMulti("fEncargado"),pdvs=valoresMulti("fPdv"),estados=valoresMulti("fEstado"),comentarios=valoresMulti("fComentario"),tipos=valoresMulti("fTipo");
     const mostrarBrechaMenor48=seleccionesResumen().some(s=>s.categoria==="brechaMenor48EnPDV")||tipos.some(t=>t.includes("<48")||t.includes("INFORMATIVO"));
-    filtradasParaResumenComentario=guias.filter(x=>{const casosV2=Array.isArray(x.casosResumen)?x.casosResumen:[];if(casosV2.length&&casosV2.every(c=>c.categoria==="brechaMenor48EnPDV")&&!mostrarBrechaMenor48)return false;const textoTipo=String(x.tipo||"").toUpperCase(),estadoComentario=String(x.comentarioGestionEncargado||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";return coincideListaGuias(x,'gestion')&&cumpleEntrada(x)&&cumpleFecha(x)&&(!escaneosExportacion.length||escaneosExportacion.includes(String(x.tipoEscaneoExportacion||"")))&&(!actualizaciones.length||actualizaciones.includes(estadoActualizacionGuia(x)))&&(!escaneosRecientes.length||escaneosRecientes.includes(String(x.tipoEscaneoReciente||"")))&&(!regionesGestion.length||regionesGestion.includes(String(x.region||"")))&&coincideFiltroResumen(x)&&(!q||String(x.guia).toLowerCase().includes(q))&&(!areas.length||areas.includes(String(x.area||"")))&&(!encargados.length||encargados.includes(String(x.encargado||"")))&&(!pdvs.length||pdvs.includes(String(x.pdv||"")))&&(!estados.length||estados.includes(String(x.estado||"").toUpperCase()))&&(!comentarios.length||comentarios.includes(estadoComentario))&&(!tipos.length||tipos.some(t=>textoTipo.includes(t.toUpperCase())));});
+    filtradasParaResumenComentario=guias.filter(x=>{const casosV2=Array.isArray(x.casosResumen)?x.casosResumen:[];if(casosV2.length&&casosV2.every(c=>c.categoria==="brechaMenor48EnPDV")&&!mostrarBrechaMenor48)return false;const textoTipo=String(x.tipo||"").toUpperCase(),estadoComentario=String(x.comentarioGestionEncargado||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";return coincideListaGuias(x,'gestion')&&cumpleEntrada(x)&&cumpleFecha(x)&&(!estadosExportacionResumen.length||estadosExportacionResumen.includes(valorEstadoExportacion(x)))&&(!escaneosExportacion.length||escaneosExportacion.includes(String(x.tipoEscaneoExportacion||"")))&&(!actualizaciones.length||actualizaciones.includes(estadoActualizacionGuia(x)))&&(!escaneosRecientes.length||escaneosRecientes.includes(String(x.tipoEscaneoReciente||"")))&&(!regionesGestion.length||regionesGestion.includes(String(x.region||"")))&&coincideFiltroResumen(x)&&(!q||String(x.guia).toLowerCase().includes(q))&&(!areas.length||areas.includes(String(x.area||"")))&&(!encargados.length||encargados.includes(String(x.encargado||"")))&&(!pdvs.length||pdvs.includes(String(x.pdv||"")))&&(!estados.length||estados.includes(String(x.estado||"").toUpperCase()))&&(!comentarios.length||comentarios.includes(estadoComentario))&&(!tipos.length||tipos.some(t=>textoTipo.includes(t.toUpperCase())));});
     filtradas=filtroComentarioJerarquiaActivo?filtradasParaResumenComentario.filter(coincideFiltroComentarioJerarquia):[...filtradasParaResumenComentario];
     resumenComentarioAgrupadoCache=null;
     filasVisiblesSeleccion=new Set(filtradas.map(x=>Number(x.fila)));

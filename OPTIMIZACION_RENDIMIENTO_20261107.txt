@@ -1,7 +1,33 @@
-Optimización conservadora de Gestión V2
-- Al seleccionar una celda del resumen, se actualiza el resaltado de las celdas existentes sin reconstruir toda la tabla resumen.
-- Las filas del detalle se preparan en un DocumentFragment antes de incorporarlas al DOM.
-- El contador de selección utiliza el Set de filas seleccionadas, sin volver a recorrer todas las guías para contar.
-- Se conservan filtros, agrupaciones, costos de brecha, Consulta desde Excel, autenticación y funciones SQL.
-- No se ha validado el rendimiento con datos reales en el navegador; probar primero en una rama de GitHub.
-- Si aún hay lentitud, perfilar renderResumenComentarioEncargado/renderGuias con Chrome Performance y considerar paginación del detalle.
+OPTIMIZACIÓN DE RENDIMIENTO – GESTIÓN DE GUÍAS V2 (07-11-2026)
+
+ARCHIVO MODIFICADO EN LA APLICACIÓN: gestion-v2.html
+Se incluyen todos los demás archivos originales para reemplazo completo en GitHub Pages.
+No se modifican tablas, archivos SQL, cuentas, permisos ni datos de Supabase.
+
+CORRECCIONES
+1. La selección de celdas del resumen V2 utiliza resaltado DOM ligero: se agregaron los atributos que faltaban en el renderizador V2 activo. No reconstruye la tabla resumen solo para marcar una selección.
+2. El filtro del resumen consulta un índice local de guías habilitadas, en lugar de leer cinco filtros HTML repetidamente por cada guía y por cada selección.
+3. El filtro de fecha y tiempo de entrada se prepara una sola vez por operación de filtrado, sin consultar el DOM para cada guía.
+4. La tabla por PDV, Subtipo 1, Subtipo 2 y comentario del administrador agrupa una vez por conjunto filtrado. Los checkboxes, acciones Ver guías y el Excel reutilizan este resultado en memoria. Se invalida al cambiar filtros o datos.
+5. El resumen jerárquico se incorpora al HTML mediante un DocumentFragment y no se recalcula ni renderiza cuando está oculto. Se actualiza al volver a abrirlo.
+6. Si el resumen tiene más de 350 grupos de comentario, abre en vista compacta por PDV; basta pulsar cada PDV para desplegar sus grupos. Los conteos y la exportación siguen considerando TODOS los registros.
+7. El detalle de Gestión presenta primero 150 guías y un botón “Mostrar 150 guías más”. Se conservan las guías restantes en memoria para filtros, selección masiva, comentarios y exportación.
+8. “Seleccionar todas las guías visibles” en el encabezado sigue incluyendo TODAS las guías filtradas, aunque no se hayan dibujado todas sus filas. El contador muestra el número real de seleccionadas.
+9. La opción “Ir a guía” amplía el tramo mostrado si el borrador está más allá de la primera página.
+10. Cuando llegan nuevas clasificaciones de comentario, se actualiza también el resumen jerárquico.
+
+PRUEBAS REALIZADAS LOCALMENTE
+- Comprobación de sintaxis JavaScript de la página y todos los .js del paquete: correcta.
+- Navegador Chromium sin acceso externo, 1.200 guías simuladas y 1.200 grupos de comentarios: 1.200 filas en el detalle anterior frente a 150 iniciales; 1.217 filas jerárquicas anteriores frente a 5 en vista compacta. Es una prueba sintética, no una medición de producción.
+- Validación: selección/desselección de celdas, filtro por PDV y categoría, resaltado, actualización de grupos, botón de más guías, selección masiva sobre todos los filtrados, abrir/contraer grupos, borrador fuera de la primera página y ausencia de errores JavaScript en esa prueba: correcto.
+- Comparación de 8.500 guías sintéticas: claves y cantidades de agrupación idénticas antes y después; invalidación de caché comprobada.
+- No se ha accedido al Supabase real ni verificado la latencia real de red, credenciales o carga de producción.
+
+DESPLIEGUE
+1. Haga copia de seguridad / pruebe primero en una rama si tiene acceso.
+2. Descomprima el ZIP y cargue los archivos DENTRO de PENALIDADES-main a la raíz del repositorio GitHub Pages, sustituyendo los del mismo nombre. No haga un segundo nivel de carpeta.
+3. Para un cambio mínimo solo es necesario reemplazar gestion-v2.html; los demás archivos son los mismos del ZIP que proporcionó.
+4. Abra la plataforma con actualización forzada del navegador (Ctrl + Shift + R).
+5. Verifique una selección de resumen, el resumen de subtipos, la paginación y una gestión / guardado con una guía de prueba.
+
+NO EJECUTAR SQL: estas mejoras son únicamente del navegador.

@@ -215,6 +215,8 @@
   .comment-group-row--reason td{background:#eff6ff;border-color:#bfdbfe}
   .comment-group-line--reason{padding-left:48px}
   #tablaDetalle tr.guide-updated-focus td{background:#fef08a!important;box-shadow:inset 0 0 0 2px #eab308!important}
+  .detalle-paginacion{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:14px 8px;font-size:12px;color:#64748b}
+  .detalle-paginacion button[hidden]{display:none}
   .comment-group-copy{align-self:center;flex:0 0 auto;border:1px solid #bfdbfe;border-radius:7px;background:#fff;color:#1452a8;padding:7px 10px;font-size:11px;font-weight:800;cursor:pointer}
   .comment-group-copy:hover:not(:disabled){background:#dbeafe}
   .comment-group-copy:disabled{opacity:.5;cursor:not-allowed}
@@ -472,6 +474,10 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
           <thead><tr><th class="check-cell"><input id="checkAllVisible" class="check-all" type="checkbox" title="Seleccionar todas las guías visibles" onclick="toggleSeleccionVisibles(this.checked)"></th><th>GUÍA</th><th>ENCARGADO</th><th>PDV</th><th>DESTINO<br><small>Departamento · Provincia · Distrito</small></th><th>ÁREA</th><th>ESTADO</th><th>TIPO</th><th>ÚLTIMA ACTUALIZACIÓN Y ESCANEO MÁS RECIENTE</th><th>COMENTARIO ENCARGADO · ADMINISTRADOR</th><th>COMENTARIO DE GESTIÓN · ENCARGADO</th><th>ACCIÓN</th></tr></thead>
           <tbody id="guiasBody"></tbody>
         </table></div>
+        <div class="detalle-paginacion" role="group" aria-label="Paginación de guías">
+          <span id="detalleGuiasPaginacionTexto" role="status" aria-live="polite"></span>
+          <button type="button" class="secondary" id="btnMasGuiasDetalle" onclick="agregarPaginaGuiasDetalle()" hidden>Mostrar más guías</button>
+        </div>
       </section>
       </div>
 
@@ -598,6 +604,15 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
   const seleccionadas = new Set();
   const pdvsComentarioCerrados = new Set();
   let resumenJerarquiaContraido = false;
+  // Índices locales: se invalidan cuando filtrar() genera un nuevo conjunto de guías.
+  let resumenComentarioAgrupadoCache = null;
+  let filasPermitidasResumen = new Set();
+  let filasVisiblesSeleccion = new Set();
+  // Evita crear miles de controles <select>, <textarea> y botones en un solo clic.
+  const TAMANO_PAGINA_DETALLE = 150;
+  const UMBRAL_GRUPOS_RESUMEN_COMPACTO = 350;
+  const pdvsComentarioAbiertosCompacto = new Set();
+  let referenciaFiltradasDetalle = null, guiasDetalleRenderizadas = 0;
   const borradoresRevision = new Map();
   let borradoresRevisionUsuario = "";
   let guiaActivaEdicionRevision = null, temporizadorResaltadoGuia = null;
@@ -727,7 +742,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
       if(version!==versionCargaClasificacionesComentarios)return;
       const mapa=new Map((r?.clasificaciones||[]).map(x=>[claveClasificacionComentario(x.guia,x.pdv),x]));
       guias.forEach(x=>{const c=mapa.get(claveClasificacionComentario(x.guia,x.pdv));if(c){x.subcampo1=String(c.subcampo1||"");x.subcampo2=String(c.subcampo2||"");}});
-      clasificacionesComentariosCargadas=true;catalogoComentariosDisponible=catalogoComentariosCargado;const estado=reconciliarBorradoresRevision(guias);actualizarEstadoCatalogoComentarios();renderGuias();
+      clasificacionesComentariosCargadas=true;catalogoComentariosDisponible=catalogoComentariosCargado;const estado=reconciliarBorradoresRevision(guias);actualizarEstadoCatalogoComentarios();filtrar();
       if(estado.conflictos)toast("Se conservaron borradores locales; una clasificación guardada cambió mientras editabas. Revisa antes de guardar.",false);
     }).withFailureHandler(e=>{if(version!==versionCargaClasificacionesComentarios)return;clasificacionesComentariosCargadas=false;catalogoComentariosDisponible=false;actualizarEstadoCatalogoComentarios("No se pudieron cargar las clasificaciones: "+errorTexto(e)+". Verifica la instalación del SQL del catálogo.");renderGuias();}).obtenerClasificacionesComentarios(token);
   }
@@ -1138,7 +1153,10 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   }
   function enfocarEdicionActiva(){
     const fila=Number(guiaActivaEdicionRevision);if(!Number.isFinite(fila))return;
-    abrirRutaGuiaDetalle(fila,true);renderGuias();resaltarGuiaDetalle(fila);
+    abrirRutaGuiaDetalle(fila,true);
+    const indice=filtradas.findIndex(x=>Number(x.fila)===fila);
+    if(indice>=0){guiasDetalleRenderizadas=Math.min(filtradas.length,Math.ceil((indice+1)/TAMANO_PAGINA_DETALLE)*TAMANO_PAGINA_DETALLE);referenciaFiltradasDetalle=filtradas;}
+    renderGuias();resaltarGuiaDetalle(fila);
   }
 
   let versionCargaPortal=0;
@@ -1236,7 +1254,9 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   }
 
   function aplicarFiltrosResumen(conservarSeleccion){
-    const resumenCalculado=construirResumenGuiasCliente(guias.filter(cumpleFiltrosGuiaResumen));
+    const guiasPermitidas=guias.filter(cumpleFiltrosGuiaResumen);
+    filasPermitidasResumen=new Set(guiasPermitidas.map(x=>Number(x.fila)));
+    const resumenCalculado=construirResumenGuiasCliente(guiasPermitidas);
     resumen=soloCriticos?recalcularResumenVisible(resumenCalculado.filas.filter(x=>Number(x.totalCritico||0)>0)):resumenCalculado;
     if(!conservarSeleccion){filtroResumenActivo=null;actualizarChipResumen();}
     renderResumen();actualizarEstadoFiltrosResumen();filtrar();
@@ -1368,7 +1388,7 @@ function actualizarChipResumen(){
 }
 function coincideFiltroResumen(x){return !seleccionesResumen().length||seleccionesResumen().some(s=>coincideFiltroResumenIndividual(x,s));}
 
-function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;if(!cumpleFiltrosGuiaResumen(x))return false;const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],pdv=seleccion.pdv,categoria=seleccion.categoria,criticas=["h720NoDevuelto","h720PorDevolver","mayor144EnPDV","mayor144NoLlegado"],preventivasCriticas=CATEGORIAS_PREVENTIVO_CRITICO_V2;return casos.some(c=>{if(pdv&&String(c.pdv||"")!==pdv)return false;const tipo=String(c.categoria||"");if(!categoria||categoria==="totalCasos"||categoria==="guiasUnicas")return true;if(categoria==="totalCritico")return criticas.includes(tipo);if(categoria==="totalPreventivoCritico")return preventivasCriticas.includes(tipo);return tipo===categoria||(categoria==="mayor144NoLlegado"&&tipo==="brecha144a168NoLlegado");});}
+function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;if(!filasPermitidasResumen.has(Number(x.fila)))return false;const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],pdv=seleccion.pdv,categoria=seleccion.categoria,criticas=["h720NoDevuelto","h720PorDevolver","mayor144EnPDV","mayor144NoLlegado"],preventivasCriticas=CATEGORIAS_PREVENTIVO_CRITICO_V2;return casos.some(c=>{if(pdv&&String(c.pdv||"")!==pdv)return false;const tipo=String(c.categoria||"");if(!categoria||categoria==="totalCasos"||categoria==="guiasUnicas")return true;if(categoria==="totalCritico")return criticas.includes(tipo);if(categoria==="totalPreventivoCritico")return preventivasCriticas.includes(tipo);return tipo===categoria||(categoria==="mayor144NoLlegado"&&tipo==="brecha144a168NoLlegado");});}
 
   function abrirComentario(pdv){const x=(resumen.filas||[]).find(r=>r.pdv===pdv);if(!x)return;document.getElementById("commentModal").dataset.pdv=pdv;document.getElementById("commentText").value=x.comentario||"";aplicarIdiomaModalComentario();document.getElementById("commentModal").style.display="flex";setTimeout(()=>document.getElementById("commentText").focus(),50);}
   function cerrarComentario(){document.getElementById("commentModal").style.display="none";}
@@ -1434,11 +1454,33 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function cerrarMultis(){document.querySelectorAll(".multi-menu.open").forEach(x=>x.classList.remove("open"));document.querySelectorAll(".multi-trigger.active").forEach(x=>x.classList.remove("active"));}
   function limpiarMulti(id,alCambiar){document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti(id);(alCambiar||filtrar)();}
 
+  function crearPredicadosFechasGestion(){
+    const entradaDesde=document.getElementById('fEntradaDesde').value,
+      entradaHasta=document.getElementById('fEntradaHasta').value,
+      dias=[...document.querySelectorAll('#fEntradaRapidos input:checked')].map(el=>Number(el.value)),
+      desdeMs=entradaDesde?new Date(entradaDesde).getTime():-Infinity,
+      hastaMs=entradaHasta?new Date(entradaHasta).getTime():Infinity,
+      ahora=Date.now(),fechaDesde=document.getElementById('fFechaExportacionDesde').value,
+      fechaHasta=document.getElementById('fFechaExportacionHasta').value;
+    const cumpleEntrada=(!entradaDesde&&!entradaHasta&&!dias.length)?()=>true:x=>{
+      const fecha=fechaEscaneoValida(x.tiempoEntradaExportacion);if(!fecha)return false;
+      const t=fecha.getTime();return t>=desdeMs&&t<=hastaMs&&(!dias.length||dias.some(d=>t<=ahora-d*86400000));
+    };
+    const cumpleFecha=(!fechaDesde&&!fechaHasta)?()=>true:x=>{
+      const fecha=fechaEscaneoValida(x.fechaEscaneoExportacion);if(!fecha)return false;
+      const dia=fecha.getFullYear()+'-'+String(fecha.getMonth()+1).padStart(2,'0')+'-'+String(fecha.getDate()).padStart(2,'0');
+      return (!fechaDesde||dia>=fechaDesde)&&(!fechaHasta||dia<=fechaHasta);
+    };
+    return {cumpleEntrada,cumpleFecha};
+  }
   function filtrar(){const escaneosExportacion=valoresMulti('fEscaneoExportacion');const actualizaciones=valoresMulti('fActualizacion');const escaneosRecientes=valoresMulti("fEscaneo");const regionesGestion=valoresMulti("fRegion");
+    const {cumpleEntrada,cumpleFecha}=crearPredicadosFechasGestion();
     const q=document.getElementById("buscar").value.trim().toLowerCase(),areas=valoresMulti("fArea"),encargados=valoresMulti("fEncargado"),pdvs=valoresMulti("fPdv"),estados=valoresMulti("fEstado"),comentarios=valoresMulti("fComentario"),tipos=valoresMulti("fTipo");
     const mostrarBrechaMenor48=seleccionesResumen().some(s=>s.categoria==="brechaMenor48EnPDV")||tipos.some(t=>t.includes("<48")||t.includes("INFORMATIVO"));
-    filtradasParaResumenComentario=guias.filter(x=>{const casosV2=Array.isArray(x.casosResumen)?x.casosResumen:[];if(casosV2.length&&casosV2.every(c=>c.categoria==="brechaMenor48EnPDV")&&!mostrarBrechaMenor48)return false;const textoTipo=String(x.tipo||"").toUpperCase(),estadoComentario=String(x.comentarioGestionEncargado||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";return coincideListaGuias(x,'gestion')&&coincideEntradaExportacion(x,'fEntrada')&&coincideFechaExportacion(x,'fFechaExportacion')&&(!escaneosExportacion.length||escaneosExportacion.includes(String(x.tipoEscaneoExportacion||"")))&&(!actualizaciones.length||actualizaciones.includes(estadoActualizacionGuia(x)))&&(!escaneosRecientes.length||escaneosRecientes.includes(String(x.tipoEscaneoReciente||"")))&&(!regionesGestion.length||regionesGestion.includes(String(x.region||"")))&&coincideFiltroResumen(x)&&(!q||String(x.guia).toLowerCase().includes(q))&&(!areas.length||areas.includes(String(x.area||"")))&&(!encargados.length||encargados.includes(String(x.encargado||"")))&&(!pdvs.length||pdvs.includes(String(x.pdv||"")))&&(!estados.length||estados.includes(String(x.estado||"").toUpperCase()))&&(!comentarios.length||comentarios.includes(estadoComentario))&&(!tipos.length||tipos.some(t=>textoTipo.includes(t.toUpperCase())));});
+    filtradasParaResumenComentario=guias.filter(x=>{const casosV2=Array.isArray(x.casosResumen)?x.casosResumen:[];if(casosV2.length&&casosV2.every(c=>c.categoria==="brechaMenor48EnPDV")&&!mostrarBrechaMenor48)return false;const textoTipo=String(x.tipo||"").toUpperCase(),estadoComentario=String(x.comentarioGestionEncargado||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";return coincideListaGuias(x,'gestion')&&cumpleEntrada(x)&&cumpleFecha(x)&&(!escaneosExportacion.length||escaneosExportacion.includes(String(x.tipoEscaneoExportacion||"")))&&(!actualizaciones.length||actualizaciones.includes(estadoActualizacionGuia(x)))&&(!escaneosRecientes.length||escaneosRecientes.includes(String(x.tipoEscaneoReciente||"")))&&(!regionesGestion.length||regionesGestion.includes(String(x.region||"")))&&coincideFiltroResumen(x)&&(!q||String(x.guia).toLowerCase().includes(q))&&(!areas.length||areas.includes(String(x.area||"")))&&(!encargados.length||encargados.includes(String(x.encargado||"")))&&(!pdvs.length||pdvs.includes(String(x.pdv||"")))&&(!estados.length||estados.includes(String(x.estado||"").toUpperCase()))&&(!comentarios.length||comentarios.includes(estadoComentario))&&(!tipos.length||tipos.some(t=>textoTipo.includes(t.toUpperCase())));});
     filtradas=filtroComentarioJerarquiaActivo?filtradasParaResumenComentario.filter(coincideFiltroComentarioJerarquia):[...filtradasParaResumenComentario];
+    resumenComentarioAgrupadoCache=null;
+    filasVisiblesSeleccion=new Set(filtradas.map(x=>Number(x.fila)));
     renderResumenComentarioEncargado();renderGuias();actualizarTarjetas();
   }
 
@@ -2191,11 +2233,19 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function toggleResumenComentarioJerarquia(){
     const contenido=document.getElementById("comentarioJerarquiaContenido"),boton=document.getElementById("btnToggleComentarioJerarquia");if(!contenido||!boton)return;
     resumenJerarquiaContraido=!resumenJerarquiaContraido;contenido.hidden=resumenJerarquiaContraido;boton.setAttribute("aria-expanded",String(!resumenJerarquiaContraido));boton.textContent=resumenJerarquiaContraido?"Mostrar resumen":"Ocultar resumen";
+    if(!resumenJerarquiaContraido)renderResumenComentarioEncargado();
   }
   function gruposPorPdvComentarioDetalle(filas){
     const mapa=new Map();
     filas.forEach(x=>{const pdv=String(valorGrupoDetalle(x,"pdv")||"SIN PDV").trim()||"SIN PDV",clave="pdv:"+claveComentarioDetalle(pdv);if(!mapa.has(clave))mapa.set(clave,{clave,pdv,filas:[]});mapa.get(clave).filas.push(x);});
     return [...mapa.values()].map(g=>({...g,...indicadoresCriticosDetalle(g.filas),cantidadGuias:cantidadGuiasUnicasDetalle(g.filas),subtipos:gruposPorSubcampo1Detalle(g.filas)})).sort((a,b)=>a.pdv.localeCompare(b.pdv,"es",{numeric:true}));
+  }
+  function obtenerResumenComentarioAgrupado(){
+    if(resumenComentarioAgrupadoCache?.fuente===filtradasParaResumenComentario)return resumenComentarioAgrupadoCache;
+    const pdvs=gruposPorPdvComentarioDetalle(filtradasParaResumenComentario),porClave=new Map();
+    pdvs.forEach(p=>p.subtipos.forEach(s1=>s1.subgrupos.forEach(s2=>s2.motivos.forEach(g=>porClave.set(g.clave,g)))));
+    resumenComentarioAgrupadoCache={fuente:filtradasParaResumenComentario,pdvs,porClave};
+    return resumenComentarioAgrupadoCache;
   }
   function crearFilaGrupoPdvComentario(g,cerrado){
     const tr=document.createElement("tr"),td=document.createElement("td"),boton=document.createElement("button"),flecha=document.createElement("span"),nombre=document.createElement("strong"),guias=document.createElement("span"),preventiva=document.createElement("span");
@@ -2204,14 +2254,21 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     [["Brecha en PDV · "+num(g.guiasBrechaEnPDV),"comment-pdv-badge--brecha"],["Brecha no llegados · "+num(g.guiasBrechaNoLlegados),"comment-pdv-badge--brecha"],["Cola no devuelto · "+num(g.guiasColaLargaNoDevuelto),"comment-pdv-badge--cola"],["Cola por devolver · "+num(g.guiasColaLargaPorDevolver),"comment-pdv-badge--cola"]].forEach(([texto,clase])=>{const badge=document.createElement("span");badge.className="comment-pdv-badge "+clase;badge.textContent=texto;boton.appendChild(badge);});
     td.appendChild(boton);tr.appendChild(td);return tr;
   }
-  function toggleGrupoComentarioPdv(clave){if(pdvsComentarioCerrados.has(clave))pdvsComentarioCerrados.delete(clave);else pdvsComentarioCerrados.add(clave);renderResumenComentarioEncargado();}
+  function toggleGrupoComentarioPdv(clave){
+    const totalGrupos=obtenerResumenComentarioAgrupado().porClave.size;
+    const gruposCerrados=totalGrupos>UMBRAL_GRUPOS_RESUMEN_COMPACTO?pdvsComentarioAbiertosCompacto:pdvsComentarioCerrados;
+    if(gruposCerrados.has(clave))gruposCerrados.delete(clave);else gruposCerrados.add(clave);
+    renderResumenComentarioEncargado();
+  }
   function renderResumenComentarioEncargado(){
-    const body=document.getElementById("comentarioJerarquiaBody"),resumenEl=document.getElementById("comentarioJerarquiaResumen");if(!body||!resumenEl)return;body.replaceChildren();
-    const pdvs=gruposPorPdvComentarioDetalle(filtradasParaResumenComentario),padres=pdvs.flatMap(p=>p.subtipos),cantidadSubtipos2=padres.reduce((a,p)=>a+p.subgrupos.length,0),cantidadComentarios=padres.reduce((a,p)=>a+p.subgrupos.reduce((b,s2)=>b+s2.motivos.length,0),0),totalGuias=cantidadGuiasUnicasDetalle(filtradasParaResumenComentario);
-    resumenEl.textContent=pdvs.length+" PDV · "+padres.length+" Subtipos 1 · "+cantidadSubtipos2+" Subtipos 2 · "+cantidadComentarios+" grupos de comentario · "+totalGuias+" guías";
-    if(!pdvs.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=11;td.className="comment-hierarchy-empty";td.textContent="No hay guías que coincidan con los filtros actuales.";tr.appendChild(td);body.appendChild(tr);sincronizarCasillasGruposComentario();return;}
+    const body=document.getElementById("comentarioJerarquiaBody"),resumenEl=document.getElementById("comentarioJerarquiaResumen");if(!body||!resumenEl||resumenJerarquiaContraido)return;
+    const pdvs=obtenerResumenComentarioAgrupado().pdvs,padres=pdvs.flatMap(p=>p.subtipos),cantidadSubtipos2=padres.reduce((a,p)=>a+p.subgrupos.length,0),cantidadComentarios=padres.reduce((a,p)=>a+p.subgrupos.reduce((b,s2)=>b+s2.motivos.length,0),0),totalGuias=cantidadGuiasUnicasDetalle(filtradasParaResumenComentario);
+    const vistaCompacta=cantidadComentarios>UMBRAL_GRUPOS_RESUMEN_COMPACTO;
+    resumenEl.textContent=pdvs.length+" PDV · "+padres.length+" Subtipos 1 · "+cantidadSubtipos2+" Subtipos 2 · "+cantidadComentarios+" grupos de comentario · "+totalGuias+" guías"+(vistaCompacta?" · Vista compacta: despliega el PDV que necesites":"");
+    const fragmento=document.createDocumentFragment();
+    if(!pdvs.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=11;td.className="comment-hierarchy-empty";td.textContent="No hay guías que coincidan con los filtros actuales.";tr.appendChild(td);fragmento.appendChild(tr);body.replaceChildren(fragmento);return;}
     pdvs.forEach(gpdv=>{
-      const cerrado=pdvsComentarioCerrados.has(gpdv.clave);body.appendChild(crearFilaGrupoPdvComentario(gpdv,cerrado));if(cerrado)return;
+      const cerrado=vistaCompacta?!pdvsComentarioAbiertosCompacto.has(gpdv.clave):pdvsComentarioCerrados.has(gpdv.clave);fragmento.appendChild(crearFilaGrupoPdvComentario(gpdv,cerrado));if(cerrado)return;
       const padresPdv=gpdv.subtipos;
       padresPdv.forEach(p=>{
         const cantidadFilasPadre=p.subgrupos.reduce((total,s2)=>total+s2.motivos.length+1,0);let primeraFilaPadre=true;
@@ -2220,19 +2277,20 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
             const tr=crearFilaComentarioJerarquia(g),indiceSubtipo2=primeraFilaPadre?2:1;
             if(primeraFilaPadre){const td=document.createElement("td");td.className="hierarchy-category-cell";td.rowSpan=cantidadFilasPadre;td.textContent=p.etiqueta;tr.insertBefore(td,tr.children[1]);primeraFilaPadre=false;}
             if(primeraFilaSubtipo2){const td=document.createElement("td");td.className="hierarchy-category-cell";td.rowSpan=s2.motivos.length;td.textContent=s2.etiqueta;tr.insertBefore(td,tr.children[indiceSubtipo2]);primeraFilaSubtipo2=false;}
-            body.appendChild(tr);
+            fragmento.appendChild(tr);
           });
-          body.appendChild(crearFilaSubtotalJerarquia("Subtotal Subtipo 2 · "+s2.etiqueta,s2.filas,"comment-hierarchy-subtotal--subtipo2",3));
+          fragmento.appendChild(crearFilaSubtotalJerarquia("Subtotal Subtipo 2 · "+s2.etiqueta,s2.filas,"comment-hierarchy-subtotal--subtipo2",3));
         });
-        body.appendChild(crearFilaSubtotalJerarquia("Total Subtipo 1 · "+p.etiqueta,p.filas,"comment-hierarchy-subtotal--subtipo1",3));
+        fragmento.appendChild(crearFilaSubtotalJerarquia("Total Subtipo 1 · "+p.etiqueta,p.filas,"comment-hierarchy-subtotal--subtipo1",3));
       });
-      body.appendChild(crearFilaSubtotalJerarquia("TOTAL PDV · "+gpdv.pdv,gpdv.filas,"comment-hierarchy-subtotal--pdv",3));
+      fragmento.appendChild(crearFilaSubtotalJerarquia("TOTAL PDV · "+gpdv.pdv,gpdv.filas,"comment-hierarchy-subtotal--pdv",3));
     });
-    body.appendChild(crearFilaSubtotalJerarquia("TOTAL GENERAL",filtradasParaResumenComentario,"comment-hierarchy-grand-total",3));
+    fragmento.appendChild(crearFilaSubtotalJerarquia("TOTAL GENERAL",filtradasParaResumenComentario,"comment-hierarchy-grand-total",3));
+    body.replaceChildren(fragmento);
     sincronizarCasillasGruposComentario();
   }
   function construirResumenComentarioExcel(){
-    const encabezados=["PDV","SUBTIPO 1","SUBTIPO 2","COMENTARIO ADMINISTRADOR","GUÍAS","PREVENTIVA","BRECHA CRÍTICA · EN EL PDV","BRECHA CRÍTICA · NO LLEGADOS AL PDV","COLA LARGA CRÍTICA · NO DEVUELTO","COLA LARGA CRÍTICA · POR DEVOLVER"],filas=[],pdvs=gruposPorPdvComentarioDetalle(filtradasParaResumenComentario);
+    const encabezados=["PDV","SUBTIPO 1","SUBTIPO 2","COMENTARIO ADMINISTRADOR","GUÍAS","PREVENTIVA","BRECHA CRÍTICA · EN EL PDV","BRECHA CRÍTICA · NO LLEGADOS AL PDV","COLA LARGA CRÍTICA · NO DEVUELTO","COLA LARGA CRÍTICA · POR DEVOLVER"],filas=[],pdvs=obtenerResumenComentarioAgrupado().pdvs;
     const filaTotal=(pdv,etiquetas,filasGrupo,tipo)=>{const indicadores=indicadoresCriticosDetalle(filasGrupo);return {tipo,valores:[pdv,etiquetas.subtipo1||"",etiquetas.subtipo2||"",etiquetas.comentario||"",cantidadGuiasUnicasDetalle(filasGrupo),indicadores.guiasPreventivas,indicadores.guiasBrechaEnPDV,indicadores.guiasBrechaNoLlegados,indicadores.guiasColaLargaNoDevuelto,indicadores.guiasColaLargaPorDevolver]};};
     pdvs.forEach(gpdv=>{
       gpdv.subtipos.forEach(p=>{
@@ -2247,18 +2305,38 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     filas.push(filaTotal("",{subtipo1:"TOTAL GENERAL"},filtradasParaResumenComentario,"total"));
     return {encabezados,filas,anchos:[20,26,34,60,12,14,20,24,22,24]};
   }
-  function renderGuias(){actualizarEstadoListaGuias('gestion');
-    const body=document.getElementById("guiasBody");enlazarBorradoresRevision();body.replaceChildren();
-    if(!filtradas.length){body.innerHTML='<tr><td colspan="12" style="padding:35px;color:#64748b">No hay guías para mostrar. Selecciona un comentario en el resumen o ajusta los filtros.</td></tr>';actualizarContextoEdicionRevision();actualizarBarraSeleccion();return;}
-    const fragmento=document.createDocumentFragment();filtradas.forEach(x=>fragmento.appendChild(crearFilaGuia(x)));body.appendChild(fragmento);
-    actualizarContextoEdicionRevision();actualizarBarraSeleccion();
+  function actualizarPaginacionDetalle(){
+    const indicador=document.getElementById("detalleGuiasPaginacionTexto"),boton=document.getElementById("btnMasGuiasDetalle");
+    if(indicador)indicador.textContent=filtradas.length
+      ?"Mostrando "+num(guiasDetalleRenderizadas)+" de "+num(filtradas.length)+" guías filtradas. La casilla del encabezado selecciona todas las filtradas."
+      :"No hay guías para mostrar.";
+    if(boton){boton.hidden=guiasDetalleRenderizadas>=filtradas.length;boton.textContent="Mostrar "+num(Math.min(TAMANO_PAGINA_DETALLE,filtradas.length-guiasDetalleRenderizadas))+" guías más";}
+  }
+  function agregarPaginaGuiasDetalle(){
+    const body=document.getElementById("guiasBody");if(!body)return;
+    const hasta=Math.min(filtradas.length,guiasDetalleRenderizadas+TAMANO_PAGINA_DETALLE),fragmento=document.createDocumentFragment();
+    for(let i=guiasDetalleRenderizadas;i<hasta;i++)fragmento.appendChild(crearFilaGuia(filtradas[i]));
+    body.appendChild(fragmento);guiasDetalleRenderizadas=hasta;
+    actualizarPaginacionDetalle();
+  }
+  function renderGuias(){
+    actualizarEstadoListaGuias('gestion');
+    const body=document.getElementById("guiasBody");if(!body)return;enlazarBorradoresRevision();
+    if(referenciaFiltradasDetalle!==filtradas){referenciaFiltradasDetalle=filtradas;guiasDetalleRenderizadas=0;}
+    // Al editar un registro, sus borradores se conservan; cuando cambia el filtro se reinicia la página.
+    const limite=Math.min(filtradas.length,Math.max(TAMANO_PAGINA_DETALLE,guiasDetalleRenderizadas));
+    body.replaceChildren();guiasDetalleRenderizadas=0;
+    if(!filtradas.length){body.innerHTML='<tr><td colspan="12" style="padding:35px;color:#64748b">No hay guías para mostrar. Selecciona un comentario en el resumen o ajusta los filtros.</td></tr>';}
+    else{const fragmento=document.createDocumentFragment();for(let i=0;i<limite;i++)fragmento.appendChild(crearFilaGuia(filtradas[i]));body.appendChild(fragmento);guiasDetalleRenderizadas=limite;}
+    actualizarPaginacionDetalle();actualizarContextoEdicionRevision();actualizarBarraSeleccion();
   }
   function sincronizarCasillasGruposComentario(){
-    const grupos=new Map(gruposPorComentarioDetalle(filtradasParaResumenComentario).map(g=>[g.clave,g]));
+    if(resumenJerarquiaContraido)return;
+    const grupos=obtenerResumenComentarioAgrupado().porClave;
     document.querySelectorAll("#comentarioJerarquiaBody .comment-group-check").forEach(casilla=>{const g=grupos.get(casilla.dataset.groupKey);if(!g){casilla.checked=false;casilla.indeterminate=false;return;}const marcadas=g.filas.filter(x=>seleccionadas.has(Number(x.fila))).length;casilla.checked=marcadas===g.filas.length&&g.filas.length>0;casilla.indeterminate=marcadas>0&&marcadas<g.filas.length;casilla.setAttribute("aria-checked",marcadas===0?"false":marcadas===g.filas.length?"true":"mixed");});
   }
-  function toggleSeleccionGrupoComentario(clave,marcada){const grupo=gruposPorComentarioDetalle(filtradasParaResumenComentario).find(g=>g.clave===clave);if(!grupo)return;grupo.filas.forEach(x=>{const fila=Number(x.fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
-  function seleccionarComentarioJerarquia(clave){const grupo=gruposPorComentarioDetalle(filtradasParaResumenComentario).find(g=>g.clave===clave);if(!grupo)return;filtroComentarioJerarquiaActivo={clave:grupo.clave,pdv:grupo.pdv,subcampo1:grupo.subcampo1,subcampo2:grupo.subcampo2,comentario:grupo.comentario};actualizarChipResumen();filtrar();document.getElementById("detalleGuiasPanel").scrollIntoView({behavior:"smooth",block:"start"});}
+  function toggleSeleccionGrupoComentario(clave,marcada){const grupo=obtenerResumenComentarioAgrupado().porClave.get(clave);if(!grupo)return;grupo.filas.forEach(x=>{const fila=Number(x.fila);if(marcada)seleccionadas.add(fila);else seleccionadas.delete(fila);});sincronizarCasillasSeleccion();sincronizarCasillasGruposComentario();actualizarBarraSeleccion();}
+  function seleccionarComentarioJerarquia(clave){const grupo=obtenerResumenComentarioAgrupado().porClave.get(clave);if(!grupo)return;filtroComentarioJerarquiaActivo={clave:grupo.clave,pdv:grupo.pdv,subcampo1:grupo.subcampo1,subcampo2:grupo.subcampo2,comentario:grupo.comentario};actualizarChipResumen();filtrar();document.getElementById("detalleGuiasPanel").scrollIntoView({behavior:"smooth",block:"start"});}
   function coincideFiltroComentarioJerarquia(x){const filtro=filtroComentarioJerarquiaActivo;if(!filtro)return true;return claveComentarioDetalle(x.pdv)===claveComentarioDetalle(filtro.pdv)&&claveComentarioDetalle(x.subcampo1)===claveComentarioDetalle(filtro.subcampo1)&&claveComentarioDetalle(x.subcampo2)===claveComentarioDetalle(filtro.subcampo2)&&claveComentarioDetalle(x.comentario)===claveComentarioDetalle(filtro.comentario);}
   function limpiarFiltroComentarioJerarquia(desplazar){filtroComentarioJerarquiaActivo=null;actualizarChipResumen();filtrar();if(desplazar)document.getElementById("detalleGuiasPanel").scrollIntoView({behavior:"smooth",block:"start"});}
   async function copiarComentarioGrupo(comentario){
@@ -2274,7 +2352,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function sincronizarCasillasSeleccion(){document.querySelectorAll("#guiasBody .row-check").forEach(casilla=>{const fila=Number(casilla.dataset.fila),marcada=seleccionadas.has(fila);casilla.checked=marcada;const tr=document.getElementById("row-"+fila);if(tr)tr.classList.toggle("row-selected",marcada);});}
   function seleccionActual(){return guias.filter(x=>seleccionadas.has(Number(x.fila))).map(x=>({fila:Number(x.fila),guia:String(x.guia||"")}));}
   function actualizarBarraSeleccion(){
-    const cantidadSeleccionada=seleccionadas.size,visibles=filtradas.filter(x=>seleccionadas.has(Number(x.fila))).length,totalVisibles=filtradas.length;
+    const cantidadSeleccionada=seleccionadas.size,visibles=[...seleccionadas].filter(fila=>filasVisiblesSeleccion.has(fila)).length,totalVisibles=filtradas.length;
     document.getElementById("bulkCount").textContent=cantidadSeleccionada+" guía"+(cantidadSeleccionada===1?" seleccionada":"s seleccionadas")+(cantidadSeleccionada!==visibles?" · "+visibles+" visibles":"");
     const manage=document.getElementById("btnBulkManage");if(manage){manage.hidden=sesion?.rol!=="ADMINISTRADOR";manage.disabled=!cantidadSeleccionada;}const managerComment=document.getElementById("btnBulkManagerComment");if(managerComment){managerComment.hidden=sesion?.rol!=="ENCARGADO";managerComment.disabled=!cantidadSeleccionada||!comentarioGestionEncargadoDisponible;}const roleHelp=document.getElementById("bulkRoleHelp");if(roleHelp)roleHelp.textContent=sesion?.rol==="ENCARGADO"?"La acción masiva del encargado actualiza solo su comentario de gestión.":"La gestión masiva aplica comentario, cierre y notificación al PDV.";document.getElementById("btnPrintGestion").disabled=!cantidadSeleccionada;document.getElementById("btnPrintDetalleGestion").disabled=!cantidadSeleccionada;
     const check=document.getElementById("checkAllVisible");if(check){check.checked=Boolean(totalVisibles&&visibles===totalVisibles);check.indeterminate=Boolean(visibles&&visibles<totalVisibles);check.disabled=!totalVisibles;}
@@ -2896,14 +2974,14 @@ function celdaV2(valor,pdv,categoria,total=false){
  if(['h576a600NoDevuelto','h576a600PorDevolver','brecha96a120','brecha96NoLlegado'].includes(categoria))td.classList.add('preventive-cell');
  if(categoria==='totalCritico')td.classList.add('summary-critical');
  if(categoria==='totalPreventivoCritico')td.classList.add('summary-preventive-critical');
- if(valor){td.classList.add('summary-clickable');td.classList.toggle('summary-selected',celdaResumenSeleccionada(total?'':pdv,categoria));td.onclick=()=>aplicarFiltroResumen(total?'':pdv,categoria);}
+ if(valor){td.classList.add('summary-clickable');td.dataset.resumenPdv=total?'':String(pdv||'');td.dataset.resumenCategoria=categoria;td.classList.toggle('summary-selected',celdaResumenSeleccionada(total?'':pdv,categoria));td.onclick=()=>aplicarFiltroResumen(total?'':pdv,categoria);}
  return td;
 }
 function filaResumen(x,esTotal){
  const tr=document.createElement('tr');if(esTotal)tr.classList.add('total-row');
  if(!esTotal)tr.dataset.excelPdv=String(x.pdv||'');
  tr.classList.toggle('summary-row-active',!esTotal&&filaResumenSeleccionada(x.pdv));
- const pdv=document.createElement('td');pdv.textContent=x.pdv;pdv.className='summary-clickable';pdv.classList.toggle('summary-selected',!esTotal&&celdaResumenSeleccionada(x.pdv,''));pdv.onclick=()=>esTotal?limpiarFiltroResumen(false):aplicarFiltroResumen(x.pdv,'');tr.append(pdv);
+ const pdv=document.createElement('td');pdv.textContent=x.pdv;pdv.className='summary-clickable';if(!esTotal){pdv.dataset.resumenPdv=String(x.pdv||'');pdv.dataset.resumenCategoria='';}pdv.classList.toggle('summary-selected',!esTotal&&celdaResumenSeleccionada(x.pdv,''));pdv.onclick=()=>esTotal?limpiarFiltroResumen(false):aplicarFiltroResumen(x.pdv,'');tr.append(pdv);
  const desp=document.createElement('td');desp.textContent=Number(x.despachosAyer||0)===0?'':num(x.despachosAyer);tr.append(desp);
  for(const k of [...COLUMNAS_V2,'total','totalCritico','totalPreventivoCritico','guiasUnicas'])tr.append(celdaV2(k==='totalPreventivoCritico'?totalPreventivoCriticoV2(x):x[k],x.pdv,k==='total'?'totalCasos':k,esTotal));
  const comentario=document.createElement('td');comentario.className='comment-col';if(!esTotal)comentario.dataset.excelComment=String(x.comentario||'');

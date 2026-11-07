@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261104-brecha-menor48-carga-completa-1"></script>
+<script src="./bridge.js?v=20261107-comentarios-concurrencia-1"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -165,12 +165,12 @@
     </div></header>
 
     <main>
-      <div class="view-tabs"><button id="tabGestion" data-view-tab="gestion" data-module-key="gestion" class="view-tab active" onclick="mostrarVista('gestion')">📋 Gestión de guías</button><button id="tabExcel" data-view-tab="excel" data-module-key="consulta_excel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabEstadisticas" data-view-tab="estadisticas" data-module-key="estadisticas" class="view-tab" onclick="mostrarVista('estadisticas')">📊 Estadísticas por PDV</button><a data-modulo-v2="true" data-module-key="gestion_v2" href="./gestion-v2.html?v=20261105-comentario-encargado-masivo-1" class="view-tab">Gestión de guías V2</a><a data-modulo-penalidades="true" data-module-key="penalidades" href="./penalidades.html?v=20261030-zonificacion-persistente-1" class="view-tab">💰 Penalidades</a></div>
+      <div class="view-tabs"><button id="tabGestion" data-view-tab="gestion" data-module-key="gestion" class="view-tab active" onclick="mostrarVista('gestion')">📋 Gestión de guías</button><button id="tabExcel" data-view-tab="excel" data-module-key="consulta_excel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabEstadisticas" data-view-tab="estadisticas" data-module-key="estadisticas" class="view-tab" onclick="mostrarVista('estadisticas')">📊 Estadísticas por PDV</button><a data-modulo-v2="true" data-module-key="gestion_v2" href="./gestion-v2.html?v=20261107-comentarios-concurrencia-1" class="view-tab">Gestión de guías V2</a><a data-modulo-penalidades="true" data-module-key="penalidades" href="./penalidades.html?v=20261030-zonificacion-persistente-1" class="view-tab">💰 Penalidades</a></div>
       <div id="viewGestion" class="app-view">
       <section id="sourceUploadPanel" class="panel hidden">
         <div class="panel-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Carga de información operativa <span class="readonly-note">SOLO ADMINISTRADOR</span><button type="button" id="sourceUploadToggle" class="secondary" style="margin-left:auto" aria-expanded="true" aria-controls="sourceUploadContent" onclick="toggleCargaOperativa()">Ocultar carga</button></div>
         <div id="sourceUploadContent" class="panel-body"><details><summary>Migración inicial desde Google (opcional)</summary><p>Solo en una réplica vacía. Seleccione el JSON privado generado por ExportarReplica.gs. No suba ese JSON a GitHub.</p><input type="file" accept=".json" onchange="importarReplica(this.files[0])"><span id="migrationStatus" role="status"></span></details>
-          <div class="source-actions" style="margin:12px 0"><button id="guardarFuentesBtn" class="success" onclick="guardarInformacionCargada()">💾 Guardar información cargada</button><span id="guardadoFuentesEstado" role="status" style="margin-left:12px"></span></div><p class="source-note">Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada archivo reemplaza todos los datos anteriores de su fuente. Para Track Break y Cola Larga se guardan únicamente las regiones elegidas del nuevo archivo. Espere la confirmación antes de cerrar.</p><div class="source-upload-grid"><div class="source-card"><div class="source-card-head"><div class="source-card-title">PDV_LISTA — cargar primero</div><span id="sourcePdvStatus" class="source-status">Sin verificar</span></div><input id="sourcePdvFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourcePdvMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('PDV LISTA')">Cargar PDV_LISTA — cargar primero</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Exportación de guías</div><span id="sourceEnvioStatus" class="source-status">Sin verificar</span></div><input id="sourceEnvioFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceEnvioMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('EXPORTACION GUIAS')">Cargar Exportación de guías</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Despachos ayer (opcional)</div><span id="sourceDespachosStatus" class="source-status">Sin verificar</span></div><input id="sourceDespachosFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceDespachosMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('DESPACHOS AYER')">Cargar Despachos ayer (opcional)</button></div>
+          <div class="source-actions" style="margin:12px 0"><button id="guardarFuentesBtn" class="success" onclick="guardarInformacionCargada()">💾 Guardar información cargada</button><span id="guardadoFuentesEstado" role="status" style="margin-left:12px"></span></div><p class="source-note">Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada archivo reemplaza todos los datos anteriores de su fuente. Para Track Break y Cola Larga se guardan únicamente las regiones elegidas del nuevo archivo. Espere la confirmación antes de cerrar.</p><div class="source-upload-grid"><div class="source-card"><div class="source-card-head"><div class="source-card-title">PDV_LISTA — cargar primero</div><span id="sourcePdvStatus" class="source-status">Sin verificar</span></div><input id="sourcePdvFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourcePdvMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('PDV LISTA')">Cargar PDV_LISTA — cargar primero</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Exportación de guías</div><span id="sourceEnvioStatus" class="source-status">Sin verificar</span></div><input id="sourceEnvioFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceEnvioMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('EXPORTACION GUIAS')">Cargar Exportación de guías</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Despachos ayer (opcional)</div><span id="sourceDespachosStatus" class="source-status">Sin verificar</span></div><input id="sourceDespachosFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceDespachosMeta" class="source-meta"></div><small class="source-note">También acepta Exportación de guías. Cuenta cada guía única por Punto de entrega; si está vacío, usa el Punto de escaneo más reciente. Solo se guardan los conteos por PDV.</small><button onclick="cargarFuenteOperativaPortal('DESPACHOS AYER')">Cargar Despachos ayer (opcional)</button></div>
             <div class="source-card">
               <div class="source-card-head"><div class="source-card-title">Track break más informes</div><span id="sourceBrechaStatus" class="source-status">Sin verificar</span></div>
               <input id="sourceBrechaFile" class="source-file" type="file" accept=".xlsx,.xls">
@@ -365,7 +365,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
       if(['TRACK BREAK','COLA LARGA'].includes(tipo)){prepararRegionesFuente(tipo,archivo.name,filas,input);return;}
       google.script.run.withSuccessHandler(r=>{
         mostrarLoading(false);input.value="";renderEstadoFuentes(r&&r.estadoFuentes?r.estadoFuentes:null);
-        toast(tipo+" actualizado: "+num(r.guiasUnicas)+" guías únicas. "+num(r.guiasActivas)+" guías activas en total.",true);
+        if(tipo==="DESPACHOS AYER"){const resumenDespachos=resumirConteoDespachos(filas);toast("Despachos ayer actualizado: "+num(resumenDespachos.guias)+" guías únicas resumidas en "+num(resumenDespachos.pdvs)+" PDV. Se almacenó solo el conteo por PDV.",true);}else toast(tipo+" actualizado: "+num(r.guiasUnicas)+" guías únicas. "+num(r.guiasActivas)+" guías activas en total.",true);
         cargarDatos();
       }).withFailureHandler(manejarError).cargarFuenteOperativa(token,{tipo:tipo,nombreArchivo:archivo.name,filas:filas});
     }catch(error){mostrarLoading(false);toast("No se pudo preparar el archivo: "+errorTexto(error),false);}
@@ -431,7 +431,8 @@ async function guardarInformacionCargada(){
    guardadas.push(x.tipo);x.input.value='';renderEstadoFuentes(r.estadoFuentes);
   }
   actual='confirmación';mostrarLoading(true,'Publicando todas las fuentes de forma atómica…');const r=await rpcFuentesGuardar('confirmarGuardadoFuentes',token);if(!r||!r.ok)throw new Error('No se recibió confirmación.');mostrarGuardadoFuentes(r.ultimoGuardado);renderEstadoFuentes(r.estadoFuentes);
-  toast(guardadas.length?'Información guardada y confirmada.':'Se verificó la información que ya estaba guardada. No había nuevos archivos seleccionados.',true);
+  const fuenteDespachos=lecturas.find(x=>x.tipo==='DESPACHOS AYER'),resumenDespachos=fuenteDespachos?resumirConteoDespachos(fuenteDespachos.filas):null;
+  toast(guardadas.length?'Información guardada y confirmada.'+(resumenDespachos?' Despachos ayer: '+num(resumenDespachos.guias)+' guías únicas resumidas en '+num(resumenDespachos.pdvs)+' PDV.':''):'Se verificó la información que ya estaba guardada. No había nuevos archivos seleccionados.',true);
   if(regionesGuardadas.size){const regiones=[...regionesGuardadas];guardarRegionesGestion(regiones);cargarDatos(regiones);}else cargarDatos();
  }catch(e){mostrarLoading(false);const texto=(guardadas.length?'Preparadas, todavía sin publicar: '+guardadas.join(', ')+'. ':'No se confirmó ningún archivo nuevo. ')+'No terminó '+actual+': '+errorTexto(e)+'. Los archivos pendientes siguen seleccionados para reintentar.';estado.textContent=texto;toast(texto,false);
  }finally{guardadoFuentesEnCurso=false;btn.disabled=false;inputs.forEach(x=>{if(x)x.disabled=false;});}
@@ -447,8 +448,8 @@ async function guardarInformacionCargada(){
     if(!estado||!meta||!estadoFuente)return;
     const vigente=Number(estadoFuente.filas||0)>0;
     estado.textContent=vigente?"Vigente":"Sin datos";estado.classList.toggle("ready",vigente);
-    const partes=[num(estadoFuente.filas||0)+" filas"];
-    if(Number(estadoFuente.guiasUnicas||0)>0)partes.push(num(estadoFuente.guiasUnicas)+" guías únicas");
+    const partes=[prefijo==="Despachos"?num(estadoFuente.filas||0)+" PDV con conteo":num(estadoFuente.filas||0)+" filas"];
+    if(prefijo!=="Despachos"&&Number(estadoFuente.guiasUnicas||0)>0)partes.push(num(estadoFuente.guiasUnicas)+" guías únicas");
     partes.push(estadoFuente.fecha||"Sin fecha");
     if(estadoFuente.usuario)partes.push(estadoFuente.usuario);
     if(estadoFuente.archivo)partes.push(estadoFuente.archivo);
@@ -504,10 +505,25 @@ async function leerFilasArchivoExcel(archivo,usarFormatoVisible,tipo){
  for(const nombre of libro.SheetNames){const hoja=libro.Sheets[nombre];corregirRangoHojaExcel(hoja);const filas=XLSX.utils.sheet_to_json(hoja,{header:1,defval:"",raw:!usarFormatoVisible,blankrows:false});
  if(filas.length<2)continue;
  const headers=filas[0].map(normalizarExcel);
- const requeridas=tipo==="PDV LISTA"?["NOMBRE SIMPLE","NOMBRE.SIMPLE2"]:tipo==="DESPACHOS AYER"?["NOMBRE SIMPLE","DESPACHOS AYER"]:tipo==="COLA LARGA"?["NUMERO DE GUIA 运单号","TIPO DE COLA LARGA 长尾类型"]:["NUMERO DE GUIA"];
- if(requeridas.every(h=>headers.includes(h)))candidatas.push(filas);}
- if(candidatas.length!==1)throw new Error(candidatas.length?"Hay varias hojas de detalle compatibles; deje una sola hoja de detalle en el archivo.":"No se encontró una hoja de detalle con las columnas requeridas.");
- return candidatas[0];
+ const despachoResumen=headers.includes("NOMBRE SIMPLE")&&headers.includes("DESPACHOS AYER"),despachoExportacion=headers.includes("NUMERO DE GUIA")&&(headers.includes("PUNTO DE ENTREGA")||headers.includes("PUNTO DE ESCANEO MAS RECIENTE"));
+ const requeridas=tipo==="PDV LISTA"?["NOMBRE SIMPLE","NOMBRE.SIMPLE2"]:tipo==="DESPACHOS AYER"?null:tipo==="COLA LARGA"?["NUMERO DE GUIA 运单号","TIPO DE COLA LARGA 长尾类型"]:["NUMERO DE GUIA"];
+ if(tipo==="DESPACHOS AYER"?(despachoResumen||despachoExportacion):requeridas.every(h=>headers.includes(h)))candidatas.push(filas);}
+ if(candidatas.length!==1){const mensaje=tipo==="DESPACHOS AYER"?'No se encontró una hoja con "Número de Guía" y "Punto de entrega" (o "Punto de escaneo más reciente"), ni una tabla con "NOMBRE SIMPLE" y "DESPACHOS AYER".':"No se encontró una hoja de detalle con las columnas requeridas.";throw new Error(candidatas.length?"Hay varias hojas de detalle compatibles; deje una sola hoja de detalle en el archivo.":mensaje);}
+ const filas=candidatas[0];return tipo==="DESPACHOS AYER"?agruparDespachosAyer(filas):filas;
+}
+
+function resumirConteoDespachos(filas){const datos=(filas||[]).slice(1);return{pdvs:datos.length,guias:datos.reduce((s,f)=>s+Number(f[1]||0),0)};}
+
+function agruparDespachosAyer(filas){
+ const encabezados=filas[0]||[],indiceGuia=buscarColumnaExcel(encabezados,["Número de Guía","Numero de guia","Guía"]),indicePdvDestino=buscarColumnaExcel(encabezados,["Punto de entrega"]),indicePdvEscaneo=buscarColumnaExcel(encabezados,["Punto de escaneo más reciente","Últ. Punto de escaneo más reciente","Último punto de escaneo"]),indicePdvResumen=buscarColumnaExcel(encabezados,["NOMBRE SIMPLE"]),indiceConteo=buscarColumnaExcel(encabezados,["DESPACHOS AYER"]),resultado=new Map();
+ if(indiceGuia>=0&&(indicePdvDestino>=0||indicePdvEscaneo>=0)){
+   const porPdv=new Map();for(let i=1;i<filas.length;i++){const fila=filas[i]||[],guia=claveGuiaExcel(valorExcel(fila,indiceGuia)),punto=String(valorExcel(fila,indicePdvDestino)||"").trim(),pdv=limpiarPdvExcel(punto||valorExcel(fila,indicePdvEscaneo));if(!guia||!pdv)continue;if(!porPdv.has(pdv))porPdv.set(pdv,new Set());porPdv.get(pdv).add(guia);}
+   [...porPdv.entries()].sort((a,b)=>a[0].localeCompare(b[0],"es")).forEach(([pdv,guias])=>resultado.set(pdv,guias.size));
+ }else if(indicePdvResumen>=0&&indiceConteo>=0){
+   for(let i=1;i<filas.length;i++){const fila=filas[i]||[],pdv=limpiarPdvExcel(valorExcel(fila,indicePdvResumen)),original=valorExcel(fila,indiceConteo);if(!pdv||original===""||original==null)continue;let cantidad;if(typeof original==="number")cantidad=original;else{const texto=String(original).trim().replace(/\s/g,"");if(texto.includes(".")&&texto.includes(",")){const ultimo=Math.max(texto.lastIndexOf("."),texto.lastIndexOf(",")),antes=texto.slice(0,ultimo).replace(/[.,]/g,""),despues=texto.slice(ultimo+1).replace(/\D/g,"");cantidad=Number(antes+(despues?"."+despues:""));}else cantidad=/^\d{1,3}(?:[.,]\d{3})+$/.test(texto)?Number(texto.replace(/[.,]/g,"")):Number(texto.replace(",","."));}if(!Number.isFinite(cantidad)||cantidad<0)continue;resultado.set(pdv,(resultado.get(pdv)||0)+Math.round(cantidad));}
+ }else throw new Error("La hoja no contiene columnas válidas para contar guías por PDV.");
+ if(!resultado.size)throw new Error("No se encontraron guías con un PDV válido para resumir.");
+ return [["NOMBRE SIMPLE","DESPACHOS AYER"],...[...resultado.entries()].map(([pdv,cantidad])=>[pdv,cantidad])];
 }
 
   function corregirRangoHojaExcel(hoja){

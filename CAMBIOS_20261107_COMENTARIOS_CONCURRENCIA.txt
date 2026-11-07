@@ -1,0 +1,11 @@
+CORRECCIÓN CONSERVADORA - COMENTARIOS DE ENCARGADO
+
+- Evita llamadas de guardado individual cuando el comentario no cambió.
+- En guardado masivo omite guías cuyo comentario ya coincide con el texto solicitado.
+- Reduce concurrencia del lote de 4 a 2 solicitudes.
+- Bloquea solicitudes simultáneas sobre la misma guía y PDV dentro de la misma pestaña.
+- Conserva código de error de Supabase para diagnóstico y muestra instrucción clara ante conflicto.
+- Mantiene la función SQL existente y sus controles de permisos/versiones. No hay migración SQL.
+- Renueva versión de caché del bridge y acceso a Gestión V2.
+
+IMPORTANTE: Esta mejora reduce operaciones redundantes, pero no corrige fechas de versión obsoletas que procedan de la carga de datos. Si persisten errores 40001, verificar en la respuesta de carga el campo comentarioGestionActualizadoEn y la fecha real en Supabase; no habilitar sobreescritura automática.

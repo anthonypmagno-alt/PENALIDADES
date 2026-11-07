@@ -1,0 +1,13 @@
+Gestión de Guías V2 — conteo de Despachos ayer por PDV
+Fecha: 2026-11-06
+
+Cambios
+- El archivo cargado en “Despachos ayer” acepta tanto la tabla anterior con NOMBRE SIMPLE / DESPACHOS AYER como la Exportación de guías.
+- En la Exportación se cuenta una sola vez cada Número de Guía por Punto de entrega. Si no hay Punto de entrega, se usa el Punto de escaneo más reciente.
+- Antes de guardar, el navegador convierte el archivo en una tabla de dos columnas con un conteo por PDV. No se guardan las 26 mil filas de detalle de la exportación en la fuente Despachos ayer.
+- La carga individual y el guardado general usan la misma agregación.
+- La carga confirma el total de guías únicas y los PDV resumidos. El estado guardado indica cuántos PDV tienen conteo.
+- Se actualizó el enlace de Gestión de guías V2 para evitar caché de la versión anterior.
+
+Uso
+En el módulo V2, en la tarjeta “Despachos ayer (opcional)”, seleccione la Exportación de guías y pulse “Cargar Despachos ayer”. Si utiliza “Guardar información cargada”, el archivo se agregará y comprimirá de la misma forma.

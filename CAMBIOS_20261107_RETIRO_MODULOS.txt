@@ -1,0 +1,3 @@
+Se retiraron de navegación y acceso por hash los módulos Estadísticas por PDV (index.html y gestion-v2.html) y SLA de paquetes (gestion-v2.html).
+Se conservan las rutinas de cálculo, brecha-costos.js, configuración de montos y SQL de Supabase para mantener Consulta desde Excel y su resumen de montos por tipo de brecha.
+No ejecutar DROP TABLE ni eliminar scripts de costos. No requiere SQL.

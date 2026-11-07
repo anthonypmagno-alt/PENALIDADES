@@ -1,0 +1,1 @@
+Se ocultó Gestión de guías normal en index.html y se impide abrirla mediante hash. La página index.html conserva el login y Consulta desde Excel como vista inicial. Se eliminó el enlace Volver a Gestión actual de gestion-v2.html. No se eliminan funciones, tablas ni lógica de cálculo de costos por brecha. No requiere SQL.

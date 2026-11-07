@@ -1,0 +1,27 @@
+GESTIÓN V2 - CORRECCIÓN DEL ERROR "No se encontró Último estado" (07/11/2026)
+
+CAUSA
+El validador del archivo Exportación de guías rechazaba cualquier Excel que no tuviera una columna denominada «Último estado». Esa columna no equivale a «Tipo de escaneo más reciente» y no forma parte necesariamente de la exportación del usuario. El lector de Excel ya normalizaba tildes, mayúsculas y espacios múltiples; no era un error de espacios del nombre.
+
+CORRECCIÓN
+1. El validador ya NO exige «Último estado» y valida solo la columna obligatoria Número de Guía; permite que Tipo de escaneo más reciente esté ausente o vacío (en cuyo caso el filtro mostrará SIN DATO para las guías afectadas).
+2. El filtro superior del Resumen de casos por PDV utiliza el campo real tipoEscaneoExportacion, cuya fuente es «Tipo de escaneo más reciente» del Excel. Se ha actualizado el texto del filtro para distinguirlo del distinto campo «Último estado».
+3. Se conservan los filtros por Provincia de destino, Ciudad de Destino y Colonia de destino, así como las optimizaciones de rendimiento.
+4. No se alteraron bridge.js ni process-worker.js. El worker de la versión base ya interpreta el campo «Tipo de escaneo más reciente» con espacios extra entre palabras.
+
+ARCHIVO EJECUTABLE MODIFICADO
+- gestion-v2.html (único ejecutable modificado)
+
+PRUEBAS LOCALES
+- Sintaxis de los scripts inline, bridge.js y process-worker.js: OK.
+- 11 pruebas de validación de encabezados, lectura del worker y selección del tipo de escaneo: OK.
+- 21 pruebas anteriores de filtros por destino y resumen: OK.
+- Pruebas con datos sintéticos. No se dispone del Excel fuente real ni de acceso al despliegue de GitHub/Supabase.
+
+PUBLICACIÓN
+1. Reemplazar gestion-v2.html en la raíz del repositorio GitHub; no cambiar su nombre.
+2. Recargar la plataforma con Ctrl + Shift + R.
+3. Como administrador, volver a cargar la Exportación de guías y confirmar el guardado/actualización de las fuentes.
+4. Verificar las opciones en el filtro «Tipos de escaneo (Exportación)» del resumen.
+
+Nota: el historial anterior menciona una validación obligatoria de «Último estado», que queda reemplazada por esta corrección. No requiere SQL.

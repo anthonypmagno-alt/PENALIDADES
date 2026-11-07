@@ -1,0 +1,16 @@
+CAMBIOS 2026-11-07 · FILTROS DE DESTINO - GESTIÓN V2
+
+Se agregan filtros de selección múltiple buscables para la tabla Resumen de casos por PDV:
+- Provincia de destino (campo exportación «Provincia de destino» -> propiedad existente dpto / Departamento)
+- Ciudad de Destino (campo exportación «Ciudad de Destino» -> propiedad existente prov / Provincia)
+- Colonia de destino (campo exportación «Colonia de destino» -> propiedad existente dsto / Distrito)
+
+Estos filtros afectan los totales del resumen y las guías que aparecen en el detalle y resumen por comentarios.
+Su lógica combina filtros distintos mediante AND y varias opciones del mismo filtro mediante OR.
+Las celdas vacías aparecen como SIN DATO; las opciones se normalizan eliminando diferencias de mayúsculas y acentos.
+Para agilizar la apertura, se guardan selecciones en memoria, se busca por texto y se generan hasta 100 casillas visibles.
+Todos los datos de destino ya estaban disponibles en la carga de Exportación de guías de la versión de origen; no se añadió tabla ni columna de Supabase.
+
+Instalación: reemplazar gestion-v2.html con el archivo del ZIP. El resto se entrega sin cambios.
+Si la exportación anterior no contenía destinos, vuelva a cargarla como administrador y procesar las fuentes para actualizar registros.
+Pruebas: validación de sintaxis JavaScript, pruebas de filtrado con datos simulados, y de controles DOM en navegador local cuando aplique.

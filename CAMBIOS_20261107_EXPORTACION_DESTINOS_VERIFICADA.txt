@@ -1,0 +1,23 @@
+VERSIÓN: 20261107-1145-DESTINOS-ESCANEO-V4
+
+Archivo de referencia comprobado:
+- Exportación de guía de embarque20261107090509-...xlsx
+- Hoja: Exportación de guía de embarque
+- Encabezados reales: Número de Guía, Tipo de escaneo más reciente, Provincia de destino, Ciudad de Destino, Colonia de destino.
+- Este Excel NO incluye “Último estado”: no debe solicitarse ni bloquear la carga.
+
+CORRECCIONES
+1. Se valida Número de Guía, sin exigir Último estado.
+2. La lectura de Tipo de escaneo más reciente acepta espacios adicionales, saltos de línea y acentos.
+3. Filtros de destinos colocados en una banda azul visible bajo FILTRAR RESUMEN.
+4. Destinos se leen del Excel y se procesan como dpto (Provincia de destino), prov (Ciudad de Destino), dsto (Colonia de destino).
+5. Se añade un marcador de edición en la cabecera y un parámetro build en el redireccionamiento de index.html.
+6. Se mantiene el rendimiento optimizado y las funcionalidades existentes.
+
+PUBLICACIÓN EN GITHUB
+- Subir y reemplazar gestion-v2.html e index.html de la raíz del repositorio.
+- Si usas ZIP completo, descomprime y sube los archivos DENTRO de PENALIDADES-main a la raíz. No crear un segundo nivel PENALIDADES-main.
+- Abre .../index.html o .../gestion-v2.html?build=20261107-1145-DESTINOS-ESCANEO-V4
+- Verifica la insignia “Edición 20261107-1145-DESTINOS-ESCANEO-V4” en la cabecera.
+- Si esa edición no aparece, la página publicada es otra versión; revisar branch, raíz y publicación de GitHub Pages.
+- Vuelve a cargar la Exportación de guías. No necesitas SQL.

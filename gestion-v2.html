@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261108-PROBLEMA-FILTROS-LINEAS-V11"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261108-DETALLE-ENCABEZADOS-V12"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
 <script src="./bridge.js?v=20261108-problema-v11"></script>
   <base target="_top">
 <style>/* v9 only */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden]{display:none!important}</style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261108-PROBLEMA-FILTROS-LINEAS-V11</title><meta name="app-build" content="20261108-PROBLEMA-FILTROS-LINEAS-V11">
+  <title>Gestión de guías V2 · 20261108-DETALLE-ENCABEZADOS-V12</title><meta name="app-build" content="20261108-DETALLE-ENCABEZADOS-V12">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -409,6 +409,41 @@
 .problema-filtros fieldset{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px;border:1px solid #cbd5e1;border-radius:7px;}
 .problema-filtros legend{font-size:11px;font-weight:800;color:#1e3a5f;}
 .problema-filtros input[type=datetime-local]{width:192px;max-width:100%;}
+
+/* V12 - columnas estables para Gestión V2 y Consulta Excel.
+   La tabla se desplaza horizontalmente y NO comprime los encabezados nuevos. */
+#tablaDetalle{table-layout:fixed!important;width:2670px!important;min-width:2670px!important;max-width:none!important}
+#tablaDetalle col.col-select{width:46px!important}
+#tablaDetalle col.col-guide{width:184px!important}
+#tablaDetalle col.col-manager{width:128px!important}
+#tablaDetalle col.col-pdv{width:92px!important}
+#tablaDetalle col.col-destination{width:210px!important}
+#tablaDetalle col.col-area{width:103px!important}
+#tablaDetalle col.col-state{width:143px!important}
+#tablaDetalle col.col-type{width:174px!important}
+#tablaDetalle col.col-update{width:250px!important}
+#tablaDetalle col.col-problem-reason{width:238px!important}
+#tablaDetalle col.col-problem-date{width:205px!important}
+#tablaDetalle col.col-comment{width:355px!important}
+#tablaDetalle col.col-observation{width:332px!important}
+#tablaDetalle col.col-action{width:110px!important}
+#tablaDetalle th{white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:none;line-height:1.24!important;vertical-align:middle!important;padding:10px 7px!important;height:70px!important}
+#tablaDetalle .problem-reason-cell{min-width:0!important;max-width:none!important;overflow-wrap:break-word!important}
+#tablaDetalle .problem-date-cell{min-width:0!important;white-space:normal!important}
+#tablaDetalle td{vertical-align:top}
+.excel-table{table-layout:fixed!important;min-width:2310px!important;width:2310px!important;max-width:none!important}
+.excel-table col.excel-guide-col{width:180px!important}
+.excel-table col.excel-point-col{width:198px!important}
+.excel-table col.excel-operation-col{width:215px!important}
+.excel-table col.excel-destination-col{width:185px!important}
+.excel-table col.excel-problem-col{width:190px!important}
+.excel-table col.excel-problem-reason-col{width:245px!important}
+.excel-table col.excel-problem-date-col{width:195px!important}
+.excel-table col.excel-date-col{width:245px!important}
+.excel-table col.excel-wait-col{width:245px!important}
+.excel-table col.excel-deadline-col{width:195px!important}
+.excel-table th{overflow-wrap:normal!important;word-break:normal!important;white-space:normal!important}
+.excel-table .problem-reason-cell,.excel-table .problem-date-cell{min-width:0!important;max-width:none!important;overflow-wrap:break-word!important}
 </style>
 </head>
 <body>
@@ -425,7 +460,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V16 <span class="build-stamp" id="buildStamp">Edición 20261108-PROBLEMA-FILTROS-LINEAS-V11</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V16 <span class="build-stamp" id="buildStamp">Edición 20261108-DETALLE-ENCABEZADOS-V12</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -745,7 +780,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
     if(vista==="sla")window.SlaPaquetesV2?.alAbrir();
     if(vista==="comentarios")renderConfiguracionComentarios();
-    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261108-PROBLEMA-FILTROS-LINEAS-V11";frame.dataset.loaded="1";}}
+    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261108-DETALLE-ENCABEZADOS-V12";frame.dataset.loaded="1";}}
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
 
@@ -1277,6 +1312,7 @@ function agruparDespachosAyer(filas){
   function tiempoRestanteExcel(plazo){if(!plazo)return "No se pudo calcular el plazo";const diferencia=plazo.getTime()-Date.now(),vencido=diferencia<0,totalMinutos=Math.floor(Math.abs(diferencia)/60000),dias=Math.floor(totalMinutos/1440),horas=Math.floor(totalMinutos%1440/60),minutos=totalMinutos%60,partes=[];if(dias)partes.push(dias+" d");if(horas||dias)partes.push(horas+" h");partes.push(minutos+" min");return vencido?"Vencido hace "+partes.join(" "):"Faltan "+partes.join(" ");}
 
   function filtrarExcel(){
+ const cumpleHoraProblema=crearPredicadoHoraProblema('excelRegistroProblema');
  const consulta=document.getElementById('excelSearch').value.trim().toLowerCase();
  const filtros=[['excelRazonProblema','ultimaRazonProblema'],['excelUltimoEstado','tipoEscaneoExportacion'],['excelSiguienteParada','siguienteParada'],['excelOperacion','tipoOperacion'],['excelUltimoPunto','ultimoPunto'],['excelArea','area'],['excelEncargado','encargado']].map(([id,campo])=>({campo,valores:valoresMulti(id)})),plazos=valoresMulti('excelDeadlineFilter');
  excelFiltrados=excelRegistros.filter(x=>{
@@ -1787,7 +1823,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     };
     return {cumpleEntrada,cumpleFecha};
   }
-  function filtrar(){const estadosExportacionResumen=new Set(valoresMulti('sEstadoExportacion')),provinciasDestino=new Set(valoresMulti('sProvinciaDestino')),ciudadesDestino=new Set(valoresMulti('sCiudadDestino')),coloniasDestino=new Set(valoresMulti('sColoniaDestino'));const escaneosExportacion=valoresMulti('fEscaneoExportacion');const actualizaciones=valoresMulti('fActualizacion');const escaneosRecientes=valoresMulti("fEscaneo");const regionesGestion=valoresMulti("fRegion");
+  function filtrar(){const razonesGestion=new Set(valoresMulti('fRazonProblema')),cumpleHoraProblema=crearPredicadoHoraProblema('fRegistroProblema');const estadosExportacionResumen=new Set(valoresMulti('sEstadoExportacion')),provinciasDestino=new Set(valoresMulti('sProvinciaDestino')),ciudadesDestino=new Set(valoresMulti('sCiudadDestino')),coloniasDestino=new Set(valoresMulti('sColoniaDestino'));const escaneosExportacion=valoresMulti('fEscaneoExportacion');const actualizaciones=valoresMulti('fActualizacion');const escaneosRecientes=valoresMulti("fEscaneo");const regionesGestion=valoresMulti("fRegion");
     const {cumpleEntrada,cumpleFecha}=crearPredicadosFechasGestion();
     const minDiasCola=leerDiasMinimosColaResumen(),ahoraColaMs=Date.now(),areasEntregaResumen=new Set(valoresMulti("sAreaEntrega"));
     const q=document.getElementById("buscar").value.trim().toLowerCase(),areas=valoresMulti("fArea"),encargados=valoresMulti("fEncargado"),pdvs=valoresMulti("fPdv"),estados=valoresMulti("fEstado"),comentarios=valoresMulti("fComentario"),tipos=valoresMulti("fTipo");

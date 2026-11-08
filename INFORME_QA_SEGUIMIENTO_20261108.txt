@@ -1,0 +1,28 @@
+INFORME DE VALIDACION - SEGUIMIENTO GENERAL DE GUIAS
+Fecha: 08/11/2026
+Build: 20261108-SEGUIMIENTO-V1
+
+Archivos de usuario verificados:
+- Exportación de guía de embarque 08/11/2026: 2,360 guías únicas.
+- Monitoreo de entrada al puerto del nodo: 500 guías únicas.
+- Cruce por Número de Guía: 500 coincidencias.
+- SLA desde llegada PDV: 359 guías.
+- En tránsito (sin llegada ni despacho en monitoreo): 141 guías.
+- Sin información de monitoreo: 1,860 guías.
+
+Pruebas del motor: 28 casos exitosos.
+Incluye conversion de numero serial Excel a hora Peru, filtros dd-mm-yyyy,
+rangos horarios, 8 decimales, consolidacion de duplicados, clasificacion de
+SLA, normalizacion de PDV y agrupacion por area+punto.
+Verificación de sintaxis: bridge.js, seguimiento-core.js,
+seguimiento-general.js y todos los scripts embebidos en gestion-v2.html,
+sin errores en node --check.
+
+LIMITACION:
+No se pudo ejecutar el flujo completo en navegador mediante Chromium en
+este entorno (navegacion local bloqueada por el administrador). Por ello,
+validar el despliegue y la carga de archivos en GitHub Pages con una sesion real.
+La lectura/descarga XLSX requiere que el CDN de SheetJS esté accesible.
+
+Persistencia: únicamente memoria de la pestaña del navegador. NO Supabase.
+No se crean tablas ni se requiere SQL.

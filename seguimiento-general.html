@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Seguimiento General de Guías</title>
+<link rel="stylesheet" href="./seguimiento-general.css?v=20261108-v1">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+<script src="./seguimiento-core.js?v=20261108-v1" defer></script>
+<script src="./seguimiento-general.js?v=20261108-v1" defer></script>
+</head><body>
+<main id="seguimientoApp" class="container">
+ <div class="page-top"><div><div class="eyebrow">MONITOREO OPERATIVO · TEMU</div><h1>Seguimiento General de Guías</h1><p>Consolidación de exportaciones y monitoreo; seguimiento dinámico por área, punto de escaneo y antigüedad.</p></div><div class="top-buttons"><span class="version">V1 · 08-11-2026</span><button class="outline" id="exportBtn" type="button" disabled>⬇ Exportar Excel</button><button class="outline danger" id="clearData" type="button">Vaciar datos locales</button></div></div>
+ <div id="authAlert" class="alert hidden" role="alert"></div>
+ <section class="panel upload-panel"><div class="panel-head"><h2>1 · Carga múltiple de información</h2><span class="mini">Los archivos se procesan en este navegador; no se suben a Supabase.</span></div>
+ <div class="upload-grid"><label class="upload-box"><strong>Exportación de guía de embarque <span class="required">*</span></strong><small>Varios Excel a la vez · Base de guías y Tiempo de entrada</small><input id="filesExport" type="file" accept=".xlsx,.xls" multiple><span id="countExport" class="file-names">Sin archivos nuevos seleccionados</span></label>
+ <label class="upload-box"><strong>Monitoreo de entrada al puerto del nodo</strong><small>Varios Excel · Salida HUB, llegada PDV y despacho</small><input id="filesMonitor" type="file" accept=".xlsx,.xls" multiple><span id="countMonitor" class="file-names">Sin archivos nuevos seleccionados</span></label>
+ <label class="upload-box"><strong>PDV LISTA (opcional)</strong><small>Las áreas se obtienen automáticamente del portal; también puedes cargar un maestro local.</small><input id="filesPdv" type="file" accept=".xlsx,.xls" multiple><span id="countPdv" class="file-names">Usando catálogo del portal si está disponible</span></label></div>
+ <div class="upload-actions"><button id="loadBtn" class="primary" type="button">Procesar archivos seleccionados</button><label class="inline-check"><input type="checkbox" id="replaceCheck"> Reemplazar cargas anteriores (si no, acumular y consolidar)</label><span id="catalogStatus" class="mini"></span></div>
+ <div id="importStatus" class="status" role="status">Selecciona los archivos y pulsa «Procesar». Puedes combinar varias exportaciones y varios archivos de monitoreo.</div>
+ </section>
+ <div class="kpis" id="kpis"><div class="kpi"><span>Guías únicas</span><strong id="kpiGuias">0</strong></div><div class="kpi"><span>Con monitoreo</span><strong id="kpiMonitor">0</strong></div><div class="kpi"><span>SLA medible</span><strong id="kpiSla">0</strong></div><div class="kpi"><span>Sin monitoreo</span><strong id="kpiSinMonitor">0</strong></div><div class="kpi"><span>Sin área por punto</span><strong id="kpiSinArea">0</strong></div></div>
+ <section class="panel filter-panel"><div class="panel-head"><h2>2 · Filtros generales</h2><div><button class="outline" id="clearFilters" type="button">Limpiar filtros</button></div></div>
+ <div class="main-filters"><label class="search-field">Buscar guía, punto, PDV, destino o repartidor<input type="search" id="search" placeholder="JPE0000... / PDV / destino" autocomplete="off"></label>
+ <div id="filtersCategorical" class="categorical-filters"></div>
+ </div>
+ <div class="date-head"><h3>Filtros de fechas y días transcurridos</h3><span class="mini">Fecha en <b>dd-mm-aaaa</b> (hora opcional: <b>HH:mm</b>) · días con 8 decimales · zona horaria Perú (UTC-05)</span></div>
+ <div id="dateFilterGrid" class="date-filters"></div>
+ <div class="sla-filter"><div><b>SLA transcurrido (días)</b><p>Desde llegada al PDV; si no hay llegada y existe despacho, desde salida del HUB.</p></div><label>Mínimo<input id="slaMin" type="number" step="any" min="0" placeholder="0"></label><label>Máximo<input id="slaMax" type="number" step="any" min="0" placeholder="Ej. 5"></label></div>
+ <div id="dateErrors" class="validation" role="status"></div></section>
+ <section class="panel"><div class="panel-head"><h2>3 · Resumen por área y punto de escaneo más reciente</h2><span id="resultSummary" class="mini"></span></div>
+ <div class="table-scroll"><table><thead><tr><th>Área (PDV LISTA)</th><th>Punto de escaneo más reciente</th><th class="numeric">Guías</th><th class="numeric">Con SLA</th><th class="numeric">Sin SLA</th><th class="numeric">Prom. cola larga (días)</th><th class="numeric">Prom. SLA (días)</th></tr></thead><tbody id="summaryBody"><tr><td colspan="7" class="empty">Carga una exportación para ver el resumen.</td></tr></tbody></table></div>
+ <div class="panel-footer"><button class="outline hidden" id="showSummaryMore" type="button">Mostrar más grupos</button><span id="groupSelection" class="mini"></span><button id="clearGroup" type="button" class="outline hidden">Quitar selección de grupo</button></div>
+ </section>
+ <section class="panel"><div class="panel-head"><h2>4 · Detalle de guías</h2><div class="toolbar"><label>Ordenar <select id="sortBy"><option value="cola">Mayor cola larga</option><option value="sla">Mayor SLA</option><option value="area">Área y punto</option><option value="guia">Número de guía</option></select></label><span id="detailCount" class="mini"></span></div></div>
+ <p class="table-hint">Selecciona un grupo del resumen para ver solo sus guías. Los filtros y descargas incluyen todos los registros coincidentes, aunque solo se muestren 150 filas inicialmente.</p>
+ <div class="table-scroll detail-scroll"><table><thead><tr><th>Guía</th><th>Área</th><th>Punto escaneo</th><th>PDV entrega</th><th>Tipo escaneo</th><th>Tiempo de entrada</th><th class="numeric">Días cola larga</th><th>Hora salida HUB</th><th class="numeric">Días desde HUB</th><th>Hora llegada PDV</th><th class="numeric">Días desde PDV</th><th>Tiempo despacho</th><th class="numeric">Días desde despacho</th><th>Estado SLA</th><th class="numeric">SLA (días)</th><th>Provincia destino</th><th>Ciudad destino</th><th>Colonia destino</th></tr></thead><tbody id="detailBody"><tr><td colspan="18" class="empty">Sin registros.</td></tr></tbody></table></div>
+ <div class="panel-footer"><span id="showingCount" class="mini"></span><button id="showMore" class="outline hidden" type="button">Mostrar 150 más</button></div>
+ </section>
+ <footer>Seguimiento General de Guías · Los tiempos se actualizan cada minuto · La información cargada permanece en memoria durante esta sesión; si cierras la pestaña, vuelve a importar los Excel.</footer>
+</main></body></html>

@@ -36,7 +36,7 @@ function Ke(fe={}){let U=fe,Ne={},Ze="",G="GUIAS A REVISAR",Xe="CREDENCIALES",x=
   registro.dsto=m(r,"Colonia de destino");
   registro.tiempoEntradaExportacion=entrada;
   registro.fechaEscaneoExportacion=ee(m(r,"Tiempo del escaneo más reciente"));
-  registro.tipoEscaneoExportacion=m(r,"Tipo de escaneo más reciente");
+  registro.tipoEscaneoExportacion=m(r,"Tipo de escaneo más reciente");registro.ultimaRazonProblema=m(r,"Última razón del problema");registro.horaRegistroProblema=ee(m(r,"Hora de registro del problema"));
   registro.ultimoEstadoExportacion=m(r,"Último estado")||m(r,"Estado más reciente")||m(r,"Último estado de la guía")||m(r,"Estado actual");
   const operador=m(r,"Empleado de entrega"),operacion=registro.fechaEscaneoExportacion;
   ct(registro,{...punto,repartidor:operador,ultimaOperacion:operacion,tipoEscaneoReciente:registro.tipoEscaneoExportacion},"EXPORTACION GUIAS");

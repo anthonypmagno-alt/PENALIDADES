@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261108-EXPORTACION-MULTIPLE-V7-TIMEOUT"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261108-EXPORTACION-MULTIPLE-V8-BLOQUES300"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261108-timeout-carga-v7"></script>
+<script src="./bridge.js?v=20261108-bloques300-v8"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261108-EXPORTACION-MULTIPLE-V7-TIMEOUT</title><meta name="app-build" content="20261108-EXPORTACION-MULTIPLE-V7-TIMEOUT">
+  <title>Gestión de guías V2 · 20261108-EXPORTACION-MULTIPLE-V8-BLOQUES300</title><meta name="app-build" content="20261108-EXPORTACION-MULTIPLE-V8-BLOQUES300">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -399,7 +399,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V16 <span class="build-stamp" id="buildStamp">Edición 20261108-EXPORTACION-MULTIPLE-V7-TIMEOUT</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V16 <span class="build-stamp" id="buildStamp">Edición 20261108-EXPORTACION-MULTIPLE-V8-BLOQUES300</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -719,7 +719,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
     if(vista==="sla")window.SlaPaquetesV2?.alAbrir();
     if(vista==="comentarios")renderConfiguracionComentarios();
-    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261108-EXPORTACION-MULTIPLE-V7-TIMEOUT";frame.dataset.loaded="1";}}
+    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261108-EXPORTACION-MULTIPLE-V8-BLOQUES300";frame.dataset.loaded="1";}}
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
 

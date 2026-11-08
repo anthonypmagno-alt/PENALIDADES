@@ -501,17 +501,21 @@ function v16ModuleRequirement(operation,args){
 
 var $l=window.V16_CONFIG,po=Lu($l.url,$l.key,{auth:{storageKey:"v16-replica-auth"}}),kp=_p(po),Bc=["PDV LISTA","EXPORTACION GUIAS","DESPACHOS AYER","TRACK BREAK","COLA LARGA"],Ut,La=[],Ua=null,Xl=null,ti=new Map,Lc=null,ha=fo();async function ra(e,t={}){let{data:r,error:a}=await po.rpc("v16_call",{method:e,payload:t});if(a)throw new Error(a.message);return r}function Kl(){let e=Ut.perfil;return{ok:!0,token:"supabase",usuario:e.rol==="PDV"?e.pdvs[0]:e.usuario,rol:e.rol,area:e.areas.join(", "),region:e.regiones.join(", "),pagina:e.rol==="PDV"?"pdv":"encargado"}}function n4(){ha.setSources({"PDV LISTA":[["NOMBRE SIMPLE","NOMBRE.SIMPLE2","\xC1rea \u533A\u57DF1","Regi\xF3n","ENCARGADO"],...Ut.catalogo.map(e=>[e.pdv,"",e.area,e.region,e.encargado])],"DESPACHOS AYER":[["NOMBRE SIMPLE","DESPACHOS AYER"],...Ut.catalogo.map(e=>[e.pdv,e.despachos])]}),ha.setComments(Object.fromEntries(Ut.comentarios.map(e=>[e.pdv,e])))}async function Ba(){return Ut=await ra("inicio"),kp.setContext(Ut.perfil,Ut.catalogo),n4(),await v16RefreshModulePermissions(false),Kl()}function Uc(){return Object.fromEntries(["pdv","envio","despachos","brecha","colaLarga"].map((e,t)=>[e,{fuente:Bc[t],...Ut.fuentes[Bc[t]]||{}}]))}function Wl(){return{fecha:Ut.meta.fecha,usuario:Ut.meta.usuario,revision:Ut.meta.revision}}function Zc(e,t){return String(e||"").trim().toUpperCase()+"|"+String(t||"").trim().toUpperCase()}async function listarComentariosGestionEncargadoV16(){let e=[],t="",r="";for(;;){let{data:a,error:n}=await po.rpc("v16_gestion_v2_listar_comentarios_encargado",{p_despues_guia:t,p_despues_pdv:r,p_limite:1000});if(n)throw new Error(n.message);let i=Array.isArray(a)?a:Array.isArray(a?.comentarios)?a.comentarios:[];e.push(...i);if(i.length<1000)break;let s=i[i.length-1];t=String(s.guia||"");r=String(s.pdv||"")}return e}async function i4(){let e=await Ba(),t=[];for(;;){let n=await ra("detalle",{despues:t.at(-1)?.guia||""});if(t.push(...n),n.length<1e3)break}if((await ra("inicio")).meta.revision!==Ut.meta.revision)throw new Error("Se actualizaron las fuentes mientras cargaba. Pulse Actualizar nuevamente.");La=t.map((n,i)=>({...n,fila:i+2}));let comentariosGestionEncargadoDisponible=!1,errorComentariosGestionEncargado="";if(["ADMINISTRADOR","ENCARGADO"].includes(e.rol))try{let n=await listarComentariosGestionEncargadoV16(),i=new Map(n.map(s=>[Zc(s.guia,s.pdv),s]));La.forEach(s=>{let o=i.get(Zc(s.guia,s.pdv));s.comentarioGestionEncargado=String(o?.comentario||"");s.comentarioGestionActualizadoEn=o?.actualizado_en||null});comentariosGestionEncargadoDisponible=!0}catch(n){errorComentariosGestionEncargado=n?.message||String(n)}let a=window.V16_GESTION_V2?uo(La):{guias:La};return{sesion:e,guias:structuredClone(a.guias),v2:a.sinEntrada===void 0?null:{sinEntrada:a.sinEntrada,sinEstado:a.sinEstado,calculadoEn:a.calculadoEn},resumen:ha.summary(a.guias,{},e),fuentes:e.rol==="ADMINISTRADOR"?Uc():null,ultimoGuardado:Wl(),comentariosGestionEncargadoDisponible,errorComentariosGestionEncargado}}async function wp(){if(Ua)return;await Ba();let e=Ut.meta.revision,t={};for(let a of Object.keys(Ut.fuentes)){let n=[];for(;;){let i=await ra("source",{nombre:a,offset:n.length});if(n.push(...i),i.length<1e3)break}t[a]=n}if((await ra("inicio")).meta.revision!==e)throw new Error("Las fuentes cambiaron. Reintente la carga.");Ua=t,Xl=e}function v16AvisoCarga(etapa,hechos=0,total=0){try{window.dispatchEvent(new CustomEvent("v16-carga-progreso",{detail:{etapa,hechos,total}}))}catch(_){}}
 async function ho(e,t,r={},a=Ut.meta.revision){
-  // Una sola escritura por vez: los RPC de 300 filas x3 simultáneos saturaban el
-  // servicio en cargas de varias exportaciones. No reintentar bloques a ciegas:
-  // una petición que termina con timeout puede haberse confirmado en PostgreSQL.
-  let n=t.length?t:[{_empty:!0}],tam=120,total=Math.ceil(n.length/tam),i;
+  // Contrato de public.v16_call(action="bloque"): el servidor delimita el índice
+  // de cada bloque usando el lote histórico de 300 registros. V7 usaba lotes de
+  // 120 y el índice 38 (bloque 39) quedaba fuera del rango esperado en un lote
+  // de ~11.400 filas. No cambiar este tamaño sin actualizar la función SQL.
+  // Seguimos enviando UN RPC A LA VEZ para evitar los picos de carga de V6.
+  // No repetir automáticamente un RPC fallido: un timeout podría haberse aplicado.
+  const TAM_BLOQUE_V16=300;
+  let n=t.length?t:[{_empty:!0}],tam=TAM_BLOQUE_V16,total=Math.ceil(n.length/tam),i;
   v16AvisoCarga("Iniciando "+e,0,total);
   try{i=await ra("iniciar",{kind:e,expected:n.length,base:a,extra:r})}
   catch(err){throw new Error("Iniciando "+e+": "+(err?.message||err))}
   for(let s=0;s<total;s++){
     v16AvisoCarga("Guardando "+e,s,total);
     try{await ra("bloque",{id:i,n:s,rows:n.slice(s*tam,(s+1)*tam)})}
-    catch(err){throw new Error("Guardando "+e+", bloque "+(s+1)+" de "+total+": "+(err?.message||err))}
+    catch(err){throw new Error("Guardando "+e+", bloque "+(s+1)+" de "+total+" (índice "+s+", hasta "+tam+" filas): "+(err?.message||err))}
     v16AvisoCarga("Guardando "+e,s+1,total);
   }
   return i;

@@ -1,0 +1,1 @@
+Gestión V2: el resumen por Subtipo 1, Subtipo 2 y comentario administrador comienza contraído. Botón inicial: Mostrar resumen; al abrir, se genera el contenido; al cerrar, se oculta. Los demás módulos no se modifican.

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261108-UMBRAL-COLA-AREA-ENTREGA-V5"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261108-EXPORTACION-MULTIPLE-V6"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
 <script src="./bridge.js?v=20261108-umbral-area-entrega-v5"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261108-UMBRAL-COLA-AREA-ENTREGA-V5</title><meta name="app-build" content="20261108-UMBRAL-COLA-AREA-ENTREGA-V5">
+  <title>Gestión de guías V2 · 20261108-EXPORTACION-MULTIPLE-V6</title><meta name="app-build" content="20261108-EXPORTACION-MULTIPLE-V6">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -287,18 +287,17 @@
 #tablaResumenV2 thead tr:nth-child(2) th:nth-child(1),#tablaResumenV2 thead tr:nth-child(2) th:nth-child(2),#tablaResumenV2 thead tr:nth-child(2) th:nth-child(3),#tablaResumenV2 thead tr:nth-child(2) th:nth-child(4){border-left:4px solid #1e293b!important}
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(1),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(4),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(7),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(11){border-left:4px solid #1e293b!important}
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(13){border-right:4px solid #1e293b!important}
-#tablaResumenV2 tbody tr>td:nth-child(3),#tablaResumenV2 tbody tr>td:nth-child(6),#tablaResumenV2 tbody tr>td:nth-child(9),#tablaResumenV2 tbody tr>td:nth-child(13),#tablaResumenV2 tbody tr>td:nth-child(16){border-left:4px solid #1e293b!important}
+#tablaResumenV2 tbody tr>td:nth-child(3),#tablaResumenV2 tbody tr>td:nth-child(4),#tablaResumenV2 tbody tr>td:nth-child(7),#tablaResumenV2 tbody tr>td:nth-child(10),#tablaResumenV2 tbody tr>td:nth-child(14){border-left:4px solid #1e293b!important}
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(3),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(6),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(10),#tablaResumenV2 thead tr:nth-child(3) th:nth-child(13){background:#fde68a!important;color:#713f12!important;border-color:#d97706!important}
 #tablaResumenV2 tbody tr.brecha-data-row td:nth-child(5):not(.summary-selected),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(8):not(.summary-selected),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(12):not(.summary-selected),#tablaResumenV2 tbody tr.brecha-data-row td:nth-child(15):not(.summary-selected),#tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(5),#tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(8),#tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(12),#tablaResumenV2 tbody tr.area-subtotal-nested td:nth-child(15),#tablaResumenV2 tbody tr.region-subtotal td:nth-child(5),#tablaResumenV2 tbody tr.region-subtotal td:nth-child(8),#tablaResumenV2 tbody tr.region-subtotal td:nth-child(12),#tablaResumenV2 tbody tr.region-subtotal td:nth-child(15),#tablaResumenV2 tbody tr.total-row td:nth-child(5),#tablaResumenV2 tbody tr.total-row td:nth-child(8),#tablaResumenV2 tbody tr.total-row td:nth-child(12),#tablaResumenV2 tbody tr.total-row td:nth-child(15){background:#fef3c7!important;color:#92400e!important;font-weight:800}
 /* Separador continuo, de alto contraste, entre Cola Larga y Brecha. */
 #tablaResumenV2 thead tr:first-child th:nth-child(4),
-#tablaResumenV2 thead tr:nth-child(2) th:nth-child(3),
+#tablaResumenV2 thead tr:nth-child(2) th:nth-child(4),
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(7),
-#tablaResumenV2 tbody tr>td:nth-child(9){border-left:6px solid #dc2626!important;box-shadow:inset 2px 0 #fee2e2!important}
-#tablaResumenV2 thead tr:first-child th:nth-child(3),
-#tablaResumenV2 thead tr:nth-child(2) th:nth-child(2),
+#tablaResumenV2 tbody tr>td:nth-child(10){border-left:6px solid #dc2626!important;box-shadow:inset 2px 0 #fee2e2!important}
+#tablaResumenV2 thead tr:nth-child(2) th:nth-child(3),
 #tablaResumenV2 thead tr:nth-child(3) th:nth-child(6),
-#tablaResumenV2 tbody tr>td:nth-child(8){border-right:6px solid #dc2626!important}
+#tablaResumenV2 tbody tr>td:nth-child(9){border-right:6px solid #dc2626!important}
 
 .summary-table .summary-preventive-critical{background:#fef3c7!important;color:#92400e!important;font-weight:900}
 .summary-table thead th.summary-preventive-critical{background:#f59e0b!important;color:#1f2937!important}
@@ -400,7 +399,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V16 <span class="build-stamp" id="buildStamp">Edición 20261108-UMBRAL-COLA-AREA-ENTREGA-V5</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V16 <span class="build-stamp" id="buildStamp">Edición 20261108-EXPORTACION-MULTIPLE-V6</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -410,7 +409,7 @@
       <section id="sourceUploadPanel" class="panel hidden">
         <div class="panel-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Carga de información operativa <span class="readonly-note">SOLO ADMINISTRADOR</span><button type="button" id="sourceUploadToggle" class="secondary" style="margin-left:auto" aria-expanded="true" aria-controls="sourceUploadContent" onclick="toggleCargaOperativa()">Ocultar carga</button></div>
         <div id="sourceUploadContent" class="panel-body"><details><summary>Migración inicial desde Google (opcional)</summary><p>Solo en una réplica vacía. Seleccione el JSON privado generado por ExportarReplica.gs. No suba ese JSON a GitHub.</p><input type="file" accept=".json" onchange="importarReplica(this.files[0])"><span id="migrationStatus" role="status"></span></details>
-          <div class="source-actions" style="margin:12px 0"><button id="guardarFuentesBtn" class="success" onclick="guardarInformacionCargada()">💾 Guardar información cargada</button><span id="guardadoFuentesEstado" role="status" style="margin-left:12px"></span></div><p class="source-note">Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada archivo reemplaza todos los datos anteriores de su fuente. Para Track Break se guardan únicamente las regiones elegidas del nuevo archivo. COLA LARGA se calcula desde Exportación de guías. Espere la confirmación antes de cerrar.</p><div class="source-upload-grid"><div class="source-card"><div class="source-card-head"><div class="source-card-title">PDV_LISTA — cargar primero</div><span id="sourcePdvStatus" class="source-status">Sin verificar</span></div><input id="sourcePdvFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourcePdvMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('PDV LISTA')">Cargar PDV_LISTA — cargar primero</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Exportación de guías</div><span id="sourceEnvioStatus" class="source-status">Sin verificar</span></div><input id="sourceEnvioFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceEnvioMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('EXPORTACION GUIAS')">Cargar Exportación de guías</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Despachos ayer (opcional)</div><span id="sourceDespachosStatus" class="source-status">Sin verificar</span></div><input id="sourceDespachosFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceDespachosMeta" class="source-meta"></div><small class="source-note">También acepta Exportación de guías. Se cuenta cada guía única por Punto de entrega; si falta, usa el Punto de escaneo más reciente. Solo se guardan los conteos por PDV.</small><button onclick="cargarFuenteOperativaPortal('DESPACHOS AYER')">Cargar Despachos ayer (opcional)</button></div>
+          <div class="source-actions" style="margin:12px 0"><button id="guardarFuentesBtn" class="success" onclick="guardarInformacionCargada()">💾 Guardar información cargada</button><span id="guardadoFuentesEstado" role="status" style="margin-left:12px"></span></div><p class="source-note">Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada fuente reemplaza su versión anterior; para Exportación puedes elegir varios Excel y se guardarán unidos por guía. Para Track Break se guardan únicamente las regiones elegidas del nuevo archivo. COLA LARGA se calcula desde Exportación de guías. Espere la confirmación antes de cerrar.</p><div class="source-upload-grid"><div class="source-card"><div class="source-card-head"><div class="source-card-title">PDV_LISTA — cargar primero</div><span id="sourcePdvStatus" class="source-status">Sin verificar</span></div><input id="sourcePdvFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourcePdvMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('PDV LISTA')">Cargar PDV_LISTA — cargar primero</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Exportación de guías</div><span id="sourceEnvioStatus" class="source-status">Sin verificar</span></div><input id="sourceEnvioFile" class="source-file" type="file" accept=".xlsx,.xls" multiple onchange="mostrarSeleccionExportacionMultiple(this)"><small class="source-note">Puedes seleccionar varios Excel en una sola carga (Ctrl + clic). Se unen por Número de Guía y se conserva el registro con el escaneo más reciente. El conjunto reemplaza la exportación vigente al guardarse.</small><div id="sourceEnvioSeleccionados" class="source-meta" role="status" aria-live="polite"></div><div id="sourceEnvioMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('EXPORTACION GUIAS')">Cargar Exportación de guías</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Despachos ayer (opcional)</div><span id="sourceDespachosStatus" class="source-status">Sin verificar</span></div><input id="sourceDespachosFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceDespachosMeta" class="source-meta"></div><small class="source-note">También acepta Exportación de guías. Se cuenta cada guía única por Punto de entrega; si falta, usa el Punto de escaneo más reciente. Solo se guardan los conteos por PDV.</small><button onclick="cargarFuenteOperativaPortal('DESPACHOS AYER')">Cargar Despachos ayer (opcional)</button></div>
             <div class="source-card">
               <div class="source-card-head"><div class="source-card-title">Track break más informes</div><span id="sourceBrechaStatus" class="source-status">Sin verificar</span></div>
               <input id="sourceBrechaFile" class="source-file" type="file" accept=".xlsx,.xls">
@@ -466,8 +465,8 @@
       </section>
 
       <section id="comentarioJerarquiaPanel" class="panel">
-        <div class="panel-title comment-hierarchy-panel-title"><span>Resumen por Subtipo 1, Subtipo 2 y comentario administrador</span><button type="button" id="btnToggleComentarioJerarquia" class="summary-toggle" aria-expanded="true" aria-controls="comentarioJerarquiaContenido" onclick="toggleResumenComentarioJerarquia()">Ocultar resumen</button></div>
-        <div id="comentarioJerarquiaContenido">
+        <div class="panel-title comment-hierarchy-panel-title"><span>Resumen por Subtipo 1, Subtipo 2 y comentario administrador</span><button type="button" id="btnToggleComentarioJerarquia" class="summary-toggle" aria-expanded="false" aria-controls="comentarioJerarquiaContenido" onclick="toggleResumenComentarioJerarquia()">Mostrar resumen</button></div>
+        <div id="comentarioJerarquiaContenido" hidden>
           <div class="comment-group-toolbar" aria-live="polite">
             <div class="comment-group-summary"><span id="comentarioJerarquiaResumen"></span><small>El agrupamiento usa el comentario del Administrador. Los subtipos se combinan por filas; selecciona “Ver guías” para cargar sus guías en el detalle.</small></div>
             <div class="comment-hierarchy-actions"><button type="button" class="secondary" onclick="limpiarFiltroComentarioJerarquia(true)">Mostrar todas las guías</button></div>
@@ -516,7 +515,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
           <div class="panel-body">
             <div id="consultaEstado" class="source-note" role="status"></div><button class="secondary" onclick="cargarConsultaCompartida()">Volver a información compartida</button><div class="excel-upload"><input id="excelFile" class="excel-file-input" type="file" accept=".xlsx,.xls" onchange="cargarArchivoExcel(event)"><label class="excel-file-label" for="excelFile">Cargar Track break más informes</label><div><div id="excelFileName" class="excel-file-name">Ningún archivo seleccionado</div><div class="excel-file-help">Puede actualizar este archivo de forma independiente. El plazo se calcula desde el último escaneo + 48 horas.</div></div></div>
             <div id="excelRegionImport" class="hidden" style="padding:16px;border:1px solid #cbd5e1;border-radius:8px;margin:12px 0"><b>Regiones a importar</b><p>Se importarán únicamente las regiones seleccionadas, según el último punto de operación y PDV_LISTA.</p><div id="excelRegionOptions"></div><button class="secondary" type="button" onclick="seleccionarTodasRegionesExcel(true)">Seleccionar todas</button> <button class="secondary" type="button" onclick="seleccionarTodasRegionesExcel(false)">Quitar selección</button> <button type="button" onclick="importarRegionesExcel()">Importar regiones seleccionadas</button></div>
-<div id="excelEnvioUpload" class="excel-upload"><input id="excelEnvioFile" class="excel-file-input" type="file" accept=".xlsx,.xls" onchange="cargarArchivoGuiasEnvio(event)"><label class="excel-file-label" for="excelEnvioFile">Cargar Exportación de guías</label><div><div id="excelEnvioFileName" class="excel-file-name">Ningún archivo seleccionado</div><div class="excel-file-help">Actualiza empleado, destino y último escaneo sobre la consulta disponible. Puede cargarlo sin volver a subir Track Break.</div></div></div>
+<div id="excelEnvioUpload" class="excel-upload"><input id="excelEnvioFile" class="excel-file-input" type="file" accept=".xlsx,.xls" multiple onchange="cargarArchivoGuiasEnvio(event)"><label class="excel-file-label" for="excelEnvioFile">Cargar Exportación de guías</label><div><div id="excelEnvioFileName" class="excel-file-name">Ningún archivo seleccionado</div><div class="excel-file-help">Actualiza empleado, destino y último escaneo sobre la consulta disponible. Puede cargarlo sin volver a subir Track Break.</div></div></div>
             <div id="excelMessage" class="excel-message hidden"></div>
             <div id="excelResults" class="hidden">
               <div class="excel-cards"><div class="excel-card"><b id="excelTotal">0</b><span>Guías cargadas</span></div><div class="excel-card danger-card"><b id="excelVencidas">0</b><span>Plazo vencido</span></div><div class="excel-card warning-card"><b id="excelProximas">0</b><span>Vencen en 12 horas</span></div><div class="excel-card success-card"><b id="excelVigentes">0</b><span>Plazo vigente</span></div></div>
@@ -632,7 +631,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
   const EXCEL_PAGE_SIZE = 100, EXCEL_MAX_BYTES = 30 * 1024 * 1024;
   const seleccionadas = new Set();
   const pdvsComentarioCerrados = new Set();
-  let resumenJerarquiaContraido = false;
+  let resumenJerarquiaContraido = true;
   // Índices locales: se invalidan cuando filtrar() genera un nuevo conjunto de guías.
   let resumenComentarioAgrupadoCache = null;
   let filasPermitidasResumen = new Set();
@@ -720,7 +719,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
     if(vista==="sla")window.SlaPaquetesV2?.alAbrir();
     if(vista==="comentarios")renderConfiguracionComentarios();
-    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261108-UMBRAL-COLA-AREA-ENTREGA-V5";frame.dataset.loaded="1";}}
+    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261108-EXPORTACION-MULTIPLE-V6";frame.dataset.loaded="1";}}
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
 
@@ -803,25 +802,97 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     google.script.run.withSuccessHandler(r=>{btn.disabled=false;aplicarCatalogoComentarios(r);status.textContent="Configuración guardada y compartida con todos los usuarios.";renderGuias();toast("Catálogo de comentarios guardado.",true);}).withFailureHandler(e=>{btn.disabled=false;status.textContent="No se guardaron los cambios: "+errorTexto(e);toast(errorTexto(e),false);}).guardarCatalogoComentarios(token,{subcampos1,opciones});
   }
 
+
+  // Carga multiple sin escrituras parciales: todos los Excel se validan y consolidan
+  // antes de enviar una UNICA fuente EXPORTACION GUIAS al backend.
+  function mostrarSeleccionExportacionMultiple(input){
+    const estado=document.getElementById("sourceEnvioSeleccionados");if(!estado)return;
+    const archivos=Array.from(input?.files||[]);
+    estado.textContent=archivos.length?archivos.length+" Excel seleccionados: "+archivos.map(f=>f.name).join(" · "):"";
+  }
+  async function consolidarExportacionesGuias(archivos,{validarCola=true,onProgreso}={}){
+    const lista=Array.from(archivos||[]);
+    if(!lista.length)throw new Error("Selecciona al menos un Excel de Exportación de guías.");
+    if(typeof XLSX==="undefined")throw new Error("No se cargó el lector de Excel.");
+    const headers=[],posicion=new Map(),elegidas=new Map();let leidas=0,sinGuia=0;
+    for(let f=0;f<lista.length;f++){
+      const archivo=lista[f];
+      if(!/\.(xlsx|xls)$/i.test(archivo.name)||archivo.size>EXCEL_MAX_BYTES||!archivo.size)
+        throw new Error("Excel inválido, vacío o mayor de 30 MB: "+archivo.name);
+      if(onProgreso)onProgreso(f+1,lista.length,archivo.name);
+      const filas=await leerFilasArchivoExcel(archivo,true,"EXPORTACION GUIAS");
+      if(validarCola)validarEstadosArchivoExportacion(filas);
+      if(filas.length<2)throw new Error("La exportación está vacía: "+archivo.name);
+      const titulos=filas[0];
+      const guiaIx=buscarColumnaExcel(titulos,["Número de Guía","Numero de Guia","Guía","Guia"]);
+      if(guiaIx<0)throw new Error("Falta Número de Guía en "+archivo.name);
+      const escaneoIx=buscarColumnaExcel(titulos,["Tiempo del escaneo más reciente","Tiempo de escaneo más reciente"]);
+      const despachoIx=buscarColumnaExcel(titulos,["Tiempo de despacho"]);
+      const actualizacionIx=buscarColumnaExcel(titulos,["Última actualización","Ultima actualizacion"]);
+      const mapa=titulos.map(h=>{
+        const normal=normalizarExcel(h);if(!normal)return -1;
+        if(!posicion.has(normal)){posicion.set(normal,headers.length);headers.push(String(h||"").trim());}
+        return posicion.get(normal);
+      });
+      for(let i=1;i<filas.length;i++){
+        const fila=filas[i];if(!Array.isArray(fila))continue;
+        const guia=claveGuiaExcel(fila[guiaIx]);
+        if(!guia){sinGuia++;continue;}
+        leidas++;
+        const fechaEscaneo=escaneoIx<0?null:parsearFechaExcel(fila[escaneoIx]);
+        const fechaDespacho=despachoIx<0?null:parsearFechaExcel(fila[despachoIx]);
+        const fecha=fechaEscaneo||fechaDespacho;
+        // Primero escaneo más reciente; en empate, Última actualización y despacho.
+        // Un nombre de archivo más nuevo resuelve empates estables sin depender
+        // del orden en que el usuario seleccionó los Excel.
+        const orden=fecha?fecha.getTime():-Infinity;
+        const actualizacion=actualizacionIx<0?null:parsearFechaExcel(fila[actualizacionIx]);
+        const revision=actualizacion?actualizacion.getTime():-Infinity;
+        const despacho=fechaDespacho?fechaDespacho.getTime():-Infinity;
+        const completitud=fila.filter(v=>v!==""&&v!=null).length;
+        const previo=elegidas.get(guia);
+        const nombre=archivo.name;
+        if(!previo||orden>previo.orden||
+            (orden===previo.orden&&(revision>previo.revision||
+            (revision===previo.revision&&(despacho>previo.despacho||
+            (despacho===previo.despacho&&(completitud>previo.completitud||
+            (completitud===previo.completitud&&nombre>previo.nombre))))))))
+          elegidas.set(guia,{orden,revision,despacho,completitud,nombre,valores:fila,mapa});
+      }
+    }
+    if(!elegidas.size)throw new Error("No se encontraron guías válidas en los Excel seleccionados.");
+    if(elegidas.size>100000)throw new Error("La exportación supera 100.000 guías únicas. Divide la carga y solicita aumentar el límite del sistema.");
+    const filas=[headers];
+    for(const r of elegidas.values()){
+      const salida=Array(headers.length).fill("");
+      for(let i=0;i<r.mapa.length;i++)if(r.mapa[i]>=0)salida[r.mapa[i]]=r.valores[i]??"";
+      filas.push(salida);
+    }
+    const descripcion=lista.length===1?lista[0].name:
+      "Consolidado ("+lista.length+" Excel): "+lista.map(f=>f.name).join("; ").slice(0,180);
+    return {filas,nombreArchivo:descripcion,archivos:lista.length,registros:leidas,
+      guiasUnicas:elegidas.size,duplicadas:leidas-elegidas.size,sinGuia};
+  }
+
   async function cargarFuenteOperativaPortal(tipo){
     if(guardadoFuentesEnCurso){toast("Espere que termine el guardado general.",false);return;}
     if(!sesion||sesion.rol!=="ADMINISTRADOR"){toast("Solo el administrador puede cargar las fuentes operativas.",false);return;}
-    const prefijo={"TRACK BREAK":"Brecha","COLA LARGA":"Cola","PDV LISTA":"Pdv","EXPORTACION GUIAS":"Envio","DESPACHOS AYER":"Despachos"}[tipo],input=document.getElementById("source"+prefijo+"File"),archivo=input&&input.files?input.files[0]:null;
+    const prefijo={"TRACK BREAK":"Brecha","COLA LARGA":"Cola","PDV LISTA":"Pdv","EXPORTACION GUIAS":"Envio","DESPACHOS AYER":"Despachos"}[tipo],input=document.getElementById("source"+prefijo+"File"),archivos=Array.from(input?.files||[]),archivo=archivos[0];
     if(!archivo){toast("Seleccione el archivo Excel de "+tipo+".",false);return;}
-    if(!/\.(xlsx|xls)$/i.test(archivo.name)){toast("Seleccione un archivo XLSX o XLS válido.",false);return;}
-    if(archivo.size>EXCEL_MAX_BYTES){toast("El archivo supera el límite de 30 MB.",false);return;}
+    if(archivos.some(f=>!/\.(xlsx|xls)$/i.test(f.name)||!f.size||f.size>EXCEL_MAX_BYTES)){toast("Seleccione Excel XLSX/XLS válidos, de hasta 30 MB cada uno.",false);return;}
     if(typeof XLSX==="undefined"){toast("No se pudo cargar el lector de Excel.",false);return;}
-    if(!["TRACK BREAK","COLA LARGA"].includes(tipo)&&!window.confirm("Se reemplazará únicamente la fuente "+tipo+" con el contenido de "+archivo.name+". Los comentarios y cierres se conservarán. ¿Continuar?"))return;
+    if(!["TRACK BREAK","COLA LARGA"].includes(tipo)&&!window.confirm("Se reemplazará únicamente la fuente "+tipo+" con "+(tipo==="EXPORTACION GUIAS"?archivos.length+" Excel consolidados":archivo.name)+". Los comentarios y cierres se conservarán. ¿Continuar?"))return;
     mostrarLoading(true,"Validando y cargando "+tipo+"...");
     try{
-      const filas=await leerFilasArchivoExcel(archivo,true,tipo);
-      if(tipo==="EXPORTACION GUIAS")validarEstadosArchivoExportacion(filas);
+      const union=tipo==="EXPORTACION GUIAS"?await consolidarExportacionesGuias(archivos,{onProgreso:(n,total,nombre)=>mostrarLoading(true,"Leyendo Excel "+n+"/"+total+": "+nombre)}):null;
+      const filas=union?union.filas:await leerFilasArchivoExcel(archivo,true,tipo);
+      const nombreArchivo=union?union.nombreArchivo:archivo.name;
       if(['TRACK BREAK','COLA LARGA'].includes(tipo)){prepararRegionesFuente(tipo,archivo.name,filas,input);return;}
       google.script.run.withSuccessHandler(r=>{
-        mostrarLoading(false);input.value="";renderEstadoFuentes(r&&r.estadoFuentes?r.estadoFuentes:null);
-        if(tipo==="DESPACHOS AYER"){const resumenDespachos=resumirConteoDespachos(filas);toast("Despachos ayer actualizado: "+num(resumenDespachos.guias)+" guías únicas resumidas en "+num(resumenDespachos.pdvs)+" PDV. Se almacenó solo el conteo por PDV.",true);}else toast(tipo+" actualizado: "+num(r.guiasUnicas)+" guías únicas. "+num(r.guiasActivas)+" guías activas en total.",true);
+        mostrarLoading(false);input.value="";mostrarSeleccionExportacionMultiple(input);renderEstadoFuentes(r&&r.estadoFuentes?r.estadoFuentes:null);
+        if(tipo==="DESPACHOS AYER"){const resumenDespachos=resumirConteoDespachos(filas);toast("Despachos ayer actualizado: "+num(resumenDespachos.guias)+" guías únicas resumidas en "+num(resumenDespachos.pdvs)+" PDV. Se almacenó solo el conteo por PDV.",true);}else toast(tipo+" actualizado: "+num(r.guiasUnicas)+" guías únicas. "+num(r.guiasActivas)+" guías activas en total."+(union?" "+union.archivos+" Excel unidos, "+num(union.duplicadas)+" duplicados resueltos.":""),true);
         cargarDatos();
-      }).withFailureHandler(manejarError).cargarFuenteOperativa(token,{tipo:tipo,nombreArchivo:archivo.name,filas:filas});
+      }).withFailureHandler(manejarError).cargarFuenteOperativa(token,{tipo:tipo,nombreArchivo,filas:filas});
     }catch(error){mostrarLoading(false);toast("No se pudo preparar el archivo: "+errorTexto(error),false);}
   }
 
@@ -872,21 +943,28 @@ async function guardarInformacionCargada(){
  cancelarRegionesFuente();guardadoFuentesEnCurso=true;versionCargaPortal++;
  const btn=document.getElementById('guardarFuentesBtn'),estado=document.getElementById('guardadoFuentesEstado');btn.disabled=true;
  const catalogo=[['PDV LISTA','Pdv'],['EXPORTACION GUIAS','Envio'],['DESPACHOS AYER','Despachos'],['TRACK BREAK','Brecha']];
- const archivos=catalogo.map(([tipo,prefijo])=>{const input=document.getElementById('source'+prefijo+'File');return {tipo,input,archivo:input?.files?.[0]};}).filter(x=>x.archivo);
+ const archivos=catalogo.map(([tipo,prefijo])=>{const input=document.getElementById('source'+prefijo+'File');return {tipo,input,archivos:Array.from(input?.files||[])};}).filter(x=>x.archivos.length);
  const inputs=catalogo.map(([,p])=>document.getElementById('source'+p+'File'));inputs.forEach(x=>{if(x)x.disabled=true;});
  const guardadas=[],regionesGuardadas=new Set();let actual='',lecturas=[];
  try{
   if(archivos.length&&typeof XLSX==='undefined')throw new Error('No se pudo cargar el lector de Excel.');
   // Validate all local files before sending the first source to the server.
-  for(const x of archivos){actual=x.tipo;if(!/\.(xlsx|xls)$/i.test(x.archivo.name)||x.archivo.size>EXCEL_MAX_BYTES)throw new Error('Archivo XLSX/XLS inválido o mayor de 30 MB: '+x.archivo.name);mostrarLoading(true,'Leyendo '+x.tipo+'…');const filas=await leerFilasArchivoExcel(x.archivo,true,x.tipo);if(x.tipo==="EXPORTACION GUIAS")validarEstadosArchivoExportacion(filas);lecturas.push({...x,filas});}
-  for(const x of lecturas){actual=x.tipo;estado.textContent='Guardando '+x.tipo+'…';let entrada={tipo:x.tipo,nombreArchivo:x.archivo.name,filas:x.filas,diferirProcesamiento:true};
+  for(const x of archivos){actual=x.tipo;
+   for(const f of x.archivos)if(!/\.(xlsx|xls)$/i.test(f.name)||!f.size||f.size>EXCEL_MAX_BYTES)throw new Error('Excel inválido o mayor de 30 MB: '+f.name);
+   mostrarLoading(true,'Leyendo '+x.tipo+'…');
+   const union=x.tipo==='EXPORTACION GUIAS'?await consolidarExportacionesGuias(x.archivos,{onProgreso:(n,total,nombre)=>mostrarLoading(true,'Exportación '+n+'/'+total+': '+nombre)}):null;
+   const filas=union?union.filas:await leerFilasArchivoExcel(x.archivos[0],true,x.tipo);
+   lecturas.push({...x,filas,nombreArchivo:union?union.nombreArchivo:x.archivos[0].name,estadisticas:union});
+  }
+  for(const x of lecturas){actual=x.tipo;estado.textContent='Guardando '+x.tipo+'…';let entrada={tipo:x.tipo,nombreArchivo:x.nombreArchivo,filas:x.filas,diferirProcesamiento:true};
    if(['TRACK BREAK','COLA LARGA'].includes(x.tipo)){const elegidas=await elegirRegionesGuardado(x.tipo,x.filas);Object.assign(entrada,elegidas);elegidas.regiones.forEach(r=>regionesGuardadas.add(r));}
    mostrarLoading(true,'Guardando '+x.tipo+' en Google Sheets…');const r=await rpcFuentesGuardar('cargarFuenteOperativa',token,entrada);if(!r||!r.ok)throw new Error('El servidor no confirmó el guardado.');
-   guardadas.push(x.tipo);x.input.value='';renderEstadoFuentes(r.estadoFuentes);
+   guardadas.push(x.tipo);x.input.value='';if(x.tipo==='EXPORTACION GUIAS')mostrarSeleccionExportacionMultiple(x.input);renderEstadoFuentes(r.estadoFuentes);
   }
   actual='confirmación';mostrarLoading(true,'Publicando todas las fuentes de forma atómica…');const r=await rpcFuentesGuardar('confirmarGuardadoFuentes',token);if(!r||!r.ok)throw new Error('No se recibió confirmación.');mostrarGuardadoFuentes(r.ultimoGuardado);renderEstadoFuentes(r.estadoFuentes);
   const fuenteDespachos=lecturas.find(x=>x.tipo==='DESPACHOS AYER'),resumenDespachos=fuenteDespachos?resumirConteoDespachos(fuenteDespachos.filas):null;
-  toast(guardadas.length?'Información guardada y confirmada.'+(resumenDespachos?' Despachos ayer: '+num(resumenDespachos.guias)+' guías únicas en '+num(resumenDespachos.pdvs)+' PDV.':''):'Se verificó la información que ya estaba guardada. No había nuevos archivos seleccionados.',true);
+  const fuenteExportacion=lecturas.find(x=>x.tipo==='EXPORTACION GUIAS')?.estadisticas;
+  toast(guardadas.length?'Información guardada y confirmada.'+(fuenteExportacion?' Exportación: '+fuenteExportacion.archivos+' Excel, '+num(fuenteExportacion.guiasUnicas)+' guías únicas; '+num(fuenteExportacion.duplicadas)+' repetidas consolidadas.':'')+(resumenDespachos?' Despachos ayer: '+num(resumenDespachos.guias)+' guías únicas en '+num(resumenDespachos.pdvs)+' PDV.':''):'Se verificó la información que ya estaba guardada. No había nuevos archivos seleccionados.',true);
   if(regionesGuardadas.size){const regiones=[...regionesGuardadas];guardarRegionesGestion(regiones);cargarDatos(regiones);}else cargarDatos();
  }catch(e){mostrarLoading(false);const texto=(guardadas.length?'Preparadas, todavía sin publicar: '+guardadas.join(', ')+'. ':'No se confirmó ningún archivo nuevo. ')+'No terminó '+actual+': '+errorTexto(e)+'. Los archivos pendientes siguen seleccionados para reintentar.';estado.textContent=texto;toast(texto,false);
  }finally{guardadoFuentesEnCurso=false;btn.disabled=false;inputs.forEach(x=>{if(x)x.disabled=false;});}
@@ -935,20 +1013,19 @@ async function guardarInformacionCargada(){
   }
 
   async function cargarArchivoGuiasEnvio(evento){
- const archivo=evento?.target?.files?.[0];if(!archivo)return;
- if(!/\.(xlsx|xls)$/i.test(archivo.name)||archivo.size>EXCEL_MAX_BYTES){mostrarMensajeExcel('Seleccione un Excel válido de hasta 30 MB.',false);return;}
+ const archivos=Array.from(evento?.target?.files||[]);if(!archivos.length)return;
  if(typeof XLSX==='undefined'){mostrarMensajeExcel('No se pudo cargar el lector de Excel.',false);return;}
  const version=consultaVersion,actualToken=token;
  mostrarLoading(true,'Leyendo Exportación de guías...');
  try{
-  const filas=await leerFilasArchivoExcel(archivo);
+  const union=await consolidarExportacionesGuias(archivos,{validarCola:false,onProgreso:(n,total,nombre)=>mostrarLoading(true,'Leyendo Exportación '+n+'/'+total+': '+nombre)});
   if(version!==consultaVersion||actualToken!==token)return;
-  const mapa=procesarFilasGuiasEnvio(filas);
-  exportacionConsultaMapa=mapa;excelEnvioNombre=archivo.name;
-  document.getElementById('excelEnvioFileName').textContent=archivo.name;
+  const mapa=procesarFilasGuiasEnvio(union.filas);
+  exportacionConsultaMapa=mapa;excelEnvioNombre=union.nombreArchivo;
+  document.getElementById('excelEnvioFileName').textContent=union.archivos+' Excel · '+num(union.guiasUnicas)+' guías únicas · '+num(union.duplicadas)+' repetidas unificadas';
   if(!excelRegistros.length){estadoConsulta('Exportación preparada en esta sesión. Cargue Track Break para mostrar y cruzar las guías.');mostrarMensajeExcel('Exportación leída correctamente. Se aplicará al cargar Track Break.',true);return;}
   iniciarCargaLocalConsulta();
-  aplicarDatosGuiasEnvio(mapa,archivo.name);publicarConsultaPreparada();
+  aplicarDatosGuiasEnvio(mapa,union.nombreArchivo);publicarConsultaPreparada();
  }catch(error){mostrarMensajeExcel('No se pudo leer Exportación: '+errorTexto(error),false);}
  finally{mostrarLoading(false);if(evento?.target)evento.target.value='';}
  }
@@ -1717,7 +1794,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     ["Migración inicial desde Google (opcional)", "Initial migration from Google (optional)", "从 Google 初始迁移（可选）"],
     ["Solo en una réplica vacía. Seleccione el JSON privado generado por ExportarReplica.gs. No suba ese JSON a GitHub.", "Only for an empty replica. Select the private JSON created by ExportarReplica.gs. Do not upload it to GitHub.", "仅用于空白副本。请选择 ExportarReplica.gs 生成的私有 JSON。请勿上传到 GitHub。"],
     ["💾 Guardar información cargada", "💾 Save uploaded data", "💾 保存已上传数据"],
-    ["Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada archivo reemplaza todos los datos anteriores de su fuente. Para Track Break se guardan únicamente las regiones elegidas del nuevo archivo. COLA LARGA se calcula desde Exportación de guías. Espere la confirmación antes de cerrar.", "Select the Excel files and click Save uploaded data. Sources without a selected file are kept. Each file replaces previous data for its source. For Track Break, only selected regions from the new file are saved. Long Queue is calculated from Shipping Export. Wait for confirmation before closing.", "请选择 Excel 文件并点击“保存已上传数据”。未选择文件的数据源将保留。每个文件会替换其数据源的旧数据。Track Break 仅保存新文件中所选地区，长队积压由发货导出数据计算。关闭前请等待确认。"],
+    ["Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada fuente reemplaza su versión anterior; para Exportación puedes elegir varios Excel y se guardarán unidos por guía. Para Track Break se guardan únicamente las regiones elegidas del nuevo archivo. COLA LARGA se calcula desde Exportación de guías. Espere la confirmación antes de cerrar.", "Select the Excel files and click Save uploaded data. Sources without a selected file are kept. Each file replaces previous data for its source. For Track Break, only selected regions from the new file are saved. Long Queue is calculated from Shipping Export. Wait for confirmation before closing.", "请选择 Excel 文件并点击“保存已上传数据”。未选择文件的数据源将保留。每个文件会替换其数据源的旧数据。Track Break 仅保存新文件中所选地区，长队积压由发货导出数据计算。关闭前请等待确认。"],
     ["PDV_LISTA — cargar primero", "PDV_LISTA — upload first", "PDV_LISTA — 请先上传"],
     ["Sin verificar", "Not verified", "未验证"],
     ["Cargar PDV_LISTA — cargar primero", "Upload PDV_LISTA — upload first", "上传 PDV_LISTA — 请先上传"],

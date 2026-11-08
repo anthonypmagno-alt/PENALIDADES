@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261108-EXPORTACION-MULTIPLE-V6"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261108-EXPORTACION-MULTIPLE-V7-TIMEOUT"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261108-umbral-area-entrega-v5"></script>
+<script src="./bridge.js?v=20261108-timeout-carga-v7"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261108-EXPORTACION-MULTIPLE-V6</title><meta name="app-build" content="20261108-EXPORTACION-MULTIPLE-V6">
+  <title>Gestión de guías V2 · 20261108-EXPORTACION-MULTIPLE-V7-TIMEOUT</title><meta name="app-build" content="20261108-EXPORTACION-MULTIPLE-V7-TIMEOUT">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -399,7 +399,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V16 <span class="build-stamp" id="buildStamp">Edición 20261108-EXPORTACION-MULTIPLE-V6</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V16 <span class="build-stamp" id="buildStamp">Edición 20261108-EXPORTACION-MULTIPLE-V7-TIMEOUT</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -719,7 +719,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
     if(vista==="sla")window.SlaPaquetesV2?.alAbrir();
     if(vista==="comentarios")renderConfiguracionComentarios();
-    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261108-EXPORTACION-MULTIPLE-V6";frame.dataset.loaded="1";}}
+    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261108-EXPORTACION-MULTIPLE-V7-TIMEOUT";frame.dataset.loaded="1";}}
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
 
@@ -927,6 +927,13 @@ function importarRegionesFuente(){
 
 
 let guardadoFuentesEnCurso=false,seleccionRegionesGuardado=null;
+window.addEventListener('v16-carga-progreso',evento=>{
+ const p=evento.detail||{},texto=String(p.etapa||'Guardando en Supabase')+(p.total?' · '+p.hechos+'/'+p.total+' bloques':'');
+ const estado=document.getElementById('guardadoFuentesEstado');
+ if(guardadoFuentesEnCurso&&estado)estado.textContent=texto;
+ const loading=document.getElementById('loading');
+ if(loading&&loading.style.display==='flex')mostrarLoading(true,texto);
+});
 function mostrarGuardadoFuentes(dato){const el=document.getElementById('guardadoFuentesEstado');if(!el)return;el.textContent=dato?'Último guardado confirmado: '+dato.fecha+' · '+dato.usuario:'Sin confirmación de guardado en esta versión';}
 function rpcFuentesGuardar(nombre,...args){return new Promise((resolve,reject)=>{google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[nombre](...args);});}
 async function elegirRegionesGuardado(tipo,filas){
@@ -959,13 +966,15 @@ async function guardarInformacionCargada(){
   for(const x of lecturas){actual=x.tipo;estado.textContent='Guardando '+x.tipo+'…';let entrada={tipo:x.tipo,nombreArchivo:x.nombreArchivo,filas:x.filas,diferirProcesamiento:true};
    if(['TRACK BREAK','COLA LARGA'].includes(x.tipo)){const elegidas=await elegirRegionesGuardado(x.tipo,x.filas);Object.assign(entrada,elegidas);elegidas.regiones.forEach(r=>regionesGuardadas.add(r));}
    mostrarLoading(true,'Guardando '+x.tipo+' en Google Sheets…');const r=await rpcFuentesGuardar('cargarFuenteOperativa',token,entrada);if(!r||!r.ok)throw new Error('El servidor no confirmó el guardado.');
-   guardadas.push(x.tipo);x.input.value='';if(x.tipo==='EXPORTACION GUIAS')mostrarSeleccionExportacionMultiple(x.input);renderEstadoFuentes(r.estadoFuentes);
+   guardadas.push(x.tipo);renderEstadoFuentes(r.estadoFuentes);
   }
-  actual='confirmación';mostrarLoading(true,'Publicando todas las fuentes de forma atómica…');const r=await rpcFuentesGuardar('confirmarGuardadoFuentes',token);if(!r||!r.ok)throw new Error('No se recibió confirmación.');mostrarGuardadoFuentes(r.ultimoGuardado);renderEstadoFuentes(r.estadoFuentes);
+  actual='confirmación';mostrarLoading(true,'Publicando todas las fuentes de forma atómica…');const r=await rpcFuentesGuardar('confirmarGuardadoFuentes',token);if(!r||!r.ok)throw new Error('No se recibió confirmación.');if(r.advertencia){estado.textContent=r.advertencia;}else{mostrarGuardadoFuentes(r.ultimoGuardado);}renderEstadoFuentes(r.estadoFuentes);
+  // Borrar el selector SOLO cuando Supabase confirmó toda la publicación.
+  for(const x of lecturas){x.input.value='';if(x.tipo==='EXPORTACION GUIAS')mostrarSeleccionExportacionMultiple(x.input);}
   const fuenteDespachos=lecturas.find(x=>x.tipo==='DESPACHOS AYER'),resumenDespachos=fuenteDespachos?resumirConteoDespachos(fuenteDespachos.filas):null;
   const fuenteExportacion=lecturas.find(x=>x.tipo==='EXPORTACION GUIAS')?.estadisticas;
   toast(guardadas.length?'Información guardada y confirmada.'+(fuenteExportacion?' Exportación: '+fuenteExportacion.archivos+' Excel, '+num(fuenteExportacion.guiasUnicas)+' guías únicas; '+num(fuenteExportacion.duplicadas)+' repetidas consolidadas.':'')+(resumenDespachos?' Despachos ayer: '+num(resumenDespachos.guias)+' guías únicas en '+num(resumenDespachos.pdvs)+' PDV.':''):'Se verificó la información que ya estaba guardada. No había nuevos archivos seleccionados.',true);
-  if(regionesGuardadas.size){const regiones=[...regionesGuardadas];guardarRegionesGestion(regiones);cargarDatos(regiones);}else cargarDatos();
+  if(r.advertencia){toast(r.advertencia,false);}else if(regionesGuardadas.size){const regiones=[...regionesGuardadas];guardarRegionesGestion(regiones);cargarDatos(regiones);}else cargarDatos();
  }catch(e){mostrarLoading(false);const texto=(guardadas.length?'Preparadas, todavía sin publicar: '+guardadas.join(', ')+'. ':'No se confirmó ningún archivo nuevo. ')+'No terminó '+actual+': '+errorTexto(e)+'. Los archivos pendientes siguen seleccionados para reintentar.';estado.textContent=texto;toast(texto,false);
  }finally{guardadoFuentesEnCurso=false;btn.disabled=false;inputs.forEach(x=>{if(x)x.disabled=false;});}
 }

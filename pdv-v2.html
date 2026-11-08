@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261107-comentarios-concurrencia-1"></script>
+<script src="./bridge.js?v=20261108-cola-desde-exportacion-v3"></script>
 <link rel="stylesheet" href="./sla-paquetes.css?v=20261029-pdv-local-1">
   <base target="_top">
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -1177,7 +1177,7 @@ function subtotalGrupoResumen(items,nombre,admin,clase){
 function mostrarEstadoV2(info){
  const el=document.getElementById('gestionV2Status');if(!el||!info)return;
  const fecha=new Date(info.calculadoEn).toLocaleString('es-PE',{timeZone:'America/Lima'});
- el.textContent='Cálculo: '+fecha+' · Hora de Perú. '+(info.sinEntrada||info.sinEstado?`Cola larga sin clasificar: ${info.sinEntrada||0} guías sin entrada válida y ${info.sinEstado||0} sin estado de devolución. Vuelva a cargar Exportación y Cola Larga y guarde los datos.`:'Cola larga preventiva: 576 a <600 H desde Tiempo de entrada. Brecha: 96 a <120 H preventiva y ≥120 H crítica desde Último tiempo de funcionamiento.');
+ el.textContent='Cálculo: '+fecha+' · Hora de Perú. '+(info.sinEntrada||info.sinEstado?`Cola larga sin clasificar: ${info.sinEntrada||0} guías sin entrada válida y ${info.sinEstado||0} sin estado de devolución. Revise Tiempo de entrada e Identificación de transferencia y devolución en Exportación y vuelva a guardar.`:'Cola larga derivada de Exportación: 576 a <600 H preventiva desde Tiempo de entrada. Brecha: 96 a <120 H preventiva y ≥120 H crítica desde Último tiempo de funcionamiento.');
 }
 function actualizarClasificacionV2(){
  if(!sesion||!window.refrescarGestionV2)return;

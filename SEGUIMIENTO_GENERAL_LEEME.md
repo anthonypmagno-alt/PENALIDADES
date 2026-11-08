@@ -1,4 +1,4 @@
-# Módulo Seguimiento General de Guías — V1 (08/11/2026)
+# Módulo Seguimiento General de Guías — V2 · exportación compartida (08/11/2026)
 
 ## Instalación en GitHub Pages
 
@@ -11,9 +11,14 @@
    - `seguimiento-general.js` — carga, controles, filtros, Excel y representación.
    - `seguimiento-core.js` — procesamiento y cálculos.
 2. Ingresar por `index.html` o `gestion-v2.html`, iniciar sesión y seleccionar **Seguimiento general de guías**.
-3. Subir varios Excel de **Exportación de guía de embarque** y, opcionalmente, varios Excel de **Monitoreo de entrada al puerto del nodo**. Si el catálogo PDV LISTA no aparece en el portal, cargar el Excel **PDV LISTA** también.
-4. Pulsar **Procesar archivos seleccionados**. Una nueva carga se añade a la información de la sesión y se consolida por guía. Marcar **Reemplazar cargas anteriores** solo si se desea reiniciar el universo.
+3. **No volver a subir Exportación de guías**: la fuente debe estar guardada previamente desde **Gestión de Guías V2** por el administrador.
+4. Al abrir Seguimiento General, el módulo obtiene automáticamente las guías de `EXPORTACION GUIAS` ya publicadas y calcula cola larga a partir de `Tiempo de entrada`.
+5. Si la fuente se actualiza en Gestión V2, pulsa **Actualizar exportación** en Seguimiento General.
+6. Subir únicamente los Excel de **Monitoreo de entrada al puerto del nodo**, opcionalmente varios en una selección, y si corresponde un maestro **PDV LISTA**. Pulsa **Procesar archivos seleccionados**.
+7. El selector **Reemplazar cargas anteriores** afecta exclusivamente a Monitoreo y PDV LISTA locales, nunca la fuente compartida.
 
+### Permisos
+La lectura de la **exportación completa** desde la fuente operativa existente se habilita para el rol **ADMINISTRADOR**. De este modo no se expone el universo de guías a usuarios con ámbito de PDV o área sin un control de acceso equivalente en el backend. El módulo informa claramente si el usuario no cuenta con autorización. Para habilitar otros roles se requerirá un servicio con filtrado autorizado desde el servidor.
 ## Fuentes y cruce
 
 - **Exportación de guía de embarque**: clave `Número de Guía`; `Tiempo de entrada`, `Punto de escaneo más reciente`, `Punto de entrega`, `Tipo de escaneo más reciente`, `Última actualización`, Provincia/Ciudad/Colonia de destino, reparto y firma.
@@ -49,8 +54,9 @@
 
 ## Limitaciones de esta primera versión
 
-- **Carga local de sesión:** no se envían los Excel ni los registros del módulo a Supabase y **no** quedan compartidos con otros usuarios. Al cerrar la pestaña o salir de la plataforma, hay que volver a cargar los archivos. Esto evita crear tablas, SQL o tráfico de escritura sin autorización.
+- **Exportación reutilizada:** se lee desde la fuente guardada en Gestión V2 en Supabase, sin una segunda subida ni escrituras nuevas. Se descargan al navegador únicamente las columnas necesarias para el seguimiento. **Monitoreo y PDV LISTA manual** sí permanecen locales: hay que volver a cargarlos después de cerrar la sesión.
+- **Permiso:** la lectura directa de la exportación completa está restringida al administrador hasta disponer de un endpoint con filtrado seguro para otros roles.
 - No cambia los cálculos ni las fuentes de Gestión V2, Consulta desde Excel ni Penalidades.
 - La biblioteca de lectura/escritura Excel se carga desde el mismo CDN de SheetJS XLSX que usa Penalidades. Se necesita acceso a esa dependencia para importar/exportar archivos.
 - Antes de desplegar, conservar una copia del repositorio actual. Si el navegador no muestra la pestaña nueva, actualizar con Ctrl + Shift + R y confirmar que el build sea `20261108-SEGUIMIENTO-V1`.
-- El módulo se muestra dentro de Gestión V2 a usuarios con permiso de visualizar `gestion_v2`. El catálogo PDV se lee mediante la sesión activa del portal.
+- El módulo se muestra dentro de Gestión V2. El catálogo PDV se lee mediante la sesión activa del portal; la Exportación completa solo puede consultarla un administrador.

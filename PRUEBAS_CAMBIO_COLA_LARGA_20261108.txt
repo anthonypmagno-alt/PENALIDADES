@@ -1,0 +1,17 @@
+GESTIÓN V2 — Cola Larga desde Exportación de guías (08/11/2026)
+
+Pruebas ejecutadas:
+- Sintaxis: node --check para bridge.js, process-worker.js.
+- Scripts HTML inline: Gestión V2 (6), PDV V2 (5).
+- Worker: fuente Exportación sin Cola Larga, estados NO/POR, fecha faltante, estado faltante, punto Callao no asignado, firmado excluido.
+- Fuente vieja de Cola Larga incluida: no modifica nuevos registros de Cola Larga.
+- Recalcular: thresholds a 119.99, 120, 575.99, 576, 599.99, 600, 601 h.
+- Fallback de lectura desde bridge.js: 2.010 registros con 2.360 filas reales de Exportación y PDV LISTA sintético.
+- Exportación real de 08/11/2026: 2.360 guías, 2.010 con PDV de último escaneo reconocible a partir de catálogo sintetizado, 348 registros Callao.SC y 2 CEDIS no asignados.
+- Worker procesamiento de 2.360 registros con PDV LISTA sintético: sin errores, ~170 ms en el entorno de prueba (no refleja tiempos de red/servidor).
+
+No se probó publicación final en GitHub ni conexión a proyecto real Supabase; para ello es necesario instalar archivos en el repositorio y cargar la exportación desde Gestión V2.
+
+Fuente de clasificación:
+- No devuelto => No devuelto
+- Devuelto => categoría heredada 'Por devolver' (verificar acuerdo de semántica operativa; no se cambió el diseño del resumen)

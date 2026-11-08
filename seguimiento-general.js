@@ -8,7 +8,7 @@
   const state = {
     exports: [], monitors: [], manualCatalog: [], portalCatalog: [], consolidated: null,
     filtered: [], detail: [], groups: [], selectedGroup: null, visible: 150, groupVisible: 250,
-    selected: {}, reading: false, lastNow: Date.now()
+    selected: {}, reading: false, updatingExport: false, sourceRevision: null, lastNow: Date.now()
   };
   const categories = [
     ['area','Área'], ['punto','Punto de escaneo'], ['pdv','PDV de entrega'], ['tipo','Tipo escaneo'],
@@ -18,14 +18,14 @@
   const isVisible = el => !el.classList.contains('hidden');
   function status(message, level = '') { $('importStatus').textContent = message; $('importStatus').className = 'status ' + level; }
   function updateFiles() {
-    for (const [id, dest] of [['filesExport','countExport'],['filesMonitor','countMonitor'],['filesPdv','countPdv']]) {
+    for (const [id, dest] of [['filesMonitor','countMonitor'],['filesPdv','countPdv']]) {
       const files = [...$(id).files];
       $(dest).textContent = files.length ? `${files.length} archivos: ${files.map(f=>f.name).join(', ')}` :
         id === 'filesPdv' ? 'Usando catálogo del portal si está disponible' : 'Sin archivos nuevos seleccionados';
     }
   }
   function setBusy(busy) {
-    state.reading = busy; $('loadBtn').disabled = busy; $('clearData').disabled = busy;
+    state.reading = busy; $('loadBtn').disabled = busy; $('clearData').disabled = busy; $('refreshExport').disabled = busy;
     $('loadBtn').textContent = busy ? 'Procesando…' : 'Procesar archivos seleccionados';
   }
   async function loadPortalCatalog() {
@@ -41,6 +41,29 @@
       $('catalogStatus').textContent = 'No se pudo leer PDV LISTA del portal. Puedes cargarlo manualmente.';
       console.warn('Seguimiento: catálogo no disponible:', err);
     }
+  }
+  async function refreshSharedExport() {
+    if (state.reading) return;
+    setBusy(true);
+    $('sharedExportStatus').textContent = 'Leyendo Exportación guardada en Gestión V2…';
+    try {
+      if (window.parent === window || typeof window.parent.V16SeguimientoApi?.exportacion !== 'function') {
+        throw new Error('Abre Seguimiento General desde la pestaña de Gestión V2, después de iniciar sesión.');
+      }
+      const result = await window.parent.V16SeguimientoApi.exportacion();
+      if (!result || !Array.isArray(result.filas)) throw new Error('Gestión V2 no devolvió una exportación válida.');
+      const rows = C.normalizeExport(C.normalizeRows(result.filas), result.archivo || 'Gestión V2');
+      if (!rows.length) throw new Error('La Exportación guardada no contiene guías válidas.');
+      state.exports = rows;
+      state.sourceRevision = result.revision;
+      rebuild();
+      $('sharedExportStatus').textContent = `${fmtNum(state.consolidated.uniqueExport)} guías desde Gestión V2 · Cola larga lista para calcular`;
+      status(`Exportación compartida sincronizada: ${fmtNum(state.consolidated.uniqueExport)} guías. No necesitas volver a subir el Excel.`, 'good');
+    } catch (err) {
+      console.error('Seguimiento: no se pudo leer la exportación compartida',err);
+      $('sharedExportStatus').textContent = state.exports.length ? 'No se pudo actualizar · se conserva la copia de esta sesión' : 'Sin exportación disponible';
+      status(`No se pudo leer la Exportación de Gestión V2: ${err.message}`, 'error');
+    } finally { setBusy(false); }
   }
   function hasColumn(matrix, aliases) {
     return matrix.some((row, i) => i < 15 && aliases.some(a => row.map(C.key).includes(C.key(a))));
@@ -67,25 +90,23 @@
   }
   async function load() {
     if (state.reading) return;
-    const types = [ ['filesExport','export'], ['filesMonitor','monitor'], ['filesPdv','pdv'] ];
+    const types = [ ['filesMonitor','monitor'], ['filesPdv','pdv'] ];
     const files = types.flatMap(([id, kind]) => [...$(id).files].map(file => ({file, kind})));
     if (!files.length) { status('Selecciona al menos un archivo Excel.', 'error'); return; }
     setBusy(true);
     try {
-      const staged = {exports:[], monitors:[], manualCatalog:[]};
+      const staged = {monitors:[], manualCatalog:[]};
       for (let idx = 0; idx < files.length; idx++) {
         const {file,kind} = files[idx];
         status(`Procesando archivo ${idx+1} de ${files.length}: ${file.name}`);
         await new Promise(resolve => setTimeout(resolve, 0));
         const rows = await readWorkbook(file, kind);
-        const target = kind === 'export' ? staged.exports : kind === 'monitor' ? staged.monitors : staged.manualCatalog;
+        const target = kind === 'monitor' ? staged.monitors : staged.manualCatalog;
         target.push(...rows);
       }
       const replace = $('replaceCheck').checked;
-      const nextExports = replace ? staged.exports : [...state.exports, ...staged.exports];
-      if (!nextExports.length) throw new Error('Primero carga al menos un Excel de Exportación de guías.');
+      if (!state.exports.length) throw new Error('La Exportación compartida no está disponible. Ve a Gestión V2, publícala y pulsa Actualizar exportación.');
       // Aplicar solo cuando toda la carga haya terminado correctamente (sin datos parciales).
-      state.exports = nextExports;
       state.monitors = replace ? staged.monitors : [...state.monitors, ...staged.monitors];
       state.manualCatalog = replace ? staged.manualCatalog : [...state.manualCatalog, ...staged.manualCatalog];
       await loadPortalCatalog();
@@ -260,15 +281,22 @@
     $('dateErrors').textContent = '';
   }
   function clearData() {
-    if (state.exports.length && !window.confirm('¿Vaciar los Excel cargados en esta sesión? No afecta otras secciones ni Supabase.')) return;
-    state.exports=[];state.monitors=[];state.manualCatalog=[];state.consolidated=null;state.filtered=[];state.detail=[];state.groups=[];state.selectedGroup=null;state.selected={};
-    $('filesExport').value='';$('filesMonitor').value='';$('filesPdv').value='';updateFiles();resetFilters();
-    $('filtersCategorical').replaceChildren(); $('summaryBody').innerHTML='<tr><td colspan="7" class="empty">Carga una exportación para ver el resumen.</td></tr>';
-    $('detailBody').innerHTML='<tr><td colspan="18" class="empty">Sin registros.</td></tr>';
-    for(const id of ['kpiGuias','kpiMonitor','kpiSla','kpiSinMonitor','kpiSinArea'])$(id).textContent='0';
-    $('exportBtn').disabled=true;$('resultSummary').textContent='';$('detailCount').textContent='';$('showingCount').textContent='';
-    $('showMore').classList.add('hidden');$('showSummaryMore').classList.add('hidden');$('clearGroup').classList.add('hidden');
-    status('Datos locales vaciados. Puedes realizar una nueva carga.');
+    if ((state.monitors.length || state.manualCatalog.length) && !window.confirm('¿Vaciar únicamente Monitoreo y PDV LISTA locales? La Exportación compartida de Gestión V2 se conservará.')) return;
+    state.monitors=[];state.manualCatalog=[];state.selectedGroup=null;state.selected={};
+    $('filesMonitor').value='';$('filesPdv').value='';updateFiles();
+    $('search').value='';$('slaMin').value='';$('slaMax').value='';
+    $('dateFilterGrid').querySelectorAll('input').forEach(el=>{if(el.type==='checkbox')el.checked=false;else el.value='';});
+    $('dateErrors').textContent='';
+    if(state.exports.length) rebuild();
+    else {
+      state.consolidated=null;state.filtered=[];state.detail=[];state.groups=[];
+      $('filtersCategorical').replaceChildren();
+      $('summaryBody').innerHTML='<tr><td colspan="7" class="empty">Publica una Exportación de guías en Gestión V2.</td></tr>';
+      $('detailBody').innerHTML='<tr><td colspan="18" class="empty">Sin registros.</td></tr>';
+      for(const id of ['kpiGuias','kpiMonitor','kpiSla','kpiSinMonitor','kpiSinArea'])$(id).textContent='0';
+      $('exportBtn').disabled=true;
+    }
+    status('Solo se vaciaron los datos locales de Monitoreo y PDV. La Exportación de Gestión V2 se mantiene.', 'good');
   }
   function exportXlsx() {
     if (!state.consolidated?.rows.length) return;
@@ -302,7 +330,8 @@
   }
   async function init() {
     renderDateFilters();
-    for(const id of ['filesExport','filesMonitor','filesPdv'])$(id).addEventListener('change',updateFiles);
+    for(const id of ['filesMonitor','filesPdv'])$(id).addEventListener('change',updateFiles);
+    $('refreshExport').addEventListener('click',refreshSharedExport);
     $('loadBtn').addEventListener('click',load);
     $('clearData').addEventListener('click',clearData);
     $('clearFilters').addEventListener('click',resetFilters);
@@ -314,8 +343,9 @@
     $('showMore').addEventListener('click',()=>{state.visible+=150;renderDetail();});
     $('showSummaryMore').addEventListener('click',()=>{state.groupVisible+=250;renderSummary();});
     document.addEventListener('click',e=>{if(!e.target.closest('.multi-filter'))document.querySelectorAll('.multi-filter details[open]').forEach(d=>d.open=false);});
-    if(window.parent===window){$('authAlert').classList.remove('hidden');$('authAlert').textContent='Para utilizar el catálogo PDV LISTA de la plataforma, ingresa desde Gestión de guías V2 y abre la pestaña Seguimiento general. También puedes cargar PDV LISTA manualmente.';}
+    if(window.parent===window){$('authAlert').classList.remove('hidden');$('authAlert').textContent='Abre este módulo desde Gestión de guías V2 con sesión activa para reutilizar la Exportación guardada.';}
     await loadPortalCatalog();
+    await refreshSharedExport();
     if(window.parent !== window && 'ResizeObserver' in window){
       const notifyHeight=()=>{try{window.parent.postMessage({type:'V16_SEGUIMIENTO_ALTURA',height:Math.ceil(document.documentElement.scrollHeight)},location.origin);}catch(_){}};
       new ResizeObserver(notifyHeight).observe(document.body);

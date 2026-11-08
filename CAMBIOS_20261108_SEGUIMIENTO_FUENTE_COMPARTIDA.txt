@@ -1,0 +1,43 @@
+SEGUIMIENTO GENERAL V2 — EXPORTACION COMPARTIDA
+Fecha: 08/11/2026
+
+Cambio principal:
+  Se elimina el selector de subida del Excel Exportación de guías dentro
+  de Seguimiento General. El módulo consulta la misma fuente publicada
+  desde Gestión de Guías V2 (EXPORTACION GUIAS).
+
+Uso:
+  1) Administrador: subir/publicar Exportación de guías desde Gestión V2.
+  2) En Seguimiento General: la exportación se carga automáticamente.
+  3) Cargar varios Excel de Monitoreo. PDV LISTA se obtiene del catálogo del portal.
+  4) Si cambia la exportación principal, pulsar "Actualizar exportación".
+
+Campos reutilizados:
+  Número de Guía, Punto de escaneo más reciente, Punto de entrega,
+  Tipo de escaneo más reciente, Tiempo de entrada,
+  Tiempo del escaneo más reciente, Última actualización,
+  Provincia/Ciudad/Colonia de destino, Estatus de firma,
+  Empleado de entrega.
+
+Se mantiene:
+  Cola larga = (fecha y hora actual - Tiempo de entrada)/86.400.000 (días).
+  SLA desde llegada al PDV o, cuando corresponda, desde salida HUB.
+  Filtros dd-mm-aaaa y rangos de días; ocho decimales.
+  Detalle, resumen, exportación a Excel y cruce por Número de Guía.
+
+Seguridad:
+  Acceso a la Exportación completa compartida: rol Administrador.
+  No se abre una lectura global a roles de alcance parcial sin
+  filtrado comprobado en el servidor.
+
+Almacenamiento:
+  No hay nuevo SQL ni escrituras en Supabase. Se lee una fuente ya guardada.
+  Los Excel de Monitoreo/PDV opcional permanecen en memoria de esta sesión.
+  Pulsar "Vaciar datos locales" no afecta Exportación de Gestión V2.
+
+Pruebas:
+  node --check bridge.js, seguimiento-general.js y seguimiento-core.js: OK
+  API fuente simulada: paginación, falta de columnas, versión concurrente,
+  autorización: OK.
+  Conversión de fechas reales de ejemplo y cruce de guías: OK.
+  Prueba con entorno real de Supabase/GitHub Pages: PENDIENTE.

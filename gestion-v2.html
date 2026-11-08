@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261108-SEGUIMIENTO-V1"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261108-SEGUIMIENTO-V2-COMPARTIDO"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261108-SEGUIMIENTO-V1"></script>
+<script src="./bridge.js?v=20261108-cola-desde-exportacion-v3"></script>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261108-SEGUIMIENTO-V1</title><meta name="app-build" content="20261108-SEGUIMIENTO-V1">
+  <title>Gestión de guías V2 · 20261108-SEGUIMIENTO-V2-COMPARTIDO</title><meta name="app-build" content="20261108-SEGUIMIENTO-V2-COMPARTIDO">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -395,7 +395,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V16 <span class="build-stamp" id="buildStamp">Edición 20261108-SEGUIMIENTO-V1</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V16 <span class="build-stamp" id="buildStamp">Edición 20261108-COLA-DESDE-EXPORTACION-V3</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -405,18 +405,16 @@
       <section id="sourceUploadPanel" class="panel hidden">
         <div class="panel-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Carga de información operativa <span class="readonly-note">SOLO ADMINISTRADOR</span><button type="button" id="sourceUploadToggle" class="secondary" style="margin-left:auto" aria-expanded="true" aria-controls="sourceUploadContent" onclick="toggleCargaOperativa()">Ocultar carga</button></div>
         <div id="sourceUploadContent" class="panel-body"><details><summary>Migración inicial desde Google (opcional)</summary><p>Solo en una réplica vacía. Seleccione el JSON privado generado por ExportarReplica.gs. No suba ese JSON a GitHub.</p><input type="file" accept=".json" onchange="importarReplica(this.files[0])"><span id="migrationStatus" role="status"></span></details>
-          <div class="source-actions" style="margin:12px 0"><button id="guardarFuentesBtn" class="success" onclick="guardarInformacionCargada()">💾 Guardar información cargada</button><span id="guardadoFuentesEstado" role="status" style="margin-left:12px"></span></div><p class="source-note">Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada archivo reemplaza todos los datos anteriores de su fuente. Para Track Break y Cola Larga se guardan únicamente las regiones elegidas del nuevo archivo. Espere la confirmación antes de cerrar.</p><div class="source-upload-grid"><div class="source-card"><div class="source-card-head"><div class="source-card-title">PDV_LISTA — cargar primero</div><span id="sourcePdvStatus" class="source-status">Sin verificar</span></div><input id="sourcePdvFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourcePdvMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('PDV LISTA')">Cargar PDV_LISTA — cargar primero</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Exportación de guías</div><span id="sourceEnvioStatus" class="source-status">Sin verificar</span></div><input id="sourceEnvioFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceEnvioMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('EXPORTACION GUIAS')">Cargar Exportación de guías</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Despachos ayer (opcional)</div><span id="sourceDespachosStatus" class="source-status">Sin verificar</span></div><input id="sourceDespachosFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceDespachosMeta" class="source-meta"></div><small class="source-note">También acepta Exportación de guías. Se cuenta cada guía única por Punto de entrega; si falta, usa el Punto de escaneo más reciente. Solo se guardan los conteos por PDV.</small><button onclick="cargarFuenteOperativaPortal('DESPACHOS AYER')">Cargar Despachos ayer (opcional)</button></div>
+          <div class="source-actions" style="margin:12px 0"><button id="guardarFuentesBtn" class="success" onclick="guardarInformacionCargada()">💾 Guardar información cargada</button><span id="guardadoFuentesEstado" role="status" style="margin-left:12px"></span></div><p class="source-note">Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada archivo reemplaza todos los datos anteriores de su fuente. Para Track Break se guardan únicamente las regiones elegidas del nuevo archivo. COLA LARGA se calcula desde Exportación de guías. Espere la confirmación antes de cerrar.</p><div class="source-upload-grid"><div class="source-card"><div class="source-card-head"><div class="source-card-title">PDV_LISTA — cargar primero</div><span id="sourcePdvStatus" class="source-status">Sin verificar</span></div><input id="sourcePdvFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourcePdvMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('PDV LISTA')">Cargar PDV_LISTA — cargar primero</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Exportación de guías</div><span id="sourceEnvioStatus" class="source-status">Sin verificar</span></div><input id="sourceEnvioFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceEnvioMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('EXPORTACION GUIAS')">Cargar Exportación de guías</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Despachos ayer (opcional)</div><span id="sourceDespachosStatus" class="source-status">Sin verificar</span></div><input id="sourceDespachosFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceDespachosMeta" class="source-meta"></div><small class="source-note">También acepta Exportación de guías. Se cuenta cada guía única por Punto de entrega; si falta, usa el Punto de escaneo más reciente. Solo se guardan los conteos por PDV.</small><button onclick="cargarFuenteOperativaPortal('DESPACHOS AYER')">Cargar Despachos ayer (opcional)</button></div>
             <div class="source-card">
               <div class="source-card-head"><div class="source-card-title">Track break más informes</div><span id="sourceBrechaStatus" class="source-status">Sin verificar</span></div>
               <input id="sourceBrechaFile" class="source-file" type="file" accept=".xlsx,.xls">
               <div id="sourceBrechaMeta" class="source-meta">Cargue PDV_LISTA y Exportación de guías antes de Track break.</div>
               <div class="source-actions"><button class="small" onclick="cargarFuenteOperativaPortal('TRACK BREAK')">Cargar Track break</button></div>
             </div>
-            <div class="source-card">
-              <div class="source-card-head"><div class="source-card-title">COLA LARGA</div><span id="sourceColaStatus" class="source-status">Sin verificar</span></div>
-              <input id="sourceColaFile" class="source-file" type="file" accept=".xlsx,.xls">
-              <div id="sourceColaMeta" class="source-meta">Datos existentes en la hoja COLA LARGA.</div>
-              <div class="source-actions"><button class="small" onclick="cargarFuenteOperativaPortal('COLA LARGA')">Reemplazar COLA LARGA</button></div>
+            <div class="source-card" id="sourceColaCalculada">
+              <div class="source-card-head"><div class="source-card-title">COLA LARGA · cálculo automático</div><span class="source-status">Sin carga adicional</span></div>
+              <p class="source-note">Se obtiene de <b>Exportación de guías</b>, usando <b>Tiempo de entrada</b> e <b>Identificación de transferencia y devolución</b>. Ya no se requiere cargar un Excel COLA LARGA por separado.</p>
             </div>
           </div>
           <div id="sourceRegionPanel" class="hidden" style="padding:16px;border:1px solid #cbd5e1;border-radius:8px;margin:12px 0"><b id="sourceRegionTitle">Regiones a importar</b><p>Se borrarán los datos anteriores de esta fuente y se guardarán únicamente las regiones seleccionadas del nuevo archivo. Las regiones anteriores no seleccionadas también se eliminarán de esta fuente. Los comentarios y cierres se conservan.</p><div id="sourceRegionOptions"></div><button class="secondary" onclick="marcarRegionesFuente(true)">Seleccionar todas</button> <button class="secondary" onclick="marcarRegionesFuente(false)">Quitar selección</button> <button onclick="importarRegionesFuente()">Guardar e importar regiones seleccionadas</button> <button class="secondary" onclick="cancelarRegionesFuente()">Cancelar</button></div><div class="source-note"><b>Carga independiente:</b> puede actualizar una fuente sin reemplazar la otra. Los comentarios, cierres, estados y notificaciones guardados en GUIAS A REVISAR se conservan.</div>
@@ -710,7 +708,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
     if(vista==="sla")window.SlaPaquetesV2?.alAbrir();
     if(vista==="comentarios")renderConfiguracionComentarios();
-    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261108-SEGUIMIENTO-V1";frame.dataset.loaded="1";}}
+    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261108-SEGUIMIENTO-V2-COMPARTIDO";frame.dataset.loaded="1";}}
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
 
@@ -861,7 +859,7 @@ async function guardarInformacionCargada(){
  if(guardadoFuentesEnCurso)return;if(!sesion||sesion.rol!=='ADMINISTRADOR'){toast('Solo el administrador puede guardar las fuentes.',false);return;}
  cancelarRegionesFuente();guardadoFuentesEnCurso=true;versionCargaPortal++;
  const btn=document.getElementById('guardarFuentesBtn'),estado=document.getElementById('guardadoFuentesEstado');btn.disabled=true;
- const catalogo=[['PDV LISTA','Pdv'],['EXPORTACION GUIAS','Envio'],['DESPACHOS AYER','Despachos'],['TRACK BREAK','Brecha'],['COLA LARGA','Cola']];
+ const catalogo=[['PDV LISTA','Pdv'],['EXPORTACION GUIAS','Envio'],['DESPACHOS AYER','Despachos'],['TRACK BREAK','Brecha']];
  const archivos=catalogo.map(([tipo,prefijo])=>{const input=document.getElementById('source'+prefijo+'File');return {tipo,input,archivo:input?.files?.[0]};}).filter(x=>x.archivo);
  const inputs=catalogo.map(([,p])=>document.getElementById('source'+p+'File'));inputs.forEach(x=>{if(x)x.disabled=true;});
  const guardadas=[],regionesGuardadas=new Set();let actual='',lecturas=[];
@@ -884,7 +882,7 @@ async function guardarInformacionCargada(){
   function renderEstadoFuentes(fuentes){
     if(!fuentes)return;
     renderEstadoFuente("Brecha",fuentes.brecha);
-    renderEstadoFuente("Cola",fuentes.colaLarga);renderEstadoFuente("Pdv",fuentes.pdv);renderEstadoFuente("Envio",fuentes.envio);renderEstadoFuente("Despachos",fuentes.despachos);
+    renderEstadoFuente("Pdv",fuentes.pdv);renderEstadoFuente("Envio",fuentes.envio);renderEstadoFuente("Despachos",fuentes.despachos);
   }
 
   function renderEstadoFuente(prefijo,estadoFuente){
@@ -963,6 +961,9 @@ function validarEstadosArchivoExportacion(filas){
  const encabezados=Array.isArray(filas?.[0])?filas[0]:[];
  const guia=buscarColumnaExcel(encabezados,["Número de Guía","Numero de Guia","Guía","Guia"]);
  if(guia<0)throw new Error('La Exportación de guías no tiene la columna obligatoria "Número de Guía".');
+ const entrada=buscarColumnaExcel(encabezados,["Tiempo de entrada"]);
+ const devolucion=buscarColumnaExcel(encabezados,["Identificación de transferencia y devolución","Identificacion de transferencia y devolucion"]);
+ if(entrada<0||devolucion<0)throw new Error('Para calcular COLA LARGA desde Exportación faltan las columnas: '+[entrada<0?'Tiempo de entrada':'',devolucion<0?'Identificación de transferencia y devolución':''].filter(Boolean).join(', ')+'.');
  const indice=buscarColumnaExcel(encabezados,["Tipo de escaneo más reciente","Tipo de escaneo mas reciente"]);
  const opciones=new Set();let conTipo=0;
  if(indice>=0)for(let i=1;i<filas.length;i++){
@@ -1660,7 +1661,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     ["Migración inicial desde Google (opcional)", "Initial migration from Google (optional)", "从 Google 初始迁移（可选）"],
     ["Solo en una réplica vacía. Seleccione el JSON privado generado por ExportarReplica.gs. No suba ese JSON a GitHub.", "Only for an empty replica. Select the private JSON created by ExportarReplica.gs. Do not upload it to GitHub.", "仅用于空白副本。请选择 ExportarReplica.gs 生成的私有 JSON。请勿上传到 GitHub。"],
     ["💾 Guardar información cargada", "💾 Save uploaded data", "💾 保存已上传数据"],
-    ["Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada archivo reemplaza todos los datos anteriores de su fuente. Para Track Break y Cola Larga se guardan únicamente las regiones elegidas del nuevo archivo. Espere la confirmación antes de cerrar.", "Select the Excel files and click Save uploaded data. Sources without a selected file are kept. Each file replaces previous data for its source. For Track Break and Long Queue, only selected regions from the new file are saved. Wait for confirmation before closing.", "请选择 Excel 文件并点击“保存已上传数据”。未选择文件的数据源将保留。每个文件会替换其数据源的旧数据。Track Break 和长队积压仅保存新文件中所选地区。关闭前请等待确认。"],
+    ["Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada archivo reemplaza todos los datos anteriores de su fuente. Para Track Break se guardan únicamente las regiones elegidas del nuevo archivo. COLA LARGA se calcula desde Exportación de guías. Espere la confirmación antes de cerrar.", "Select the Excel files and click Save uploaded data. Sources without a selected file are kept. Each file replaces previous data for its source. For Track Break, only selected regions from the new file are saved. Long Queue is calculated from Shipping Export. Wait for confirmation before closing.", "请选择 Excel 文件并点击“保存已上传数据”。未选择文件的数据源将保留。每个文件会替换其数据源的旧数据。Track Break 仅保存新文件中所选地区，长队积压由发货导出数据计算。关闭前请等待确认。"],
     ["PDV_LISTA — cargar primero", "PDV_LISTA — upload first", "PDV_LISTA — 请先上传"],
     ["Sin verificar", "Not verified", "未验证"],
     ["Cargar PDV_LISTA — cargar primero", "Upload PDV_LISTA — upload first", "上传 PDV_LISTA — 请先上传"],
@@ -1673,8 +1674,8 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     ["Cargue PDV_LISTA y Exportación de guías antes de Track break.", "Upload PDV_LISTA and guide export before Track Break.", "请先上传 PDV_LISTA 和指南导出文件，再上传 Track Break。"],
     ["Cargar Track break", "Upload Track Break", "上传 Track Break"],
     ["COLA LARGA", "LONG QUEUE", "长队积压"],
-    ["Datos existentes en la hoja COLA LARGA.", "Existing data in the LONG QUEUE sheet.", "长队积压工作表中的现有数据。"],
-    ["Reemplazar COLA LARGA", "Replace LONG QUEUE", "替换长队积压数据"],
+    ["Datos de Exportación de guías.", "Calculated from Shipping Export.", "根据发货导出数据计算。"],
+    ["COLA LARGA automática", "Automatic LONG QUEUE", "自动长队积压"],
     ["Regiones a importar", "Regions to import", "要导入的地区"],
     ["Se borrarán los datos anteriores de esta fuente y se guardarán únicamente las regiones seleccionadas del nuevo archivo. Las regiones anteriores no seleccionadas también se eliminarán de esta fuente. Los comentarios y cierres se conservan.", "Previous data for this source will be deleted, and only selected regions from the new file will be saved. Other previous regions will also be removed. Comments and closures are kept.", "此数据源的旧数据将被删除，仅保存新文件中选定的地区。其他旧地区也将移除。评论和结案信息将保留。"],
     ["Seleccionar todas", "Select all", "全选"],
@@ -3111,7 +3112,7 @@ function subtotalGrupoResumen(items,nombre,admin,clase){
 function mostrarEstadoV2(info){
  const el=document.getElementById('gestionV2Status');if(!el||!info)return;
  const fecha=new Date(info.calculadoEn).toLocaleString('es-PE',{timeZone:'America/Lima'});
- el.textContent='Cálculo: '+fecha+' · Hora de Perú. '+(info.sinEntrada||info.sinEstado?`Cola larga sin clasificar: ${info.sinEntrada||0} guías sin entrada válida y ${info.sinEstado||0} sin estado de devolución. Vuelva a cargar Exportación y Cola Larga y guarde los datos.`:'Cola larga preventiva: 576 a <600 H desde Tiempo de entrada. Brecha: 96 a <120 H preventiva y ≥120 H crítica desde Último tiempo de funcionamiento.');
+ el.textContent='Cálculo: '+fecha+' · Hora de Perú. '+(info.sinEntrada||info.sinEstado?`Cola larga sin clasificar: ${info.sinEntrada||0} guías sin entrada válida y ${info.sinEstado||0} sin estado de devolución. Revise Tiempo de entrada e Identificación de transferencia y devolución en Exportación y vuelva a guardar.`:'Cola larga derivada de Exportación: 576 a <600 H preventiva desde Tiempo de entrada. Brecha: 96 a <120 H preventiva y ≥120 H crítica desde Último tiempo de funcionamiento.');
 }
 function conservarClasificacionesComentarios(guiasNuevas){
  const anteriores=new Map((Array.isArray(guias)?guias:[]).map(x=>[claveClasificacionComentario(x.guia,x.pdv),x]));

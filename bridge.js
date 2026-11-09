@@ -649,6 +649,28 @@ function yp(e){let t=ha.pdvKey(e),r=Ut.catalogo.filter(n=>ha.pdvKey(n.pdv)===t);
   return {revision,archivo:latest?.fuentes?.[nombre]?.archivo||nombre,
    filas:[wanted.map(([label])=>label),...matrix.slice(1).filter(Array.isArray).map(row=>indices.map(i=>i<0?"":row[i]??""))]};
  }
+};window.V16DescargaPdvApi={
+ async ejecutar(metodo,payload={}){
+  if(!Ut)await Ba();
+  v16AssertModule("gestion_v2",["bloque","publicar","cancelar"].includes(metodo)?"ejecutar":"ver");
+  if(["bloque","publicar","cancelar","estado"].includes(metodo)&&Ut.perfil?.rol!=="ADMINISTRADOR")throw new Error("Solo administrador puede operar esta fuente.");
+  const {data,error}=await po.rpc("v16_gestion_v2_descarga_pdv",{p_metodo:metodo,p_payload:payload});
+  if(error)throw new Error(error.message);return data;
+ },
+ async listar(){
+  const resultado=[];let despues="";
+  for(let vuelta=0;vuelta<120;vuelta++){
+   const page=await this.ejecutar("listar",{despues});
+   if(!Array.isArray(page))throw new Error("La respuesta de Descarga PDV no es una lista.");
+   if(!page.length)break;
+   resultado.push(...page);
+   const nuevo=String(page[page.length-1].guia||"");
+   if(!nuevo||nuevo<=despues)throw new Error("Paginación de descarga PDV inconsistente.");
+   despues=nuevo;
+   if(page.length<1000)break;
+  }
+  return resultado;
+ }
 };window.V16GestionSlaApi={async ejecutar(accion,payload={}){if(!Ut)await Ba();const write=["guardar_parametros","guardar_precios","iniciar_carga","guardar_bloque","publicar_carga","cancelar_carga"].includes(accion);v16AssertModule("sla_paquetes",write?"ejecutar":"ver");let{data,error}=await po.rpc("v16_gestion_v2_sla_paquetes",{p_accion:accion,p_payload:payload});if(error)throw new Error(error.message);return data},async zonificacion(accion,payload={}){if(!Ut)await Ba();const write=["iniciar_carga","guardar_bloque","publicar_carga","cancelar_carga"].includes(accion);v16AssertModule("sla_paquetes",write?"ejecutar":"ver");let{data,error}=await po.rpc("v16_gestion_v2_sla_zonificacion",{p_accion:accion,p_payload:payload});if(error)throw new Error(error.message);return data},async catalogo(){if(!Ut)await Ba();v16AssertModule("sla_paquetes","ver");return JSON.parse(JSON.stringify(Ut.catalogo||[]))}};window.v16DepuracionComentarios={async listar(){if(!Ut)await Ba();if(Ut.perfil.rol!=="ADMINISTRADOR")throw new Error("Solo administrador");return await listarComentariosGestionEncargadoV16()},async depurar(registros){if(!Ut)await Ba();if(Ut.perfil.rol!=="ADMINISTRADOR")throw new Error("Solo administrador");let {data,error}=await po.rpc("v16_gestion_v2_depurar_comentarios_encargado",{p_registros:registros});if(error)throw new Error(error.message);return data}};window.google={script:{run:zl()}};window.importarReplica=async e=>{if(e)try{if(await Ba(),Ut.perfil.rol!=="ADMINISTRADOR"||Ut.meta.revision!==0)throw new Error("Solo se importa una vez, con administrador y r\xE9plica vac\xEDa.");let t=JSON.parse(await e.text());if(t.formato!=="V16-SUPABASE-REPLICA-1")throw new Error("Formato de respaldo incorrecto.");if(!confirm("\xBFImportar fuentes, comentarios y consulta compartida en esta r\xE9plica vac\xEDa? Google no se modificar\xE1."))return;let r=t.fuentes,a=fo(r),n=new Map;for(let i of Object.keys(r)){if(!Bc.includes(i))throw new Error("Fuente no v\xE1lida");let s=a.validate(i,r[i]);n.set(i,{...s,archivo:e.name,fecha:t.exportado,usuario:Ut.perfil.usuario})}if(!r["PDV LISTA"])throw new Error("Falta PDV LISTA en el respaldo.");Ua=r,Xl=0,ti=n,Lc=[...(t.gestion||[]).map(i=>({type:"gestion",value:i})),...(t.resumen||[]).map(i=>({type:"resumen",value:i})),...(t.consulta||[]).map(i=>({type:"consulta",value:i}))],document.getElementById("migrationStatus").textContent="Importando; espere la confirmaci\xF3n\u2026",await Gl(),document.getElementById("migrationStatus").textContent="Migraci\xF3n guardada. Pulse Actualizar."}catch(t){document.getElementById("migrationStatus").textContent="No se confirm\xF3 la migraci\xF3n: "+t.message}};window.addEventListener("beforeunload",e=>{ti.size&&(e.preventDefault(),e.returnValue="Hay fuentes preparadas sin guardar.")});})();
 /*! Bundled license information:
 

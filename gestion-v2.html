@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261109-DESCARGA-PDV-V18-2DEC"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261109-DESCARGA-PDV-V18-1-2DEC-BRIDGE"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261109-descarga-pdv-v18"></script>
+<script src="./bridge.js?v=20261109-descarga-pdv-v18-1-compat"></script>
   <base target="_top">
 <style>/* v9 only */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden]{display:none!important}</style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261109-DESCARGA-PDV-V18-2DEC</title><meta name="app-build" content="20261109-DESCARGA-PDV-V18-2DEC">
+  <title>Gestión de guías V2 · 20261109-DESCARGA-PDV-V18-1-2DEC-BRIDGE</title><meta name="app-build" content="20261109-DESCARGA-PDV-V18-1-2DEC-BRIDGE">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -543,7 +543,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V18 <span class="build-stamp" id="buildStamp">Edición 20261109-DESCARGA-PDV-V18-2DEC</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V18 <span class="build-stamp" id="buildStamp">Edición 20261109-DESCARGA-PDV-V18-1-2DEC-BRIDGE</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -629,7 +629,7 @@
         <div class="panel-title">Detalle de guías <span id="filtroResumenChip" class="summary-filter-chip hidden"></span></div>
         <div class="panel-body">
           <div class="filters"><div class="multi-filter" id="fActualizacion"><button type="button" id="fActualizacionButton" class="multi-trigger" aria-label="Estado de actualización" onclick="toggleMulti('fActualizacion',event)"><span id="fActualizacionLabel">Todos: actualizado / pendiente</span><span>▾</span></button><div id="fActualizacionMenu" class="multi-menu" data-placeholder="Todos: actualizado / pendiente" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fEscaneoExportacion"><button type="button" id="fEscaneoExportacionButton" class="multi-trigger" aria-label="Tipo de escaneo más reciente de Exportación" onclick="toggleMulti('fEscaneoExportacion',event)"><span id="fEscaneoExportacionLabel">Todos los escaneos (Exportación)</span><span>▾</span></button><div id="fEscaneoExportacionMenu" class="multi-menu" data-placeholder="Todos los escaneos (Exportación)" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fEscaneo"><button type="button" id="fEscaneoButton" class="multi-trigger" onclick="toggleMulti('fEscaneo',event)"><span id="fEscaneoLabel">Todos los escaneos recientes</span><span>▾</span></button><div id="fEscaneoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fRegion"><button type="button" id="fRegionButton" class="multi-trigger" onclick="toggleMulti('fRegion',event)" aria-label="Filtrar por región"><span id="fRegionLabel">Todas las regiones</span><span>▾</span></button><div id="fRegionMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
-            <input id="buscar" placeholder="Buscar guía en el detalle..." oninput="filtrar()"><label class="descarga-dias-filter" for="fDescargaDias"><span>Descarga PDV &gt; días</span><input type="number" id="fDescargaDias" min="0" step="0.01" inputmode="decimal" placeholder="Ej. 7" onchange="filtrar()" onkeydown="if(event.key==='Enter')filtrar()" aria-label="Mostrar guías con más de X días desde descarga PDV"><small>Mayor que</small></label><span id="fDescargaInfo" class="source-note" role="status" aria-live="polite">Fechas de descarga: consultando…</span><span id="fDescargaInfo" class="source-note" role="status" aria-live="polite">Fechas de descarga: consultando…</span>
+            <input id="buscar" placeholder="Buscar guía en el detalle..." oninput="filtrar()"><label class="descarga-dias-filter" for="fDescargaDias"><span>Descarga PDV &gt; días</span><input type="number" id="fDescargaDias" min="0" step="0.01" inputmode="decimal" placeholder="Ej. 7" onchange="filtrar()" onkeydown="if(event.key==='Enter')filtrar()" aria-label="Mostrar guías con más de X días desde descarga PDV"><small>Mayor que</small></label><span id="fDescargaInfo" class="source-note" role="status" aria-live="polite">Fechas de descarga: consultando…</span>
             <div class="multi-filter" id="fArea"><button type="button" id="fAreaButton" class="multi-trigger" onclick="toggleMulti('fArea',event)"><span id="fAreaLabel">Todas las áreas</span><span>▾</span></button><div id="fAreaMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
             <div class="multi-filter" id="fEncargado"><button type="button" id="fEncargadoButton" class="multi-trigger" onclick="toggleMulti('fEncargado',event)"><span id="fEncargadoLabel">Todos los encargados</span><span>▾</span></button><div id="fEncargadoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
             <div class="multi-filter" id="fPdv"><button type="button" id="fPdvButton" class="multi-trigger" onclick="toggleMulti('fPdv',event)"><span id="fPdvLabel">Todos los PDV</span><span>▾</span></button><div id="fPdvMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
@@ -869,7 +869,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
     if(vista==="sla")window.SlaPaquetesV2?.alAbrir();
     if(vista==="comentarios")renderConfiguracionComentarios();
-    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261109-DESCARGA-PDV-V18-2DEC";frame.dataset.loaded="1";}}
+    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261109-DESCARGA-PDV-V18-1-2DEC-BRIDGE";frame.dataset.loaded="1";}}
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
 
@@ -1548,7 +1548,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   }
   async function cargarDescargaPdvBD(){
     const secuencia=++descargaPdvCargaSecuencia,tokenActual=token;
-    if(!window.V16DescargaPdvApi){actualizarEstadoDescarga('Falta actualizar bridge.js.','No disponible');return;}
+    if(!window.V16DescargaPdvApi){actualizarEstadoDescarga('No se cargó bridge.js V18. Reemplaza el archivo en GitHub y recarga.','No disponible');return;}
     try{
       const filas=await window.V16DescargaPdvApi.listar();
       if(secuencia!==descargaPdvCargaSecuencia||tokenActual!==token)return;
@@ -1568,7 +1568,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     const input=document.getElementById('sourceDescargaFile'),files=Array.from(input?.files||[]),btn=document.getElementById('sourceDescargaBtn');
     if(!files.length)return toast('Selecciona al menos un archivo Centro.xlsx.',false);
     if(typeof XLSX==='undefined')return toast('El lector de Excel no está disponible.',false);
-    if(!window.V16DescargaPdvApi)return toast('Actualiza bridge.js e instala el SQL de Descarga PDV.',false);
+    if(!window.V16DescargaPdvApi)return toast('No se cargó la API de Descarga PDV en bridge.js. Reemplaza bridge.js en la misma carpeta que gestion-v2.html y recarga (Ctrl + Shift + R). El SQL no provoca este mensaje.',false);
     btn.disabled=true;
     let carga=null,publicada=false,bloquesCompletos=false;
     try{

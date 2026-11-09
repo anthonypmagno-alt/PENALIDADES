@@ -1,1 +1,0 @@
-Corrección: index.html redirige a gestion-v2.html#excel. Consulta desde Excel y Gestión V2 comparten la misma sesión y navegación. No se modifica Supabase ni el cálculo de costos por brecha. Si se accede directamente a gestion-v2.html sin sesión, se muestra login (comportamiento esperado).

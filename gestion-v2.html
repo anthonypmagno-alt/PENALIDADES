@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261108-DETALLE-AJUSTADO-V16"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261109-DESCARGA-PDV-V18-2DEC"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261108-problema-v11"></script>
+<script src="./bridge.js?v=20261109-descarga-pdv-v18"></script>
   <base target="_top">
 <style>/* v9 only */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden]{display:none!important}</style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261108-DETALLE-AJUSTADO-V16</title><meta name="app-build" content="20261108-DETALLE-AJUSTADO-V16">
+  <title>Gestión de guías V2 · 20261109-DESCARGA-PDV-V18-2DEC</title><meta name="app-build" content="20261109-DESCARGA-PDV-V18-2DEC">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -521,7 +521,14 @@
    En escritorio el detalle se reparte en el 100% del ancho disponible. */
 @media (max-width:1099px){#tablaDetalle{min-width:1100px!important;max-width:none!important}}
 </style>
-</head>
+<style>
+.descarga-dias-filter{display:flex;align-items:center;gap:7px;flex-wrap:wrap;background:#eff6ff;border:1px solid #93c5fd;border-radius:7px;padding:5px 9px;color:#1e3a8a;font-size:11px;font-weight:750}
+.descarga-dias-filter input{width:75px;min-width:70px;height:30px;border:1px solid #94a3b8;border-radius:5px;padding:4px 6px;background:#fff}
+.descarga-dias-filter small{color:#475569;font-size:9px;font-weight:600}
+.descarga-guia{margin-top:5px;padding-top:5px;border-top:1px dashed #cbd5e1;line-height:1.3;font-size:9px;color:#334155;overflow-wrap:anywhere}
+.descarga-guia b{color:#075985}.descarga-guia .dias{color:#146c43;font-weight:750;white-space:nowrap}
+.descarga-guia.pendiente{color:#94a3b8}
+</style></head>
 <body>
   <section id="login" class="login">
     <div class="login-card">
@@ -536,7 +543,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V16 <span class="build-stamp" id="buildStamp">Edición 20261108-DETALLE-AJUSTADO-V16</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V18 <span class="build-stamp" id="buildStamp">Edición 20261109-DESCARGA-PDV-V18-2DEC</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -553,7 +560,13 @@
               <div id="sourceBrechaMeta" class="source-meta">Cargue PDV_LISTA y Exportación de guías antes de Track break.</div>
               <div class="source-actions"><button class="small" onclick="cargarFuenteOperativaPortal('TRACK BREAK')">Cargar Track break</button></div>
             </div>
-            <div class="source-card" id="sourceColaCalculada">
+            <div class="source-card" id="sourceDescargaPdvCard">
+  <div class="source-card-head"><div class="source-card-title">Descarga PDV · Centro.xlsx</div><span id="sourceDescargaStatus" class="source-status">Sin consultar</span></div>
+  <input id="sourceDescargaFile" class="source-file" type="file" accept=".xlsx,.xls" multiple aria-label="Archivos Centro con guia1 y descarga_pdv">
+  <small class="source-note">Se extraen solamente guia1 y descarga_pdv. Se guarda aparte, sin volver a publicar toda la Exportación.</small>
+  <div class="source-meta" id="sourceDescargaMeta" role="status" aria-live="polite">En espera de carga.</div>
+  <button id="sourceDescargaBtn" type="button" onclick="subirDescargaPdvCentro()">Guardar fechas de descarga</button><button id="sourceDescargaRetryBtn" type="button" class="secondary" hidden onclick="reintentarPublicacionDescargaPdv()">Reintentar solo publicación</button>
+</div><div class="source-card" id="sourceColaCalculada">
               <div class="source-card-head"><div class="source-card-title">COLA LARGA · cálculo automático</div><span class="source-status">Sin carga adicional</span></div>
               <p class="source-note">Se obtiene de <b>Exportación de guías</b>, usando <b>Tiempo de entrada</b> e <b>Identificación de transferencia y devolución</b>. Ya no se requiere cargar un Excel COLA LARGA por separado.</p>
             </div>
@@ -616,7 +629,7 @@
         <div class="panel-title">Detalle de guías <span id="filtroResumenChip" class="summary-filter-chip hidden"></span></div>
         <div class="panel-body">
           <div class="filters"><div class="multi-filter" id="fActualizacion"><button type="button" id="fActualizacionButton" class="multi-trigger" aria-label="Estado de actualización" onclick="toggleMulti('fActualizacion',event)"><span id="fActualizacionLabel">Todos: actualizado / pendiente</span><span>▾</span></button><div id="fActualizacionMenu" class="multi-menu" data-placeholder="Todos: actualizado / pendiente" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fEscaneoExportacion"><button type="button" id="fEscaneoExportacionButton" class="multi-trigger" aria-label="Tipo de escaneo más reciente de Exportación" onclick="toggleMulti('fEscaneoExportacion',event)"><span id="fEscaneoExportacionLabel">Todos los escaneos (Exportación)</span><span>▾</span></button><div id="fEscaneoExportacionMenu" class="multi-menu" data-placeholder="Todos los escaneos (Exportación)" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fEscaneo"><button type="button" id="fEscaneoButton" class="multi-trigger" onclick="toggleMulti('fEscaneo',event)"><span id="fEscaneoLabel">Todos los escaneos recientes</span><span>▾</span></button><div id="fEscaneoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fRegion"><button type="button" id="fRegionButton" class="multi-trigger" onclick="toggleMulti('fRegion',event)" aria-label="Filtrar por región"><span id="fRegionLabel">Todas las regiones</span><span>▾</span></button><div id="fRegionMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
-            <input id="buscar" placeholder="Buscar guía en el detalle..." oninput="filtrar()">
+            <input id="buscar" placeholder="Buscar guía en el detalle..." oninput="filtrar()"><label class="descarga-dias-filter" for="fDescargaDias"><span>Descarga PDV &gt; días</span><input type="number" id="fDescargaDias" min="0" step="0.01" inputmode="decimal" placeholder="Ej. 7" onchange="filtrar()" onkeydown="if(event.key==='Enter')filtrar()" aria-label="Mostrar guías con más de X días desde descarga PDV"><small>Mayor que</small></label><span id="fDescargaInfo" class="source-note" role="status" aria-live="polite">Fechas de descarga: consultando…</span><span id="fDescargaInfo" class="source-note" role="status" aria-live="polite">Fechas de descarga: consultando…</span>
             <div class="multi-filter" id="fArea"><button type="button" id="fAreaButton" class="multi-trigger" onclick="toggleMulti('fArea',event)"><span id="fAreaLabel">Todas las áreas</span><span>▾</span></button><div id="fAreaMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
             <div class="multi-filter" id="fEncargado"><button type="button" id="fEncargadoButton" class="multi-trigger" onclick="toggleMulti('fEncargado',event)"><span id="fEncargadoLabel">Todos los encargados</span><span>▾</span></button><div id="fEncargadoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
             <div class="multi-filter" id="fPdv"><button type="button" id="fPdvButton" class="multi-trigger" onclick="toggleMulti('fPdv',event)"><span id="fPdvLabel">Todos los PDV</span><span>▾</span></button><div id="fPdvMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
@@ -856,7 +869,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
     if(vista==="sla")window.SlaPaquetesV2?.alAbrir();
     if(vista==="comentarios")renderConfiguracionComentarios();
-    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261108-DETALLE-AJUSTADO-V16";frame.dataset.loaded="1";}}
+    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261109-DESCARGA-PDV-V18-2DEC";frame.dataset.loaded="1";}}
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
 
@@ -1470,6 +1483,140 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     renderGuias();resaltarGuiaDetalle(fila);
   }
 
+
+  async function reintentarPublicacionDescargaPdv(){
+    const pendiente=descargaPdvPublicacionPendiente,btn=document.getElementById('sourceDescargaRetryBtn');
+    if(!pendiente||sesion?.rol!=='ADMINISTRADOR')return toast('No hay publicación de Descarga PDV pendiente en esta pestaña.',false);
+    if(!confirm('¿Reintentar únicamente la publicación de '+pendiente.esperado+' fechas ya enviadas?'))return;
+    btn.disabled=true;
+    try{
+      const r=await window.V16DescargaPdvApi.ejecutar('publicar',pendiente);
+      descargaPdvPublicacionPendiente=null;btn.hidden=true;
+      document.getElementById('sourceDescargaFile').value='';
+      actualizarEstadoDescarga('Publicación confirmada · '+r.guardadas+' fechas de descarga.','Vigente');
+      await cargarDescargaPdvBD();toast('Descarga PDV publicada correctamente.',true);
+    }catch(e){actualizarEstadoDescarga('No se confirmó publicación: '+errorTexto(e)+'. Revisa Supabase antes de reintentar de nuevo.','Error');toast(errorTexto(e),false);}
+    finally{btn.disabled=false;}
+  }
+
+  // Fuente Centro: solo guía y fecha de descarga. Independiente de v16_call/publicar.
+  let descargaPdvPorGuia=new Map(),descargaPdvCargaSecuencia=0,descargaPdvPublicacionPendiente=null;
+  function normalizarGuiaDescarga(valor){return String(valor??'').trim().toUpperCase();}
+  function normalizarEncabezadoDescarga(valor){return String(valor??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'').toLowerCase();}
+  function fechaDescargaPdvISO(valor){
+    if(valor==null||valor==='')return '';
+    let s=String(valor).trim(),m;
+    if(typeof valor==='number'&&typeof XLSX!=='undefined'&&XLSX.SSF?.parse_date_code){
+      const d=XLSX.SSF.parse_date_code(valor);if(!d)return '';
+      s=`${String(d.y).padStart(4,'0')}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}T${String(d.H||0).padStart(2,'0')}:${String(d.M||0).padStart(2,'0')}:${String(Math.floor(d.S||0)).padStart(2,'0')}`;
+    }else if(m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/)){
+      s=`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}T${(m[4]||'00').padStart(2,'0')}:${m[5]||'00'}:${m[6]||'00'}`;
+    }else if(m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/)){
+      s=`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}T${(m[4]||'00').padStart(2,'0')}:${m[5]||'00'}:${m[6]||'00'}`;
+    }else return '';
+    const d=new Date(s+'-05:00');
+    if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==s.slice(0,10)){
+      // Lima midnight becomes 05:00Z; for late hours UTC may switch day.
+      const check=new Date(Date.UTC(Number(s.slice(0,4)),Number(s.slice(5,7))-1,Number(s.slice(8,10))));
+      if(!Number.isFinite(check.getTime())||check.toISOString().slice(0,10)!==s.slice(0,10))return '';
+    }
+    return Number.isFinite(d.getTime())?s:'';
+  }
+  function fechaDescargaPdvMs(valor){
+    const s=fechaDescargaPdvISO(valor);
+    if(!s)return NaN;
+    return new Date(s+'-05:00').getTime();
+  }
+  function asignarDescargasGuias(){
+    for(const x of guias){const fecha=descargaPdvPorGuia.get(normalizarGuiaDescarga(x.guia))||'';x.descargaPdv=fecha;x.descargaPdvMs=fecha?fechaDescargaPdvMs(fecha):NaN;}
+  }
+  function diasDesdeDescargaPdv(x,ahoraMs=Date.now()){
+    const ms=Number(x?.descargaPdvMs);
+    return Number.isFinite(ms)&&ms>0&&ahoraMs>=ms?(ahoraMs-ms)/86400000:null;
+  }
+  function vistaDescargaPdv(x){
+    const fecha=String(x.descargaPdv||''),dias=diasDesdeDescargaPdv(x);
+    if(!fecha)return '<div class="descarga-guia pendiente">Descarga PDV: sin dato</div>';
+    const d=fecha.slice(8,10)+'-'+fecha.slice(5,7)+'-'+fecha.slice(0,4),hora=fecha.slice(11,19);
+    const fechaTexto=hora&&hora!=='00:00:00'?d+' '+hora:d;
+    return `<div class="descarga-guia"><b>Descarga PDV:</b> ${esc(fechaTexto)}<div class="dias">Días: ${dias===null?'—':dias.toFixed(2)}</div></div>`;
+  }
+  function actualizarEstadoDescarga(texto,estado){
+    const el=document.getElementById('sourceDescargaMeta');if(el)el.textContent=texto;
+    const et=document.getElementById('sourceDescargaStatus');if(et&&estado)et.textContent=estado;
+    const info=document.getElementById('fDescargaInfo');if(info&&estado==='Cargada')info.textContent=descargaPdvPorGuia.size+' fechas disponibles; solo se muestran las de guías autorizadas.';else if(info&&estado==='Sin conexión')info.textContent='Fechas de descarga no disponibles: revisa conexión y SQL.';
+  }
+  async function cargarDescargaPdvBD(){
+    const secuencia=++descargaPdvCargaSecuencia,tokenActual=token;
+    if(!window.V16DescargaPdvApi){actualizarEstadoDescarga('Falta actualizar bridge.js.','No disponible');return;}
+    try{
+      const filas=await window.V16DescargaPdvApi.listar();
+      if(secuencia!==descargaPdvCargaSecuencia||tokenActual!==token)return;
+      descargaPdvPorGuia=new Map(filas.filter(f=>f.guia&&f.descarga_pdv).map(f=>[normalizarGuiaDescarga(f.guia),f.descarga_pdv]));
+      asignarDescargasGuias();
+      const conFecha=guias.filter(x=>x.descargaPdv).length;
+      actualizarEstadoDescarga('Fuente disponible · '+descargaPdvPorGuia.size+' fechas autorizadas · '+conFecha+' guías del detalle con cruce.','Cargada');
+      filtrar();
+    }catch(error){
+      if(secuencia!==descargaPdvCargaSecuencia)return;
+      actualizarEstadoDescarga('No se pudo consultar Descarga PDV: '+errorTexto(error)+'. Instala el SQL de Descarga PDV V18.','Sin conexión');
+      // Si falla el servidor, no borrar fechas ya mostradas ni impedir el detalle.
+    }
+  }
+  async function subirDescargaPdvCentro(){
+    if(sesion?.rol!=='ADMINISTRADOR')return toast('Solo el administrador puede cargar Descarga PDV.',false);
+    const input=document.getElementById('sourceDescargaFile'),files=Array.from(input?.files||[]),btn=document.getElementById('sourceDescargaBtn');
+    if(!files.length)return toast('Selecciona al menos un archivo Centro.xlsx.',false);
+    if(typeof XLSX==='undefined')return toast('El lector de Excel no está disponible.',false);
+    if(!window.V16DescargaPdvApi)return toast('Actualiza bridge.js e instala el SQL de Descarga PDV.',false);
+    btn.disabled=true;
+    let carga=null,publicada=false,bloquesCompletos=false;
+    try{
+      const mapa=new Map();let sinFecha=0,invalidos=0;
+      for(const file of files){
+        if(!/\.(xlsx|xls)$/i.test(file.name)||file.size>30*1024*1024)throw new Error('Archivo no válido o superior a 30 MB: '+file.name);
+        actualizarEstadoDescarga('Leyendo '+file.name+'…','Procesando');
+        const libro=XLSX.read(await file.arrayBuffer(),{type:'array',dense:true,cellDates:false});
+        let validado=false;
+        for(const nombre of libro.SheetNames){
+          const matrix=XLSX.utils.sheet_to_json(libro.Sheets[nombre],{header:1,defval:'',raw:false,blankrows:false});
+          const headers=(matrix[0]||[]).map(normalizarEncabezadoDescarga),ig=headers.indexOf('guia1'),id=headers.indexOf('descarga_pdv');
+          if(ig<0||id<0)continue;
+          validado=true;
+          for(const fila of matrix.slice(1)){
+            const guia=normalizarGuiaDescarga(fila[ig]);if(!guia){invalidos++;continue;}
+            const fecha=fechaDescargaPdvISO(fila[id]);
+            if(!fecha){sinFecha++;continue;}
+            if(!mapa.has(guia)||fecha>mapa.get(guia))mapa.set(guia,fecha);
+          }
+          break;
+        }
+        if(!validado)throw new Error('No se encontraron los encabezados guia1 y descarga_pdv en '+file.name+'.');
+      }
+      if(!mapa.size)throw new Error('No se encontraron fechas de descarga válidas.');
+      if(mapa.size>100000)throw new Error('Demasiadas guías para una carga.');
+      const datos=[...mapa].map(([guia,fecha])=>({guia,fecha}));
+      if(!confirm('¿Publicar '+datos.length+' fechas de Descarga PDV? Reemplazará la carga anterior, sin modificar Gestión V2 ni la Exportación. '+sinFecha+' registros sin fecha se omitirán.'))return;
+      carga=crypto.randomUUID();
+      for(let i=0;i<datos.length;i+=300){
+        const n=Math.floor(i/300)+1,total=Math.ceil(datos.length/300);
+        actualizarEstadoDescarga('Enviando bloque '+n+' de '+total+' · '+Math.min(i+300,datos.length)+'/'+datos.length+' guías…','Guardando');
+        await window.V16DescargaPdvApi.ejecutar('bloque',{carga,filas:datos.slice(i,i+300)});
+      }
+      bloquesCompletos=true;descargaPdvPublicacionPendiente={carga,esperado:datos.length};
+      actualizarEstadoDescarga('Publicando '+datos.length+' fechas de descarga…','Publicando');
+      const respuesta=await window.V16DescargaPdvApi.ejecutar('publicar',{carga,esperado:datos.length});
+      publicada=true;descargaPdvPublicacionPendiente=null;document.getElementById('sourceDescargaRetryBtn').hidden=true;input.value='';
+      actualizarEstadoDescarga('Guardadas '+(respuesta?.guardadas||datos.length)+' guías · '+sinFecha+' sin fecha y '+invalidos+' filas descartadas.','Vigente');
+      toast('Fechas de Descarga PDV publicadas correctamente.',true);
+      await cargarDescargaPdvBD();
+    }catch(error){
+      document.getElementById('sourceDescargaRetryBtn').hidden=!bloquesCompletos;
+      actualizarEstadoDescarga('Error: '+errorTexto(error)+(bloquesCompletos?' · Puedes reintentar solo la publicación, sin volver a enviar archivos.':''),'Error');
+      toast(errorTexto(error),false);
+    }finally{btn.disabled=false;}
+  }
+
   let versionCargaPortal=0;
   function cargarDatos(regionesImportadas,forzar){
     const version=++versionCargaPortal,actualToken=token;
@@ -1477,7 +1624,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     google.script.run.withSuccessHandler(r=>{
       if(version!==versionCargaPortal||actualToken!==token)return;
       mostrarLoading(false);mostrarEstadoV2(r.v2);sesion=r.sesion;comentarioGestionEncargadoDisponible=r.comentariosGestionEncargadoDisponible===true;cargarBorradoresRevisionUsuario();const guiasNuevas=Array.isArray(r.guias)?r.guias:[],estadoBorradores=reconciliarBorradoresRevision(guiasNuevas);guias=guiasNuevas;filtradasParaResumenComentario=[];filtroComentarioJerarquiaActivo=null;resumenBase=r.resumen||{filas:[],total:{}};actualizarEstadoComentarioGestion(r.errorComentariosGestionEncargado||"");cargarClasificacionesComentarios();seleccionadas.clear();renderEstadoFuentes(r.fuentes);mostrarGuardadoFuentes(r.ultimoGuardado);
-      cargarFiltros();cargarFiltrosResumen();if(Array.isArray(regionesImportadas))enfocarResumenImportado(regionesImportadas);else restaurarRegionesGestion();aplicarFiltrosResumen();if(estadoBorradores.conflictos)toast("Se conservaron borradores locales. El comentario, clasificación o cierre guardado cambió mientras editabas; revisa el contenido antes de guardar.",false);else if(estadoBorradores.conservados)toast("Se conservaron "+estadoBorradores.conservados+" borrador(es) sin guardar.",true);
+      asignarDescargasGuias();cargarDescargaPdvBD();cargarFiltros();cargarFiltrosResumen();if(Array.isArray(regionesImportadas))enfocarResumenImportado(regionesImportadas);else restaurarRegionesGestion();aplicarFiltrosResumen();if(estadoBorradores.conflictos)toast("Se conservaron borradores locales. El comentario, clasificación o cierre guardado cambió mientras editabas; revisa el contenido antes de guardar.",false);else if(estadoBorradores.conservados)toast("Se conservaron "+estadoBorradores.conservados+" borrador(es) sin guardar.",true);
     }).withFailureHandler(manejarError).obtenerDatosPortal(token,forzar===true);
   }
 
@@ -1902,10 +2049,11 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function filtrar(){const razonesGestion=new Set(valoresMulti('fRazonProblema')),cumpleHoraProblema=crearPredicadoHoraProblema('fRegistroProblema');const estadosExportacionResumen=new Set(valoresMulti('sEstadoExportacion')),provinciasDestino=new Set(valoresMulti('sProvinciaDestino')),ciudadesDestino=new Set(valoresMulti('sCiudadDestino')),coloniasDestino=new Set(valoresMulti('sColoniaDestino'));const escaneosExportacion=valoresMulti('fEscaneoExportacion');const actualizaciones=valoresMulti('fActualizacion');const escaneosRecientes=valoresMulti("fEscaneo");const regionesGestion=valoresMulti("fRegion");
     const {cumpleEntrada,cumpleFecha}=crearPredicadosFechasGestion();
     const minDiasCola=leerDiasMinimosColaResumen(),ahoraColaMs=Date.now(),areasEntregaResumen=new Set(valoresMulti("sAreaEntrega"));
+    const textoDiasDescarga=String(document.getElementById("fDescargaDias")?.value||"").trim(),minDiasDescarga=textoDiasDescarga!==""&&Number.isFinite(Number(textoDiasDescarga))&&Number(textoDiasDescarga)>=0?Number(textoDiasDescarga):null,ahoraDescarga=Date.now();
     const q=document.getElementById("buscar").value.trim().toLowerCase(),areas=valoresMulti("fArea"),encargados=valoresMulti("fEncargado"),pdvs=valoresMulti("fPdv"),estados=valoresMulti("fEstado"),comentarios=valoresMulti("fComentario"),tipos=valoresMulti("fTipo");
     const mostrarEnCola=seleccionesResumen().some(s=>s.categoria==="enColaLarga");
     const mostrarBrechaMenor48=seleccionesResumen().some(s=>s.categoria==="brechaMenor48EnPDV")||tipos.some(t=>t.includes("<48")||t.includes("INFORMATIVO"));
-    filtradasParaResumenComentario=guias.filter(x=>{const casosV2=Array.isArray(x.casosResumen)?x.casosResumen:[];if(casosV2.length&&casosV2.every(c=>c.categoria==="brechaMenor48EnPDV")&&!mostrarBrechaMenor48)return false;if(casosV2.length&&casosV2.every(c=>c.categoria==="enColaLarga")&&!mostrarEnCola)return false;const textoTipo=String(x.tipo||"").toUpperCase(),estadoComentario=String(x.comentarioGestionEncargado||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";return coincideListaGuias(x,'gestion')&&cumpleMinDiasColaResumen(x,minDiasCola,ahoraColaMs)&&(!areasEntregaResumen.size||areasEntregaResumen.has(normalizarLocal(x.areaAsignadaEntrega)||"SIN DATO"))&&cumpleEntrada(x)&&cumpleFecha(x)&&(!razonesGestion.size||razonesGestion.has(String(x.ultimaRazonProblema||'').trim()||'SIN DATO'))&&cumpleHoraProblema(x)&&(!estadosExportacionResumen.size||estadosExportacionResumen.has(valorEstadoExportacion(x)))&&(!provinciasDestino.size||provinciasDestino.has(valorDestinoExportacion(x,"dpto")))&&(!ciudadesDestino.size||ciudadesDestino.has(valorDestinoExportacion(x,"prov")))&&(!coloniasDestino.size||coloniasDestino.has(valorDestinoExportacion(x,"dsto")))&&(!escaneosExportacion.length||escaneosExportacion.includes(String(x.tipoEscaneoExportacion||"")))&&(!actualizaciones.length||actualizaciones.includes(estadoActualizacionGuia(x)))&&(!escaneosRecientes.length||escaneosRecientes.includes(String(x.tipoEscaneoReciente||"")))&&(!regionesGestion.length||regionesGestion.includes(String(x.region||"")))&&coincideFiltroResumen(x)&&(!q||String(x.guia).toLowerCase().includes(q))&&(!areas.length||areas.includes(String(x.area||"")))&&(!encargados.length||encargados.includes(String(x.encargado||"")))&&(!pdvs.length||pdvs.includes(String(x.pdv||"")))&&(!estados.length||estados.includes(String(x.estado||"").toUpperCase()))&&(!comentarios.length||comentarios.includes(estadoComentario))&&(!tipos.length||tipos.some(t=>textoTipo.includes(t.toUpperCase())));});
+    filtradasParaResumenComentario=guias.filter(x=>{const casosV2=Array.isArray(x.casosResumen)?x.casosResumen:[];if(casosV2.length&&casosV2.every(c=>c.categoria==="brechaMenor48EnPDV")&&!mostrarBrechaMenor48)return false;if(casosV2.length&&casosV2.every(c=>c.categoria==="enColaLarga")&&!mostrarEnCola)return false;const textoTipo=String(x.tipo||"").toUpperCase(),estadoComentario=String(x.comentarioGestionEncargado||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";return coincideListaGuias(x,'gestion')&&(minDiasDescarga===null||(diasDesdeDescargaPdv(x,ahoraDescarga)??-1)>minDiasDescarga)&&cumpleMinDiasColaResumen(x,minDiasCola,ahoraColaMs)&&(!areasEntregaResumen.size||areasEntregaResumen.has(normalizarLocal(x.areaAsignadaEntrega)||"SIN DATO"))&&cumpleEntrada(x)&&cumpleFecha(x)&&(!razonesGestion.size||razonesGestion.has(String(x.ultimaRazonProblema||'').trim()||'SIN DATO'))&&cumpleHoraProblema(x)&&(!estadosExportacionResumen.size||estadosExportacionResumen.has(valorEstadoExportacion(x)))&&(!provinciasDestino.size||provinciasDestino.has(valorDestinoExportacion(x,"dpto")))&&(!ciudadesDestino.size||ciudadesDestino.has(valorDestinoExportacion(x,"prov")))&&(!coloniasDestino.size||coloniasDestino.has(valorDestinoExportacion(x,"dsto")))&&(!escaneosExportacion.length||escaneosExportacion.includes(String(x.tipoEscaneoExportacion||"")))&&(!actualizaciones.length||actualizaciones.includes(estadoActualizacionGuia(x)))&&(!escaneosRecientes.length||escaneosRecientes.includes(String(x.tipoEscaneoReciente||"")))&&(!regionesGestion.length||regionesGestion.includes(String(x.region||"")))&&coincideFiltroResumen(x)&&(!q||String(x.guia).toLowerCase().includes(q))&&(!areas.length||areas.includes(String(x.area||"")))&&(!encargados.length||encargados.includes(String(x.encargado||"")))&&(!pdvs.length||pdvs.includes(String(x.pdv||"")))&&(!estados.length||estados.includes(String(x.estado||"").toUpperCase()))&&(!comentarios.length||comentarios.includes(estadoComentario))&&(!tipos.length||tipos.some(t=>textoTipo.includes(t.toUpperCase())));});
     filtradas=filtroComentarioJerarquiaActivo?filtradasParaResumenComentario.filter(coincideFiltroComentarioJerarquia):[...filtradasParaResumenComentario];
     resumenComentarioAgrupadoCache=null;
     filasVisiblesSeleccion=new Set(filtradas.map(x=>Number(x.fila)));
@@ -1959,7 +2107,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     ["USUARIO", "USERNAME", "用户名"],
     ["CONTRASEÑA", "PASSWORD", "密码"],
     ["INGRESAR", "SIGN IN", "登录"],
-    ["📋 Revisión de Guías · V16", "📋 Guide Review · V16", "📋 指南审核 · V16"],
+    ["📋 Revisión de Guías · V18", "📋 Guide Review · V16", "📋 指南审核 · V16"],
     ["Seguimiento de Brecha, Cola Larga y respuestas de los PDV", "Tracking gaps, long queues, and PDV responses", "跟踪轨迹间隔、长队积压和 PDV 回复"],
     ["👤 Usuarios", "👤 Users", "👤 用户"],
     ["📥 Excel completo · 3 hojas", "📥 Full Excel · 3 sheets", "📥 完整 Excel · 3 个工作表"],
@@ -2638,7 +2786,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     const notaEncargado=`<div class="manager-note-display ${notaClase}">${esc(notaVisual)}</div>${notaRegistrada?horaComentario:""}${encargado?`<div class="manager-note-help">Para editar: selecciona la guía y usa «Comentario de gestión masivo».</div>`:""}`;
     tr.id="row-"+fila;if(marcada)tr.classList.add("row-selected");tr.innerHTML=`
       <td class="check-cell"><input class="row-check" data-fila="${fila}" type="checkbox" ${marcada?"checked":""} aria-label="Seleccionar guía ${esc(x.guia)}" onchange="toggleSeleccionFila(${fila},this.checked)"></td>
-      <td><span class="guide">${esc(x.guia)}</span><button type="button" class="qr" onclick="mostrarQR('${escJs(x.guia)}')">QR</button><button type="button" class="copy-guide" title="Copiar número de guía" onclick="copiarGuia('${escJs(x.guia)}')">📋 Copiar</button></td>
+      <td><span class="guide">${esc(x.guia)}</span><button type="button" class="qr" onclick="mostrarQR('${escJs(x.guia)}')">QR</button><button type="button" class="copy-guide" title="Copiar número de guía" onclick="copiarGuia('${escJs(x.guia)}')">📋 Copiar</button>${vistaDescargaPdv(x)}</td>
       <td>${esc(x.encargado)}</td><td>${esc(x.pdv)}</td><td class="gestion-destination">${formatearDestinoGestion(x)}</td><td>${esc(x.area)}</td>
       <td><span class="state ${claseEstado(x.estado)}">${esc(x.estado)}</span>${bloqueTiempoEntrada(x)}<div class="date">${esc(x.fecha||"")}</div></td><td class="type-cell">${formatearTipo(x.tipo)}</td><td class="update-cell">${formatearUltimaActualizacion(x)}</td><td class="problem-combined-cell">${formatearProblemaUnificado(x)}</td>
       <td class="edit"><div class="comment-taxonomy"><select id="subcampo1-${fila}" data-fila="${fila}" data-draft-field="subcampo1" aria-label="Subcampo 1" ${catalogoComentariosDisponible?"":"disabled"}>${opcionesSubcampo1Html(subcampo1Actual)}</select><select id="subcampo2-${fila}" data-fila="${fila}" data-draft-field="subcampo2" aria-label="Subcampo 2" ${catalogoComentariosDisponible?"":"disabled"}>${opcionesSubcampo2Html(subcampo1Actual,subcampo2Actual)}</select></div><textarea id="comentario-${fila}" data-fila="${fila}" data-draft-field="comentario" placeholder="Comentario del encargado · administrador" ${admin?"":"readonly"}>${esc(comentarioActual)}</textarea><select id="cierre-${fila}" data-fila="${fila}" data-draft-field="cierre"><option value="">¿Cerrar caso?</option><option value="SI" ${cierreActual==="SI"?"selected":""}>SI</option><option value="NO" ${cierreActual==="NO"?"selected":""}>NO</option></select><label class="share-pdv"><input id="visible-pdv-${fila}" data-fila="${fila}" data-draft-field="notificacion" type="checkbox" ${notificacionActual?"checked":""}><span>Notificar / mostrar al PDV</span></label></td>
@@ -2858,9 +3006,9 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     mostrarLoading(true,"Generando Excel con resumen, comentarios y detalle...");
     try{
       if(!window.XlsxResumenV2||typeof window.XlsxResumenV2.generarLibroDesdeTabla!=="function")throw new Error("No se cargó el generador XLSX actualizado. Reemplace también xlsx-resumen.js en el repositorio.");
-      const encabezados=["GUIAS A REVISAR","ENCARGADO","PDV","DEPARTAMENTO","PROVINCIA","DISTRITO","AREA ASIGNADA","FECHA Y HORA DE REVISIÓN","ESTADO DE REVISIÓN","TIPO DE REVISIÓN","COMENTARIO","SE CERRO EL CASO?","TIEMPO DE ENTRADA","ÚLTIMA FECHA Y HORA DE OPERACIÓN","TIPO DE ESCANEO MÁS RECIENTE","COMENTARIO DE GESTIÓN · ENCARGADO","FECHA DEL COMENTARIO DE GESTIÓN"];
-      const filas=filtradas.map(x=>[x.guia,x.encargado,x.pdv,x.dpto,x.prov,x.dsto,x.area,x.fecha,x.estado,x.tipo,x.comentario,x.cerro,formatearFechaEntradaExcelDescarga(x.tiempoEntradaExportacion),x.ultimaOperacion,x.tipoEscaneoReciente,x.comentarioGestionEncargado,x.comentarioGestionActualizadoEn]);
-      const anchos=[22,24,16,22,22,22,20,23,20,30,44,20,24,26,34,44,25];
+      const encabezados=["GUIAS A REVISAR","ENCARGADO","PDV","DEPARTAMENTO","PROVINCIA","DISTRITO","AREA ASIGNADA","FECHA Y HORA DE REVISIÓN","ESTADO DE REVISIÓN","TIPO DE REVISIÓN","COMENTARIO","SE CERRO EL CASO?","TIEMPO DE ENTRADA","ÚLTIMA FECHA Y HORA DE OPERACIÓN","TIPO DE ESCANEO MÁS RECIENTE","COMENTARIO DE GESTIÓN · ENCARGADO","FECHA DEL COMENTARIO DE GESTIÓN","DESCARGA PDV","DÍAS DESDE DESCARGA PDV"];
+      const filas=filtradas.map(x=>[x.guia,x.encargado,x.pdv,x.dpto,x.prov,x.dsto,x.area,x.fecha,x.estado,x.tipo,x.comentario,x.cerro,formatearFechaEntradaExcelDescarga(x.tiempoEntradaExportacion),x.ultimaOperacion,x.tipoEscaneoReciente,x.comentarioGestionEncargado,x.comentarioGestionActualizadoEn,x.descargaPdv?x.descargaPdv.slice(8,10)+"/"+x.descargaPdv.slice(5,7)+"/"+x.descargaPdv.slice(0,4)+(x.descargaPdv.slice(11,19)==="00:00:00"?"":" "+x.descargaPdv.slice(11,19)):"",diasDesdeDescargaPdv(x)===null?"":Number(diasDesdeDescargaPdv(x).toFixed(2))]);
+      const anchos=[22,24,16,22,22,22,20,23,20,30,44,20,24,26,34,44,25,22,22];
       const resumenCriticoPorPdv=construirResumenCriticoComentarioPorPdv();document.querySelectorAll("#resumenBody tr[data-excel-pdv]").forEach(fila=>{const celda=fila.querySelector(".comment-col");if(celda)celda.dataset.excelCriticalSummary=textoResumenCriticoComentarioExcel(resumenCriticoPorPdv.get(clavePdvCriticoComentario(fila.dataset.excelPdv))||[]);});
       const bytes=window.XlsxResumenV2.generarLibroDesdeTabla(tabla,{encabezados,filas,anchos},construirResumenComentarioExcel()),blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),url=URL.createObjectURL(blob),a=document.createElement("a");
       a.href=url;a.download="Gestion_Guias_V2_"+new Date().toISOString().replace(/[:.]/g,"-")+".xlsx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
@@ -2868,7 +3016,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     }catch(e){mostrarLoading(false);toast("No se pudo generar el Excel combinado: "+(e.message||String(e)),false);}
     finally{if(boton)boton.disabled=false;}
   }
-function limpiarFiltros(){limpiarListaGuias('gestion',false);limpiarEntradaExportacion('fEntrada',false);limpiarFechaExportacion('fFechaExportacion',false);limpiarRangoProblema('fRegistroProblema',false);limpiarFiltroExcelMultiple('fRazonProblema');limpiarFiltroExcelMultiple('fEscaneoExportacion');limpiarFiltroExcelMultiple('fActualizacion');document.querySelectorAll("#fEscaneoMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fEscaneo");document.querySelectorAll("#fRegionMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fRegion");document.getElementById("buscar").value="";["fArea","fEncargado","fPdv","fEstado","fComentario","fTipo"].forEach(id=>{document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti(id);});filtroResumenActivo=null;filtroComentarioJerarquiaActivo=null;actualizarChipResumen();renderResumen();cerrarMultis();filtrar();}
+function limpiarFiltros(){const filtroDescarga=document.getElementById("fDescargaDias");if(filtroDescarga)filtroDescarga.value="";limpiarListaGuias('gestion',false);limpiarEntradaExportacion('fEntrada',false);limpiarFechaExportacion('fFechaExportacion',false);limpiarRangoProblema('fRegistroProblema',false);limpiarFiltroExcelMultiple('fRazonProblema');limpiarFiltroExcelMultiple('fEscaneoExportacion');limpiarFiltroExcelMultiple('fActualizacion');document.querySelectorAll("#fEscaneoMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fEscaneo");document.querySelectorAll("#fRegionMenu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti("fRegion");document.getElementById("buscar").value="";["fArea","fEncargado","fPdv","fEstado","fComentario","fTipo"].forEach(id=>{document.querySelectorAll("#"+id+"Menu input[type=checkbox]").forEach(x=>x.checked=false);actualizarEtiquetaMulti(id);});filtroResumenActivo=null;filtroComentarioJerarquiaActivo=null;actualizarChipResumen();renderResumen();cerrarMultis();filtrar();}
   function actualizarTarjetas(){document.getElementById("totalGuias").textContent=filtradas.length;document.getElementById("pendientes").textContent=filtradas.filter(x=>estado(x)==="PENDIENTE").length;document.getElementById("proceso").textContent=filtradas.filter(x=>estado(x)==="EN PROCESO").length;document.getElementById("finalizados").textContent=filtradas.filter(x=>estado(x)==="FINALIZADO").length;}
   function estado(x){return String(x.estado||"PENDIENTE").trim().toUpperCase()}
   function claseEstado(v){v=String(v||"").toUpperCase();return v==="FINALIZADO"?"finalizado":v==="EN PROCESO"?"proceso":"pendiente";}
@@ -2879,7 +3027,7 @@ function limpiarFiltros(){limpiarListaGuias('gestion',false);limpiarEntradaExpor
   function copiarGuia(guia){const texto=String(guia||"").trim();if(!texto){toast("No existe una guía para copiar.",false);return;}if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(texto).then(()=>toast("Guía "+texto+" copiada.",true)).catch(()=>copiarGuiaAlternativo(texto));return;}copiarGuiaAlternativo(texto);}
   function copiarGuiaAlternativo(texto){const campo=document.createElement("textarea");campo.value=texto;campo.setAttribute("readonly","");campo.style.position="fixed";campo.style.opacity="0";document.body.appendChild(campo);campo.select();campo.setSelectionRange(0,texto.length);let copiado=false;try{copiado=document.execCommand("copy");}catch(e){copiado=false;}document.body.removeChild(campo);toast(copiado?"Guía "+texto+" copiada.":"No se pudo copiar la guía.",copiado);}
   function salir(){const seguimiento=document.getElementById("seguimientoFrame");if(seguimiento){seguimiento.src="about:blank";delete seguimiento.dataset.loaded;}const t=token,clave=claveBorradoresRevision();try{if(clave)sessionStorage.removeItem(clave);}catch(e){}borradoresRevision.clear();borradoresRevisionUsuario="";limpiarSesion();google.script.run.cerrarSesion(t);mostrarLogin();}
-  function limpiarSesion(){cancelarRegionesFuente();token="";sesion=null;sessionStorage.removeItem("tokenGuiasSupabaseReplica");limpiarArchivoExcel(true);}
+  function limpiarSesion(){descargaPdvCargaSecuencia++;descargaPdvPorGuia=new Map();cancelarRegionesFuente();token="";sesion=null;sessionStorage.removeItem("tokenGuiasSupabaseReplica");limpiarArchivoExcel(true);}
   function mostrarLoading(si,texto){document.getElementById("loadingText").textContent=texto||"Procesando...";document.getElementById("loading").style.display=si?"flex":"none";}
   function manejarError(e){mostrarLoading(false);const t=errorTexto(e);toast(t,false);if(/sesión|sesion/i.test(t)){limpiarSesion();mostrarLogin();}}
   function toast(texto,ok){const e=document.getElementById("toast");e.textContent=texto;e.className="toast "+(ok?"ok":"bad");e.style.display="block";clearTimeout(e._timer);e._timer=setTimeout(()=>e.style.display="none",4200);}

@@ -657,6 +657,13 @@ function yp(e){let t=ha.pdvKey(e),r=Ut.catalogo.filter(n=>ha.pdvKey(n.pdv)===t);
   const {data,error}=await po.rpc("v16_gestion_v2_descarga_pdv",{p_metodo:metodo,p_payload:payload});
   if(error)throw new Error(error.message);return data;
  },
+ async buscar(guias){
+  if(!Array.isArray(guias)||!guias.length)return [];
+  if(guias.length>500)throw new Error('La consulta admite hasta 500 guías por lote.');
+  const page=await this.ejecutar('buscar',{guias});
+  if(!Array.isArray(page))throw new Error('La respuesta de Descarga PDV no tiene formato de lista.');
+  return page;
+ },
  async listar(){
   const resultado=[];let despues="";
   for(let vuelta=0;vuelta<120;vuelta++){

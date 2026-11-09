@@ -2843,6 +2843,13 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     finally{const actual=document.getElementById("guardar-comentario-gestion-"+fila);if(actual){actual.disabled=false;actual.textContent="Guardar comentario";}}
   }
 
+  // Campo de la exportación compartida, solo se añade a la hoja Detalle de guías.
+  // Las guías sin fecha conservan la celda vacía (no se inventa un valor).
+  function formatearFechaEntradaExcelDescarga(valor){
+    const fecha=fechaEscaneoValida(valor);
+    return fecha?formatearFechaExcel(fecha):"";
+  }
+
   function descargarExcelCompleto(){
     const tabla=document.getElementById("tablaResumenV2"),boton=document.getElementById("btnDescargarExcelCompleto");
     if(!tabla){toast("No se encontró la tabla resumen de Gestión V2.",false);return;}
@@ -2851,9 +2858,9 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     mostrarLoading(true,"Generando Excel con resumen, comentarios y detalle...");
     try{
       if(!window.XlsxResumenV2||typeof window.XlsxResumenV2.generarLibroDesdeTabla!=="function")throw new Error("No se cargó el generador XLSX actualizado. Reemplace también xlsx-resumen.js en el repositorio.");
-      const encabezados=["GUIAS A REVISAR","ENCARGADO","PDV","DEPARTAMENTO","PROVINCIA","DISTRITO","AREA ASIGNADA","FECHA Y HORA DE REVISIÓN","ESTADO DE REVISIÓN","TIPO DE REVISIÓN","COMENTARIO","SE CERRO EL CASO?","ÚLTIMA FECHA Y HORA DE OPERACIÓN","TIPO DE ESCANEO MÁS RECIENTE","COMENTARIO DE GESTIÓN · ENCARGADO","FECHA DEL COMENTARIO DE GESTIÓN"];
-      const filas=filtradas.map(x=>[x.guia,x.encargado,x.pdv,x.dpto,x.prov,x.dsto,x.area,x.fecha,x.estado,x.tipo,x.comentario,x.cerro,x.ultimaOperacion,x.tipoEscaneoReciente,x.comentarioGestionEncargado,x.comentarioGestionActualizadoEn]);
-      const anchos=[22,24,16,22,22,22,20,23,20,30,44,20,26,34,44,25];
+      const encabezados=["GUIAS A REVISAR","ENCARGADO","PDV","DEPARTAMENTO","PROVINCIA","DISTRITO","AREA ASIGNADA","FECHA Y HORA DE REVISIÓN","ESTADO DE REVISIÓN","TIPO DE REVISIÓN","COMENTARIO","SE CERRO EL CASO?","TIEMPO DE ENTRADA","ÚLTIMA FECHA Y HORA DE OPERACIÓN","TIPO DE ESCANEO MÁS RECIENTE","COMENTARIO DE GESTIÓN · ENCARGADO","FECHA DEL COMENTARIO DE GESTIÓN"];
+      const filas=filtradas.map(x=>[x.guia,x.encargado,x.pdv,x.dpto,x.prov,x.dsto,x.area,x.fecha,x.estado,x.tipo,x.comentario,x.cerro,formatearFechaEntradaExcelDescarga(x.tiempoEntradaExportacion),x.ultimaOperacion,x.tipoEscaneoReciente,x.comentarioGestionEncargado,x.comentarioGestionActualizadoEn]);
+      const anchos=[22,24,16,22,22,22,20,23,20,30,44,20,24,26,34,44,25];
       const resumenCriticoPorPdv=construirResumenCriticoComentarioPorPdv();document.querySelectorAll("#resumenBody tr[data-excel-pdv]").forEach(fila=>{const celda=fila.querySelector(".comment-col");if(celda)celda.dataset.excelCriticalSummary=textoResumenCriticoComentarioExcel(resumenCriticoPorPdv.get(clavePdvCriticoComentario(fila.dataset.excelPdv))||[]);});
       const bytes=window.XlsxResumenV2.generarLibroDesdeTabla(tabla,{encabezados,filas,anchos},construirResumenComentarioExcel()),blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),url=URL.createObjectURL(blob),a=document.createElement("a");
       a.href=url;a.download="Gestion_Guias_V2_"+new Date().toISOString().replace(/[:.]/g,"-")+".xlsx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);

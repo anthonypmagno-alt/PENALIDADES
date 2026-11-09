@@ -404,16 +404,18 @@ function a4(e){if(e==null||String(e).trim()==="")return NaN;let t=String(e).trim
   for(const caso of fuentes){
    const original=String(caso.categoria||"");
    const enPDV=["brechaMenor48EnPDV","brecha48a120","brecha120a144","mayor144EnPDV"].includes(original);
-   const noLlegado=["brecha48NoLlegado","brecha120NoLlegado","brecha144a168NoLlegado","mayor144NoLlegado"].includes(original);
+   const noLlegado=["brechaMenor48NoLlegado","brecha48NoLlegado","brecha120NoLlegado","brecha144a168NoLlegado","mayor144NoLlegado"].includes(original);
+   if(original==="brechaNoLlegadoSinFecha"){agregar(caso.pdv,"brechaNoLlegadoSinFecha","EN TRÁNSITO\nCallao.SC · SIN FECHA DE ESCANEO");continue;}
    if(!enPDV&&!noLlegado)continue;
    let categoria,etiqueta;
    if(Number.isFinite(horasBrecha)){
     if(horasBrecha<0)continue;
-    if(horasBrecha<48){if(enPDV)agregar(caso.pdv,"brechaMenor48EnPDV","BRECHA\n<48 H · INFORMATIVO\nEn el PDV");continue;}
+    if(horasBrecha<48){if(enPDV)agregar(caso.pdv,"brechaMenor48EnPDV","BRECHA\n<48 H · INFORMATIVO\nEn el PDV");else if(noLlegado)agregar(caso.pdv,"brechaMenor48NoLlegado","EN TRÁNSITO\n<48 H · INFORMATIVO\nCallao.SC · No llegado al PDV");continue;}
     if(horasBrecha<96){categoria=enPDV?"brecha48a120":"brecha48NoLlegado";etiqueta="≥48 y <96 H"}
     else if(horasBrecha<120){categoria=enPDV?"brecha96a120":"brecha96NoLlegado";etiqueta="96 a <120 H · PREVENTIVO"}
     else{categoria=enPDV?"mayor144EnPDV":"mayor144NoLlegado";etiqueta="≥120 H"}
    }else{
+    if(original==="brechaMenor48NoLlegado"){agregar(caso.pdv,"brechaMenor48NoLlegado","EN TRÁNSITO\n<48 H · INFORMATIVO\nCallao.SC · No llegado al PDV");continue;}
     const antesDe120=["brecha48a120","brecha48NoLlegado"].includes(original);
     categoria=antesDe120?(enPDV?"brecha48a120":"brecha48NoLlegado"):(enPDV?"mayor144EnPDV":"mayor144NoLlegado");
     etiqueta=antesDe120?"≥48 y <120 H":"≥120 H";
@@ -519,7 +521,7 @@ async function ho(e,t,r={},a=Ut.meta.revision){
     v16AvisoCarga("Guardando "+e,s+1,total);
   }
   return i;
-}function s4(){return new Promise((e,t)=>{let r=new Worker(new URL("./process-worker.js?v=20261108-problema-v11",location.href),{type:"module"});r.onmessage=({data:a})=>{r.terminate(),a.error?t(new Error(a.error)):e(a)},r.onerror=a=>{r.terminate(),t(new Error(a.message))},r.postMessage({sources:Ua})})}async function Gl(){
+}function s4(){return new Promise((e,t)=>{let r=new Worker(new URL("./process-worker.js?v=20261109-callao-sc-v19",location.href),{type:"module"});r.onmessage=({data:a})=>{r.terminate(),a.error?t(new Error(a.error)):e(a)},r.onerror=a=>{r.terminate(),t(new Error(a.message))},r.postMessage({sources:Ua})})}async function Gl(){
   if(v16ObtenerPublicacionPendiente())throw new Error("Hay una publicación V9 pendiente. Usa primero Verificar publicación y Reintentar SOLO publicación; no vuelvas a transferir los Excel.");
   if(!ti.size)return await Ba(),{ok:!0,estadoFuentes:Uc(),ultimoGuardado:Wl()};
   let e=Xl,t,r,a,n=[];

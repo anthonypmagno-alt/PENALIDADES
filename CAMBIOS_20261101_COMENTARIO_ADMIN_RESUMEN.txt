@@ -1,6 +1,0 @@
-Actualización: resumen de paquetes críticos en el cuadro de comentario
-
-- El resumen agrupa por Subtipo 1, Subtipo 2 y comentario del administrador (campo principal), ya no por el comentario de gestión del encargado.
-- El encabezado de la tabla ahora indica “Comentario administrador”.
-- La representación del resumen crítico en la exportación Excel usa el mismo campo y etiqueta.
-- Se actualizó el parámetro de la pestaña Gestión de guías V2 para que el navegador solicite esta versión.

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261108-PROBLEMA-COMPACTO-V14"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261108-DETALLE-AJUSTADO-V16"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
 <script src="./bridge.js?v=20261108-problema-v11"></script>
   <base target="_top">
 <style>/* v9 only */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden]{display:none!important}</style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261108-PROBLEMA-COMPACTO-V14</title><meta name="app-build" content="20261108-PROBLEMA-COMPACTO-V14">
+  <title>Gestión de guías V2 · 20261108-DETALLE-AJUSTADO-V16</title><meta name="app-build" content="20261108-DETALLE-AJUSTADO-V16">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -413,20 +413,20 @@
 
 /* V13 - columnas estables para Gestión V2 y Consulta Excel; problema unificado.
    La tabla se desplaza horizontalmente y NO comprime los encabezados nuevos. */
-#tablaDetalle{table-layout:fixed!important;width:2420px!important;min-width:2420px!important;max-width:none!important}
-#tablaDetalle col.col-select{width:46px!important}
-#tablaDetalle col.col-guide{width:184px!important}
-#tablaDetalle col.col-manager{width:128px!important}
-#tablaDetalle col.col-pdv{width:92px!important}
-#tablaDetalle col.col-destination{width:210px!important}
-#tablaDetalle col.col-area{width:103px!important}
-#tablaDetalle col.col-state{width:143px!important}
-#tablaDetalle col.col-type{width:174px!important}
-#tablaDetalle col.col-update{width:250px!important}
-#tablaDetalle col.col-problem-combined{width:190px!important}
-#tablaDetalle col.col-comment{width:355px!important}
-#tablaDetalle col.col-observation{width:332px!important}
-#tablaDetalle col.col-action{width:110px!important}
+#tablaDetalle{table-layout:fixed!important;width:1837px!important;min-width:1837px!important;max-width:none!important}
+#tablaDetalle col.col-select{width:42px!important}
+#tablaDetalle col.col-guide{width:154px!important}
+#tablaDetalle col.col-manager{width:112px!important}
+#tablaDetalle col.col-pdv{width:76px!important}
+#tablaDetalle col.col-destination{width:150px!important}
+#tablaDetalle col.col-area{width:85px!important}
+#tablaDetalle col.col-state{width:116px!important}
+#tablaDetalle col.col-type{width:142px!important}
+#tablaDetalle col.col-update{width:196px!important}
+#tablaDetalle col.col-problem-combined{width:164px!important}
+#tablaDetalle col.col-comment{width:260px!important}
+#tablaDetalle col.col-observation{width:244px!important}
+#tablaDetalle col.col-action{width:96px!important}
 #tablaDetalle th{white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:none;line-height:1.24!important;vertical-align:middle!important;padding:10px 7px!important;height:70px!important}
 #tablaDetalle .problem-combined-cell{min-width:0!important;max-width:none!important;white-space:normal!important;overflow-wrap:break-word!important}
 #tablaDetalle td{vertical-align:top}
@@ -447,6 +447,79 @@
 #tablaDetalle .manager-comment-inline{padding:5px 7px;margin-bottom:7px;background:#f1f5f9;border:1px solid #dbe4ee;border-radius:5px;font-size:10px;line-height:1.35;color:#334155;overflow-wrap:anywhere;}
 #tablaDetalle .manager-comment-inline strong{color:#1e3a5f;}
 #tablaDetalle .manager-comment-inline span{white-space:pre-wrap;}
+
+/* V15 - encabezados abreviados, comentarios administrativo y de encargado separados. */
+#tablaDetalle th{height:54px!important;padding:8px 5px!important;line-height:1.18!important;}
+#tablaDetalle .edit{min-width:0!important;}
+#tablaDetalle .manager-note-cell{min-width:0!important;vertical-align:top;text-align:left;}
+#tablaDetalle .manager-note-cell .manager-note-display{padding:8px 9px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;color:#1e3a5f;font-size:11px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;}
+#tablaDetalle .manager-note-cell .manager-note-unavailable{background:#fff7ed;border-color:#fed7aa;color:#9a3412;}
+#tablaDetalle .manager-note-cell .manager-note-empty{background:#f8fafc;border-color:#e2e8f0;color:#64748b;font-style:italic;}
+#tablaDetalle .manager-note-cell .manager-note-help{padding:0 2px;}
+#tablaDetalle .manager-note-cell .date{padding-left:2px;}
+#tablaDetalle .gestion-destination{font-size:10px;}
+
+/* V16 – Detalle ajustado al contenedor: no empuja Comentario Encargado fuera de pantalla.
+   Mantener visibles las 13 columnas en escritorio, sin ocultar datos ni controles. */
+#tablaDetalle {
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  table-layout:fixed!important;
+}
+#tablaDetalle col.col-select{width:2.6%!important}
+#tablaDetalle col.col-guide{width:8.7%!important}
+#tablaDetalle col.col-manager{width:6.2%!important}
+#tablaDetalle col.col-pdv{width:4.3%!important}
+#tablaDetalle col.col-destination{width:9.7%!important}
+#tablaDetalle col.col-area{width:4.7%!important}
+#tablaDetalle col.col-state{width:7%!important}
+#tablaDetalle col.col-type{width:8.3%!important}
+#tablaDetalle col.col-update{width:10.5%!important}
+#tablaDetalle col.col-problem-combined{width:7.7%!important}
+#tablaDetalle col.col-comment{width:16.5%!important}
+#tablaDetalle col.col-observation{width:8.8%!important}
+#tablaDetalle col.col-action{width:5%!important}
+#tablaDetalle th,
+#tablaDetalle td{
+  box-sizing:border-box!important;
+  min-width:0!important;
+  padding:5px 3px!important;
+  font-size:10px!important;
+  line-height:1.3!important;
+  overflow-wrap:anywhere!important;
+}
+#tablaDetalle th{
+  height:48px!important;
+  padding:7px 3px!important;
+  white-space:normal!important;
+  word-break:normal!important;
+}
+#tablaDetalle .check-cell{padding:4px 0!important}
+#tablaDetalle .check-all,#tablaDetalle .row-check{width:14px;height:14px}
+#tablaDetalle .guide{font-size:10px;overflow-wrap:anywhere;word-break:normal}
+#tablaDetalle .qr,#tablaDetalle .copy-guide{padding:3px 4px;margin:3px 1px 0 0;font-size:9px}
+#tablaDetalle .type-title{font-size:10px}
+#tablaDetalle .type-value{font-size:11px}
+#tablaDetalle .type-detail{font-size:9px}
+#tablaDetalle .state{font-size:9px;padding:4px}
+#tablaDetalle .update-date,#tablaDetalle .problem-time{font-size:10px;overflow-wrap:anywhere}
+#tablaDetalle .update-scan,#tablaDetalle .update-driver,#tablaDetalle .problem-reason{font-size:9px!important}
+#tablaDetalle .gestion-destination,#tablaDetalle .gestion-destination b{font-size:9px!important}
+#tablaDetalle .edit{min-width:0!important}
+#tablaDetalle .comment-taxonomy{gap:3px!important;margin-bottom:4px!important}
+#tablaDetalle .comment-taxonomy select{font-size:9px!important;padding:4px 2px!important;min-width:0!important}
+#tablaDetalle .edit textarea{box-sizing:border-box;max-width:100%;min-height:46px;font-size:10px!important;padding:5px;resize:vertical}
+#tablaDetalle .edit select{box-sizing:border-box;max-width:100%;margin:3px 0;padding:5px 3px;font-size:10px}
+#tablaDetalle .share-pdv{gap:4px;padding:4px 2px!important;font-size:9px!important}
+#tablaDetalle .manager-note-cell .manager-note-display{padding:5px!important;font-size:10px!important;line-height:1.3!important}
+#tablaDetalle .manager-note-help{font-size:9px!important}
+#tablaDetalle .action-cell{white-space:normal!important;padding:5px 2px!important}
+#tablaDetalle .action-cell button{width:100%;max-width:100%;font-size:9px!important;padding:6px 2px!important;white-space:normal;overflow-wrap:break-word}
+/* En pantallas muy angostas preservamos legibilidad mediante desplazamiento horizontal.
+   En escritorio el detalle se reparte en el 100% del ancho disponible. */
+@media (max-width:1099px){#tablaDetalle{min-width:1100px!important;max-width:none!important}}
 </style>
 </head>
 <body>
@@ -463,7 +536,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V16 <span class="build-stamp" id="buildStamp">Edición 20261108-PROBLEMA-COMPACTO-V14</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V16 <span class="build-stamp" id="buildStamp">Edición 20261108-DETALLE-AJUSTADO-V16</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -562,7 +635,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
         <div id="comentarioGestionEstado" class="source-note" role="status" aria-live="polite"></div>
         <div class="table-wrap"><table id="tablaDetalle" class="detail-table">
           <colgroup><col class="col-select"><col class="col-guide"><col class="col-manager"><col class="col-pdv"><col class="col-destination"><col class="col-area"><col class="col-state"><col class="col-type"><col class="col-update"><col class="col-problem-combined"><col class="col-comment"><col class="col-observation"><col class="col-action"></colgroup>
-          <thead><tr><th class="check-cell"><input id="checkAllVisible" class="check-all" type="checkbox" title="Seleccionar todas las guías visibles" onclick="toggleSeleccionVisibles(this.checked)"></th><th>GUÍA</th><th>ENCARGADO</th><th>PDV</th><th>DESTINO<br><small>Departamento · Provincia · Distrito</small></th><th>ÁREA</th><th>ESTADO</th><th>TIPO</th><th>ÚLTIMA ACTUALIZACIÓN Y ESCANEO MÁS RECIENTE</th><th title="Última razón del problema y hora de registro">PROBLEMA</th><th>COMENTARIO ENCARGADO · ADMINISTRADOR</th><th>COMENTARIO DE GESTIÓN · ENCARGADO</th><th>ACCIÓN</th></tr></thead>
+          <thead><tr><th class="check-cell"><input id="checkAllVisible" class="check-all" type="checkbox" title="Seleccionar todas las guías visibles" onclick="toggleSeleccionVisibles(this.checked)"></th><th>GUÍA</th><th>ENCARGADO</th><th>PDV</th><th title="Departamento · Provincia · Distrito">DESTINO</th><th>AREA</th><th>ESTADO</th><th>TIPO</th><th title="Última actualización y escaneo más reciente">ULT. ESTADO</th><th title="Última razón del problema y hora de registro">ULTIMO PROBLEMA</th><th>COMENTARIO ADMINISTRADOR</th><th>COMENTARIO ENCARGADO</th><th>ACCIÓN</th></tr></thead>
           <tbody id="guiasBody"></tbody>
         </table></div>
         <div class="detalle-paginacion" role="group" aria-label="Paginación de guías">
@@ -783,7 +856,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
     if(vista==="sla")window.SlaPaquetesV2?.alAbrir();
     if(vista==="comentarios")renderConfiguracionComentarios();
-    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261108-PROBLEMA-COMPACTO-V14";frame.dataset.loaded="1";}}
+    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261108-DETALLE-AJUSTADO-V16";frame.dataset.loaded="1";}}
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
 
@@ -2039,6 +2112,10 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     ["ÚLTIMA ACTUALIZACIÓN Y ESCANEO MÁS RECIENTE", "LATEST UPDATE AND MOST RECENT SCAN", "最近更新和最近扫描"],
     ["COMENTARIO ENCARGADO · ADMINISTRADOR", "SUPERVISOR · ADMINISTRATOR COMMENT", "负责人 · 管理员评论"],
     ["COMENTARIO DE GESTIÓN · ENCARGADO", "MANAGEMENT COMMENT · SUPERVISOR", "管理评论 · 负责人"],
+    ["AREA", "AREA", "区域"],
+    ["ULT. ESTADO", "LATEST STATUS", "最新状态"],
+    ["ULTIMO PROBLEMA", "LATEST PROBLEM", "最新问题"],
+    ["COMENTARIO ENCARGADO", "SUPERVISOR COMMENT", "负责人评论"],
     ["ACCIÓN", "ACTION", "操作"],
     ["Consulta de actualización mediante archivo Excel", "Update lookup using an Excel file", "通过 Excel 文件查询更新情况"],
     ["Volver a información compartida", "Return to shared data", "返回共享数据"],
@@ -2551,15 +2628,22 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
   function crearFilaGuia(x){
     const tr=document.createElement("tr"),fila=Number(x.fila),marcada=seleccionadas.has(fila),comentario=valorBorradorRevision(fila,"comentario"),notaBorrador=valorBorradorRevision(fila,"comentarioGestionEncargado"),cierre=valorBorradorRevision(fila,"cierre"),notificacion=valorBorradorRevision(fila,"notificacion"),subcampo1=valorBorradorRevision(fila,"subcampo1"),subcampo2=valorBorradorRevision(fila,"subcampo2"),admin=sesion?.rol==="ADMINISTRADOR",encargado=sesion?.rol==="ENCARGADO";
     const comentarioActual=comentario===undefined?String(x.comentario||""):String(comentario),notaActual=notaBorrador===undefined?String(x.comentarioGestionEncargado||""):String(notaBorrador),cierreActual=String(cierre===undefined?x.cerro||"":cierre).toUpperCase(),notificacionActual=notificacion===undefined?Boolean(x.comentarioVisiblePDV):Boolean(notificacion),subcampo1Actual=String(subcampo1===undefined?x.subcampo1||"":subcampo1),subcampo2Actual=String(subcampo2===undefined?x.subcampo2||"":subcampo2);
-    const notaEncargado=admin?`<div class="manager-note-display">${esc(x.comentarioGestionEncargado||"Sin comentario de gestión")}</div>${x.comentarioGestionEncargado&&x.comentarioGestionActualizadoEn?`<div class="date">${esc(new Date(x.comentarioGestionActualizadoEn).toLocaleString("es-PE"))}</div>`:""}`:encargado?`<div class="manager-note-editor"><div class="manager-note-display">${esc(x.comentarioGestionEncargado||"Sin comentario de gestión")}</div><div class="manager-note-help">Para actualizar, selecciona la guía y usa «Comentario de encargado» en gestión masiva.</div></div>`:`<div class="manager-note-display">${esc(x.comentarioGestionEncargado||"Sin comentario de gestión")}</div>`;
+    // Mostrar los datos guardados en la fuente de comentarios del encargado.
+    // Si la consulta falló, no afirmar equivocadamente que no hay comentario.
+    const notaRegistrada=String(notaActual||"").trim(),notaNoDisponible=!comentarioGestionEncargadoDisponible&&(admin||encargado)&&!notaRegistrada;
+    const notaVisual=notaRegistrada|| (notaNoDisponible?"Comentarios no disponibles · revisa el aviso superior":"Sin comentario registrado");
+    const notaClase=notaNoDisponible?"manager-note-unavailable":notaRegistrada?"":"manager-note-empty";
+    const fechaComentario=x.comentarioGestionActualizadoEn?new Date(x.comentarioGestionActualizadoEn):null;
+    const horaComentario=fechaComentario&&!Number.isNaN(fechaComentario.getTime())?`<div class="date">Actualizado: ${esc(fechaComentario.toLocaleString("es-PE"))}</div>`:"";
+    const notaEncargado=`<div class="manager-note-display ${notaClase}">${esc(notaVisual)}</div>${notaRegistrada?horaComentario:""}${encargado?`<div class="manager-note-help">Para editar: selecciona la guía y usa «Comentario de gestión masivo».</div>`:""}`;
     tr.id="row-"+fila;if(marcada)tr.classList.add("row-selected");tr.innerHTML=`
       <td class="check-cell"><input class="row-check" data-fila="${fila}" type="checkbox" ${marcada?"checked":""} aria-label="Seleccionar guía ${esc(x.guia)}" onchange="toggleSeleccionFila(${fila},this.checked)"></td>
       <td><span class="guide">${esc(x.guia)}</span><button type="button" class="qr" onclick="mostrarQR('${escJs(x.guia)}')">QR</button><button type="button" class="copy-guide" title="Copiar número de guía" onclick="copiarGuia('${escJs(x.guia)}')">📋 Copiar</button></td>
       <td>${esc(x.encargado)}</td><td>${esc(x.pdv)}</td><td class="gestion-destination">${formatearDestinoGestion(x)}</td><td>${esc(x.area)}</td>
       <td><span class="state ${claseEstado(x.estado)}">${esc(x.estado)}</span>${bloqueTiempoEntrada(x)}<div class="date">${esc(x.fecha||"")}</div></td><td class="type-cell">${formatearTipo(x.tipo)}</td><td class="update-cell">${formatearUltimaActualizacion(x)}</td><td class="problem-combined-cell">${formatearProblemaUnificado(x)}</td>
-      <td class="edit">${admin||encargado?`<div class="manager-comment-inline" aria-label="Comentario de gestión del encargado"><strong>Gestión encargado:</strong> <span>${esc(notaActual||"Sin comentario de gestión")}</span></div>`:""}<div class="comment-taxonomy"><select id="subcampo1-${fila}" data-fila="${fila}" data-draft-field="subcampo1" aria-label="Subcampo 1" ${catalogoComentariosDisponible?"":"disabled"}>${opcionesSubcampo1Html(subcampo1Actual)}</select><select id="subcampo2-${fila}" data-fila="${fila}" data-draft-field="subcampo2" aria-label="Subcampo 2" ${catalogoComentariosDisponible?"":"disabled"}>${opcionesSubcampo2Html(subcampo1Actual,subcampo2Actual)}</select></div><textarea id="comentario-${fila}" data-fila="${fila}" data-draft-field="comentario" placeholder="Comentario del encargado · administrador" ${admin?"":"readonly"}>${esc(comentarioActual)}</textarea><select id="cierre-${fila}" data-fila="${fila}" data-draft-field="cierre"><option value="">¿Cerrar caso?</option><option value="SI" ${cierreActual==="SI"?"selected":""}>SI</option><option value="NO" ${cierreActual==="NO"?"selected":""}>NO</option></select><label class="share-pdv"><input id="visible-pdv-${fila}" data-fila="${fila}" data-draft-field="notificacion" type="checkbox" ${notificacionActual?"checked":""}><span>Notificar / mostrar al PDV</span></label></td>
+      <td class="edit"><div class="comment-taxonomy"><select id="subcampo1-${fila}" data-fila="${fila}" data-draft-field="subcampo1" aria-label="Subcampo 1" ${catalogoComentariosDisponible?"":"disabled"}>${opcionesSubcampo1Html(subcampo1Actual)}</select><select id="subcampo2-${fila}" data-fila="${fila}" data-draft-field="subcampo2" aria-label="Subcampo 2" ${catalogoComentariosDisponible?"":"disabled"}>${opcionesSubcampo2Html(subcampo1Actual,subcampo2Actual)}</select></div><textarea id="comentario-${fila}" data-fila="${fila}" data-draft-field="comentario" placeholder="Comentario del encargado · administrador" ${admin?"":"readonly"}>${esc(comentarioActual)}</textarea><select id="cierre-${fila}" data-fila="${fila}" data-draft-field="cierre"><option value="">¿Cerrar caso?</option><option value="SI" ${cierreActual==="SI"?"selected":""}>SI</option><option value="NO" ${cierreActual==="NO"?"selected":""}>NO</option></select><label class="share-pdv"><input id="visible-pdv-${fila}" data-fila="${fila}" data-draft-field="notificacion" type="checkbox" ${notificacionActual?"checked":""}><span>Notificar / mostrar al PDV</span></label></td>
       <td class="manager-note-cell">${notaEncargado}</td>
-      <td class="action-cell"><button id="guardar-${fila}" class="small" onclick="guardarRevision(${fila})">Guardar revisión</button></td>`;
+      <td class="action-cell"><button id="guardar-${fila}" class="small" title="Guardar revisión" aria-label="Guardar revisión de la guía ${esc(x.guia)}" onclick="guardarRevision(${fila})">Guardar</button></td>`;
     return tr;
   }
   function crearCasillaGrupoJerarquia(clase,dataKey,clave,filas,etiqueta,cambiar){

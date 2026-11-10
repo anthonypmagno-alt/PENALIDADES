@@ -1,17 +1,12 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261110-BRECHAS-CALLAO-AL-PDV-V22-2"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261110-V18-4-FILTRO-COLA-EXCLUSIVO-V1"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261110-BRECHAS-CALLAO-AL-PDV-V22-2"></script>
+<script src="./bridge.js?v=20261109-descarga-pdv-v18-3-buscar"></script>
   <base target="_top">
-<style>/* v9 only */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden]{display:none!important}
-/* V20: fila de Callao.SC independiente de los subtotales regionales y por PDV. */
-#tablaResumenV2 tr.callao-independent-row td:first-child{background:#dbeafe!important;color:#1e40af!important;font-weight:900}
-#tablaResumenV2 tr.callao-independent-row{border-top:4px solid #2563eb!important;border-bottom:3px solid #2563eb!important}
-#tablaResumenV2 tr.callao-independent-row td.comment-col{font-size:9px;color:#475569;background:#f8fafc!important}
-</style>
+<style>/* v9 only */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden]{display:none!important}</style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261110-BRECHAS-CALLAO-AL-PDV-V22-2</title><meta name="app-build" content="20261110-BRECHAS-CALLAO-AL-PDV-V22-2">
+  <title>Gestión de guías V2 · 20261110-V18-4-FILTRO-COLA-EXCLUSIVO-V1</title><meta name="app-build" content="20261110-V18-4-FILTRO-COLA-EXCLUSIVO-V1">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -548,7 +543,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V22.2 <span class="build-stamp" id="buildStamp">Edición 20261110-BRECHAS-CALLAO-AL-PDV-V22-2</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V18 <span class="build-stamp" id="buildStamp">Edición 20261110-V18-4-FILTRO-COLA-EXCLUSIVO-V1</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -634,7 +629,7 @@
         <div class="panel-title">Detalle de guías <span id="filtroResumenChip" class="summary-filter-chip hidden"></span></div>
         <div class="panel-body">
           <div class="filters"><div class="multi-filter" id="fActualizacion"><button type="button" id="fActualizacionButton" class="multi-trigger" aria-label="Estado de actualización" onclick="toggleMulti('fActualizacion',event)"><span id="fActualizacionLabel">Todos: actualizado / pendiente</span><span>▾</span></button><div id="fActualizacionMenu" class="multi-menu" data-placeholder="Todos: actualizado / pendiente" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fEscaneoExportacion"><button type="button" id="fEscaneoExportacionButton" class="multi-trigger" aria-label="Tipo de escaneo más reciente de Exportación" onclick="toggleMulti('fEscaneoExportacion',event)"><span id="fEscaneoExportacionLabel">Todos los escaneos (Exportación)</span><span>▾</span></button><div id="fEscaneoExportacionMenu" class="multi-menu" data-placeholder="Todos los escaneos (Exportación)" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fEscaneo"><button type="button" id="fEscaneoButton" class="multi-trigger" onclick="toggleMulti('fEscaneo',event)"><span id="fEscaneoLabel">Todos los escaneos recientes</span><span>▾</span></button><div id="fEscaneoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div><div class="multi-filter" id="fRegion"><button type="button" id="fRegionButton" class="multi-trigger" onclick="toggleMulti('fRegion',event)" aria-label="Filtrar por región"><span id="fRegionLabel">Todas las regiones</span><span>▾</span></button><div id="fRegionMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
-            <input id="buscar" placeholder="Buscar guía o último punto de escaneo..." oninput="filtrar()"><label class="descarga-dias-filter" for="fDescargaDias"><span>Descarga PDV &gt; días</span><input type="number" id="fDescargaDias" min="0" step="0.01" inputmode="decimal" placeholder="Ej. 7" onchange="filtrar()" onkeydown="if(event.key==='Enter')filtrar()" aria-label="Mostrar guías con más de X días desde descarga PDV"><small>Mayor que</small></label><span id="fDescargaInfo" class="source-note" role="status" aria-live="polite">Fechas de descarga: consultando…</span><button type="button" class="secondary" style="padding:6px 8px" onclick="cargarDescargaPdvBD()" title="Consultar nuevamente las fechas de Descarga PDV">Actualizar descargas</button>
+            <input id="buscar" placeholder="Buscar guía en el detalle..." oninput="filtrar()"><label class="descarga-dias-filter" for="fDescargaDias"><span>Descarga PDV &gt; días</span><input type="number" id="fDescargaDias" min="0" step="0.01" inputmode="decimal" placeholder="Ej. 7" onchange="filtrar()" onkeydown="if(event.key==='Enter')filtrar()" aria-label="Mostrar guías con más de X días desde descarga PDV"><small>Mayor que</small></label><span id="fDescargaInfo" class="source-note" role="status" aria-live="polite">Fechas de descarga: consultando…</span><button type="button" class="secondary" style="padding:6px 8px" onclick="cargarDescargaPdvBD()" title="Consultar nuevamente las fechas de Descarga PDV">Actualizar descargas</button>
             <div class="multi-filter" id="fArea"><button type="button" id="fAreaButton" class="multi-trigger" onclick="toggleMulti('fArea',event)"><span id="fAreaLabel">Todas las áreas</span><span>▾</span></button><div id="fAreaMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
             <div class="multi-filter" id="fEncargado"><button type="button" id="fEncargadoButton" class="multi-trigger" onclick="toggleMulti('fEncargado',event)"><span id="fEncargadoLabel">Todos los encargados</span><span>▾</span></button><div id="fEncargadoMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
             <div class="multi-filter" id="fPdv"><button type="button" id="fPdvButton" class="multi-trigger" onclick="toggleMulti('fPdv',event)"><span id="fPdvLabel">Todos los PDV</span><span>▾</span></button><div id="fPdvMenu" class="multi-menu" onclick="event.stopPropagation()"></div></div>
@@ -874,7 +869,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
     if(vista==="sla")window.SlaPaquetesV2?.alAbrir();
     if(vista==="comentarios")renderConfiguracionComentarios();
-    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261110-BRECHAS-CALLAO-AL-PDV-V22-2";frame.dataset.loaded="1";}}
+    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261110-V18-4-FILTRO-COLA-EXCLUSIVO-V1";frame.dataset.loaded="1";}}
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
 
@@ -1847,76 +1842,16 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     return (!f.comentariosAdmin.size||f.comentariosAdmin.has(estadoAdmin))&&(!f.comentariosGestion.size||f.comentariosGestion.has(estadoGestion));
   }
 
-  // V22.2: en el RESUMEN, una BRECHA real de Track Break se contabiliza
-  // en su PDV operativo, incluso cuando Exportación mantiene Callao.SC como
-  // último escaneo. La marca origenTrackBreak puede faltar en registros
-  // antiguos ya publicados: también se valida el origen y la operación.
-  // Cola Larga e informativas de Exportación conservan la fila Callao.SC.
-  const PDV_RESUMEN_CALLAO='CALLAO.SC';
-  function normalizarPdvCasoResumen(valor){
-    return String(valor||'').trim().toUpperCase().split('|')[0].replace(/\.PDV$/i,'');
-  }
-  function esUltimoPuntoCallao(guia){
-    return /^CALLAO\.SC(?:\|.*)?$/.test(String(guia?.ultimoPuntoEscaneoExportacion||'').trim().toUpperCase());
-  }
-  function esCategoriaBrechaResumen(categoria){
-    const c=String(categoria||'');return c.startsWith('brecha')||c.startsWith('mayor144');
-  }
-  function esSalidaCallaoTrackBreakResumen(guia){
-    const operacion=normalizarLocal(guia?.tipoOperacionTrackBreak||guia?.tipoEscaneoReciente).replace(/\s+/g,' ');
-    if(operacion!=='SALIDA TR1/2 A DESTINO')return false;
-    const punto=String(guia?.ultimoPuntoOperacion||'').trim().toUpperCase();
-    // Algunos registros antiguos aún no guardaron Último punto de operación;
-    // se acepta Callao.SC de Exportación SOLO junto al tipo exacto de Track Break.
-    return punto?/^CALLAO\.SC(?:\|.*)?$/.test(punto):esUltimoPuntoCallao(guia);
-  }
-  function pdvVisualCasoResumen(guia,caso){
-    const pdv=normalizarPdvCasoResumen(caso?.pdv);
-    if(esCategoriaBrechaResumen(caso?.categoria)){
-      const tr12Callao=esSalidaCallaoTrackBreakResumen(guia);
-      if(tr12Callao){
-        const siguiente=normalizarPdvCasoResumen(guia?.siguienteParadaTrackBreak);
-        // «Nombre de la siguiente parada» es la autoridad si identifica un
-        // PDV inequívoco; nunca se usa Punto de entrega para esta atribución.
-        const catalogo=(resumenBase?.filas||[]);
-        if(siguiente&&siguiente!==PDV_RESUMEN_CALLAO&&catalogo.some(x=>normalizarPdvCasoResumen(x.pdv)===siguiente))return siguiente;
-        // Al cargar fuentes con la V22, caso.pdv ya contiene Siguiente parada.
-        // Esto también recupera casos antiguos donde faltó origenTrackBreak.
-        if(pdv&&pdv!==PDV_RESUMEN_CALLAO)return pdv;
-        const guiaPdv=normalizarPdvCasoResumen(guia?.pdv);
-        if(guia?.pdvAtribucionOrigen==='SIGUIENTE_PARADA'&&guiaPdv&&guiaPdv!==PDV_RESUMEN_CALLAO)return guiaPdv;
-        return PDV_RESUMEN_CALLAO;
-      }
-      const fuentes=Array.isArray(guia?.fuentes)?guia.fuentes:[];
-      const deTrackBreak=caso?.origenTrackBreak===true||caso?.origenCallaoSalidaTR12===true||
-        fuentes.some(x=>/^(BRECHA|TRACK BREAK|TRACK_BREAK)$/.test(normalizarLocal(x)));
-      if(deTrackBreak){
-        // Fuera de TR1/2 desde Callao, la BRECHA corresponde a Último punto
-        // de operación, representado en el PDV del caso de Track Break.
-        const ultimo=normalizarPdvCasoResumen(guia?.ultimoPuntoOperacion);
-        if(ultimo===PDV_RESUMEN_CALLAO)return PDV_RESUMEN_CALLAO;
-        return pdv;
-      }
-    }
-    return esUltimoPuntoCallao(guia)?PDV_RESUMEN_CALLAO:pdv;
-  }
-  const CATEGORIAS_INFORMATIVAS_RESUMEN=new Set([
-    'enColaLarga','brechaMenor48EnPDV','brechaMenor48NoLlegado','brechaNoLlegadoSinFecha'
-  ]);
   function construirResumenGuiasCliente(registros){
     const acumulado={},vistos=new Set(),meta={};
     (resumenBase.filas||[]).forEach(x=>meta[String(x.pdv||"")]=x);
     registros.forEach(x=>{
       const guia=normalizarLocal(x.guia),casos=Array.isArray(x.casosResumen)?x.casosResumen:[];
     casos.forEach(c=>{
-        const pdv=pdvVisualCasoResumen(x,c),categoria=String(c.categoria||""),clave=pdv+"|"+categoria+"|"+guia;
+        const pdv=String(c.pdv||"").trim().toUpperCase().replace(/\.PDV$/i,""),categoria=String(c.categoria||""),clave=pdv+"|"+categoria+"|"+guia;
         if(!pdv||!categoria||!guia||vistos.has(clave))return;if(categoria==="enColaLarga"&&!coincideUmbralEnCola(x))return;vistos.add(clave);
-        const callao=pdv===PDV_RESUMEN_CALLAO;
-        if(!acumulado[pdv])acumulado[pdv]=nuevoAcumuladoResumen(pdv,callao?"CENTRO DE CLASIFICACIÓN":x.area,callao?"SORTING CENTER":x.region);
-        acumulado[pdv][categoria]=Number(acumulado[pdv][categoria]||0)+1;
-        // En Callao, la fila de guías únicas incluye también las informativas
-        // (<48 h); el TOTAL de casos vencidos NO las incluye.
-        if(callao||!CATEGORIAS_INFORMATIVAS_RESUMEN.has(categoria))acumulado[pdv]._guias.add(guia);
+        if(!acumulado[pdv])acumulado[pdv]=nuevoAcumuladoResumen(pdv,x.area,x.region);
+        acumulado[pdv][categoria]=Number(acumulado[pdv][categoria]||0)+1;if(!["brechaMenor48EnPDV","enColaLarga"].includes(categoria))acumulado[pdv]._guias.add(guia);
         const encargado=String(x.encargado||"").trim();if(encargado)acumulado[pdv]._encargados.add(encargado);
       });
     });
@@ -1979,12 +1914,12 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     const comentario=!esTotal&&puedeComentar?`<button class="btn-comment ${x.comentario?'has-comment':''}" title="${x.comentario?'Ver o actualizar comentario':'Agregar comentario'}" onclick="abrirComentario('${escJs(x.pdv)}')">💬</button><button type="button" class="btn-image" title="Ver o cargar imágenes de ${esc(x.pdv)}" aria-label="Ver o cargar imágenes de ${esc(x.pdv)}" onclick="abrirImagenesResumen('${escJs(x.pdv)}')">🖼</button>`:"";
     const pdvFiltro=esTotal?"":String(x.pdv||""),pdvActivo=!esTotal&&celdaResumenSeleccionada(pdvFiltro,'');
     if(!esTotal&&filaResumenSeleccionada(pdvFiltro))tr.classList.add("summary-row-active");
-    const celdaPdv=esTotal?`<td><b>${esc(x.pdv)}</b></td>`:`<td class="summary-clickable${pdvActivo?' summary-selected':''}" title="Filtrar todas las guías de ${esc(x.pdv)}" data-resumen-pdv="${esc(pdvFiltro)}" data-resumen-categoria="" onclick="aplicarFiltroResumen('${escJs(pdvFiltro)}','')"><b>${esc(x.pdv)}</b></td>`;
+    const celdaPdv=esTotal?`<td><b>${esc(x.pdv)}</b></td>`:`<td class="summary-clickable${pdvActivo?' summary-selected':''}" title="Filtrar todas las guías de ${esc(x.pdv)}" data-resumen-pdv="${esc(pdvFiltro)}" data-resumen-categoria="" onclick="aplicarFiltroResumen('${escJs(pdvFiltro)}','',event)"><b>${esc(x.pdv)}</b></td>`;
     tr.innerHTML=`${celdaPdv}<td>${num(x.despachosAyer||0)}</td>${celdaNumeroResumen(x.h120o168,pdvFiltro,"h120o168",esTotal)}${celdaNumeroResumen(x.h360NoDevuelto,pdvFiltro,"h360NoDevuelto",esTotal)}${celdaNumeroResumen(x.h360PorDevolver,pdvFiltro,"h360PorDevolver",esTotal)}${celdaNumeroResumen(x.h720NoDevuelto,pdvFiltro,"h720NoDevuelto",esTotal)}${celdaNumeroResumen(x.h720PorDevolver,pdvFiltro,"h720PorDevolver",esTotal)}${celdaNumeroResumen(x.brecha48a120,pdvFiltro,"brecha48a120",esTotal)}${celdaNumeroResumen(x.brecha48NoLlegado,pdvFiltro,"brecha48NoLlegado",esTotal)}${celdaNumeroResumen(x.brecha120a144,pdvFiltro,"brecha120a144",esTotal)}${celdaNumeroResumen(x.brecha120NoLlegado,pdvFiltro,"brecha120NoLlegado",esTotal)}${celdaNumeroResumen(x.mayor144EnPDV,pdvFiltro,"mayor144EnPDV",esTotal)}${celdaNumeroResumen(Number(x.mayor144NoLlegado||0)+Number(x.brecha144a168NoLlegado||0),pdvFiltro,"mayor144NoLlegado",esTotal)}${celdaNumeroResumen(x.total,pdvFiltro,"totalCasos",esTotal)}${celdaNumeroResumen(x.totalCritico,pdvFiltro,"totalCritico",esTotal,"summary-critical")}${celdaNumeroResumen(x.guiasUnicas,pdvFiltro,"guiasUnicas",esTotal)}<td class="comment-col image-comment-col">${comentario}</td>`;
     return tr;
   }
 
-  function celdaNumeroResumen(valor,pdv,categoria,esTotal,claseExtra){const n=Number(valor||0),extra=claseExtra?" "+claseExtra:"",punto=esTotal?"":String(pdv||""),tipo=String(categoria||""),activo=celdaResumenSeleccionada(punto,tipo);if(n===0)return `<td class="number zero-value${extra}">0</td>`;const accion=!punto&&!tipo?"limpiarFiltroResumen(true)":`aplicarFiltroResumen('${escJs(punto)}','${escJs(tipo)}')`;const titulo=!punto&&!tipo?"Mostrar todas las guías":`Filtrar: ${esc(etiquetaFiltroResumen(punto,tipo))}`;return `<td class="number summary-clickable${extra}${activo?' summary-selected':''}" title="${titulo}" data-resumen-pdv="${esc(punto)}" data-resumen-categoria="${esc(tipo)}" onclick="${accion}">${num(n)}</td>`;}
+  function celdaNumeroResumen(valor,pdv,categoria,esTotal,claseExtra){const n=Number(valor||0),extra=claseExtra?" "+claseExtra:"",punto=esTotal?"":String(pdv||""),tipo=String(categoria||""),activo=celdaResumenSeleccionada(punto,tipo);if(n===0)return `<td class="number zero-value${extra}">0</td>`;const accion=!punto&&!tipo?"limpiarFiltroResumen(true)":`aplicarFiltroResumen('${escJs(punto)}','${escJs(tipo)}',event)`;const titulo=!punto&&!tipo?"Mostrar todas las guías":`Filtrar: ${esc(etiquetaFiltroResumen(punto,tipo))}`;return `<td class="number summary-clickable${extra}${activo?' summary-selected':''}" title="${titulo}" data-resumen-pdv="${esc(punto)}" data-resumen-categoria="${esc(tipo)}" onclick="${accion}">${num(n)}</td>`;}
   function etiquetaFiltroResumen(pdv,categoria){const tipo=ETIQUETAS_RESUMEN[categoria]||"Todos los casos";if(pdv&&categoria)return pdv+" · "+tipo;if(pdv)return pdv+" · Todos los casos";if(categoria)return "Todos los PDV · "+tipo;return "Todos los casos";}
   
   
@@ -1992,10 +1927,17 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   function seleccionesResumen(){return Array.isArray(filtroResumenActivo)?filtroResumenActivo:[];}
 function celdaResumenSeleccionada(pdv,categoria){return seleccionesResumen().some(s=>s.pdv===pdv&&s.categoria===categoria);}
 function filaResumenSeleccionada(pdv){return seleccionesResumen().some(s=>s.pdv===pdv);}
-function aplicarFiltroResumen(pdv,categoria){
+function aplicarFiltroResumen(pdv,categoria,evento){
  pdv=String(pdv||'');categoria=String(categoria||'');
  const actuales=seleccionesResumen();
- const nuevas=celdaResumenSeleccionada(pdv,categoria)?actuales.filter(s=>s.pdv!==pdv||s.categoria!==categoria):[...actuales,{pdv,categoria}];
+ // Un clic simple filtra exclusivamente esta columna/PDV; evita que una
+ // selección anterior de No devuelto aparezca al filtrar Por devolver.
+ // Ctrl/Cmd/Mayús + clic conserva la selección múltiple deliberada.
+ const seleccionMultiple=!!(evento&&(evento.ctrlKey||evento.metaKey||evento.shiftKey));
+ const yaSeleccionada=actuales.some(s=>s.pdv===pdv&&s.categoria===categoria);
+ const nuevas=seleccionMultiple
+   ?(yaSeleccionada?actuales.filter(s=>s.pdv!==pdv||s.categoria!==categoria):[...actuales,{pdv,categoria}])
+   :(actuales.length===1&&yaSeleccionada?[]:[{pdv,categoria}]);
  filtroResumenActivo=nuevas.length?nuevas:null;
  actualizarChipResumen();actualizarSeleccionResumenLigera();filtrar();
 }
@@ -2016,13 +1958,13 @@ function limpiarFiltroResumen(desplazar){
 function actualizarChipResumen(){
  const chip=document.getElementById('filtroResumenChip'),seleccion=seleccionesResumen(),grupo=filtroComentarioJerarquiaActivo;
  chip.classList.toggle('hidden',!seleccion.length&&!grupo);chip.replaceChildren();
- if(seleccion.length){const texto=document.createElement('span');texto.textContent=seleccion.length+' celdas del resumen seleccionadas · '+seleccion.map(s=>etiquetaFiltroResumen(s.pdv,s.categoria)).join(' | ');chip.append(texto);const limpiar=document.createElement('button');limpiar.type='button';limpiar.textContent='Quitar filtro del resumen';limpiar.onclick=()=>limpiarFiltroResumen(false);chip.append(limpiar);}
+ if(seleccion.length){const texto=document.createElement('span');texto.textContent=seleccion.length+' celdas del resumen seleccionadas · '+seleccion.map(s=>etiquetaFiltroResumen(s.pdv,s.categoria)).join(' | ');chip.append(texto);chip.title='Clic normal: solo esta celda. Ctrl/Cmd/Mayús + clic: seleccionar varias celdas.';const limpiar=document.createElement('button');limpiar.type='button';limpiar.textContent='Quitar filtro del resumen';limpiar.onclick=()=>limpiarFiltroResumen(false);chip.append(limpiar);}
  if(grupo){const texto=document.createElement('span');texto.textContent='PDV '+(grupo.pdv||'SIN PDV')+' · Comentario administrador: '+(grupo.comentario||'Sin comentario del administrador')+' · '+[grupo.subcampo1,grupo.subcampo2].filter(Boolean).join(' → ');chip.append(texto);const limpiar=document.createElement('button');limpiar.type='button';limpiar.textContent='Quitar comentario';limpiar.onclick=()=>limpiarFiltroComentarioJerarquia(false);chip.append(limpiar);}
  if(seleccion.length||grupo){const ver=document.createElement('button');ver.type='button';ver.textContent='Ver detalle';ver.onclick=()=>document.getElementById('detalleGuiasPanel').scrollIntoView({behavior:'smooth',block:'start'});chip.append(ver);}
 }
 function coincideFiltroResumen(x){return !seleccionesResumen().length||seleccionesResumen().some(s=>coincideFiltroResumenIndividual(x,s));}
 
-function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;if(!filasPermitidasResumen.has(Number(x.fila)))return false;const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],pdv=seleccion.pdv,categoria=seleccion.categoria,criticas=["h720NoDevuelto","h720PorDevolver","mayor144EnPDV","mayor144NoLlegado"],preventivasCriticas=CATEGORIAS_PREVENTIVO_CRITICO_V2;return casos.some(c=>{if(pdv&&pdvVisualCasoResumen(x,c)!==pdv)return false;const tipo=String(c.categoria||"");if(!categoria)return true;if(categoria==="totalCasos")return !CATEGORIAS_INFORMATIVAS_RESUMEN.has(tipo);if(categoria==="guiasUnicas")return pdv===PDV_RESUMEN_CALLAO||!CATEGORIAS_INFORMATIVAS_RESUMEN.has(tipo);if(categoria==="enColaLarga")return tipo==="enColaLarga"&&coincideUmbralEnCola(x);if(categoria==="totalCritico")return criticas.includes(tipo);if(categoria==="totalPreventivoCritico")return preventivasCriticas.includes(tipo);return tipo===categoria||(categoria==="mayor144NoLlegado"&&tipo==="brecha144a168NoLlegado");});}
+function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;if(!filasPermitidasResumen.has(Number(x.fila)))return false;const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],pdv=seleccion.pdv,categoria=seleccion.categoria,criticas=["h720NoDevuelto","h720PorDevolver","mayor144EnPDV","mayor144NoLlegado"],preventivasCriticas=CATEGORIAS_PREVENTIVO_CRITICO_V2;return casos.some(c=>{if(pdv&&String(c.pdv||"")!==pdv)return false;const tipo=String(c.categoria||"");if(!categoria)return true;if(categoria==="totalCasos"||categoria==="guiasUnicas")return !["enColaLarga","brechaMenor48EnPDV"].includes(tipo);if(categoria==="enColaLarga")return tipo==="enColaLarga"&&coincideUmbralEnCola(x);if(categoria==="totalCritico")return criticas.includes(tipo);if(categoria==="totalPreventivoCritico")return preventivasCriticas.includes(tipo);return tipo===categoria||(categoria==="mayor144NoLlegado"&&tipo==="brecha144a168NoLlegado");});}
 
   function abrirComentario(pdv){const x=(resumen.filas||[]).find(r=>r.pdv===pdv);if(!x)return;document.getElementById("commentModal").dataset.pdv=pdv;document.getElementById("commentText").value=x.comentario||"";const soloLectura=sesion?.rol!=="ADMINISTRADOR";document.getElementById("commentText").readOnly=soloLectura;document.getElementById("btnSaveComment").hidden=soloLectura;aplicarIdiomaModalComentario();document.getElementById("commentModal").style.display="flex";setTimeout(()=>document.getElementById("commentText").focus(),50);}
   function cerrarComentario(){document.getElementById("commentModal").style.display="none";}
@@ -2160,7 +2102,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     const q=document.getElementById("buscar").value.trim().toLowerCase(),areas=valoresMulti("fArea"),encargados=valoresMulti("fEncargado"),pdvs=valoresMulti("fPdv"),estados=valoresMulti("fEstado"),comentarios=valoresMulti("fComentario"),tipos=valoresMulti("fTipo");
     const mostrarEnCola=seleccionesResumen().some(s=>s.categoria==="enColaLarga");
     const mostrarBrechaMenor48=seleccionesResumen().some(s=>s.categoria==="brechaMenor48EnPDV")||tipos.some(t=>t.includes("<48")||t.includes("INFORMATIVO"));
-    filtradasParaResumenComentario=guias.filter(x=>{const casosV2=Array.isArray(x.casosResumen)?x.casosResumen:[];if(casosV2.length&&casosV2.every(c=>c.categoria==="brechaMenor48EnPDV")&&!mostrarBrechaMenor48)return false;if(casosV2.length&&casosV2.every(c=>c.categoria==="enColaLarga")&&!mostrarEnCola)return false;const textoTipo=String(x.tipo||"").toUpperCase(),estadoComentario=String(x.comentarioGestionEncargado||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";return coincideListaGuias(x,'gestion')&&(minDiasDescarga===null||(diasDesdeDescargaPdv(x,ahoraDescarga)??-1)>minDiasDescarga)&&cumpleMinDiasColaResumen(x,minDiasCola,ahoraColaMs)&&(!areasEntregaResumen.size||areasEntregaResumen.has(normalizarLocal(x.areaAsignadaEntrega)||"SIN DATO"))&&cumpleEntrada(x)&&cumpleFecha(x)&&(!razonesGestion.size||razonesGestion.has(String(x.ultimaRazonProblema||'').trim()||'SIN DATO'))&&cumpleHoraProblema(x)&&(!estadosExportacionResumen.size||estadosExportacionResumen.has(valorEstadoExportacion(x)))&&(!provinciasDestino.size||provinciasDestino.has(valorDestinoExportacion(x,"dpto")))&&(!ciudadesDestino.size||ciudadesDestino.has(valorDestinoExportacion(x,"prov")))&&(!coloniasDestino.size||coloniasDestino.has(valorDestinoExportacion(x,"dsto")))&&(!escaneosExportacion.length||escaneosExportacion.includes(String(x.tipoEscaneoExportacion||"")))&&(!actualizaciones.length||actualizaciones.includes(estadoActualizacionGuia(x)))&&(!escaneosRecientes.length||escaneosRecientes.includes(String(x.tipoEscaneoReciente||"")))&&(!regionesGestion.length||regionesGestion.includes(String(x.region||"")))&&coincideFiltroResumen(x)&&(!q||(String(x.guia||"")+" "+String(x.ultimoPuntoEscaneoExportacion||"")).toLowerCase().includes(q))&&(!areas.length||areas.includes(String(x.area||"")))&&(!encargados.length||encargados.includes(String(x.encargado||"")))&&(!pdvs.length||pdvs.includes(String(x.pdv||"")))&&(!estados.length||estados.includes(String(x.estado||"").toUpperCase()))&&(!comentarios.length||comentarios.includes(estadoComentario))&&(!tipos.length||tipos.some(t=>textoTipo.includes(t.toUpperCase())));});
+    filtradasParaResumenComentario=guias.filter(x=>{const casosV2=Array.isArray(x.casosResumen)?x.casosResumen:[];if(casosV2.length&&casosV2.every(c=>c.categoria==="brechaMenor48EnPDV")&&!mostrarBrechaMenor48)return false;if(casosV2.length&&casosV2.every(c=>c.categoria==="enColaLarga")&&!mostrarEnCola)return false;const textoTipo=String(x.tipo||"").toUpperCase(),estadoComentario=String(x.comentarioGestionEncargado||"").trim()?"CON COMENTARIO":"SIN COMENTARIO";return coincideListaGuias(x,'gestion')&&(minDiasDescarga===null||(diasDesdeDescargaPdv(x,ahoraDescarga)??-1)>minDiasDescarga)&&cumpleMinDiasColaResumen(x,minDiasCola,ahoraColaMs)&&(!areasEntregaResumen.size||areasEntregaResumen.has(normalizarLocal(x.areaAsignadaEntrega)||"SIN DATO"))&&cumpleEntrada(x)&&cumpleFecha(x)&&(!razonesGestion.size||razonesGestion.has(String(x.ultimaRazonProblema||'').trim()||'SIN DATO'))&&cumpleHoraProblema(x)&&(!estadosExportacionResumen.size||estadosExportacionResumen.has(valorEstadoExportacion(x)))&&(!provinciasDestino.size||provinciasDestino.has(valorDestinoExportacion(x,"dpto")))&&(!ciudadesDestino.size||ciudadesDestino.has(valorDestinoExportacion(x,"prov")))&&(!coloniasDestino.size||coloniasDestino.has(valorDestinoExportacion(x,"dsto")))&&(!escaneosExportacion.length||escaneosExportacion.includes(String(x.tipoEscaneoExportacion||"")))&&(!actualizaciones.length||actualizaciones.includes(estadoActualizacionGuia(x)))&&(!escaneosRecientes.length||escaneosRecientes.includes(String(x.tipoEscaneoReciente||"")))&&(!regionesGestion.length||regionesGestion.includes(String(x.region||"")))&&coincideFiltroResumen(x)&&(!q||String(x.guia).toLowerCase().includes(q))&&(!areas.length||areas.includes(String(x.area||"")))&&(!encargados.length||encargados.includes(String(x.encargado||"")))&&(!pdvs.length||pdvs.includes(String(x.pdv||"")))&&(!estados.length||estados.includes(String(x.estado||"").toUpperCase()))&&(!comentarios.length||comentarios.includes(estadoComentario))&&(!tipos.length||tipos.some(t=>textoTipo.includes(t.toUpperCase())));});
     filtradas=filtroComentarioJerarquiaActivo?filtradasParaResumenComentario.filter(coincideFiltroComentarioJerarquia):[...filtradasParaResumenComentario];
     resumenComentarioAgrupadoCache=null;
     filasVisiblesSeleccion=new Set(filtradas.map(x=>Number(x.fila)));
@@ -2171,7 +2113,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     return String(tipo||"").split(/\n\s*\n/).map(bloque=>{const lineas=bloque.split(/\n+/).map(v=>v.trim()).filter(Boolean);if(!lineas.length)return "";return `<div class="type-block"><div class="type-title">${esc(lineas[0])}</div>${lineas[1]?`<span class="type-value">${esc(lineas[1])}</span>`:""}${lineas.slice(2).map(v=>`<span class="type-detail">${esc(v)}</span>`).join("")}</div>`;}).join("");
   }
 
-  function formatearUltimaActualizacion(x){const fechaLeida=fechaEscaneoValida(x.ultimaOperacion),fecha=fechaLeida?formatearFechaExcel(fechaLeida):String(x.ultimaOperacion||"").trim(),escaneo=String(x.tipoEscaneoReciente||"").trim(),repartidor=empleadoEntregaVisible(x,"repartidor");return `${fecha?`<div class="update-date">${esc(fecha)}</div>`:'<div class="update-empty">Sin fecha de actualización</div>'}${escaneo?`<span class="update-scan">${esc(escaneo)}</span>`:'<span class="update-scan update-empty">Sin tipo de escaneo</span>'}<span class="update-driver"><b>Repartidor:</b> ${esc(estadoSinEmpleadoEntrega(x.tipoEscaneoExportacion)?"":(repartidor||"Sin dato"))}</span>${String(x.ultimoPuntoEscaneoExportacion||"").trim()?`<div class="update-driver"><b>Último punto:</b> ${esc(x.ultimoPuntoEscaneoExportacion)}</div>`:""}${x.pdvAtribucionOrigen==="SIGUIENTE_PARADA"?`<div class="update-driver"><b>Siguiente parada (brecha):</b> ${esc(x.siguienteParadaTrackBreak||x.pdv||"")}</div>`:""}${bloqueEscaneoExportacion(x)}`;}
+  function formatearUltimaActualizacion(x){const fechaLeida=fechaEscaneoValida(x.ultimaOperacion),fecha=fechaLeida?formatearFechaExcel(fechaLeida):String(x.ultimaOperacion||"").trim(),escaneo=String(x.tipoEscaneoReciente||"").trim(),repartidor=empleadoEntregaVisible(x,"repartidor");return `${fecha?`<div class="update-date">${esc(fecha)}</div>`:'<div class="update-empty">Sin fecha de actualización</div>'}${escaneo?`<span class="update-scan">${esc(escaneo)}</span>`:'<span class="update-scan update-empty">Sin tipo de escaneo</span>'}<span class="update-driver"><b>Repartidor:</b> ${esc(estadoSinEmpleadoEntrega(x.tipoEscaneoExportacion)?"":(repartidor||"Sin dato"))}</span>${bloqueEscaneoExportacion(x)}`;}
 
   function formatearDestinoGestion(x){return `<div><b>Departamento:</b> ${esc(x.dpto||"")}</div><div><b>Provincia:</b> ${esc(x.prov||"")}</div><div><b>Distrito:</b> ${esc(x.dsto||"")}</div>`;}
   function claveComentarioDetalle(comentario){return String(comentario||"").normalize("NFC").trim().replace(/\s+/g," ").toLocaleLowerCase("es");}
@@ -3358,7 +3300,7 @@ function renderResumen(){
   const admin=typeof filaResumen==='function',cols=document.querySelectorAll('#tablaResumenV2 colgroup col').length||20,grupos=new Map();
  let pdvRows=[];
  if(!admin){const anterior=resumen.filas;resumen.filas=filas;renderResumenAnterior();pdvRows=[...body.children];resumen.filas=anterior;}
- body.replaceChildren();filas.forEach((x,i)=>{if(x.pdv===PDV_RESUMEN_CALLAO)return;const k=regionResumen(x).key;if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push({x,i});});
+ body.replaceChildren();filas.forEach((x,i)=>{const k=regionResumen(x).key;if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push({x,i});});
  grupos.forEach((items,key)=>{
   const header=document.createElement('tr');header.className='region-heading';const td=document.createElement('td');td.colSpan=cols;const button=document.createElement('button');button.className='region-toggle';button.textContent=(regionesCerradas.has(key)?'▸ ':'▾ ')+key+' · '+items.length+' PDV';button.setAttribute('aria-expanded',String(!regionesCerradas.has(key)));button.onclick=()=>alternarRegionResumen(key);td.appendChild(button);header.appendChild(td);body.appendChild(header);
   if(!regionesCerradas.has(key)){
@@ -3374,12 +3316,6 @@ function renderResumen(){
   }
   body.appendChild(subtotalGrupoResumen(items,'SUBTOTAL REGIÓN · '+key,admin,'region-subtotal'));
  });
- // Callao.SC aparece como fila independiente, fuera de subtotales de PDV.
- const filaCallao=filas.find(x=>x.pdv===PDV_RESUMEN_CALLAO);
- if(filaCallao){
-  const fila=admin?filaResumen(filaCallao,false):pdvRows[filas.indexOf(filaCallao)];
-  if(fila){fila.classList.add('brecha-data-row','callao-independent-row');fila.title='Último punto: Callao.SC. Se muestra separado de los PDV de entrega.';body.appendChild(fila);}
- }
  if(admin&&resumen.total)body.appendChild(filaResumen(resumen.total,true));
  if(!filas.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=cols;td.textContent='No existen PDV para los filtros seleccionados.';tr.appendChild(td);body.appendChild(tr);}
 }
@@ -3722,21 +3658,21 @@ function celdaV2(valor,pdv,categoria,total=false){
  if(['h576a600NoDevuelto','h576a600PorDevolver','brecha96a120','brecha96NoLlegado'].includes(categoria))td.classList.add('preventive-cell');
  if(categoria==='totalCritico')td.classList.add('summary-critical');
  if(categoria==='totalPreventivoCritico')td.classList.add('summary-preventive-critical');
- if(valor){td.classList.add('summary-clickable');td.dataset.resumenPdv=total?'':String(pdv||'');td.dataset.resumenCategoria=categoria;td.classList.toggle('summary-selected',celdaResumenSeleccionada(total?'':pdv,categoria));td.onclick=()=>aplicarFiltroResumen(total?'':pdv,categoria);}
+ if(valor){td.classList.add('summary-clickable');td.dataset.resumenPdv=total?'':String(pdv||'');td.dataset.resumenCategoria=categoria;td.classList.toggle('summary-selected',celdaResumenSeleccionada(total?'':pdv,categoria));td.onclick=(evento)=>aplicarFiltroResumen(total?'':pdv,categoria,evento);}
  return td;
 }
 function filaResumen(x,esTotal){
  const tr=document.createElement('tr');if(esTotal)tr.classList.add('total-row');
  if(!esTotal)tr.dataset.excelPdv=String(x.pdv||'');
  tr.classList.toggle('summary-row-active',!esTotal&&filaResumenSeleccionada(x.pdv));
- const pdv=document.createElement('td');pdv.textContent=x.pdv;pdv.className='summary-clickable';if(!esTotal){pdv.dataset.resumenPdv=String(x.pdv||'');pdv.dataset.resumenCategoria='';}pdv.classList.toggle('summary-selected',!esTotal&&celdaResumenSeleccionada(x.pdv,''));pdv.onclick=()=>esTotal?limpiarFiltroResumen(false):aplicarFiltroResumen(x.pdv,'');tr.append(pdv);
+ const pdv=document.createElement('td');pdv.textContent=x.pdv;pdv.className='summary-clickable';if(!esTotal){pdv.dataset.resumenPdv=String(x.pdv||'');pdv.dataset.resumenCategoria='';}pdv.classList.toggle('summary-selected',!esTotal&&celdaResumenSeleccionada(x.pdv,''));pdv.onclick=(evento)=>esTotal?limpiarFiltroResumen(false):aplicarFiltroResumen(x.pdv,'',evento);tr.append(pdv);
  const desp=document.createElement('td');desp.textContent=Number(x.despachosAyer||0)===0?'':num(x.despachosAyer);tr.append(desp);
  for(const k of [...COLUMNAS_V2,'total','totalCritico','totalPreventivoCritico','guiasUnicas'])tr.append(celdaV2(k==='totalPreventivoCritico'?totalPreventivoCriticoV2(x):x[k],x.pdv,k==='total'?'totalCasos':k,esTotal));
  const comentario=document.createElement('td');comentario.className='comment-col';if(!esTotal)comentario.dataset.excelComment=String(x.comentario||'');
- if(!esTotal&&x.pdv!==PDV_RESUMEN_CALLAO&&['ADMINISTRADOR','ENCARGADO'].includes(sesion?.rol)&&typeof abrirComentario==='function'){
+ if(!esTotal&&['ADMINISTRADOR','ENCARGADO'].includes(sesion?.rol)&&typeof abrirComentario==='function'){
   const b=document.createElement('button');b.className='btn-comment'+(x.comentario?' has-comment':'');b.textContent='💬';b.title='Comentario del PDV';b.onclick=()=>abrirComentario(x.pdv);comentario.append(b);
   const imagen=document.createElement('button');imagen.type='button';imagen.className='btn-image';imagen.textContent='🖼';imagen.title='Ver o cargar imágenes de '+x.pdv;imagen.setAttribute('aria-label','Ver o cargar imágenes de '+x.pdv);imagen.onclick=()=>abrirImagenesResumen(x.pdv);comentario.append(imagen);
- }else if(!esTotal&&x.pdv===PDV_RESUMEN_CALLAO){comentario.textContent='Punto de escaneo, sin comentario PDV';comentario.title='No existe un PDV llamado Callao.SC. Los comentarios siguen asociados al PDV responsable en el detalle.';}tr.append(comentario);return tr;
+ }tr.append(comentario);return tr;
 }
 function subtotalGrupoResumen(items,nombre,admin,clase){
  const tr=document.createElement('tr');tr.className=clase;const td=document.createElement('td');td.textContent=clase==='area-subtotal-nested'?'SUBTOTAL ÁREA':'SUBTOTAL REGIÓN';td.title=nombre;tr.append(td);

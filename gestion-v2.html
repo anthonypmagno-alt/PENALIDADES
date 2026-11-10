@@ -548,7 +548,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V20 <span class="build-stamp" id="buildStamp">Edición 20261110-CALLAO-TR12-DIVIDIDO-V21</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V22 <span class="build-stamp" id="buildStamp">Edición 20261110-CALLAO-SIGUIENTE-PARADA-V22</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -1847,22 +1847,24 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     return (!f.comentariosAdmin.size||f.comentariosAdmin.has(estadoAdmin))&&(!f.comentariosGestion.size||f.comentariosGestion.has(estadoGestion));
   }
 
-  // V21: Callao.SC conserva una fila independiente. EXCEPCIÓN: cuando
-  // Track Break registra el valor EXACTO «Salida TR1/2 a destino» y su
-  // Último punto de operación es Callao.SC (o Callao.SC|...), solo el
-  // CASO DE BRECHA se asigna a la fila del PDV de destino.
-  // La marca viene por caso desde process-worker, nunca del texto de
-  // escaneo de Exportación, para no atribuir brechas por coincidencias falsas.
+  // V22: BRECHA pertenece al PDV de «Nombre de la siguiente parada»
+  // únicamente cuando Tipo de operación es «Salida TR1/2 a destino»
+  // y Último punto de operación es Callao.SC. En el resto de BRECHAS
+  // pertenece al «Último punto de operación». Cola Larga conserva la fila
+  // Callao.SC independiente si Exportación indica ese último escaneo.
   const PDV_RESUMEN_CALLAO='CALLAO.SC';
   function esUltimoPuntoCallao(guia){
-    return String(guia?.ultimoPuntoEscaneoExportacion||'').trim().toUpperCase()===PDV_RESUMEN_CALLAO;
+    return /^CALLAO\.SC(?:\|.*)?$/.test(String(guia?.ultimoPuntoEscaneoExportacion||'').trim().toUpperCase());
   }
   function esCategoriaBrechaResumen(categoria){
     const c=String(categoria||'');return c.startsWith('brecha')||c.startsWith('mayor144');
   }
   function pdvVisualCasoResumen(guia,caso){
     const pdv=String(caso?.pdv||'').trim().toUpperCase().replace(/\.PDV$/i,'');
-    if(caso?.origenCallaoSalidaTR12===true&&esCategoriaBrechaResumen(caso.categoria)&&pdv&&pdv!==PDV_RESUMEN_CALLAO)return pdv;
+    // El campo pdv del caso de TRACK BREAK ya es la siguiente parada
+    // (excepción) o el último punto de operación (regla general).
+    if(esCategoriaBrechaResumen(caso?.categoria)&&caso?.origenTrackBreak===true)return pdv;
+    // Guías Callao de Exportación/Cola Larga permanecen independientes.
     return esUltimoPuntoCallao(guia)?PDV_RESUMEN_CALLAO:pdv;
   }
   const CATEGORIAS_INFORMATIVAS_RESUMEN=new Set([
@@ -2136,7 +2138,7 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     return String(tipo||"").split(/\n\s*\n/).map(bloque=>{const lineas=bloque.split(/\n+/).map(v=>v.trim()).filter(Boolean);if(!lineas.length)return "";return `<div class="type-block"><div class="type-title">${esc(lineas[0])}</div>${lineas[1]?`<span class="type-value">${esc(lineas[1])}</span>`:""}${lineas.slice(2).map(v=>`<span class="type-detail">${esc(v)}</span>`).join("")}</div>`;}).join("");
   }
 
-  function formatearUltimaActualizacion(x){const fechaLeida=fechaEscaneoValida(x.ultimaOperacion),fecha=fechaLeida?formatearFechaExcel(fechaLeida):String(x.ultimaOperacion||"").trim(),escaneo=String(x.tipoEscaneoReciente||"").trim(),repartidor=empleadoEntregaVisible(x,"repartidor");return `${fecha?`<div class="update-date">${esc(fecha)}</div>`:'<div class="update-empty">Sin fecha de actualización</div>'}${escaneo?`<span class="update-scan">${esc(escaneo)}</span>`:'<span class="update-scan update-empty">Sin tipo de escaneo</span>'}<span class="update-driver"><b>Repartidor:</b> ${esc(estadoSinEmpleadoEntrega(x.tipoEscaneoExportacion)?"":(repartidor||"Sin dato"))}</span>${String(x.ultimoPuntoEscaneoExportacion||"").trim()?`<div class="update-driver"><b>Último punto:</b> ${esc(x.ultimoPuntoEscaneoExportacion)}</div>`:""}${bloqueEscaneoExportacion(x)}`;}
+  function formatearUltimaActualizacion(x){const fechaLeida=fechaEscaneoValida(x.ultimaOperacion),fecha=fechaLeida?formatearFechaExcel(fechaLeida):String(x.ultimaOperacion||"").trim(),escaneo=String(x.tipoEscaneoReciente||"").trim(),repartidor=empleadoEntregaVisible(x,"repartidor");return `${fecha?`<div class="update-date">${esc(fecha)}</div>`:'<div class="update-empty">Sin fecha de actualización</div>'}${escaneo?`<span class="update-scan">${esc(escaneo)}</span>`:'<span class="update-scan update-empty">Sin tipo de escaneo</span>'}<span class="update-driver"><b>Repartidor:</b> ${esc(estadoSinEmpleadoEntrega(x.tipoEscaneoExportacion)?"":(repartidor||"Sin dato"))}</span>${String(x.ultimoPuntoEscaneoExportacion||"").trim()?`<div class="update-driver"><b>Último punto:</b> ${esc(x.ultimoPuntoEscaneoExportacion)}</div>`:""}${x.pdvAtribucionOrigen==="SIGUIENTE_PARADA"?`<div class="update-driver"><b>Siguiente parada (brecha):</b> ${esc(x.siguienteParadaTrackBreak||x.pdv||"")}</div>`:""}${bloqueEscaneoExportacion(x)}`;}
 
   function formatearDestinoGestion(x){return `<div><b>Departamento:</b> ${esc(x.dpto||"")}</div><div><b>Provincia:</b> ${esc(x.prov||"")}</div><div><b>Distrito:</b> ${esc(x.dsto||"")}</div>`;}
   function claveComentarioDetalle(comentario){return String(comentario||"").normalize("NFC").trim().replace(/\s+/g," ").toLocaleLowerCase("es");}

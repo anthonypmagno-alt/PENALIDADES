@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261110-CALLAO-SIGUIENTE-PARADA-V22-1-PUBLICACION"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261110-BRECHAS-CALLAO-AL-PDV-V22-2"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261110-CALLAO-SIGUIENTE-PARADA-V22-1-PUBLICACION"></script>
+<script src="./bridge.js?v=20261110-BRECHAS-CALLAO-AL-PDV-V22-2"></script>
   <base target="_top">
 <style>/* v9 only */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden]{display:none!important}
 /* V20: fila de Callao.SC independiente de los subtotales regionales y por PDV. */
@@ -11,7 +11,7 @@
 </style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261110-CALLAO-SIGUIENTE-PARADA-V22-1-PUBLICACION</title><meta name="app-build" content="20261110-CALLAO-SIGUIENTE-PARADA-V22-1-PUBLICACION">
+  <title>Gestión de guías V2 · 20261110-BRECHAS-CALLAO-AL-PDV-V22-2</title><meta name="app-build" content="20261110-BRECHAS-CALLAO-AL-PDV-V22-2">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -548,7 +548,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V22 <span class="build-stamp" id="buildStamp">Edición 20261110-CALLAO-SIGUIENTE-PARADA-V22-1-PUBLICACION</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V22.2 <span class="build-stamp" id="buildStamp">Edición 20261110-BRECHAS-CALLAO-AL-PDV-V22-2</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -874,7 +874,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
     if(vista==="sla")window.SlaPaquetesV2?.alAbrir();
     if(vista==="comentarios")renderConfiguracionComentarios();
-    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261110-CALLAO-SIGUIENTE-PARADA-V22-1-PUBLICACION";frame.dataset.loaded="1";}}
+    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261110-BRECHAS-CALLAO-AL-PDV-V22-2";frame.dataset.loaded="1";}}
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
 
@@ -1847,24 +1847,57 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     return (!f.comentariosAdmin.size||f.comentariosAdmin.has(estadoAdmin))&&(!f.comentariosGestion.size||f.comentariosGestion.has(estadoGestion));
   }
 
-  // V22: BRECHA pertenece al PDV de «Nombre de la siguiente parada»
-  // únicamente cuando Tipo de operación es «Salida TR1/2 a destino»
-  // y Último punto de operación es Callao.SC. En el resto de BRECHAS
-  // pertenece al «Último punto de operación». Cola Larga conserva la fila
-  // Callao.SC independiente si Exportación indica ese último escaneo.
+  // V22.2: en el RESUMEN, una BRECHA real de Track Break se contabiliza
+  // en su PDV operativo, incluso cuando Exportación mantiene Callao.SC como
+  // último escaneo. La marca origenTrackBreak puede faltar en registros
+  // antiguos ya publicados: también se valida el origen y la operación.
+  // Cola Larga e informativas de Exportación conservan la fila Callao.SC.
   const PDV_RESUMEN_CALLAO='CALLAO.SC';
+  function normalizarPdvCasoResumen(valor){
+    return String(valor||'').trim().toUpperCase().split('|')[0].replace(/\.PDV$/i,'');
+  }
   function esUltimoPuntoCallao(guia){
     return /^CALLAO\.SC(?:\|.*)?$/.test(String(guia?.ultimoPuntoEscaneoExportacion||'').trim().toUpperCase());
   }
   function esCategoriaBrechaResumen(categoria){
     const c=String(categoria||'');return c.startsWith('brecha')||c.startsWith('mayor144');
   }
+  function esSalidaCallaoTrackBreakResumen(guia){
+    const operacion=normalizarLocal(guia?.tipoOperacionTrackBreak||guia?.tipoEscaneoReciente).replace(/\s+/g,' ');
+    if(operacion!=='SALIDA TR1/2 A DESTINO')return false;
+    const punto=String(guia?.ultimoPuntoOperacion||'').trim().toUpperCase();
+    // Algunos registros antiguos aún no guardaron Último punto de operación;
+    // se acepta Callao.SC de Exportación SOLO junto al tipo exacto de Track Break.
+    return punto?/^CALLAO\.SC(?:\|.*)?$/.test(punto):esUltimoPuntoCallao(guia);
+  }
   function pdvVisualCasoResumen(guia,caso){
-    const pdv=String(caso?.pdv||'').trim().toUpperCase().replace(/\.PDV$/i,'');
-    // El campo pdv del caso de TRACK BREAK ya es la siguiente parada
-    // (excepción) o el último punto de operación (regla general).
-    if(esCategoriaBrechaResumen(caso?.categoria)&&caso?.origenTrackBreak===true)return pdv;
-    // Guías Callao de Exportación/Cola Larga permanecen independientes.
+    const pdv=normalizarPdvCasoResumen(caso?.pdv);
+    if(esCategoriaBrechaResumen(caso?.categoria)){
+      const tr12Callao=esSalidaCallaoTrackBreakResumen(guia);
+      if(tr12Callao){
+        const siguiente=normalizarPdvCasoResumen(guia?.siguienteParadaTrackBreak);
+        // «Nombre de la siguiente parada» es la autoridad si identifica un
+        // PDV inequívoco; nunca se usa Punto de entrega para esta atribución.
+        const catalogo=(resumenBase?.filas||[]);
+        if(siguiente&&siguiente!==PDV_RESUMEN_CALLAO&&catalogo.some(x=>normalizarPdvCasoResumen(x.pdv)===siguiente))return siguiente;
+        // Al cargar fuentes con la V22, caso.pdv ya contiene Siguiente parada.
+        // Esto también recupera casos antiguos donde faltó origenTrackBreak.
+        if(pdv&&pdv!==PDV_RESUMEN_CALLAO)return pdv;
+        const guiaPdv=normalizarPdvCasoResumen(guia?.pdv);
+        if(guia?.pdvAtribucionOrigen==='SIGUIENTE_PARADA'&&guiaPdv&&guiaPdv!==PDV_RESUMEN_CALLAO)return guiaPdv;
+        return PDV_RESUMEN_CALLAO;
+      }
+      const fuentes=Array.isArray(guia?.fuentes)?guia.fuentes:[];
+      const deTrackBreak=caso?.origenTrackBreak===true||caso?.origenCallaoSalidaTR12===true||
+        fuentes.some(x=>/^(BRECHA|TRACK BREAK|TRACK_BREAK)$/.test(normalizarLocal(x)));
+      if(deTrackBreak){
+        // Fuera de TR1/2 desde Callao, la BRECHA corresponde a Último punto
+        // de operación, representado en el PDV del caso de Track Break.
+        const ultimo=normalizarPdvCasoResumen(guia?.ultimoPuntoOperacion);
+        if(ultimo===PDV_RESUMEN_CALLAO)return PDV_RESUMEN_CALLAO;
+        return pdv;
+      }
+    }
     return esUltimoPuntoCallao(guia)?PDV_RESUMEN_CALLAO:pdv;
   }
   const CATEGORIAS_INFORMATIVAS_RESUMEN=new Set([

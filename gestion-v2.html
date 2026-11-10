@@ -3,7 +3,12 @@
 <script src="./config.js"></script>
 <script src="./bridge.js?v=20261109-callao-sc-v19"></script>
   <base target="_top">
-<style>/* v9 only */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden]{display:none!important}</style>
+<style>/* v9 only */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden]{display:none!important}
+/* V20: fila de Callao.SC independiente de los subtotales regionales y por PDV. */
+#tablaResumenV2 tr.callao-independent-row td:first-child{background:#dbeafe!important;color:#1e40af!important;font-weight:900}
+#tablaResumenV2 tr.callao-independent-row{border-top:4px solid #2563eb!important;border-bottom:3px solid #2563eb!important}
+#tablaResumenV2 tr.callao-independent-row td.comment-col{font-size:9px;color:#475569;background:#f8fafc!important}
+</style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Gestión de guías V2 · 20261109-DESCARGA-PDV-V18-4-PERSISTENCIA</title><meta name="app-build" content="20261109-DESCARGA-PDV-V18-4-PERSISTENCIA">
@@ -543,7 +548,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V18 <span class="build-stamp" id="buildStamp">Edición 20261109-CALLAO-SC-V19</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V20 <span class="build-stamp" id="buildStamp">Edición 20261110-CALLAO-FILA-INDEPENDIENTE-V20</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel completo · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -1842,16 +1847,34 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     return (!f.comentariosAdmin.size||f.comentariosAdmin.has(estadoAdmin))&&(!f.comentariosGestion.size||f.comentariosGestion.has(estadoGestion));
   }
 
+  // V20: Callao.SC se presenta como fila independiente y NO se acumula
+  // en el PDV de entrega. El PDV original se conserva para permisos,
+  // comentarios y acceso al detalle en Supabase.
+  const PDV_RESUMEN_CALLAO='CALLAO.SC';
+  function esUltimoPuntoCallao(guia){
+    return String(guia?.ultimoPuntoEscaneoExportacion||'').trim().toUpperCase()===PDV_RESUMEN_CALLAO;
+  }
+  function pdvVisualCasoResumen(guia,caso){
+    return esUltimoPuntoCallao(guia)?PDV_RESUMEN_CALLAO:
+      String(caso?.pdv||'').trim().toUpperCase().replace(/\.PDV$/i,'');
+  }
+  const CATEGORIAS_INFORMATIVAS_RESUMEN=new Set([
+    'enColaLarga','brechaMenor48EnPDV','brechaMenor48NoLlegado','brechaNoLlegadoSinFecha'
+  ]);
   function construirResumenGuiasCliente(registros){
     const acumulado={},vistos=new Set(),meta={};
     (resumenBase.filas||[]).forEach(x=>meta[String(x.pdv||"")]=x);
     registros.forEach(x=>{
       const guia=normalizarLocal(x.guia),casos=Array.isArray(x.casosResumen)?x.casosResumen:[];
     casos.forEach(c=>{
-        const pdv=String(c.pdv||"").trim().toUpperCase().replace(/\.PDV$/i,""),categoria=String(c.categoria||""),clave=pdv+"|"+categoria+"|"+guia;
+        const pdv=pdvVisualCasoResumen(x,c),categoria=String(c.categoria||""),clave=pdv+"|"+categoria+"|"+guia;
         if(!pdv||!categoria||!guia||vistos.has(clave))return;if(categoria==="enColaLarga"&&!coincideUmbralEnCola(x))return;vistos.add(clave);
-        if(!acumulado[pdv])acumulado[pdv]=nuevoAcumuladoResumen(pdv,x.area,x.region);
-        acumulado[pdv][categoria]=Number(acumulado[pdv][categoria]||0)+1;if(!["brechaMenor48EnPDV","enColaLarga"].includes(categoria))acumulado[pdv]._guias.add(guia);
+        const callao=pdv===PDV_RESUMEN_CALLAO;
+        if(!acumulado[pdv])acumulado[pdv]=nuevoAcumuladoResumen(pdv,callao?"CENTRO DE CLASIFICACIÓN":x.area,callao?"SORTING CENTER":x.region);
+        acumulado[pdv][categoria]=Number(acumulado[pdv][categoria]||0)+1;
+        // En Callao, la fila de guías únicas incluye también las informativas
+        // (<48 h); el TOTAL de casos vencidos NO las incluye.
+        if(callao||!CATEGORIAS_INFORMATIVAS_RESUMEN.has(categoria))acumulado[pdv]._guias.add(guia);
         const encargado=String(x.encargado||"").trim();if(encargado)acumulado[pdv]._encargados.add(encargado);
       });
     });
@@ -1957,7 +1980,7 @@ function actualizarChipResumen(){
 }
 function coincideFiltroResumen(x){return !seleccionesResumen().length||seleccionesResumen().some(s=>coincideFiltroResumenIndividual(x,s));}
 
-function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;if(!filasPermitidasResumen.has(Number(x.fila)))return false;const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],pdv=seleccion.pdv,categoria=seleccion.categoria,criticas=["h720NoDevuelto","h720PorDevolver","mayor144EnPDV","mayor144NoLlegado"],preventivasCriticas=CATEGORIAS_PREVENTIVO_CRITICO_V2;return casos.some(c=>{if(pdv&&String(c.pdv||"")!==pdv)return false;const tipo=String(c.categoria||"");if(!categoria)return true;if(categoria==="totalCasos"||categoria==="guiasUnicas")return !["enColaLarga","brechaMenor48EnPDV"].includes(tipo);if(categoria==="enColaLarga")return tipo==="enColaLarga"&&coincideUmbralEnCola(x);if(categoria==="totalCritico")return criticas.includes(tipo);if(categoria==="totalPreventivoCritico")return preventivasCriticas.includes(tipo);return tipo===categoria||(categoria==="mayor144NoLlegado"&&tipo==="brecha144a168NoLlegado");});}
+function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;if(!filasPermitidasResumen.has(Number(x.fila)))return false;const casos=Array.isArray(x.casosResumen)?x.casosResumen:[],pdv=seleccion.pdv,categoria=seleccion.categoria,criticas=["h720NoDevuelto","h720PorDevolver","mayor144EnPDV","mayor144NoLlegado"],preventivasCriticas=CATEGORIAS_PREVENTIVO_CRITICO_V2;return casos.some(c=>{if(pdv&&pdvVisualCasoResumen(x,c)!==pdv)return false;const tipo=String(c.categoria||"");if(!categoria)return true;if(categoria==="totalCasos")return !CATEGORIAS_INFORMATIVAS_RESUMEN.has(tipo);if(categoria==="guiasUnicas")return pdv===PDV_RESUMEN_CALLAO||!CATEGORIAS_INFORMATIVAS_RESUMEN.has(tipo);if(categoria==="enColaLarga")return tipo==="enColaLarga"&&coincideUmbralEnCola(x);if(categoria==="totalCritico")return criticas.includes(tipo);if(categoria==="totalPreventivoCritico")return preventivasCriticas.includes(tipo);return tipo===categoria||(categoria==="mayor144NoLlegado"&&tipo==="brecha144a168NoLlegado");});}
 
   function abrirComentario(pdv){const x=(resumen.filas||[]).find(r=>r.pdv===pdv);if(!x)return;document.getElementById("commentModal").dataset.pdv=pdv;document.getElementById("commentText").value=x.comentario||"";const soloLectura=sesion?.rol!=="ADMINISTRADOR";document.getElementById("commentText").readOnly=soloLectura;document.getElementById("btnSaveComment").hidden=soloLectura;aplicarIdiomaModalComentario();document.getElementById("commentModal").style.display="flex";setTimeout(()=>document.getElementById("commentText").focus(),50);}
   function cerrarComentario(){document.getElementById("commentModal").style.display="none";}
@@ -3293,7 +3316,7 @@ function renderResumen(){
   const admin=typeof filaResumen==='function',cols=document.querySelectorAll('#tablaResumenV2 colgroup col').length||20,grupos=new Map();
  let pdvRows=[];
  if(!admin){const anterior=resumen.filas;resumen.filas=filas;renderResumenAnterior();pdvRows=[...body.children];resumen.filas=anterior;}
- body.replaceChildren();filas.forEach((x,i)=>{const k=regionResumen(x).key;if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push({x,i});});
+ body.replaceChildren();filas.forEach((x,i)=>{if(x.pdv===PDV_RESUMEN_CALLAO)return;const k=regionResumen(x).key;if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push({x,i});});
  grupos.forEach((items,key)=>{
   const header=document.createElement('tr');header.className='region-heading';const td=document.createElement('td');td.colSpan=cols;const button=document.createElement('button');button.className='region-toggle';button.textContent=(regionesCerradas.has(key)?'▸ ':'▾ ')+key+' · '+items.length+' PDV';button.setAttribute('aria-expanded',String(!regionesCerradas.has(key)));button.onclick=()=>alternarRegionResumen(key);td.appendChild(button);header.appendChild(td);body.appendChild(header);
   if(!regionesCerradas.has(key)){
@@ -3309,6 +3332,12 @@ function renderResumen(){
   }
   body.appendChild(subtotalGrupoResumen(items,'SUBTOTAL REGIÓN · '+key,admin,'region-subtotal'));
  });
+ // Callao.SC aparece como fila independiente, fuera de subtotales de PDV.
+ const filaCallao=filas.find(x=>x.pdv===PDV_RESUMEN_CALLAO);
+ if(filaCallao){
+  const fila=admin?filaResumen(filaCallao,false):pdvRows[filas.indexOf(filaCallao)];
+  if(fila){fila.classList.add('brecha-data-row','callao-independent-row');fila.title='Último punto: Callao.SC. Se muestra separado de los PDV de entrega.';body.appendChild(fila);}
+ }
  if(admin&&resumen.total)body.appendChild(filaResumen(resumen.total,true));
  if(!filas.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=cols;td.textContent='No existen PDV para los filtros seleccionados.';tr.appendChild(td);body.appendChild(tr);}
 }
@@ -3662,10 +3691,10 @@ function filaResumen(x,esTotal){
  const desp=document.createElement('td');desp.textContent=Number(x.despachosAyer||0)===0?'':num(x.despachosAyer);tr.append(desp);
  for(const k of [...COLUMNAS_V2,'total','totalCritico','totalPreventivoCritico','guiasUnicas'])tr.append(celdaV2(k==='totalPreventivoCritico'?totalPreventivoCriticoV2(x):x[k],x.pdv,k==='total'?'totalCasos':k,esTotal));
  const comentario=document.createElement('td');comentario.className='comment-col';if(!esTotal)comentario.dataset.excelComment=String(x.comentario||'');
- if(!esTotal&&['ADMINISTRADOR','ENCARGADO'].includes(sesion?.rol)&&typeof abrirComentario==='function'){
+ if(!esTotal&&x.pdv!==PDV_RESUMEN_CALLAO&&['ADMINISTRADOR','ENCARGADO'].includes(sesion?.rol)&&typeof abrirComentario==='function'){
   const b=document.createElement('button');b.className='btn-comment'+(x.comentario?' has-comment':'');b.textContent='💬';b.title='Comentario del PDV';b.onclick=()=>abrirComentario(x.pdv);comentario.append(b);
   const imagen=document.createElement('button');imagen.type='button';imagen.className='btn-image';imagen.textContent='🖼';imagen.title='Ver o cargar imágenes de '+x.pdv;imagen.setAttribute('aria-label','Ver o cargar imágenes de '+x.pdv);imagen.onclick=()=>abrirImagenesResumen(x.pdv);comentario.append(imagen);
- }tr.append(comentario);return tr;
+ }else if(!esTotal&&x.pdv===PDV_RESUMEN_CALLAO){comentario.textContent='Punto de escaneo, sin comentario PDV';comentario.title='No existe un PDV llamado Callao.SC. Los comentarios siguen asociados al PDV responsable en el detalle.';}tr.append(comentario);return tr;
 }
 function subtotalGrupoResumen(items,nombre,admin,clase){
  const tr=document.createElement('tr');tr.className=clase;const td=document.createElement('td');td.textContent=clase==='area-subtotal-nested'?'SUBTOTAL ÁREA':'SUBTOTAL REGIÓN';td.title=nombre;tr.append(td);

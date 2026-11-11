@@ -12,3 +12,15 @@
 #memberForm{grid-template-columns:repeat(2,minmax(220px,1fr))}
 #memberForm button{align-self:end;min-height:40px}
 @media(max-width:780px){#memberForm{grid-template-columns:1fr}.pub-kpis{grid-template-columns:repeat(2,minmax(120px,1fr))}}
+
+/* V2.1: filtros del resumen y OK persistente */
+.summary-filterbar{display:grid;grid-template-columns:repeat(6,minmax(132px,1fr)) auto;gap:9px;align-items:end;margin:0 0 7px}
+.summary-filterbar .field span{white-space:nowrap}.summary-filterbar button{min-height:36px}
+.summary-filter-hint{font-size:11px;color:#63748d;margin:0 0 12px;line-height:1.5}
+.summary-approval{text-align:center!important;min-width:56px}
+.summary-approval input{width:17px;height:17px;cursor:pointer;accent-color:#187c53}
+.summary-approval input:disabled{cursor:not-allowed;opacity:.4}
+.summary-approval.ok-row{background:#e8f7ee}
+.summary-approval.stale-row{background:#fff5df}
+@media(max-width:1280px){.summary-filterbar{grid-template-columns:repeat(4,minmax(120px,1fr))}}
+@media(max-width:760px){.summary-filterbar{grid-template-columns:repeat(2,minmax(130px,1fr))}}

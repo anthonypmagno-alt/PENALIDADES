@@ -1,4 +1,4 @@
-/* Facturación PDV V2.0: Auth compartida (v16-replica-auth), consultas RLS y sincronización. */
+/* Facturación PDV V2.1: Auth compartida (v16-replica-auth), consultas RLS y sincronización. */
 (function (root) {
   'use strict';
   let client = null;
@@ -8,7 +8,7 @@
     members: 'facturacion_usuarios', config: 'facturacion_configuracion',
     tariffs: 'facturacion_tarifas', times: 'facturacion_tiempos',
     settlements: 'facturacion_liquidaciones', private: 'facturacion_cierres_privados',
-    summary: 'facturacion_resumen', detail: 'facturacion_detalle'
+    summary: 'facturacion_resumen', detail: 'facturacion_detalle', reviews: 'facturacion_revisiones'
   };
   function ensure(result, context = 'Supabase') {
     if (result.error) throw new Error(context + ': ' + result.error.message);
@@ -128,6 +128,19 @@
       datos:data
     }, {onConflict:'periodo,clave'}), 'Guardar tiempo');
   }
+  async function loadReviews(period) {
+    assertAdmin();
+    return allPages(TABLES.reviews,'periodo,clave,pdv,aprobado_ok,aprobado_por,aprobado_en,huella',
+      q=>q.eq('periodo',period).order('clave',{ascending:true}));
+  }
+  async function saveReview(period, row, approved, fingerprint='') {
+    assertAdmin();
+    const payload={periodo:period,clave:row.key,pdv:row.pdv,departamento:row.dept,
+      provincia:row.prov,distrito:row.dist,aprobado_ok:!!approved,huella:approved?fingerprint:''};
+    return ensure(await create().from(TABLES.reviews).upsert(payload,{onConflict:'periodo,clave'})
+      .select('periodo,clave,pdv,aprobado_ok,aprobado_por,aprobado_en,huella').single(), 'Guardar OK');
+  }
+  async function refreshReviews(period) {return loadReviews(period);}
   async function listMembers() {
     assertAdmin();
     return allPages(TABLES.members,'user_id,rol,pdvs,activo,actualizado_en',
@@ -243,6 +256,6 @@
       .select('configuracion,estadisticas,totales').eq('liquidacion_id',id).single(),'Cierre privado');
   }
   root.FacturacionCloud={create,restore,refreshProfile,login,logout,profile:()=>profile,
-    user:()=>currentUser,admin,loadConfig,saveRules,saveTariff,saveTime,
+    user:()=>currentUser,admin,loadConfig,saveRules,saveTariff,saveTime,loadReviews,saveReview,refreshReviews,
     listMembers,upsertMember,publish,listSettlements,readSummary,readDetails,readAllDetails,readPrivate};
 })(window);

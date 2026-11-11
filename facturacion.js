@@ -1,8 +1,8 @@
-/* Facturación PDV V2.0 - trabajo local y cierre multiusuario con RLS en Supabase. */
+/* Facturación PDV V2.1 - trabajo local y cierre multiusuario con RLS en Supabase. */
 (()=>{'use strict';
 const M=window.FacturacionMotor,Cloud=window.FacturacionCloud,$=id=>document.getElementById(id),money=n=>n==null?'—':new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'}).format(n),fnum=(n,dp=2)=>n==null?'—':new Intl.NumberFormat('es-PE',{minimumFractionDigits:0,maximumFractionDigits:dp}).format(n),safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),csvSafe=v=>typeof v==='string'&&/^[=+@\-\t\r]/.test(v)?"'"+v:v;
 let publishedList=[],publishedSummary=[],publishedCurrent=null,pubPage=0,pubCount=0,pubBusy=false;
-let db=null,config=null,rows=[],referenceRows=[],sourceStats=null,result=null,view={details:[],summary:[],totals:null},sumPage=0,detPage=0,currentTimeKey=null,currentTariffPDV=null,selectedPDVs=new Set(),allPDVs=[],periods=[],currentSnapshot=null,filterTimer=null,importing=false,dbReady=false;
+let reviews=new Map(),fullRows=new Map(),sourceSignatures=new Map(),db=null,config=null,rows=[],referenceRows=[],sourceStats=null,result=null,view={details:[],summary:[],totals:null},sumPage=0,detPage=0,currentTimeKey=null,currentTariffPDV=null,selectedPDVs=new Set(),allPDVs=[],periods=[],currentSnapshot=null,filterTimer=null,importing=false,dbReady=false;
 const todayMonth=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
 function notify(msg,error=false){const el=$('toast');el.hidden=false;el.textContent=msg;el.classList.toggle('error',error);clearTimeout(notify.timeout);notify.timeout=setTimeout(()=>el.hidden=true,4500)}
 function setStatus(msg){$('importStatus').textContent=msg}
@@ -29,12 +29,13 @@ async function loadPeriod(){
  config={...initialConfig(),...await Cloud.loadConfig(p)};
  config.rule={...initialConfig().rule,...(config.rule||{})};
  config.times=config.times||{};config.tariffs=config.tariffs||{};
+ reviews=new Map((await Cloud.loadReviews(p)).map(x=>[x.clave,x]));
  $('rate').value=config.rule.rate;$('step').value=config.rule.step;
  $('maxExcess').value=config.rule.maxExcess;$('minGuides').value=config.minGuides;
  renderExamples();
  const src=await get('dataset',p);rows=src?.rows||[];sourceStats=src?.stats||null;
  selectedPDVs.clear();
- for(const id of ['fDept','fProv','fDist','fSearch','fEstado'])$(id).value='';
+ for(const id of ['fDept','fProv','fDist','fSearch','fEstado',...summaryFilterIds])$(id).value='';
  await updateAvailablePeriods();await calculate();
  setStatus(src?`Borrador local: ${src.file||'archivo'} · ${src.uploadedAt||''}`:`Sin archivo local para ${p}. Importa MODULADOR.xlsx.`);
  $('srcBadge').textContent=src?`${fnum(rows.length,0)} guías · ${src.stats?.duplicates||0} duplicadas omitidas · ${src.stats?.high||0} >720 h`:'Sin registros';
@@ -45,12 +46,76 @@ async function chooseReferenceRows(){
  if(!src?.rows?.length)throw Error('Falta importar localmente el periodo de referencia '+rp+' para calcular el ranking de tiempos. No se utilizará silenciosamente otro periodo.');
  return src.rows;
 }
-async function calculate(){if(!rows.length){result=null;view={details:[],summary:[],totals:null};allPDVs=[];renderAll();return;}try{referenceRows=await chooseReferenceRows();result=M.run(rows,{period:selectedPeriod(),...config},referenceRows);allPDVs=[...new Set(result.summary.map(x=>x.pdv))].sort();renderPDVFilter();populateGeoOptions();applyFilters();}catch(e){result=null;view={details:[],summary:[],totals:null};renderAll();setStatus(e.message);notify('Error calculando resultados: '+e.message,true);console.error(e);}}
+async function calculate(){if(!rows.length){result=null;view={details:[],summary:[],totals:null};allPDVs=[];fullRows.clear();sourceSignatures.clear();renderAll();return;}try{referenceRows=await chooseReferenceRows();result=M.run(rows,{period:selectedPeriod(),...config},referenceRows);fullRows=new Map(result.summary.map(x=>[x.key,x]));indexSourceSignatures();allPDVs=[...new Set(result.summary.map(x=>x.pdv))].sort();renderPDVFilter();populateGeoOptions();populateSummaryOptions();applyFilters();}catch(e){result=null;view={details:[],summary:[],totals:null};renderAll();setStatus(e.message);notify('Error calculando resultados: '+e.message,true);console.error(e);}}
 function renderPDVFilter(){selectedPDVs=new Set([...selectedPDVs].filter(p=>allPDVs.includes(p)));const zone=$('pdvChecks');zone.innerHTML=`<label class="pdv-option"><input type="checkbox" data-pdv-all ${selectedPDVs.size===0?'checked':''}> Todos los PDV</label>`+allPDVs.map(p=>`<label class="pdv-option"><input type="checkbox" data-pdv="${safe(p)}" ${selectedPDVs.has(p)?'checked':''}> ${safe(p)}</label>`).join('');$('pdvLabel').textContent=selectedPDVs.size?`${selectedPDVs.size} PDV seleccionados`:'Todos los PDV';}
 function populateGeoOptions(){const s=result?.summary||[];const oldD=$('fDept').value,oldP=$('fProv').value,oldZ=$('fDist').value;
  for(const [id,key,fn] of [['fDept','dept',()=>true],['fProv','prov',x=>!$('fDept').value||x.dept===$('fDept').value],['fDist','dist',x=>(!$('fDept').value||x.dept===$('fDept').value)&&(!$('fProv').value||x.prov===$('fProv').value)]]){const el=$(id),old={fDept:oldD,fProv:oldP,fDist:oldZ}[id],items=[...new Set(s.filter(fn).map(x=>x[key]))].sort();el.innerHTML=`<option value="">${id==='fProv'?'Todas':'Todos'}</option>`+items.map(x=>`<option value="${safe(x)}">${safe(x)}</option>`).join('');if(items.includes(old))el.value=old;}}
+const summaryFilterIds=['fMuestra','fMejorPDV','fOK','fUmbral','fTiempo','fTarifa','fObs'];
+// Firma estable por guia y tiempo: no depende del orden del Excel ni de cuando se importó.
+// Así, un OK aparece en otro navegador que importó exactamente los mismos datos.
+function hashRow(row){let h=2166136261;const v=String(row.guia)+'|'+String(row.horas)+'|'+String(row.fecha||'');for(let i=0;i<v.length;i++){h^=v.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function indexSourceSignatures(){
+ const states=new Map();for(const r of rows){const k=M.localKey(selectedPeriod(),r.dept,r.prov,r.dist,r.pdv),h=hashRow(r),v=states.get(k)||{sum:0,xor:0};v.sum=(v.sum+h)>>>0;v.xor=(v.xor^h)>>>0;states.set(k,v);}
+ sourceSignatures=new Map([...states].map(([k,v])=>[k,v.sum.toString(16)+'-'+v.xor.toString(16)]));
+}
+
+function stableStringify(v){
+ if(Array.isArray(v))return '['+v.map(stableStringify).join(',')+']';
+ if(v!==null&&typeof v==='object')return '{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+stableStringify(v[k])).join(',')+'}';
+ return JSON.stringify(v===undefined?null:v);
+}
+function reviewFingerprint(g){
+ const row=fullRows.get(g.key)||g;
+ const round=v=>v==null?null:Math.round(v*1000000)/1000000;
+ return stableStringify([selectedPeriod(),sourceSignatures.get(row.key)||'',row.key,row.count,round(row.promedio),row.bestPDV,
+ round(row.bestHours),round(row.establecido),row.umbralEst,row.tariffOrigin,config.refPeriod,config.rule,
+ config.tariffs[row.pdv]||null,config.times[row.key]||null]);
+}
+function approvalFor(g){
+ const r=reviews.get(g.key);return r?.aprobado_ok===true && r.huella===reviewFingerprint(g)?r:null;
+}
+function filterPresence(value,selector){return !selector||(selector==='CON'?!!value:!value);}
+function summaryMatches(g){
+ if(!g)return false;
+ const sample=$('fMuestra').value,ok=$('fOK').value,threshold=$('fUmbral').value,best=$('fMejorPDV').value;
+ if(!filterPresence(!!g.bestPDV,sample))return false;
+ if(best==='SIN'&&g.bestPDV)return false;
+ if(best&&best!=='SIN'&&best!==g.bestPDV)return false;
+ if(!filterPresence(!!approvalFor(g),ok))return false;
+ if(threshold==='SIN' && g.umbralEst!=null)return false;
+ if(threshold && threshold!=='SIN' && String(g.umbralEst)!==threshold)return false;
+ if(!filterPresence(g.establecido!=null,$('fTiempo').value))return false;
+ if(!filterPresence(g.tariffOrigin!=='SIN_TARIFA',$('fTarifa').value))return false;
+ if(!filterPresence(!!String(g.observaciones||'').trim(),$('fObs').value))return false;
+ return true;
+}
+function populateSummaryOptions(){
+ $('muestraMinLabel').textContent=`Muestra mínima (${config.minGuides||10} guías)`;
+ const best=$('fMejorPDV'),oldBest=best.value;
+ const opts=[...new Set((result?.summary||[]).map(g=>g.bestPDV).filter(Boolean))].sort();
+ best.innerHTML='<option value="">Todos</option><option value="SIN">Sin mejor PDV</option>'+opts.map(p=>`<option value="${safe(p)}">${safe(p)}</option>`).join('');
+ if(oldBest==='SIN'||opts.includes(oldBest))best.value=oldBest;
+ const el=$('fUmbral'),old=el.value;
+ const values=[...new Set((result?.summary||[]).map(g=>g.umbralEst).filter(x=>x!=null))].sort((a,b)=>a-b);
+ el.innerHTML='<option value="">Todos los umbrales</option><option value="SIN">Sin umbral</option>'+values.map(h=>`<option value="${safe(h)}">${safe(h)} h</option>`).join('');
+ if(old==='SIN'||values.some(v=>String(v)===old))el.value=old;
+}
+async function toggleReview(key,approved,checkbox){
+ const g=fullRows.get(key);if(!g)return;
+ const previous=approvalFor(g);
+ if(approved&&(g.umbralEst==null||g.tariffOrigin==='SIN_TARIFA')){
+  checkbox.checked=false;notify('No se puede aprobar una fila sin umbral establecido o sin tarifa.',true);return;
+ }
+ checkbox.disabled=true;
+ try{
+  const saved=await Cloud.saveReview(selectedPeriod(),g,approved,approved?reviewFingerprint(g):'');
+  reviews.set(key,saved);
+  applyFilters();notify(approved?'OK registrado en Supabase.':'OK retirado.');
+ }catch(e){checkbox.checked=!!previous;checkbox.disabled=false;notify('No se guardó el OK: '+e.message,true);}
+}
 function filteredDetailRows(){if(!result)return[];const d=$('fDept').value,p=$('fProv').value,z=$('fDist').value,s=M.norm($('fSearch').value),e=$('fEstado').value;
- return result.details.filter(r=>(!d||r.dept===d)&&(!p||r.prov===p)&&(!z||r.dist===z)&&(!selectedPDVs.size||selectedPDVs.has(r.pdv))&&(!s||r.guia.includes(s)||r.pdv.includes(s)||r.dist.includes(s))&&(!e||(e==='CERO POR EXCESO'?r.ceroMax:r.estado===e)));
+ const enabledGroups=new Set(result.summary.filter(summaryMatches).map(g=>g.key));
+ return result.details.filter(r=>(!d||r.dept===d)&&(!p||r.prov===p)&&(!z||r.dist===z)&&(!selectedPDVs.size||selectedPDVs.has(r.pdv))&&(!s||r.guia.includes(s)||r.pdv.includes(s)||r.dist.includes(s))&&(!e||(e==='CERO POR EXCESO'?r.ceroMax:r.estado===e))&&enabledGroups.has(M.localKey(selectedPeriod(),r.dept,r.prov,r.dist,r.pdv)));
 }
 function accumulate(filtered){const groups=new Map(),look=new Map((result?.summary||[]).map(g=>[g.key,g]));const tot={guias:0,bruto:0,descuentos:0,neto:0,calculadas:0,pendientes:0,fuera:0,cero:0};
  for(const r of filtered){const k=M.localKey(selectedPeriod(),r.dept,r.prov,r.dist,r.pdv);let g=groups.get(k);if(!g){const source=look.get(k);if(!source)continue;g={...source,count:0,timeSum:0,promedio:0,gross:0,discount:0,net:0,billable:0,excluded:0,breached:0,zero:0};groups.set(k,g);}g.count++;g.timeSum+=r.horas;tot.guias++;
@@ -60,9 +125,9 @@ function accumulate(filtered){const groups=new Map(),look=new Map((result?.summa
 function applyFilters(){const det=filteredDetailRows(),data=accumulate(det);view={details:det,summary:data.summary,totals:data.tot};sumPage=0;detPage=0;renderAll();}
 function renderAll(){renderKPIs();renderSummary();renderDetail();renderTariffs();renderCloseStatus();}
 function renderKPIs(){const t=view.totals;$('kGuias').textContent=t?fnum(t.guias,0):'—';$('kBruto').textContent=t?money(t.bruto):'—';$('kDescuento').textContent=t?money(t.descuentos):'—';$('kNeto').textContent=t?money(t.neto):'—';$('kPendientes').textContent=t?fnum(t.pendientes,0):'—';}
-function renderSummary(){const list=view.summary,per=40,n=Math.max(1,Math.ceil(list.length/per));sumPage=Math.min(sumPage,n-1);$('summaryCount').textContent=`${fnum(list.length,0)} filas · ${fnum(view.details.length,0)} guías`;
- $('summaryBody').innerHTML=list.length?list.slice(sumPage*per,(sumPage+1)*per).map(g=>`<tr><td>${safe(g.dept)}</td><td>${safe(g.prov)}</td><td>${safe(g.dist)}</td><td><b>${safe(g.pdv)}</b></td><td>${fnum(g.count,0)}</td><td>${th(g.promedio)}</td><td>${g.bestPDV?safe(g.bestPDV):'<span class="bad">Muestra insuficiente</span>'}</td><td>${th(g.bestHours)}</td><td>${th(g.umbral)}</td><td>${th(g.consolidacion)}</td><td>${th(g.retraslado)}</td><td>${th(g.adicional)}</td><td>${th(g.necesario)}</td><td>${th(g.establecido)}</td><td class="${g.umbralEst==null?'bad':'warn'}">${th(g.umbralEst)}</td><td>${safe(g.tariffOrigin)}</td><td>${money(g.gross)}</td><td>${money(g.discount)}</td><td class="amount">${money(g.net)}</td><td class="truncate" title="${safe(g.observaciones)}">${safe(g.observaciones)}</td><td><button class="btn-mini" data-time="${safe(g.key)}">Configurar</button></td></tr>`).join(''):`<tr><td colspan="21" class="empty">Sin registros para estos filtros.</td></tr>`;
- const t=view.totals;$('summaryFoot').innerHTML=t&&t.guias?`<tr><td colspan="4">TOTAL FILTRADO</td><td>${fnum(t.guias,0)}</td><td colspan="11"></td><td>${money(t.bruto)}</td><td>${money(t.descuentos)}</td><td>${money(t.neto)}</td><td colspan="2"></td></tr>`:'';$('sumPage').textContent=`Página ${sumPage+1} de ${n}`;$('sumPrev').disabled=sumPage<=0;$('sumNext').disabled=sumPage>=n-1;
+function renderSummary(){const list=view.summary,per=40,n=Math.max(1,Math.ceil(list.length/per));sumPage=Math.min(sumPage,n-1);const okCount=list.reduce((n,g)=>n+(approvalFor(g)?1:0),0);$('summaryCount').textContent=`${fnum(list.length,0)} filas · ${fnum(view.details.length,0)} guías · ${okCount} con OK`;
+ $('summaryBody').innerHTML=list.length?list.slice(sumPage*per,(sumPage+1)*per).map(g=>`<tr><td>${safe(g.dept)}</td><td>${safe(g.prov)}</td><td>${safe(g.dist)}</td><td><b>${safe(g.pdv)}</b></td><td class="summary-approval ${approvalFor(g)?'ok-row':reviews.get(g.key)?.aprobado_ok?'stale-row':''}" title="${approvalFor(g)?'Aprobado por '+safe(approvalFor(g).aprobado_por)+' el '+safe(approvalFor(g).aprobado_en):reviews.get(g.key)?.aprobado_ok?'Se modificó información. Requiere nuevo OK.':'Sin OK'}"><input type="checkbox" aria-label="OK ${safe(g.pdv)} ${safe(g.dist)}" data-review="${safe(g.key)}" ${approvalFor(g)?'checked':''} ${g.umbralEst==null||g.tariffOrigin==='SIN_TARIFA'?'disabled':''}></td><td>${fnum(g.count,0)}</td><td>${th(g.promedio)}</td><td>${g.bestPDV?safe(g.bestPDV):'<span class="bad">Muestra insuficiente</span>'}</td><td>${th(g.bestHours)}</td><td>${th(g.umbral)}</td><td>${th(g.consolidacion)}</td><td>${th(g.retraslado)}</td><td>${th(g.adicional)}</td><td>${th(g.necesario)}</td><td>${th(g.establecido)}</td><td class="${g.umbralEst==null?'bad':'warn'}">${th(g.umbralEst)}</td><td>${safe(g.tariffOrigin)}</td><td>${money(g.gross)}</td><td>${money(g.discount)}</td><td class="amount">${money(g.net)}</td><td class="truncate" title="${safe(g.observaciones)}">${safe(g.observaciones)}</td><td><button class="btn-mini" data-time="${safe(g.key)}">Configurar</button></td></tr>`).join(''):`<tr><td colspan="22" class="empty">Sin registros para estos filtros.</td></tr>`;
+ const t=view.totals;$('summaryFoot').innerHTML=t&&t.guias?`<tr><td colspan="5">TOTAL FILTRADO</td><td>${fnum(t.guias,0)}</td><td colspan="11"></td><td>${money(t.bruto)}</td><td>${money(t.descuentos)}</td><td>${money(t.neto)}</td><td colspan="2"></td></tr>`:'';$('sumPage').textContent=`Página ${sumPage+1} de ${n}`;$('sumPrev').disabled=sumPage<=0;$('sumNext').disabled=sumPage>=n-1;
 }
 function renderDetail(){const list=view.details,per=100,n=Math.max(1,Math.ceil(list.length/per));detPage=Math.min(detPage,n-1);
  $('detailBody').innerHTML=list.length?list.slice(detPage*per,(detPage+1)*per).map(r=>`<tr><td><b>${safe(r.guia)}</b></td><td>${safe(r.pdv)}</td><td>${safe(r.dept)}</td><td>${safe(r.prov)}</td><td>${safe(r.dist)}</td><td>${safe(r.fecha)}</td><td>${th(r.horas)}</td><td>${th(r.establecido)}</td><td class="${r.umbralEst==null?'bad':'warn'}">${th(r.umbralEst)}</td><td>${th(r.exceso)}</td><td>${money(r.tarifa)}</td><td class="${r.reduccion>0?'bad':''}">${r.reduccion==null?'—':fnum(r.reduccion)+'%'}</td><td class="${r.pagoPct===0?'bad':'ok'}">${r.pagoPct==null?'—':fnum(r.pagoPct)+'%'}</td><td>${money(r.descuento)}</td><td class="amount">${money(r.neto)}</td><td>${r.ceroMax?'<span class="bad">CERO POR EXCESO</span>':safe(r.estado)}</td></tr>`).join(''):`<tr><td colspan="16" class="empty">Sin guías para estos filtros.</td></tr>`;
@@ -82,7 +147,7 @@ async function saveTime(){
  for(const [k,v] of Object.entries(fields))if(v!==''&&(!Number.isFinite(Number(v))||Number(v)<0))throw Error('Valor negativo o inválido en '+k);
  const value={...Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,v===''?null:Number(v)])),observaciones:$('tObs').value.trim()};
  await Cloud.saveTime(selectedPeriod(),g,value);
- config.times[currentTimeKey]=value;await calculate();notify('Tiempos compartidos guardados en Supabase.');
+ reviews.delete(currentTimeKey);config.times[currentTimeKey]=value;await calculate();notify('Tiempos compartidos guardados en Supabase.');
 }
 function openTariff(pdv){currentTariffPDV=pdv;const t=config.tariffs[pdv]||{mode:'ESTANDAR',standard:null,zones:{}};$('tariffIdentity').textContent=pdv;$('tMode').value=t.mode||'ESTANDAR';$('tStandard').value=t.standard??'';
  const distinct=new Map();for(const r of rows)if(r.pdv===pdv){const key=M.districtKey(r.dept,r.prov,r.dist);distinct.set(key,`${r.dept} / ${r.prov} / ${r.dist}`);}
@@ -98,6 +163,7 @@ async function saveTariff(){
  }
  const value={mode:$('tMode').value,standard,zones,updatedAt:new Date().toISOString()};
  await Cloud.saveTariff(selectedPeriod(),currentTariffPDV,value);
+ for(const [k,g] of fullRows)if(g.pdv===currentTariffPDV)reviews.delete(k);
  config.tariffs[currentTariffPDV]=value;await calculate();notify('Tarifario guardado en Supabase para '+currentTariffPDV);
 }
 async function saveRules(){
@@ -106,7 +172,7 @@ async function saveRules(){
  if(rate==null||rate<0||rate>100||step==null||step<=0||maxExcess==null||maxExcess<0||min==null||min<1||!Number.isInteger(min))throw Error('Revisa valores (0-100%, bloque positivo, máximo >=0, mínimo entero >=1).');
  const rule={rate,step,maxExcess},ref=$('refPeriod').value||selectedPeriod();
  await Cloud.saveRules(selectedPeriod(),rule,min,ref);
- config.rule=rule;config.minGuides=min;config.refPeriod=ref;
+ reviews.clear();config.rule=rule;config.minGuides=min;config.refPeriod=ref;
  renderExamples();await calculate();notify('Reglas sincronizadas en Supabase.');
 }
 async function importFile(file){if(!Cloud.admin())return notify('Solo un administrador puede importar borradores.',true);if(!file||importing)return;const maxBytes=80*1024*1024;if(file.size>maxBytes){notify('Excel superior a 80 MB; divide en varios archivos.',true);return;}if(rows.length&&!confirm(`¿Reemplazar las ${rows.length.toLocaleString('es-PE')} guías del periodo ${selectedPeriod()}? Las liquidaciones finalizadas no se borrarán.`))return;
@@ -127,9 +193,9 @@ async function importFile(file){if(!Cloud.admin())return notify('Solo un adminis
   setStatus('Importación finalizada: '+file.name);await loadPeriod();notify(`${fnum(parsed.stats.valid,0)} guías importadas · ${parsed.stats.invalid} filas inválidas · ${parsed.stats.duplicates} duplicadas.`,false);
  }catch(e){setStatus('Error de carga: '+e.message);notify('No se pudo cargar: '+e.message,true);console.error(e);}finally{importing=false;$('fileInput').value='';renderCloseStatus();}}
 function exportData(summary,details,name,settings,stats){if(!window.XLSX)throw Error('No se cargó el exportador XLSX. Verifica la conexión a internet.');const clean=arr=>arr.map(row=>row.map(csvSafe));
- const resHeaders=['DEPARTAMENTO','PROVINCIA','DISTRITO','PDV','GUIAS','PROMEDIO LOGRADO H','MEJOR PDV','MEJOR TIEMPO H','UMBRAL H','CONSOLIDACION H','RETRASLADO H','TIEMPO ADICIONAL H','NECESARIO DESPACHO H','TIEMPO ESTABLECIDO H','UMBRAL ESTABLECIDO H','ORIGEN BASE','BRUTO S/','DESCUENTOS S/','NETO S/','OBSERVACIONES'];
+ const resHeaders=['DEPARTAMENTO','PROVINCIA','DISTRITO','PDV','OK','OK POR','OK FECHA','GUIAS','PROMEDIO LOGRADO H','MEJOR PDV','MEJOR TIEMPO H','UMBRAL H','CONSOLIDACION H','RETRASLADO H','TIEMPO ADICIONAL H','NECESARIO DESPACHO H','TIEMPO ESTABLECIDO H','UMBRAL ESTABLECIDO H','ORIGEN BASE','BRUTO S/','DESCUENTOS S/','NETO S/','OBSERVACIONES'];
  const drHeaders=['GUIA','PDV','DEPARTAMENTO','PROVINCIA','DISTRITO','DIA REPARTO','TIEMPO LOGRADO H','TIEMPO ESTABLECIDO H','UMBRAL ESTABLECIDO H','EXCESO H','TARIFA S/','TIPO TARIFA','REDUCCION %','PAGO %','DESCUENTO S/','NETO S/','ESTADO'];
- const summaryRows=[resHeaders,...summary.map(g=>[g.dept,g.prov,g.dist,g.pdv,g.count,g.promedio,g.bestPDV,g.bestHours,g.umbral,g.consolidacion,g.retraslado,g.adicional,g.necesario,g.establecido,g.umbralEst,g.origen,g.gross,g.discount,g.net,g.observaciones])];
+ const summaryRows=[resHeaders,...summary.map(g=>[g.dept,g.prov,g.dist,g.pdv,approvalFor(g)?"SI":"NO",approvalFor(g)?.aprobado_por||"",approvalFor(g)?.aprobado_en||"",g.count,g.promedio,g.bestPDV,g.bestHours,g.umbral,g.consolidacion,g.retraslado,g.adicional,g.necesario,g.establecido,g.umbralEst,g.origen,g.gross,g.discount,g.net,g.observaciones])];
  const detailRows=[drHeaders,...details.map(r=>[r.guia,r.pdv,r.dept,r.prov,r.dist,r.fecha,r.horas,r.establecido,r.umbralEst,r.exceso,r.tarifa,r.tarifaTipo,r.reduccion,r.pagoPct,r.descuento,r.neto,r.ceroMax?'CERO POR EXCESO':r.estado])];
  const tarifRows=[['PDV','MODALIDAD','TARIFA ESTANDAR S/','DEPARTAMENTO/PROVINCIA/DISTRITO','TARIFA ZONAL S/']];for(const [pdv,t] of Object.entries(settings.tariffs||{})){tarifRows.push([pdv,t.mode,t.standard,'','']);for(const [key,value] of Object.entries(t.zones||{}))tarifRows.push([pdv,t.mode,t.standard,key.replaceAll('|',' / '),value]);}
  const ruleRows=[['PARAMETRO','VALOR'],['Periodo',settings.period||selectedPeriod()],['Periodo referencia',settings.refPeriod||selectedPeriod()],['Porcentaje reducción (%)',settings.rule.rate],['Horas por bloque',settings.rule.step],['Exceso máximo permitido (h)',settings.rule.maxExcess],['Mínimo guías mejor PDV',settings.minGuides],['Guías fuente',stats?.valid||''],['Duplicados descartados',stats?.duplicates||0],['Conflictos entre PDV',stats?.pdvConflicts||0],['Guías de otros meses excluidas',stats?.excludedOtherMonths||0],['Filas inválidas',stats?.invalid||0],['Regla exceso máximo','Pago 0% si horas excedentes > máximo (no >=)'],['Primera reducción','Inmediatamente al superar umbral; en cada frontera adicional, siguiente descuento']];
@@ -146,7 +212,7 @@ async function closePeriod(){
 
 La publicación comparte datos SOLO con usuarios y PDV autorizados. Un cierre finalizado no se puede modificar.`))return;
  const payload={period:selectedPeriod(),config:structuredClone({...config,period:selectedPeriod(),refPeriod:$('refPeriod').value}),
-  stats:structuredClone(sourceStats||{}),summary:result.summary,details:result.details,
+  stats:structuredClone(sourceStats||{}),summary:result.summary.map(g=>({...g,revisionOk:!!approvalFor(g),revisionPor:approvalFor(g)?.aprobado_por||null,revisionEn:approvalFor(g)?.aprobado_en||null})),details:result.details,
   totals:structuredClone(total),source:'Excel local MODULADOR'};
  $('btnClose').disabled=true;
  try{
@@ -360,9 +426,12 @@ function bindCloudEvents(){
 
 function bindEvents(){document.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('.tab-panel').forEach(x=>x.classList.toggle('active',x.id===`tab-${btn.dataset.tab}`));if(btn.dataset.tab==='historico')renderHistory();}));
  $('period').addEventListener('change',loadPeriod);$('fileInput').addEventListener('change',e=>importFile(e.target.files?.[0]));$('btnExport').addEventListener('click',exportCurrent);
- for(const id of ['fDept','fProv','fDist'])$(id).addEventListener('change',()=>{if(id==='fDept'){$('fProv').value='';$('fDist').value='';}if(id==='fProv')$('fDist').value='';populateGeoOptions();applyFilters();});$('fEstado').addEventListener('change',applyFilters);$('fSearch').addEventListener('input',()=>{clearTimeout(filterTimer);filterTimer=setTimeout(applyFilters,140)});$('btnClear').addEventListener('click',()=>{for(const id of ['fDept','fProv','fDist','fSearch','fEstado'])$(id).value='';selectedPDVs.clear();renderPDVFilter();populateGeoOptions();applyFilters();});
+ for(const id of ['fDept','fProv','fDist'])$(id).addEventListener('change',()=>{if(id==='fDept'){$('fProv').value='';$('fDist').value='';}if(id==='fProv')$('fDist').value='';populateGeoOptions();applyFilters();});$('fEstado').addEventListener('change',applyFilters);$('fSearch').addEventListener('input',()=>{clearTimeout(filterTimer);filterTimer=setTimeout(applyFilters,140)});$('btnClear').addEventListener('click',()=>{for(const id of ['fDept','fProv','fDist','fSearch','fEstado',...summaryFilterIds])$(id).value='';selectedPDVs.clear();renderPDVFilter();populateGeoOptions();applyFilters();});
  $('pdvChecks').addEventListener('change',e=>{if(!e.target.matches('input'))return;if(e.target.hasAttribute('data-pdv-all'))selectedPDVs.clear();else{const p=e.target.dataset.pdv;if(e.target.checked)selectedPDVs.add(p);else selectedPDVs.delete(p);}renderPDVFilter();applyFilters();});
- $('sumPrev').addEventListener('click',()=>{sumPage=Math.max(0,sumPage-1);renderSummary();});$('sumNext').addEventListener('click',()=>{sumPage++;renderSummary();});$('detPrev').addEventListener('click',()=>{detPage=Math.max(0,detPage-1);renderDetail();});$('detNext').addEventListener('click',()=>{detPage++;renderDetail();});
+ for(const id of summaryFilterIds)$(id).addEventListener('change',applyFilters);
+ $('btnClearSummary').addEventListener('click',()=>{for(const id of summaryFilterIds)$(id).value='';applyFilters();});
+ $('summaryBody').addEventListener('change',e=>{const box=e.target.closest('[data-review]');if(box)toggleReview(box.dataset.review,box.checked,box);});
+ $('sumPrev').addEventListener('click' ,()=>{sumPage=Math.max(0,sumPage-1);renderSummary();});$('sumNext').addEventListener('click',()=>{sumPage++;renderSummary();});$('detPrev').addEventListener('click',()=>{detPage=Math.max(0,detPage-1);renderDetail();});$('detNext').addEventListener('click',()=>{detPage++;renderDetail();});
  $('summaryBody').addEventListener('click',e=>{const b=e.target.closest('[data-time]');if(b)openTime(b.dataset.time);});$('tariffBody').addEventListener('click',e=>{const b=e.target.closest('[data-tariff]');if(b)openTariff(b.dataset.tariff);});$('tMode').addEventListener('change',toggleZones);
  $('timeDialog').addEventListener('close',async()=>{if($('timeDialog').returnValue==='save')try{await saveTime();}catch(e){notify(e.message,true);}});$('tariffDialog').addEventListener('close',async()=>{if($('tariffDialog').returnValue==='save')try{await saveTariff();}catch(e){notify(e.message,true);}});$('btnSaveRules').addEventListener('click',async()=>{try{await saveRules();}catch(e){notify(e.message,true);}});$('refPeriod').addEventListener('change',calculate);$('btnClose').addEventListener('click',closePeriod);$('historyList').addEventListener('click',e=>{
   const b=e.target.closest('[data-export-snapshot]');if(b)exportSnapshot(b.dataset.exportSnapshot);

@@ -40,6 +40,14 @@
  function discount(hours,base,rule){const t=num(hours),b=num(base);if(t===null||b===null)return null;const step=num(rule?.step)??24,rate=num(rule?.rate)??10,max=num(rule?.maxExcess)??120;if(step<=0||rate<0||rate>100||max<0)throw Error('Regla de descuentos inválida.');const excess=Math.max(0,t-b);
   const forcedZero=excess>max+1e-9;const blocks=excess<=1e-9?0:1+Math.floor((excess+1e-9)/step);const percent=forcedZero?100:Math.min(100,blocks*rate);return{excess,blocks,discountPct:percent,payPct:100-percent,forcedZero};
  }
+ // Escenario comparativo: no altera el neto real, la configuración ni el cierre.
+ // Solo es comparable con liquidaciones reales cuando ambas tienen tarifa y tiempo base.
+ function simulatedNet(detail,simBase,rule){
+  const tarifa=num(detail?.tarifa),horas=num(detail?.horas),base=num(simBase);
+  if(tarifa===null||tarifa<0||horas===null||base===null||base<=0||detail?.neto==null)return null;
+  const d=discount(horas,base,rule);
+  return d===null?null:money(tarifa*d.payPct/100);
+ }
  function rank(rows,min=10){const bins=new Map();for(const row of rows){const k=districtKey(row.dept,row.prov,row.dist);let bin=bins.get(k);if(!bin){bin=new Map();bins.set(k,bin);}let b=bin.get(row.pdv);if(!b){b={pdv:row.pdv,sum:0,count:0};bin.set(row.pdv,b);}b.sum+=row.horas;b.count++;}
   const out={};for(const [k,binsPdv] of bins){const list=Array.from(binsPdv.values()).map(v=>({...v,avg:v.sum/v.count})).sort((a,b)=>a.avg-b.avg||a.pdv.localeCompare(b.pdv));out[k]={best:list.find(x=>x.count>=min)||null,options:list};}return out;
  }
@@ -55,5 +63,5 @@
   const totals=summary.reduce((p,g)=>({guias:p.guias+g.count,bruto:money(p.bruto+g.gross),descuentos:money(p.descuentos+g.discount),neto:money(p.neto+g.net),calculadas:p.calculadas+g.billable,pendientes:p.pendientes+g.excluded,fuera:p.fuera+g.breached,cero:p.cero+g.zero}),{guias:0,bruto:0,descuentos:0,neto:0,calculadas:0,pendientes:0,fuera:0,cero:0});
   return{details,summary,totals,ranks};
  }
- return{norm,normalizePDV,num,money,districtKey,localKey,indexColumns,parseMatrix,threshold,discount,rank,establish,getTariff,run};
+ return{norm,normalizePDV,num,money,districtKey,localKey,indexColumns,parseMatrix,threshold,discount,simulatedNet,rank,establish,getTariff,run};
 });

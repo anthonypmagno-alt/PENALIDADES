@@ -24,3 +24,14 @@
 .summary-approval.stale-row{background:#fff5df}
 @media(max-width:1280px){.summary-filterbar{grid-template-columns:repeat(4,minmax(120px,1fr))}}
 @media(max-width:760px){.summary-filterbar{grid-template-columns:repeat(2,minmax(130px,1fr))}}
+
+/* V2.2 – simulador comparativo; únicamente altera la vista. */
+.simulation-toolbar{display:flex;align-items:end;flex-wrap:wrap;gap:14px;padding:12px 14px;margin:5px 0 12px;background:#f4f8ff;border:1px solid #cbdcf3;border-radius:9px}
+.simulation-field{flex:0 0 190px}.simulation-field input{background:#fff;font-weight:700;border-color:#8faed8}
+.simulation-toolbar p{flex:1 1 330px;font-size:11px;color:#4b627d;line-height:1.5;margin:0 0 4px}
+.simulation-total{font-size:11px;font-weight:700;color:#28466e;white-space:normal;margin-bottom:4px}
+.simulation-toolbar input.is-invalid{border:2px solid #b43438;background:#fff0f0}
+.simulated-heading{background:#deebfa}
+.simulated-amount{background:#f3f8ff;font-weight:750;color:#265482}
+.diff-positive{color:#087a4a;font-weight:750}.diff-negative{color:#b03035;font-weight:750}.diff-neutral{color:#738395}
+@media(max-width:760px){.simulation-field{flex:1 1 100%}.simulation-toolbar p{flex:1 1 100%}}

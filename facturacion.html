@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Facturación PDV · Liquidaciones multiusuario</title>
+<link rel="stylesheet" href="facturacion.css">
+<script defer src="./config.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script defer src="motor-facturacion.js"></script>
+<script defer src="facturacion-cloud.js"></script>
+<script defer src="facturacion.js"></script>
+</head><body>
+<header class="topbar"><div class="brand"><span class="logo">F</span><div><h1>Facturación <span>PDV</span></h1><small>Tarifas, tiempos y liquidaciones · V2.0 multiusuario</small></div></div><div class="header-actions"><span class="environment" id="sessionLabel">SUPABASE AUTH · SIN SESIÓN</span><button id="btnLogout" type="button" class="quiet" hidden>Salir</button><a href="gestion-v2.html" class="button ghost" title="Regresar a Gestión de Guías si están en el mismo directorio">Gestión de Guías</a></div></header>
+<section id="authPanel" class="auth-layout">
+ <form id="authForm" class="panel auth-card">
+  <h2>Iniciar sesión</h2><p>Utiliza el mismo usuario y contraseña que en Gestión de Guías.</p>
+  <label class="field"><span>Usuario o correo</span><input id="authUser" autocomplete="username" required></label>
+  <label class="field"><span>Contraseña</span><input id="authPass" type="password" autocomplete="current-password" required></label>
+  <button type="submit" id="btnLoginCloud" class="primary">Ingresar a Facturación</button>
+  <p id="authStatus" role="status" class="small-warning"></p>
+ </form>
+</section>
+<main class="layout" id="appRoot" hidden>
+<section class="panel hero" data-admin-only>
+ <div class="hero-left"><h2>Liquidación operativa</h2><p>Importa MODULADOR.xlsx, establece los tiempos por distrito y PDV, configura las tarifas y calcula el pago por guía.</p></div>
+ <div class="hero-actions"><label class="field"><span>Periodo de facturación</span><input type="month" id="period"></label><label class="upload"><input id="fileInput" type="file" accept=".xlsx,.xls,.csv"><span>＋ Cargar Excel local</span></label><button class="primary" id="btnExport">⬇ Excel · selección</button></div>
+ <div class="hero-status"><span id="importStatus" role="status">Sin fuente cargada para el periodo.</span><span id="srcBadge" class="subdued">Sin registros</span></div>
+</section>
+<section class="kpis" data-admin-only aria-label="Indicadores de liquidación">
+ <div class="kpi"><span>Guías del filtro</span><b id="kGuias">—</b><small>Guías válidas</small></div>
+ <div class="kpi"><span>Importe bruto</span><b id="kBruto">—</b><small>Antes de descuentos</small></div>
+ <div class="kpi"><span>Descuentos</span><b id="kDescuento">—</b><small>Reducción por exceso</small></div>
+ <div class="kpi focus"><span>Neto a facturar</span><b id="kNeto">—</b><small>Según configuración vigente</small></div>
+ <div class="kpi"><span>Sin cálculo</span><b id="kPendientes">—</b><small>Falta tiempo o tarifa</small></div>
+</section>
+<section class="panel tools" data-admin-only><div class="filter-top"><div><h3>Filtros de visualización y exportación</h3><p>La tabla, los indicadores y el Excel utilizan exactamente los mismos PDV y destinos seleccionados.</p></div><button class="quiet" id="btnClear">Limpiar filtros</button></div>
+<div class="filters"><label class="field"><span>Departamento</span><select id="fDept"><option value="">Todos</option></select></label><label class="field"><span>Provincia</span><select id="fProv"><option value="">Todas</option></select></label><label class="field"><span>Distrito</span><select id="fDist"><option value="">Todos</option></select></label><label class="field"><span>Buscar guía o PDV</span><input type="search" id="fSearch" placeholder="JPE… / UCA-02"></label><div class="field multi-field"><span>PDV (selección múltiple)</span><details id="pdvDropdown"><summary id="pdvLabel">Todos los PDV</summary><div class="pdv-list" id="pdvChecks">Importa un Excel para seleccionar PDV</div></details></div></div></section>
+<nav class="tabs" aria-label="Secciones"><button class="active" data-admin-only data-tab="resumen">Resumen por distrito</button><button data-admin-only data-tab="detalle">Detalle de guías</button><button data-admin-only data-tab="tarifas">Tarifario PDV</button><button data-admin-only data-tab="reglas">Reglas y umbrales</button><button data-admin-only data-tab="historico">Historial y cierre</button>
+<button data-tab="publicadas">Liquidaciones compartidas</button>
+<button data-admin-only data-tab="accesos">Accesos y PDV</button></nav>
+<section class="tab-panel active" id="tab-resumen"><div class="section-heading"><div><h2>Resumen de tiempos y facturación</h2><p>Una fila por distrito y PDV. Pulsa <strong>Configurar</strong> para registrar tiempos y observaciones.</p></div><span id="summaryCount" class="subdued"></span></div>
+<div class="table-wrap"><table><thead><tr><th>Departamento</th><th>Provincia</th><th>Distrito</th><th>PDV</th><th>Guías</th><th>Promedio logrado</th><th>Mejor PDV</th><th>Mejor tiempo</th><th>Umbral</th><th>Consolidación</th><th>Retraslado</th><th>Adicional</th><th>Necesario despacho</th><th>Tiempo establecido</th><th>Umbral establecido</th><th>Tarifa / tipo</th><th>Bruto</th><th>Descuentos</th><th>Neto</th><th>Observaciones</th><th>Acción</th></tr></thead><tbody id="summaryBody"><tr><td colspan="21" class="empty">Carga el archivo de guías para comenzar.</td></tr></tbody><tfoot id="summaryFoot"></tfoot></table></div>
+<div class="pager"><button id="sumPrev" class="quiet">Anterior</button><span id="sumPage"></span><button id="sumNext" class="quiet">Siguiente</button></div></section>
+<section class="tab-panel" id="tab-detalle"><div class="section-heading"><div><h2>Detalle de guías</h2><p>Incluye exceso, tarifa aplicable, reducción y monto final. Los registros pendientes no se facturan automáticamente.</p></div><label class="field inline"><span>Estado</span><select id="fEstado"><option value="">Todos</option><option value="CALCULADO">Calculados</option><option value="SIN TIEMPO BASE">Sin tiempo base</option><option value="SIN TARIFA">Sin tarifa</option><option value="CERO POR EXCESO">Pago cero por exceso</option></select></label></div>
+<div class="table-wrap"><table><thead><tr><th>Guía</th><th>PDV</th><th>Departamento</th><th>Provincia</th><th>Distrito</th><th>Día reparto</th><th>Tiempo logrado</th><th>Tiempo establecido</th><th>Umbral establecido</th><th>Exceso</th><th>Tarifa</th><th>% reducción</th><th>% pago</th><th>Monto descuento</th><th>Neto</th><th>Estado</th></tr></thead><tbody id="detailBody"><tr><td colspan="16" class="empty">Carga el archivo de guías para comenzar.</td></tr></tbody></table></div>
+<div class="pager"><button id="detPrev" class="quiet">Anterior</button><span id="detPage"></span><button id="detNext" class="quiet">Siguiente</button></div></section>
+<section class="tab-panel" id="tab-tarifas"><div class="section-heading"><div><h2>Tarifario por PDV</h2><p>La tarifa zonal prevalece sobre la estándar. Los demás distritos conservan la tarifa estándar del PDV.</p></div><span class="subdued">Valores en soles · S/</span></div><div class="table-wrap"><table><thead><tr><th>PDV</th><th>Tipo</th><th>Tarifa estándar / respaldo</th><th>Distritos con excepción</th><th>Acción</th></tr></thead><tbody id="tariffBody"><tr><td colspan="5" class="empty">Carga el Excel para identificar los PDV.</td></tr></tbody></table></div></section>
+<section class="tab-panel" id="tab-reglas"><div class="section-heading"><div><h2>Reglas globales de facturación</h2><p>Configuración para liquidaciones futuras. El historial finalizado conserva los valores con los que fue calculado.</p></div></div>
+<div class="rule-grid"><div class="panel inset"><h3>Descuento escalonado</h3><div class="form-grid"><label class="field"><span>Reducción por bloque (%)</span><input id="rate" type="number" min="0" max="100" step="0.1" value="10"></label><label class="field"><span>Horas por bloque</span><input id="step" type="number" min="1" step="1" value="24"></label><label class="field"><span>Exceso máximo permitido (h)</span><input id="maxExcess" type="number" min="0" step="0.01" value="120"></label><label class="field"><span>Mínimo para elegir mejor PDV</span><input id="minGuides" type="number" min="1" step="1" value="10"></label><label class="field full"><span>Periodo de referencia para el mejor tiempo</span><select id="refPeriod"></select><small>Si no eliges otro periodo, se utiliza el mismo mes de la liquidación.</small></label></div><button class="primary" id="btnSaveRules">Guardar y recalcular</button></div><div class="panel inset"><h3>Cómo se descuenta</h3><p>Si el tiempo logrado no supera el <strong>umbral establecido</strong>, se paga 100%.</p><p>Al superarlo, se reduce 10% inmediatamente. En cada frontera adicional de 24 horas se descuenta otro 10%.</p><p>Si el <strong>exceso supera 120 horas</strong> (valor configurable), el pago es 0%.</p><div id="ruleExamples" class="rule-examples"></div><div class="notice">Exactamente al límite máximo todavía se aplica el descuento escalonado. El 0% por máximo se activa cuando el exceso es <strong>mayor</strong> al límite.</div></div></div></section>
+<section class="tab-panel" id="tab-historico"><div class="section-heading"><div><h2>Cierre e historial</h2><p>Las liquidaciones finalizadas se guardan como versiones independientes y no se recalculan al cambiar tarifas o tiempos.</p></div></div>
+<div class="panel inset close-panel"><div><h3 id="closeTitle">Liquidación en borrador</h3><p id="closeMessage">Configura todas las tarifas y tiempos pendientes antes de finalizar la liquidación.</p></div><button class="primary" id="btnClose">Finalizar y congelar periodo</button></div><div class="action-row"><button type="button" id="btnMigrateConfig" class="quiet">Importar configuración local de V1</button><button type="button" id="btnRefreshConfig" class="quiet">Recargar configuración de Supabase</button></div><div id="historyList" class="history-list"><p class="empty">Todavía no hay liquidaciones finalizadas.</p></div><p class="small-warning">Las liquidaciones cerradas se publican en Supabase con versión y bloqueo de edición. Los archivos de trabajo siguen guardados localmente hasta finalizar.</p></section>
+<section class="tab-panel" id="tab-publicadas">
+ <div class="section-heading"><div><h2>Liquidaciones compartidas</h2><p>Consulta únicamente los PDV autorizados. Cada cierre conserva las tarifas y tiempos aplicados.</p></div><button id="btnRefreshPublished" class="quiet">Actualizar cierres</button></div>
+ <div class="panel inset">
+  <div class="filters">
+   <label class="field"><span>Liquidación</span><select id="pubSettlement"><option value="">Sin cierres publicados</option></select></label>
+   <label class="field"><span>PDV</span><select id="pubPDV"><option value="">Todos los autorizados</option></select></label>
+   <label class="field"><span>Buscar guía</span><input id="pubSearch" placeholder="JPE..." type="search"></label>
+   <div class="field"><span>Exportación</span><button id="btnExportPublished" class="primary">Excel publicado · filtro</button></div>
+  </div>
+  <div id="publishedStatus" role="status" class="notice">Selecciona una liquidación finalizada.</div>
+  <div class="kpis pub-kpis"><div class="kpi"><span>Guías permitidas</span><b id="pubGuides">—</b></div><div class="kpi"><span>Bruto</span><b id="pubGross">—</b></div><div class="kpi"><span>Descuentos</span><b id="pubOff">—</b></div><div class="kpi focus"><span>Neto</span><b id="pubNet">—</b></div></div>
+ </div>
+ <div class="section-heading"><h3>Resumen publicado por distrito y PDV</h3></div>
+ <div class="table-wrap"><table><thead><tr><th>Departamento</th><th>Provincia</th><th>Distrito</th><th>PDV</th><th>Guías</th><th>Promedio</th><th>Mejor PDV</th><th>Tiempo establecido</th><th>Umbral</th><th>Bruto</th><th>Descuentos</th><th>Neto</th></tr></thead><tbody id="pubSummaryBody"><tr><td colspan="12" class="empty">Sin resultados.</td></tr></tbody></table></div>
+ <div class="section-heading"><h3>Detalle publicado</h3></div>
+ <div class="table-wrap"><table><thead><tr><th>Guía</th><th>PDV</th><th>Distrito</th><th>Día reparto</th><th>Tiempo logrado</th><th>Umbral</th><th>Exceso</th><th>Tarifa</th><th>Reducción</th><th>Neto</th></tr></thead><tbody id="pubDetailBody"><tr><td colspan="10" class="empty">Sin resultados.</td></tr></tbody></table></div>
+ <div class="pager"><button id="pubPrev" class="quiet">Anterior</button><span id="pubPage">—</span><button id="pubNext" class="quiet">Siguiente</button></div>
+</section>
+<section class="tab-panel" id="tab-accesos">
+ <div class="section-heading"><div><h2>Accesos y alcance de PDV</h2><p>Autoriza usuarios YA existentes en Supabase Auth utilizando su UID. Este módulo no crea cuentas nuevas.</p></div></div>
+ <div class="panel inset"><form id="memberForm" class="filters">
+  <label class="field"><span>User UID (Authentication &gt; Users)</span><input id="memberUID" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required></label>
+  <label class="field"><span>Rol</span><select id="memberRole"><option value="PDV">PDV</option><option value="ENCARGADO">Encargado</option><option value="ADMINISTRADOR">Administrador</option></select></label>
+  <label class="field"><span>PDV autorizados (separados por coma)</span><input id="memberPDVs" placeholder="UCA-02, UCA-04, UCA-05"></label>
+  <label class="field"><span>Acceso</span><select id="memberActive"><option value="true">Habilitado</option><option value="false">Deshabilitado</option></select></label>
+  <button type="submit" class="primary">Guardar acceso</button>
+ </form><small>Los roles PDV y Encargado solo consultan liquidaciones finalizadas de sus PDV asignados. Únicamente Administrador puede cambiar tarifas, tiempos y publicar cierres.</small></div>
+ <div class="table-wrap"><table><thead><tr><th>UID</th><th>Rol</th><th>PDV autorizados</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="membersBody"><tr><td colspan="5">Cargando…</td></tr></tbody></table></div>
+</section>
+<footer>Facturación PDV V2.0 · Supabase Auth y RLS · Los borradores Excel permanecen locales; los cierres finalizados se sincronizan con Supabase.</footer>
+</main>
+<dialog id="timeDialog"><form method="dialog" id="timeForm"><div class="dialog-head"><div><h2>Configurar tiempos del PDV</h2><p id="timeIdentity"></p></div><button class="quiet" value="cancel" formnovalidate>✕</button></div><div class="form-grid"><label class="field"><span>Consolidación (h)</span><input id="tConsolidacion" type="number" min="0" step="0.01" placeholder="En blanco = sin asignar"></label><label class="field"><span>Retraslado (h)</span><input id="tRetraslado" type="number" min="0" step="0.01"></label><label class="field"><span>Tiempo adicional (h)</span><input id="tAdicional" type="number" min="0" step="0.01"></label><label class="field"><span>Necesario despacho (h)</span><input id="tNecesario" type="number" min="0" step="0.01"></label><label class="field full"><span>Referencia manual (solo si no hay PDV elegible)</span><input id="tManual" type="number" min="0" step="0.01" placeholder="Opcional"></label><label class="field full"><span>Observaciones</span><textarea id="tObs" rows="3" maxlength="1000"></textarea></label></div><div class="dialog-actions"><button value="cancel" class="quiet" formnovalidate>Cancelar</button><button value="save" class="primary">Guardar tiempos</button></div></form></dialog>
+<dialog id="tariffDialog"><form method="dialog" id="tariffForm"><div class="dialog-head"><div><h2>Tarifario PDV</h2><p id="tariffIdentity"></p></div><button class="quiet" value="cancel" formnovalidate>✕</button></div><div class="form-grid"><label class="field"><span>Modalidad</span><select id="tMode"><option value="ESTANDAR">Estándar</option><option value="ZONAL">Zonal</option></select></label><label class="field"><span>Tarifa estándar (S/)</span><input id="tStandard" type="number" min="0" step="0.01" placeholder="Ej.: 5.00"></label></div><div id="zonesBox"><h3>Tarifas especiales por distrito</h3><p>Solo se aplican a las localidades indicadas; los demás distritos usan la estándar.</p><div id="zoneRates" class="zones"></div></div><div class="dialog-actions"><button value="cancel" class="quiet" formnovalidate>Cancelar</button><button value="save" class="primary">Guardar tarifas</button></div></form></dialog>
+<div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+</body></html>

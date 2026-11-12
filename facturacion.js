@@ -1,7 +1,11 @@
-/* Facturación PDV V2.7 - tarifas zonales por búsqueda geográfica y selección múltiple. */
+/* Facturación PDV V2.9 - importación/exportación masiva del tarifario R4. */
 (()=>{'use strict';
 const M=window.FacturacionMotor,Cloud=window.FacturacionCloud,Drafts=window.FacturacionBorradores,$=id=>document.getElementById(id),money=n=>n==null?'—':new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'}).format(n),fnum=(n,dp=2)=>n==null?'—':new Intl.NumberFormat('es-PE',{minimumFractionDigits:0,maximumFractionDigits:dp}).format(n),safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),csvSafe=v=>typeof v==='string'&&/^[=+@\-\t\r]/.test(v)?"'"+v:v;
-let tariffDistricts=[],zoneRateDraft=new Map(),selectedTariffDistricts=new Set(),tariffPeriod=null,zoneSearchTimer=null;
+let tariffDistricts=[],zoneRateDraft=new Map(),selectedTariffDistricts=new Set(),tariffPeriod=null,zoneSearchTimer=null,tariffImportDraft=null,tariffImportSaving=false;
+const selectedTariffFacets={dept:new Set(),prov:new Set(),dist:new Set()};
+const ZFACETS={dept:{label:'Departamentos',all:'Todos',search:'zSearchDept',list:'zOptionsDept',count:'zCountDept',summary:'zLabelDept'},prov:{label:'Provincias',all:'Todas',search:'zSearchProv',list:'zOptionsProv',count:'zCountProv',summary:'zLabelProv'},dist:{label:'Distritos',all:'Todos',search:'zSearchDist',list:'zOptionsDist',count:'zCountDist',summary:'zLabelDist'}};
+function tariffFacetValue(r,facet){return facet==='dept'?r.dept:facet==='prov'?r.dept+'|'+r.prov:r.key;}
+
 let publishedList=[],publishedSummary=[],publishedCurrent=null,pubPage=0,pubCount=0,pubBusy=false;
 let reviews=new Map(),fullRows=new Map(),sourceSignatures=new Map(),db=null,config=null,rows=[],referenceRows=[],sourceStats=null,result=null,view={details:[],summary:[],totals:null},sumPage=0,detPage=0,currentTimeKey=null,currentTariffPDV=null,selectedPDVs=new Set(),allPDVs=[],periods=[],currentSnapshot=null,filterTimer=null,simulationTimer=null,simulationHours=48,importing=false,dbReady=false,cloudDraftBusy=false,cloudMeta=null,selectedSummaryKeys=new Set(),bulkSaving=false;
 const todayMonth=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
@@ -338,7 +342,7 @@ function renderDetail(){const list=view.details,per=100,n=Math.max(1,Math.ceil(l
  $('detailBody').innerHTML=list.length?list.slice(detPage*per,(detPage+1)*per).map(r=>{const sim=M.simulatedNet(r,simulationHours,config.rule),diff=sim==null?null:M.money(r.neto-sim);return `<tr><td><b>${safe(r.guia)}</b></td><td>${safe(r.pdv)}</td><td>${safe(r.dept)}</td><td>${safe(r.prov)}</td><td>${safe(r.dist)}</td><td>${safe(r.fecha)}</td><td>${th(r.horas)}</td><td>${th(r.establecido)}</td><td class="${r.umbralEst==null?'bad':'warn'}">${th(r.umbralEst)}</td><td>${th(r.exceso)}</td><td>${money(r.tarifa)}</td><td class="${r.reduccion>0?'bad':''}">${r.reduccion==null?'—':fnum(r.reduccion)+'%'}</td><td class="${r.pagoPct===0?'bad':'ok'}">${r.pagoPct==null?'—':fnum(r.pagoPct)+'%'}</td><td>${money(r.descuento)}</td><td class="simulated-amount">${money(sim)}</td><td class="${differenceClass(diff)}">${formatDifference(diff)}</td><td class="amount">${money(r.neto)}</td><td>${r.ceroMax?'<span class="bad">CERO POR EXCESO</span>':safe(r.estado)}</td></tr>`}).join(''):`<tr><td colspan="18" class="empty">Sin guías para estos filtros.</td></tr>`;
  $('detPage').textContent=`Página ${detPage+1} de ${n} · ${fnum(list.length,0)} registros`;$('detPrev').disabled=detPage<=0;$('detNext').disabled=detPage>=n-1;
 }
-function renderTariffs(){const list=[...new Set((result?.summary||[]).map(g=>g.pdv))].sort();$('tariffBody').innerHTML=list.length?list.map(p=>{const t=config.tariffs[p]||{},zones=Object.keys(t.zones||{}).filter(k=>M.num(t.zones[k])!==null);return `<tr><td><b>${safe(p)}</b></td><td>${safe(t.mode||'NO DEFINIDA')}</td><td>${money(M.num(t.standard))}</td><td>${zones.length}</td><td><button class="btn-mini" data-tariff="${safe(p)}">Configurar</button></td></tr>`}).join(''):'<tr><td colspan="5" class="empty">No hay PDV cargados.</td></tr>';}
+function renderTariffs(){const list=[...new Set([...(result?.summary||[]).map(g=>g.pdv),...Object.keys(config.tariffs||{})])].sort();$('tariffBody').innerHTML=list.length?list.map(p=>{const t=config.tariffs[p]||{},zones=Object.keys(t.zones||{}).filter(k=>M.num(t.zones[k])!==null);return `<tr><td><b>${safe(p)}</b></td><td>${safe(t.mode||'NO DEFINIDA')}</td><td>${money(M.num(t.standard))}</td><td>${zones.length}</td><td><button class="btn-mini" data-tariff="${safe(p)}">Configurar</button></td></tr>`}).join(''):'<tr><td colspan="5" class="empty">No hay PDV cargados.</td></tr>';}
 function renderCloseStatus(){const t=result?.totals||null;if(!t){$('closeTitle').textContent='Sin guías cargadas';$('closeMessage').textContent='Carga un archivo para comenzar.';$('btnClose').disabled=true;return;}
  $('closeTitle').textContent=`Periodo ${selectedPeriod()} · ${fnum(t.guias,0)} guías`;$('closeMessage').textContent=(sourceStats?.pdvConflicts>0)?`Existen ${sourceStats.pdvConflicts} guías con más de un PDV en el Excel. Corrige esos casos en el archivo original y vuelve a importar antes del cierre.`:t.pendientes?`${fnum(t.pendientes,0)} guías no tienen tarifa o tiempo base. Debes resolverlas antes de finalizar. El cierre usa TODAS las guías del periodo, no solo los filtros visibles.`:`Todas las ${fnum(t.calculadas,0)} guías tienen tarifa y tiempo base. Puedes congelar una versión final de esta liquidación.`;$('btnClose').disabled=t.pendientes>0||(sourceStats?.pdvConflicts||0)>0||importing;
 }
@@ -431,9 +435,31 @@ function toggleCompactSummary(){
 // El borrador de excepciones se mantiene aunque una fila quede fuera del filtro.
 function tariffSearchNorm(value){return M.norm(value);}
 function filteredTariffDistricts(){
- const a=tariffSearchNorm($('zSearchDept').value),b=tariffSearchNorm($('zSearchProv').value),c=tariffSearchNorm($('zSearchDist').value);
- return tariffDistricts.filter(r=>r.dept.includes(a)&&r.prov.includes(b)&&r.dist.includes(c));
+ return tariffDistricts.filter(r=>Object.keys(selectedTariffFacets).every(facet=>!selectedTariffFacets[facet].size||selectedTariffFacets[facet].has(tariffFacetValue(r,facet))));
 }
+function tariffFacetOptions(facet){
+ const unique=new Map();
+ for(const r of tariffDistricts){
+  const value=tariffFacetValue(r,facet);
+  if(!unique.has(value))unique.set(value,{
+   value, label:facet==='dept'?r.dept:facet==='prov'?r.prov+' · '+r.dept:r.dist+' · '+r.prov+' / '+r.dept
+  });
+ }
+ const q=tariffSearchNorm($(ZFACETS[facet].search).value);
+ return [...unique.values()].sort((a,b)=>a.label.localeCompare(b.label,'es')).filter(o=>tariffSearchNorm(o.label).includes(q));
+}
+function renderTariffFacets(){
+ for(const [facet,cfg] of Object.entries(ZFACETS)){
+  const chosen=selectedTariffFacets[facet],opts=tariffFacetOptions(facet),shown=opts.slice(0,100);
+  const description=chosen.size===0?cfg.all:chosen.size===1?(facet==='dept'?[...chosen][0]:[...chosen][0].split('|').at(-1)):chosen.size+' seleccionados';
+  const heading=cfg.label+' · '+description;
+  $(cfg.summary).textContent=window.FacturacionI18n?.translateMessage(heading)||heading;
+  $(cfg.list).innerHTML=shown.map(o=>`<label class="tariff-facet-option"><input type="checkbox" data-tariff-facet-key="${safe(o.value)}" data-tariff-facet-type="${facet}" ${chosen.has(o.value)?'checked':''}><span title="${safe(o.label)}">${safe(o.label)}</span></label>`).join('')||'<p class="tariff-facet-empty">Sin coincidencias</p>';
+  const info=opts.length+' opciones · '+chosen.size+' seleccionadas'+(opts.length>shown.length?' · se muestran 100; escribe para buscar':'');
+  $(cfg.count).textContent=window.FacturacionI18n?.translateMessage(info)||info;
+ }
+}
+function updateTariffFacetFilters(){renderTariffFacets();renderTariffDistricts();}
 function renderTariffDistricts(){
  const filtered=filteredTariffDistricts(),visible=filtered.slice(0,300);
  $('zoneRates').innerHTML=visible.map(r=>{
@@ -441,8 +467,13 @@ function renderTariffDistricts(){
   return `<div class="zone-row ${chosen?'zone-row-selected':''}" data-zone-row="${safe(r.key)}"><label class="zone-check"><input type="checkbox" data-zone-select="${safe(r.key)}" ${chosen?'checked':''} aria-label="Seleccionar ${safe(r.dept)} / ${safe(r.prov)} / ${safe(r.dist)}"></label><span title="${safe(r.dept)}">${safe(r.dept)}</span><span title="${safe(r.prov)}">${safe(r.prov)}</span><span title="${safe(r.dist)}">${safe(r.dist)}</span><input aria-label="Tarifa zonal ${safe(r.dept)} / ${safe(r.prov)} / ${safe(r.dist)}" data-zone-key="${safe(r.key)}" type="number" step="0.01" min="0" placeholder="Estándar" value="${safe(value)}"></div>`;
  }).join('')||'<p class="tariff-no-matches">No hay distritos para la búsqueda.</p>';
  const remaining=filtered.length-visible.length;
+ const chosenVisible=visible.filter(r=>selectedTariffDistricts.has(r.key)).length,header=$('zSelectVisible');
+ header.checked=visible.length>0&&chosenVisible===visible.length;
+ header.indeterminate=chosenVisible>0&&chosenVisible<visible.length;
+ header.disabled=visible.length===0;
+ header.setAttribute('aria-checked',header.indeterminate?'mixed':String(header.checked));
  $('zZoneCount').textContent=`${filtered.length} distritos encontrados · ${selectedTariffDistricts.size} seleccionados${remaining>0?` · mostrando los primeros ${visible.length}; refina la búsqueda para editar individualmente`:''}`;
- $('zSelectionCount').textContent=`${selectedTariffDistricts.size} distritos seleccionados`;
+ $('zSelectionCount').textContent=`${selectedTariffDistricts.size} ${selectedTariffDistricts.size===1?'distrito seleccionado':'distritos seleccionados'}`;
  $('zSelectFiltered').disabled=filtered.length===0;
  $('zClearSelected').disabled=selectedTariffDistricts.size===0;
  $('zApplyBatch').disabled=selectedTariffDistricts.size===0;
@@ -461,8 +492,10 @@ function openTariff(pdv){
  tariffDistricts=[...distinct.values()].sort((a,b)=>a.dept.localeCompare(b.dept)||a.prov.localeCompare(b.prov)||a.dist.localeCompare(b.dist));
  zoneRateDraft=new Map(tariffDistricts.map(r=>[r.key,t.zones?.[r.key]===undefined?'':String(t.zones[r.key])]));
  selectedTariffDistricts.clear();
+ for(const facet of Object.keys(selectedTariffFacets))selectedTariffFacets[facet].clear();
  for(const id of ['zSearchDept','zSearchProv','zSearchDist','zBatchAmount'])$(id).value='';
- toggleZones();renderTariffDistricts();$('tariffSaveStatus').textContent='';$('tariffDialog').showModal();
+ for(const id of ['zMultiDept','zMultiProv','zMultiDist'])$(id).open=false;
+ toggleZones();renderTariffFacets();renderTariffDistricts();$('tariffSaveStatus').textContent='';$('tariffDialog').showModal();
 }
 function toggleZones(){$('zonesBox').hidden=$('tMode').value!=='ZONAL';}
 function applyTariffBatch(clear=false){
@@ -489,12 +522,79 @@ async function saveTariff(){
   const n=M.num(raw);if(n===null||n<0)throw Error('Tarifa zonal inválida para '+key.replaceAll('|',' / '));
   zones[key]=n;
  }
- const value={mode:$('tMode').value,standard,zones,updatedAt:new Date().toISOString()};
+ const value={...(config.tariffs[currentTariffPDV]||{}),mode:$('tMode').value,standard,zones,updatedAt:new Date().toISOString()};
  await Cloud.saveTariff(tariffPeriod,currentTariffPDV,value);
  for(const [k,g] of fullRows)if(g.pdv===currentTariffPDV)reviews.delete(k);
  config.tariffs[currentTariffPDV]=value;await calculate();
  syncStatus('Tarifas guardadas en Supabase · '+tariffPeriod);
  notify('Tarifario guardado en Supabase para '+currentTariffPDV);
+}
+async function previewTariffsFile(file) {
+ if(!file)return;
+ if(!Cloud.admin())return notify('Solo administradores pueden importar tarifas.',true);
+ const status=$('tariffBulkStatus');status.textContent='Leyendo tarifario Excel…';
+ try{
+  if(!window.XLSX||!window.FacturacionTarifasMasivas)throw Error('No se cargó el lector de tarifarios Excel.');
+  const book=XLSX.read(await file.arrayBuffer(),{type:'array',raw:true});
+  const report=window.FacturacionTarifasMasivas.parseWorkbook(book);
+  tariffImportDraft={period:selectedPeriod(),name:file.name,report};
+  const allZones=new Set((rows||[]).map(r=>r.pdv+'|'+M.districtKey(r.dept,r.prov,r.dist)));
+  const matched=report.valid.filter(r=>allZones.has(r.pdv+'|'+r.key)).length;
+  const external=report.valid.length-matched;
+  const missingStandard=report.entries.filter(r=>!Object.hasOwn(r,'standard')&&M.num(config.tariffs?.[r.pdv]?.standard)==null).length;
+  $('tariffImportPeriod').textContent=`${file.name} · Periodo ${selectedPeriod()} · Hoja ${report.sheet}`;
+  $('tariffImportSummary').textContent=`${fnum(report.sourceRows,0)} filas del Excel · ${report.entries.length} PDV · ${fnum(report.valid.length,0)} zonas válidas · ${report.conflicts.length} conflictos · ${report.duplicates.length} duplicados idénticos · ${report.invalid.length} inválidas · ${report.standardRows} filas de estándar. ${matched} zonas con guías del periodo; ${external} otras localidades se conservan para futuras cargas. ${missingStandard} PDV no tienen tarifa estándar registrada; otras zonas de esos PDV seguirán sin tarifa.`;
+  $('tariffImportRows').innerHTML=report.valid.slice(0,80).map(r=>`<tr><td>${r.row}</td><td>${safe(r.pdv)}</td><td>${safe(r.dept)}</td><td>${safe(r.prov)}</td><td>${safe(r.dist)}</td><td>${money(r.rate)}</td></tr>`).join('') || '<tr><td colspan="6">No hay tarifas válidas para importar.</td></tr>';
+  const issues=[...report.conflicts.map(x=>`${x.pdv}: ${x.dept} / ${x.prov} / ${x.dist} → ${x.options.map(o=>`fila ${o.row}: S/ ${o.rate}`).join(' y ')} (omitido)`), ...report.standardConflicts.map(x=>`Tarifa estándar contradictoria en ${x.pdv}: filas ${x.first} y ${x.second} (omitida)`), ...report.invalid.slice(0,5).map(x=>`Fila ${x.row}: PDV o tarifa inválida (${x.pdv||'sin PDV'} / ${x.value??'vacío'})`)];
+  $('tariffImportIssues').textContent=issues.length?'Incidencias: '+issues.slice(0,12).join(' | ')+(issues.length>12?' …':''):'Sin conflictos de importación.';
+  $('btnTariffImportIssues').hidden=!(report.conflicts.length||report.invalid.length||report.standardConflicts.length||report.duplicates.length);
+  $('btnConfirmTariffImport').disabled=report.entries.length===0;
+  $('tariffImportSaveStatus').textContent='';
+  $('tariffImportDialog').showModal();
+  status.textContent=`Excel revisado: ${fnum(report.valid.length,0)} tarifas válidas · ${report.entries.length} PDV. Confirma para guardar.`;
+ }catch(e){tariffImportDraft=null;status.textContent='No se pudo importar: '+e.message;notify('Tarifario: '+e.message,true);}
+}
+async function saveTariffImport(){
+ if(!tariffImportDraft||tariffImportSaving)return;
+ if(tariffImportDraft.period!==selectedPeriod())return notify('Cambió el periodo; carga de nuevo el Excel.',true);
+ const report=tariffImportDraft.report;
+ if(!report.entries.length)return;
+ tariffImportSaving=true;const b=$('btnConfirmTariffImport'),cancel=$('tariffImportCancel'),status=$('tariffImportSaveStatus');
+ b.disabled=true;cancel.disabled=true;$('tariffImportX').disabled=true;status.textContent='Guardando todas las tarifas en una sola transacción de Supabase…';
+ try{
+  const res=await Cloud.importTariffsBulk(tariffImportDraft.period,report.entries);
+  const fresh=await Cloud.loadConfig(selectedPeriod());
+  config.tariffs=fresh.tariffs||{};
+  await calculate();
+  $('tariffBulkStatus').textContent=`Guardado confirmado: ${res.pdvs} PDV y ${res.zonas} tarifas zonales · ${selectedPeriod()}.`;
+  syncStatus('Tarifario masivo sincronizado · '+selectedPeriod());
+  notify('Tarifas masivas guardadas en Supabase: '+res.pdvs+' PDV.');
+  tariffImportDraft=null;
+  $('tariffImportDialog').close();
+ }catch(e){
+  status.textContent='Error: '+e.message+'. No se confirmó la importación. Si la subida terminó antes de fallar la recarga, comprueba tarifas en Supabase.';
+  status.classList.add('is-error');notify('No se pudo confirmar la importación: '+e.message,true);
+ }finally{tariffImportSaving=false;b.disabled=false;cancel.disabled=false;$('tariffImportX').disabled=false;}
+}
+function downloadTariffIssues(){
+ const report=tariffImportDraft?.report;if(!report)return;
+ const sheet=[['TIPO','FILA','PDV','DEPARTAMENTO','PROVINCIA','DISTRITO','DETALLE']];
+ for(const x of report.conflicts)sheet.push(['CONFLICTO',x.options.map(o=>o.row).join(','),x.pdv,x.dept,x.prov,x.dist,x.options.map(o=>`Fila ${o.row}: S/ ${o.rate}`).join('; ')]);
+ for(const x of report.invalid)sheet.push(['INVALIDO',x.row,x.pdv||'',x.dept||'',x.prov||'',x.dist||'',String(x.value??'')]);
+ for(const x of report.standardConflicts)sheet.push(['ESTANDAR CONFLICTO',x.first+'/'+x.second,x.pdv,'','','','No se importó la tarifa estándar']);
+ for(const x of report.duplicates)sheet.push(['DUPLICADO IGUAL',x.row,x.pdv,'','','',x.key+' · S/ '+x.rate]);
+ const book=XLSX.utils.book_new(),sh=XLSX.utils.aoa_to_sheet(sheet);sh['!cols']=[{wch:25},{wch:13},{wch:15},{wch:19},{wch:22},{wch:28},{wch:64}];XLSX.utils.book_append_sheet(book,sh,'INCIDENCIAS');XLSX.writeFile(book,`INCIDENCIAS_TARIFARIO_${tariffImportDraft.period}.xlsx`,{compression:true});
+}
+function downloadTariffsBulk(){
+ if(!Cloud.admin())return notify('Solo administradores pueden exportar el tarifario completo.',true);
+ try{
+  if(!window.XLSX||!window.FacturacionTarifasMasivas)throw Error('Lector Excel no disponible.');
+  const scope=$('tariffExportScope').value,all=Object.entries(config.tariffs||{}),chosen=scope==='FILTER'&&selectedPDVs.size?all.filter(([p])=>selectedPDVs.has(p)):all;
+  if(!chosen.length)return notify('No hay tarifas configuradas para los PDV elegidos.',true);
+  const {book,rows:exportRows,pdvs}=window.FacturacionTarifasMasivas.workbookExport(XLSX,selectedPeriod(),Object.fromEntries(chosen),rows);
+  XLSX.writeFile(book,`TARIFARIO_PDV_${selectedPeriod()}_${scope==='FILTER'&&selectedPDVs.size?'FILTRO':'TODOS'}.xlsx`,{compression:true});
+  $('tariffBulkStatus').textContent=`Descargado: ${pdvs} PDV · ${fnum(exportRows,0)} tarifas zonales · hojas R4 y ESTANDAR_PDV.`;
+ }catch(e){$('tariffBulkStatus').textContent='Error al descargar: '+e.message;notify(e.message,true);}
 }
 async function saveRules(){
  if(!Cloud.admin())throw Error('No autorizado.');
@@ -856,8 +956,22 @@ function bindEvents(){document.querySelectorAll('[data-tab]').forEach(btn=>btn.a
  $('bulkTimeDialog').addEventListener('cancel',e=>{if(bulkSaving)e.preventDefault();});
  $('sumPrev').addEventListener('click' ,()=>{sumPage=Math.max(0,sumPage-1);renderSummary();});$('sumNext').addEventListener('click',()=>{sumPage++;renderSummary();});$('detPrev').addEventListener('click',()=>{detPage=Math.max(0,detPage-1);renderDetail();});$('detNext').addEventListener('click',()=>{detPage++;renderDetail();});
  $('summaryBody').addEventListener('click',e=>{const b=e.target.closest('[data-time]');if(b)openTime(b.dataset.time);});$('tariffBody').addEventListener('click',e=>{const b=e.target.closest('[data-tariff]');if(b)openTariff(b.dataset.tariff);});$('tMode').addEventListener('change',toggleZones);
- for(const id of ['zSearchDept','zSearchProv','zSearchDist'])$(id).addEventListener('input',()=>{clearTimeout(zoneSearchTimer);zoneSearchTimer=setTimeout(renderTariffDistricts,90);});
- $('zClearSearch').addEventListener('click',()=>{for(const id of ['zSearchDept','zSearchProv','zSearchDist'])$(id).value='';renderTariffDistricts();});
+ for(const id of ['zSearchDept','zSearchProv','zSearchDist'])$(id).addEventListener('input',()=>{clearTimeout(zoneSearchTimer);zoneSearchTimer=setTimeout(renderTariffFacets,90);});
+ $('zClearSearch').addEventListener('click',()=>{for(const facet of Object.keys(selectedTariffFacets)){selectedTariffFacets[facet].clear();$(ZFACETS[facet].search).value='';}updateTariffFacetFilters();});
+ for(const facet of Object.keys(selectedTariffFacets)){
+  const list=$(ZFACETS[facet].list);
+  list.addEventListener('change',e=>{const cb=e.target.closest('[data-tariff-facet-key]');if(!cb)return;const key=cb.dataset.tariffFacetKey;cb.checked?selectedTariffFacets[facet].add(key):selectedTariffFacets[facet].delete(key);updateTariffFacetFilters();});
+ }
+ $('tariffDialog').addEventListener('click',e=>{
+  const all=e.target.closest('[data-facet-all]'),clear=e.target.closest('[data-facet-clear]');
+  if(all){const facet=all.dataset.facetAll;for(const opt of tariffFacetOptions(facet))selectedTariffFacets[facet].add(opt.value);updateTariffFacetFilters();}
+  if(clear){const facet=clear.dataset.facetClear;selectedTariffFacets[facet].clear();updateTariffFacetFilters();}
+ });
+ $('zSelectVisible').addEventListener('change',e=>{
+  const visible=filteredTariffDistricts().slice(0,300);
+  for(const row of visible)e.target.checked?selectedTariffDistricts.add(row.key):selectedTariffDistricts.delete(row.key);
+  renderTariffDistricts();
+ });
  $('zSelectFiltered').addEventListener('click',()=>{for(const r of filteredTariffDistricts())selectedTariffDistricts.add(r.key);renderTariffDistricts();});
  $('zClearSelected').addEventListener('click',()=>{selectedTariffDistricts.clear();renderTariffDistricts();});
  $('zApplyBatch').addEventListener('click',()=>applyTariffBatch(false));
@@ -866,6 +980,13 @@ function bindEvents(){document.querySelectorAll('[data-tab]').forEach(btn=>btn.a
  $('zoneRates').addEventListener('input',e=>{const input=e.target.closest('[data-zone-key]');if(input)zoneRateDraft.set(input.dataset.zoneKey,input.value);});
  $('timeForm').addEventListener('submit',e=>saveDialog(e,'timeDialog',saveTime,'timeSaveStatus'));
  $('tariffForm').addEventListener('submit',e=>saveDialog(e,'tariffDialog',saveTariff,'tariffSaveStatus'));
+ $('tariffBulkFile').addEventListener('change',async e=>{const file=e.target.files?.[0];try{await previewTariffsFile(file);}finally{e.target.value='';}});
+ $('btnExportBulkTariffs').addEventListener('click',downloadTariffsBulk);
+ $('btnConfirmTariffImport').addEventListener('click',saveTariffImport);
+ $('btnTariffImportIssues').addEventListener('click',downloadTariffIssues);
+ for(const id of ['tariffImportCancel','tariffImportX'])$(id).addEventListener('click',()=>{if(!tariffImportSaving)$('tariffImportDialog').close();});
+ $('tariffImportDialog').addEventListener('cancel',e=>{if(tariffImportSaving)e.preventDefault();});
+
  $('btnSaveRules').addEventListener('click',async e=>{const btn=e.currentTarget,status=$('rulesSaveStatus');btn.disabled=true;status.classList.remove('is-error');status.textContent='Guardando reglas en Supabase…';try{await saveRules();status.textContent='Reglas guardadas en Supabase.';}catch(err){status.classList.add('is-error');status.textContent='No se guardaron: '+err.message;syncStatus('Error al guardar reglas: '+err.message,true);notify(err.message,true);}finally{btn.disabled=false;}});$('refPeriod').addEventListener('change',calculate);$('btnClose').addEventListener('click',closePeriod);$('historyList').addEventListener('click',e=>{
   const b=e.target.closest('[data-export-snapshot]');if(b)exportSnapshot(b.dataset.exportSnapshot);
   const old=e.target.closest('[data-publish-local]');if(old)publishOldSnapshot(old.dataset.publishLocal);

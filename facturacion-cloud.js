@@ -115,6 +115,21 @@
       periodo: period, regla: rule, minimo_guias: minGuides, periodo_referencia: refPeriod || period
     }, {onConflict:'periodo'}), 'Guardar reglas');
   }
+  async function importTariffsBulk(period, entries) {
+    assertAdmin();
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) throw Error('Periodo de facturación inválido.');
+    if (!Array.isArray(entries) || !entries.length || entries.length > 500) throw Error('Cantidad inválida de PDV para importar.');
+    const res = ensure(await create().rpc('facturacion_importar_tarifas_masivo', {
+      p_periodo: period,
+      p_tarifas: entries.map(item => ({
+        pdv: item.pdv, zones: item.zones || {}, ubigeos: item.ubigeos || {},
+        ...(Object.prototype.hasOwnProperty.call(item,'standard') ? {standard:item.standard} : {}),
+        ...(item.mode ? {mode:item.mode} : {})
+      }))
+    }), 'Importación masiva de tarifas');
+    if (Number(res?.pdvs) !== entries.length) throw Error('Supabase no confirmó todos los PDV. Revisa la configuración antes de reintentar.');
+    return res;
+  }
   async function saveTariff(period, pdv, data) {
     assertAdmin();
     return ensure(await create().from(TABLES.tariffs).upsert({periodo:period,pdv,datos:data},
@@ -279,6 +294,6 @@
       .select('configuracion,estadisticas,totales').eq('liquidacion_id',id).single(),'Cierre privado');
   }
   root.FacturacionCloud={create,restore,refreshProfile,login,logout,profile:()=>profile,
-    user:()=>currentUser,admin,loadConfig,saveRules,saveTariff,saveTime,saveTimesBulk,loadReviews,saveReview,refreshReviews,
+    user:()=>currentUser,admin,loadConfig,saveRules,saveTariff, importTariffsBulk,saveTime,saveTimesBulk,loadReviews,saveReview,refreshReviews,
     listMembers,upsertMember,publish,listSettlements,readSummary,readDetails,readAllDetails,readPrivate};
 })(window);

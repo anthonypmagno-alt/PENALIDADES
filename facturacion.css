@@ -135,3 +135,44 @@ body.summary-table-expanded{overflow:hidden}
 .tariff-count,.tariff-zone-help{font-size:11px;color:#59718a;margin:7px 0}
 .tariff-no-matches{padding:18px;text-align:center}
 @media(max-width:730px){.tariff-zone-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.tariff-zone-head,.tariff-dialog .zone-row{grid-template-columns:32px 100px 130px 130px 120px;min-width:540px}.tariff-dialog .zones{overflow:auto}.tariff-bulk-field{max-width:none}.tariff-zone-head{overflow:auto}}
+
+/* V2.8: filtros geográficos multiselección y marcar/desmarcar en encabezado */
+.tariff-zone-filters{grid-template-columns:repeat(3,minmax(0,1fr)) auto}
+.tariff-multi-filter{position:relative;min-width:0}
+.tariff-multi-filter>summary{list-style:none;border:1px solid #c9d5e4;border-radius:7px;padding:10px 11px;font-size:12px;min-height:36px;cursor:pointer;background:#fff;color:#294c76;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:650}
+.tariff-multi-filter>summary::-webkit-details-marker{display:none}
+.tariff-multi-filter>summary::after{content:'⌄';float:right;margin-left:4px}
+.tariff-multi-filter[open]>summary{background:#eaf3ff;border-color:#8eaed6}
+.tariff-facet-popup{position:absolute;top:calc(100% + 3px);left:0;z-index:70;width:max(290px,100%);max-width:min(360px,87vw);background:#fff;box-shadow:0 11px 32px #17395e35;border:1px solid #bed0e5;border-radius:9px;padding:10px}
+.tariff-facet-popup .field span{font-size:11px}
+.tariff-facet-popup .field input{min-height:34px}
+.tariff-facet-actions{display:flex;gap:6px;margin:9px 0}
+.tariff-facet-actions button{font-size:10px;min-height:27px;padding:5px 7px;flex:1;white-space:normal}
+.tariff-facet-options{max-height:215px;overflow-y:auto;border-top:1px solid #e3eaf3;border-bottom:1px solid #e3eaf3}
+.tariff-facet-option{display:flex;align-items:center;gap:9px;padding:7px 5px;cursor:pointer;font-size:11px}
+.tariff-facet-option:hover{background:#f0f5ff}
+.tariff-facet-option input{width:15px;height:15px;min-height:0;flex-shrink:0}
+.tariff-facet-option span{font-size:11px!important;white-space:normal;overflow-wrap:anywhere}
+.tariff-facet-count,.tariff-facet-empty,.tariff-facet-help{font-size:10px;color:#667992;line-height:1.4;margin:5px 0}
+.tariff-head-checkbox{display:flex;align-items:center;justify-content:center}
+.tariff-head-checkbox input{width:16px;height:16px;cursor:pointer;accent-color:#2367d1}
+@media(max-width:730px){.tariff-zone-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.tariff-facet-popup{max-width:min(335px,85vw)}}
+
+/* V2.9 - Tarifa masiva R4 */
+.tariff-excel-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;padding:13px;margin:12px 0 16px;background:#f3f7fc;border:1px solid #d8e4f2;border-radius:10px}
+.tariff-excel-title{flex:1 1 290px;display:grid;gap:4px}
+.tariff-excel-title strong{font-size:13px;color:#1c3e67}
+.tariff-excel-title small{font-size:11px;color:#55738f;line-height:1.4}
+.tariff-excel-upload{min-height:36px;white-space:nowrap}
+.tariff-export-scope{min-width:190px;max-width:240px}
+.tariff-bulk-status{width:100%;font-size:11px;color:#345775;margin:0}
+#tariffImportDialog{width:min(1000px,97vw);max-height:94vh;padding:20px}
+.tariff-import-summary{font-size:12px;font-weight:650;color:#17457c;line-height:1.6}
+.tariff-import-warning{font-size:12px;background:#fff4d8;border:1px solid #f2d28d;color:#6d4e17;padding:10px;border-radius:8px;line-height:1.55}
+.tariff-import-scroll{overflow:auto;max-height:36vh;border:1px solid #d7e3f1;border-radius:7px}
+.tariff-import-preview{width:100%;min-width:650px;font-size:12px;border-collapse:collapse}
+.tariff-import-preview th,.tariff-import-preview td{padding:7px;border-bottom:1px solid #dfe7f0;text-align:left}
+.tariff-import-preview th{background:#e8eff9;position:sticky;top:0}
+.tariff-import-issues{font-size:11px;line-height:1.6;color:#8a2a19;padding:8px 0;max-height:100px;overflow-y:auto}
+.tariff-import-bottom-note{font-size:11px;color:#4b6681}
+#tariffImportSaveStatus.is-error{color:#b42318}

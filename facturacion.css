@@ -35,3 +35,11 @@
 .simulated-amount{background:#f3f8ff;font-weight:750;color:#265482}
 .diff-positive{color:#087a4a;font-weight:750}.diff-negative{color:#b03035;font-weight:750}.diff-neutral{color:#738395}
 @media(max-width:760px){.simulation-field{flex:1 1 100%}.simulation-toolbar p{flex:1 1 100%}}
+
+/* V2.3: estado visible de guardado y respaldo local */
+#syncBadge{display:inline-block;padding:4px 9px;border-radius:6px;background:#eaf3ff;color:#1a4d83;font-weight:650}
+#syncBadge.is-error{background:#fff1ed;color:#a13120}
+#timeSaveStatus,#tariffSaveStatus,#rulesSaveStatus{min-height:1.2em;margin:8px 0;font-size:.85rem}
+#timeSaveStatus.is-error,#tariffSaveStatus.is-error,#rulesSaveStatus.is-error{color:#aa2929}
+.small-upload{position:relative;cursor:pointer;padding:.55rem .75rem;border:1px solid #c6d5ec;border-radius:7px;display:inline-flex;align-items:center;gap:4px}
+.small-upload input{position:absolute;opacity:0;width:1px;height:1px;overflow:hidden}

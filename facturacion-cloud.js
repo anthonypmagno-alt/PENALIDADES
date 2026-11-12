@@ -97,8 +97,8 @@
     const c = create();
     const [cfg, rates, times] = await Promise.all([
       c.from(TABLES.config).select('regla,minimo_guias,periodo_referencia').eq('periodo', period).maybeSingle(),
-      allPages(TABLES.tariffs, 'pdv,datos', q => q.eq('periodo', period)),
-      allPages(TABLES.times, 'clave,datos', q => q.eq('periodo', period))
+      allPages(TABLES.tariffs, 'pdv,datos', q => q.eq('periodo', period).order('pdv',{ascending:true})),
+      allPages(TABLES.times, 'clave,datos', q => q.eq('periodo', period).order('clave',{ascending:true}))
     ]);
     const settings = ensure(cfg, 'Configuración');
     return {
@@ -117,16 +117,16 @@
   }
   async function saveTariff(period, pdv, data) {
     assertAdmin();
-    ensure(await create().from(TABLES.tariffs).upsert({periodo:period,pdv,datos:data},
-      {onConflict:'periodo,pdv'}), 'Guardar tarifa');
+    return ensure(await create().from(TABLES.tariffs).upsert({periodo:period,pdv,datos:data},
+      {onConflict:'periodo,pdv'}).select('periodo,pdv,datos').single(), 'Guardar tarifa');
   }
   async function saveTime(period, summaryRow, data) {
     assertAdmin();
-    ensure(await create().from(TABLES.times).upsert({
+    return ensure(await create().from(TABLES.times).upsert({
       periodo:period, clave:summaryRow.key, pdv:summaryRow.pdv,
       departamento:summaryRow.dept, provincia:summaryRow.prov, distrito:summaryRow.dist,
       datos:data
-    }, {onConflict:'periodo,clave'}), 'Guardar tiempo');
+    }, {onConflict:'periodo,clave'}).select('periodo,clave,datos').single(), 'Guardar tiempo');
   }
   async function loadReviews(period) {
     assertAdmin();

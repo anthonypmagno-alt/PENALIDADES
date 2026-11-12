@@ -1,4 +1,4 @@
-/* Facturación PDV V2.2 - trabajo local y cierre multiusuario con RLS en Supabase. */
+/* Facturación PDV V2.3 - trabajo local y cierre multiusuario con RLS en Supabase. */
 (()=>{'use strict';
 const M=window.FacturacionMotor,Cloud=window.FacturacionCloud,$=id=>document.getElementById(id),money=n=>n==null?'—':new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'}).format(n),fnum=(n,dp=2)=>n==null?'—':new Intl.NumberFormat('es-PE',{minimumFractionDigits:0,maximumFractionDigits:dp}).format(n),safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),csvSafe=v=>typeof v==='string'&&/^[=+@\-\t\r]/.test(v)?"'"+v:v;
 let publishedList=[],publishedSummary=[],publishedCurrent=null,pubPage=0,pubCount=0,pubBusy=false;
@@ -10,13 +10,26 @@ function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open
 function put(store,obj){return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readwrite');tx.objectStore(store).put(obj);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
 function get(store,id){return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readonly'),q=tx.objectStore(store).get(id);q.onsuccess=()=>resolve(q.result??null);q.onerror=()=>reject(q.error);});}
 function getAll(store){return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readonly'),q=tx.objectStore(store).getAll();q.onsuccess=()=>resolve(q.result||[]);q.onerror=()=>reject(q.error);});}
+function getKeys(store){return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readonly'),q=tx.objectStore(store).getAllKeys();q.onsuccess=()=>resolve(q.result||[]);q.onerror=()=>reject(q.error);});}
+const LAST_PERIOD_PREFIX='facturacion_pdv_periodo_v23:',LAST_SIM_PREFIX='facturacion_pdv_sim_v23:';
+function accountKey(prefix){const uid=Cloud.user()?.id;return uid?prefix+uid:null;}
+function readSetting(prefix){try{const key=accountKey(prefix);return key?localStorage.getItem(key):null;}catch{return null;}}
+function storeSetting(prefix,value){try{const key=accountKey(prefix);if(key)localStorage.setItem(key,String(value));}catch{/* Navegador puede bloquear storage; IndexedDB sigue siendo el borrador. */}}
+function rememberWorkingState(){storeSetting(LAST_PERIOD_PREFIX,selectedPeriod());storeSetting(LAST_SIM_PREFIX,simulationHours);}
+async function restoreWorkingState(){
+ const last=readSetting(LAST_PERIOD_PREFIX),keys=(await getKeys('dataset')).filter(p=>/^\d{4}-(?:0[1-9]|1[0-2])$/.test(String(p))).sort().reverse();
+ $('period').value=(last&&/^\d{4}-(?:0[1-9]|1[0-2])$/.test(last)?last:null)||keys[0]||todayMonth();
+ const sim=M.num(readSetting(LAST_SIM_PREFIX));if(sim!==null&&sim>0){simulationHours=sim;$('simHours').value=String(sim);}
+}
+function syncStatus(message,error=false){const badge=$('syncBadge');if(!badge)return;badge.textContent=message;badge.classList.toggle('is-error',error);}
+
 function initialConfig(){return{rule:{rate:10,step:24,maxExcess:120},minGuides:10,times:{},tariffs:{}};}
 async function saveConfig(){throw Error('Configuración compartida: usa guardar tiempos, tarifas o reglas en Supabase.');}
 function selectedPeriod(){return $('period').value||todayMonth();}
 function th(v){return v==null?'—':fnum(v,2)+' h'}
 function renderExamples(){const rule=config.rule,base=72;const list=[72,80,96,120,192,192.1].map(t=>({t,...M.discount(t,base,rule)}));$('ruleExamples').innerHTML=list.map(o=>`<div class="rule-example"><strong class="${o.payPct===0?'bad':o.payPct===100?'ok':''}">${fnum(o.payPct)}%</strong>${fnum(o.t,1)} h</div>`).join('');}
 async function updateAvailablePeriods(){
- const data=await getAll('dataset');periods=data.map(x=>x.id).sort().reverse();
+ periods=(await getKeys('dataset')).map(String).sort().reverse();
  const current=selectedPeriod(),previous=config?.refPeriod||current;
  const opts=[...new Set([current,previous,...periods])];
  $('refPeriod').innerHTML=opts.map(p=>`<option value="${safe(p)}">${safe(p)}${p===current?' · periodo actual':''}${p===previous&&p!==current?' · referencia guardada':''}</option>`).join('');
@@ -25,6 +38,7 @@ async function updateAvailablePeriods(){
 async function loadPeriod(){
  if(!Cloud.profile())return;
  const p=selectedPeriod();
+ syncStatus('Cargando configuración de '+p+' desde Supabase…');
  $('period').dataset.periodLoaded=p;
  config={...initialConfig(),...await Cloud.loadConfig(p)};
  config.rule={...initialConfig().rule,...(config.rule||{})};
@@ -39,6 +53,7 @@ async function loadPeriod(){
  await updateAvailablePeriods();await calculate();
  setStatus(src?`Borrador local: ${src.file||'archivo'} · ${src.uploadedAt||''}`:`Sin archivo local para ${p}. Importa MODULADOR.xlsx.`);
  $('srcBadge').textContent=src?`${fnum(rows.length,0)} guías · ${src.stats?.duplicates||0} duplicadas omitidas · ${src.stats?.high||0} >720 h`:'Sin registros';
+ rememberWorkingState();syncStatus('Configuración de '+p+' recuperada de Supabase');
 }
 async function chooseReferenceRows(){
  const rp=$('refPeriod').value||selectedPeriod();if(rp===selectedPeriod())return rows;
@@ -154,7 +169,7 @@ function renderCloseStatus(){const t=result?.totals||null;if(!t){$('closeTitle')
  $('closeTitle').textContent=`Periodo ${selectedPeriod()} · ${fnum(t.guias,0)} guías`;$('closeMessage').textContent=(sourceStats?.pdvConflicts>0)?`Existen ${sourceStats.pdvConflicts} guías con más de un PDV en el Excel. Corrige esos casos en el archivo original y vuelve a importar antes del cierre.`:t.pendientes?`${fnum(t.pendientes,0)} guías no tienen tarifa o tiempo base. Debes resolverlas antes de finalizar. El cierre usa TODAS las guías del periodo, no solo los filtros visibles.`:`Todas las ${fnum(t.calculadas,0)} guías tienen tarifa y tiempo base. Puedes congelar una versión final de esta liquidación.`;$('btnClose').disabled=t.pendientes>0||(sourceStats?.pdvConflicts||0)>0||importing;
 }
 function openTime(k){const g=result?.summary.find(x=>x.key===k);if(!g)return;currentTimeKey=k;const t=config.times[k]||{};$('timeIdentity').textContent=`${g.pdv} · ${g.dept} / ${g.prov} / ${g.dist} · Mejor tiempo: ${th(g.bestHours)}`;
- for(const [id,prop] of [['tConsolidacion','consolidacion'],['tRetraslado','retraslado'],['tAdicional','adicional'],['tNecesario','necesario'],['tManual','manualBase']])$(id).value=t[prop]??'';$('tObs').value=t.observaciones||'';$('timeDialog').showModal();}
+ for(const [id,prop] of [['tConsolidacion','consolidacion'],['tRetraslado','retraslado'],['tAdicional','adicional'],['tNecesario','necesario'],['tManual','manualBase']])$(id).value=t[prop]??'';$('tObs').value=t.observaciones||'';$('timeSaveStatus').textContent='';$('timeDialog').showModal();}
 async function saveTime(){
  if(!Cloud.admin())throw Error('No autorizado.');
  const g=result?.summary.find(x=>x.key===currentTimeKey);if(!g)throw Error('No se encuentra el PDV/distrito.');
@@ -163,12 +178,12 @@ async function saveTime(){
  for(const [k,v] of Object.entries(fields))if(v!==''&&(!Number.isFinite(Number(v))||Number(v)<0))throw Error('Valor negativo o inválido en '+k);
  const value={...Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,v===''?null:Number(v)])),observaciones:$('tObs').value.trim()};
  await Cloud.saveTime(selectedPeriod(),g,value);
- reviews.delete(currentTimeKey);config.times[currentTimeKey]=value;await calculate();notify('Tiempos compartidos guardados en Supabase.');
+ reviews.delete(currentTimeKey);config.times[currentTimeKey]=value;await calculate();syncStatus('Tiempos guardados en Supabase · '+selectedPeriod());notify('Tiempos compartidos guardados en Supabase.');
 }
 function openTariff(pdv){currentTariffPDV=pdv;const t=config.tariffs[pdv]||{mode:'ESTANDAR',standard:null,zones:{}};$('tariffIdentity').textContent=pdv;$('tMode').value=t.mode||'ESTANDAR';$('tStandard').value=t.standard??'';
  const distinct=new Map();for(const r of rows)if(r.pdv===pdv){const key=M.districtKey(r.dept,r.prov,r.dist);distinct.set(key,`${r.dept} / ${r.prov} / ${r.dist}`);}
  for(const k of Object.keys(t.zones||{}))if(!distinct.has(k))distinct.set(k,k.replaceAll('|',' / '));
- $('zoneRates').innerHTML=[...distinct.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([key,name])=>`<div class="zone-row"><label>${safe(name)}</label><input data-zone-key="${safe(key)}" type="number" step="0.01" min="0" placeholder="Estándar" value="${t.zones?.[key]??''}"></div>`).join('');toggleZones();$('tariffDialog').showModal();}
+ $('zoneRates').innerHTML=[...distinct.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([key,name])=>`<div class="zone-row"><label>${safe(name)}</label><input data-zone-key="${safe(key)}" type="number" step="0.01" min="0" placeholder="Estándar" value="${t.zones?.[key]??''}"></div>`).join('');toggleZones();$('tariffSaveStatus').textContent='';$('tariffDialog').showModal();}
 function toggleZones(){$('zonesBox').hidden=$('tMode').value!=='ZONAL';}
 async function saveTariff(){
  if(!Cloud.admin())throw Error('No autorizado.');
@@ -180,7 +195,7 @@ async function saveTariff(){
  const value={mode:$('tMode').value,standard,zones,updatedAt:new Date().toISOString()};
  await Cloud.saveTariff(selectedPeriod(),currentTariffPDV,value);
  for(const [k,g] of fullRows)if(g.pdv===currentTariffPDV)reviews.delete(k);
- config.tariffs[currentTariffPDV]=value;await calculate();notify('Tarifario guardado en Supabase para '+currentTariffPDV);
+ config.tariffs[currentTariffPDV]=value;await calculate();syncStatus('Tarifas guardadas en Supabase · '+selectedPeriod());notify('Tarifario guardado en Supabase para '+currentTariffPDV);
 }
 async function saveRules(){
  if(!Cloud.admin())throw Error('No autorizado.');
@@ -189,7 +204,41 @@ async function saveRules(){
  const rule={rate,step,maxExcess},ref=$('refPeriod').value||selectedPeriod();
  await Cloud.saveRules(selectedPeriod(),rule,min,ref);
  reviews.clear();config.rule=rule;config.minGuides=min;config.refPeriod=ref;
- renderExamples();await calculate();notify('Reglas sincronizadas en Supabase.');
+ renderExamples();await calculate();syncStatus('Reglas guardadas en Supabase · '+selectedPeriod());notify('Reglas sincronizadas en Supabase.');
+}
+async function backupDraft(){
+ if(!Cloud.admin())return notify('Solo el administrador puede respaldar el borrador.',true);
+ const p=selectedPeriod(),src=await get('dataset',p);
+ if(!src?.rows?.length)return notify('No hay un borrador local para respaldar en '+p+'.',true);
+ const exportable={formato:'FACTURACION_PDV_BORRADOR_V23',periodo:p,generado_en:new Date().toISOString(),
+   fuente:{id:p,rows:src.rows,stats:src.stats,headers:src.headers,file:src.file,uploadedAt:src.uploadedAt}};
+ const blob=new Blob([JSON.stringify(exportable)],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob);
+ const link=document.createElement('a');link.href=url;link.download='RESPALDO_FACTURACION_'+p+'.json';document.body.appendChild(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),30000);notify('Respaldo JSON generado para '+p+'.');
+}
+async function restoreDraft(file){
+ if(!Cloud.admin()||!file)return;
+ if(file.size>100*1024*1024)throw Error('El respaldo supera 100 MB.');
+ const data=JSON.parse(await file.text());
+ if(data?.formato!=='FACTURACION_PDV_BORRADOR_V23'||!/^\d{4}-(?:0[1-9]|1[0-2])$/.test(data.periodo))throw Error('El archivo no es un respaldo válido de Facturación V2.3.');
+ const raw=data.fuente?.rows;
+ if(!Array.isArray(raw)||!raw.length||raw.length>500000)throw Error('El respaldo no contiene una cantidad válida de guías.');
+ const clean=raw.map(r=>({guia:M.norm(r.guia),pdv:M.normalizePDV(r.pdv),dept:M.norm(r.dept),prov:M.norm(r.prov),dist:M.norm(r.dist),
+   horas:M.num(r.horas),fecha:String(r.fecha||''),period:data.periodo}));
+ if(clean.some(r=>!r.guia||!r.pdv||!r.dept||!r.prov||!r.dist||r.horas===null||r.horas<0))throw Error('El respaldo contiene guías incompletas o inválidas.');
+ const existing=await get('dataset',data.periodo);
+ if(existing?.rows?.length&&!confirm('Ya existen '+existing.rows.length+' guías locales de '+data.periodo+'. ¿Deseas reemplazar el borrador de ese periodo con este respaldo?'))return;
+ await put('dataset',{id:data.periodo,rows:clean,stats:{...data.fuente.stats,valid:clean.length},headers:data.fuente.headers||[],file:data.fuente.file||file.name,
+   uploadedAt:'Restaurado '+new Date().toLocaleString('es-PE')});
+ $('period').value=data.periodo;rememberWorkingState();await loadPeriod();notify('Borrador restaurado: '+clean.length.toLocaleString('es-PE')+' guías en '+data.periodo+'.');
+}
+async function saveDialog(e,id,callback,statusId){
+ if(e.submitter?.value!=='save')return;
+ e.preventDefault();const btn=e.submitter,status=$(statusId);btn.disabled=true;
+ status.classList.remove('is-error');status.textContent='Guardando en Supabase, no cierres la pestaña…';
+ try{await callback();status.textContent='Guardado en Supabase.';$(id).close('saved');}
+ catch(err){status.classList.add('is-error');status.textContent='No se guardó: '+err.message;syncStatus('Error de guardado: '+err.message,true);notify('Error de guardado: '+err.message,true);console.error(err);}
+ finally{btn.disabled=false;}
 }
 async function importFile(file){if(!Cloud.admin())return notify('Solo un administrador puede importar borradores.',true);if(!file||importing)return;const maxBytes=80*1024*1024;if(file.size>maxBytes){notify('Excel superior a 80 MB; divide en varios archivos.',true);return;}if(rows.length&&!confirm(`¿Reemplazar las ${rows.length.toLocaleString('es-PE')} guías del periodo ${selectedPeriod()}? Las liquidaciones finalizadas no se borrarán.`))return;
  importing=true;$('btnClose').disabled=true;setStatus(`Leyendo ${file.name}…`);await new Promise(r=>setTimeout(r,60));try{if(!window.XLSX)throw Error('No se cargó el lector Excel. Verifica el acceso a cdn.jsdelivr.net e intenta de nuevo.');
@@ -468,13 +517,15 @@ function bindCloudEvents(){
 }
 
 function bindEvents(){document.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('.tab-panel').forEach(x=>x.classList.toggle('active',x.id===`tab-${btn.dataset.tab}`));if(btn.dataset.tab==='historico')renderHistory();}));
- $('period').addEventListener('change',loadPeriod);$('fileInput').addEventListener('change',e=>importFile(e.target.files?.[0]));$('btnExport').addEventListener('click',exportCurrent);
+ $('period').addEventListener('change',async()=>{rememberWorkingState();try{await loadPeriod();}catch(err){syncStatus('No se pudo recuperar el periodo: '+err.message,true);notify(err.message,true);}});$('fileInput').addEventListener('change',e=>importFile(e.target.files?.[0]));$('btnExport').addEventListener('click',exportCurrent);
+ $('btnBackupDraft').addEventListener('click',()=>backupDraft().catch(e=>notify('Respaldo: '+e.message,true)));
+ $('backupFile').addEventListener('change',async e=>{try{await restoreDraft(e.target.files?.[0]);}catch(err){notify('Restauración: '+err.message,true);}finally{e.target.value='';}});
  $('simHours').addEventListener('input',()=>{
    const n=M.num($('simHours').value),invalid=n==null||n<=0;
    $('simHours').classList.toggle('is-invalid',invalid);
    $('simHours').setCustomValidity(invalid?'Ingresa una cantidad positiva de horas.':'');
    if(invalid){$('simTotals').textContent='Introduce un umbral válido mayor que cero.';return;}
-   simulationHours=n;
+   simulationHours=n;storeSetting(LAST_SIM_PREFIX,n);
    clearTimeout(simulationTimer);simulationTimer=setTimeout(refreshSimulation,140);
  });
  for(const id of ['fDept','fProv','fDist'])$(id).addEventListener('change',()=>{if(id==='fDept'){$('fProv').value='';$('fDist').value='';}if(id==='fProv')$('fDist').value='';populateGeoOptions();applyFilters();});$('fEstado').addEventListener('change',applyFilters);$('fSearch').addEventListener('input',()=>{clearTimeout(filterTimer);filterTimer=setTimeout(applyFilters,140)});$('btnClear').addEventListener('click',()=>{for(const id of ['fDept','fProv','fDist','fSearch','fEstado',...summaryFilterIds])$(id).value='';selectedPDVs.clear();renderPDVFilter();populateGeoOptions();applyFilters();});
@@ -484,7 +535,9 @@ function bindEvents(){document.querySelectorAll('[data-tab]').forEach(btn=>btn.a
  $('summaryBody').addEventListener('change',e=>{const box=e.target.closest('[data-review]');if(box)toggleReview(box.dataset.review,box.checked,box);});
  $('sumPrev').addEventListener('click' ,()=>{sumPage=Math.max(0,sumPage-1);renderSummary();});$('sumNext').addEventListener('click',()=>{sumPage++;renderSummary();});$('detPrev').addEventListener('click',()=>{detPage=Math.max(0,detPage-1);renderDetail();});$('detNext').addEventListener('click',()=>{detPage++;renderDetail();});
  $('summaryBody').addEventListener('click',e=>{const b=e.target.closest('[data-time]');if(b)openTime(b.dataset.time);});$('tariffBody').addEventListener('click',e=>{const b=e.target.closest('[data-tariff]');if(b)openTariff(b.dataset.tariff);});$('tMode').addEventListener('change',toggleZones);
- $('timeDialog').addEventListener('close',async()=>{if($('timeDialog').returnValue==='save')try{await saveTime();}catch(e){notify(e.message,true);}});$('tariffDialog').addEventListener('close',async()=>{if($('tariffDialog').returnValue==='save')try{await saveTariff();}catch(e){notify(e.message,true);}});$('btnSaveRules').addEventListener('click',async()=>{try{await saveRules();}catch(e){notify(e.message,true);}});$('refPeriod').addEventListener('change',calculate);$('btnClose').addEventListener('click',closePeriod);$('historyList').addEventListener('click',e=>{
+ $('timeForm').addEventListener('submit',e=>saveDialog(e,'timeDialog',saveTime,'timeSaveStatus'));
+ $('tariffForm').addEventListener('submit',e=>saveDialog(e,'tariffDialog',saveTariff,'tariffSaveStatus'));
+ $('btnSaveRules').addEventListener('click',async e=>{const btn=e.currentTarget,status=$('rulesSaveStatus');btn.disabled=true;status.classList.remove('is-error');status.textContent='Guardando reglas en Supabase…';try{await saveRules();status.textContent='Reglas guardadas en Supabase.';}catch(err){status.classList.add('is-error');status.textContent='No se guardaron: '+err.message;syncStatus('Error al guardar reglas: '+err.message,true);notify(err.message,true);}finally{btn.disabled=false;}});$('refPeriod').addEventListener('change',calculate);$('btnClose').addEventListener('click',closePeriod);$('historyList').addEventListener('click',e=>{
   const b=e.target.closest('[data-export-snapshot]');if(b)exportSnapshot(b.dataset.exportSnapshot);
   const old=e.target.closest('[data-publish-local]');if(old)publishOldSnapshot(old.dataset.publishLocal);
  });
@@ -503,7 +556,7 @@ async function showApp(profile){
  const tabName=Cloud.admin()?'resumen':'publicadas';
  document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
  $(`tab-${tabName}`).classList.add('active');
- if(Cloud.admin())await loadPeriod();
+ if(Cloud.admin()){await restoreWorkingState();await loadPeriod();}
  await refreshPublishedList();
  if(Cloud.admin())await renderHistory();
 }

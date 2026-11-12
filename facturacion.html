@@ -11,7 +11,7 @@
 <script defer src="facturacion-i18n.js"></script>
 <script defer src="facturacion.js"></script>
 </head><body>
-<header class="topbar"><div class="brand"><span class="logo">F</span><div><h1>Facturación <span>PDV</span></h1><small>Tarifas, tiempos y liquidaciones · V2.6 · resumen por PDV y filtros con buscador</small></div></div><div class="header-actions"><label class="language-field"><span>Idioma</span><select id="factLang" aria-label="Idioma de la interfaz"><option value="es">Español</option><option value="en">English</option><option value="zh">简体中文</option></select></label><span class="environment" id="sessionLabel">SUPABASE AUTH · SIN SESIÓN</span><button id="btnLogout" type="button" class="quiet" hidden>Salir</button><a href="gestion-v2.html" class="button ghost" title="Regresar a Gestión de Guías si están en el mismo directorio">Gestión de Guías</a></div></header>
+<header class="topbar"><div class="brand"><span class="logo">F</span><div><h1>Facturación <span>PDV</span></h1><small>Tarifas, tiempos y liquidaciones · V2.7 · tarifario zonal con búsqueda y selección múltiple</small></div></div><div class="header-actions"><label class="language-field"><span>Idioma</span><select id="factLang" aria-label="Idioma de la interfaz"><option value="es">Español</option><option value="en">English</option><option value="zh">简体中文</option></select></label><span class="environment" id="sessionLabel">SUPABASE AUTH · SIN SESIÓN</span><button id="btnLogout" type="button" class="quiet" hidden>Salir</button><a href="gestion-v2.html" class="button ghost" title="Regresar a Gestión de Guías si están en el mismo directorio">Gestión de Guías</a></div></header>
 <section id="authPanel" class="auth-layout">
  <form id="authForm" class="panel auth-card">
   <h2>Iniciar sesión</h2><p>Utiliza el mismo usuario y contraseña que en Gestión de Guías.</p>
@@ -114,7 +114,7 @@
  </form><small>Los roles PDV y Encargado solo consultan liquidaciones finalizadas de sus PDV asignados. Únicamente Administrador puede cambiar tarifas, tiempos y publicar cierres.</small></div>
  <div class="table-wrap"><table><thead><tr><th>UID</th><th>Rol</th><th>PDV autorizados</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="membersBody"><tr><td colspan="5">Cargando…</td></tr></tbody></table></div>
 </section>
-<footer>Facturación PDV V2.6 · Supabase Auth y RLS · Borradores y cierres en Supabase; copia local en IndexedDB.</footer>
+<footer>Facturación PDV V2.7 · Supabase Auth y RLS · Borradores y cierres en Supabase; copia local en IndexedDB.</footer>
 </main>
 <dialog id="timeDialog"><form method="dialog" id="timeForm"><div class="dialog-head"><div><h2>Configurar tiempos del PDV</h2><p id="timeIdentity"></p></div><button class="quiet" value="cancel" formnovalidate>✕</button></div><div class="form-grid"><label class="field"><span>Consolidación (h)</span><input id="tConsolidacion" type="number" min="0" step="0.01" placeholder="En blanco = sin asignar"></label><label class="field"><span>Retraslado (h)</span><input id="tRetraslado" type="number" min="0" step="0.01"></label><label class="field"><span>Tiempo adicional (h)</span><input id="tAdicional" type="number" min="0" step="0.01"></label><label class="field"><span>Tiempo necesario de despacho (h)</span><input id="tNecesario" type="number" min="0" step="0.01"></label><label class="field full"><span>Referencia manual (si los cuatro componentes están vacíos)</span><input id="tManual" type="number" min="0" step="0.01" placeholder="Opcional"></label><label class="field full"><span>Observaciones</span><textarea id="tObs" rows="3" maxlength="1000"></textarea></label></div><p id="timeSaveStatus" role="status" aria-live="polite" class="subdued"></p><div class="dialog-actions"><button value="cancel" class="quiet" formnovalidate>Cancelar</button><button value="save" class="primary">Guardar tiempos</button></div></form></dialog>
 <dialog id="bulkTimeDialog" class="bulk-config-dialog"><form method="dialog" id="bulkTimeForm">
@@ -132,6 +132,25 @@
   <p id="bulkTimeSaveStatus" role="status" aria-live="polite" class="subdued bulk-status"></p>
   <div class="dialog-actions"><button type="submit" value="cancel" class="quiet" formnovalidate>Cancelar</button><button type="submit" id="btnSaveBulkTimes" value="save" class="primary">Guardar cambios masivos</button></div>
  </form></dialog>
-<dialog id="tariffDialog"><form method="dialog" id="tariffForm"><div class="dialog-head"><div><h2>Tarifario PDV</h2><p id="tariffIdentity"></p></div><button class="quiet" value="cancel" formnovalidate>✕</button></div><div class="form-grid"><label class="field"><span>Modalidad</span><select id="tMode"><option value="ESTANDAR">Estándar</option><option value="ZONAL">Zonal</option></select></label><label class="field"><span>Tarifa estándar (S/)</span><input id="tStandard" type="number" min="0" step="0.01" placeholder="Ej.: 5.00"></label></div><div id="zonesBox"><h3>Tarifas especiales por distrito</h3><p>Solo se aplican a las localidades indicadas; los demás distritos usan la estándar.</p><div id="zoneRates" class="zones"></div></div><p id="tariffSaveStatus" role="status" aria-live="polite" class="subdued"></p><div class="dialog-actions"><button value="cancel" class="quiet" formnovalidate>Cancelar</button><button value="save" class="primary">Guardar tarifas</button></div></form></dialog>
+<dialog id="tariffDialog" class="tariff-dialog"><form method="dialog" id="tariffForm"><div class="dialog-head"><div><h2>Tarifario PDV</h2><p id="tariffIdentity"></p></div><button class="quiet" value="cancel" formnovalidate>✕</button></div><div class="form-grid"><label class="field"><span>Modalidad</span><select id="tMode"><option value="ESTANDAR">Estándar</option><option value="ZONAL">Zonal</option></select></label><label class="field"><span>Tarifa estándar (S/)</span><input id="tStandard" type="number" min="0" step="0.01" placeholder="Ej.: 5.00"></label></div><div id="zonesBox"><h3>Tarifas especiales por distrito</h3><p>Busca por departamento, provincia y distrito. Marca varias localidades para asignar una misma tarifa zonal. Los demás distritos conservan la estándar.</p>
+ <div class="tariff-zone-filters" aria-label="Buscador geográfico del tarifario">
+  <label class="field"><span>Buscar departamento</span><input id="zSearchDept" type="search" autocomplete="off" placeholder="Ej.: LIMA"></label>
+  <label class="field"><span>Buscar provincia</span><input id="zSearchProv" type="search" autocomplete="off" placeholder="Ej.: HUAROCHIRÍ"></label>
+  <label class="field"><span>Buscar distrito</span><input id="zSearchDist" type="search" autocomplete="off" placeholder="Ej.: MATUCANA"></label>
+  <button type="button" id="zClearSearch" class="quiet">Limpiar búsqueda</button>
+ </div>
+ <div class="tariff-bulk-bar" aria-label="Asignar tarifa zonal a varios distritos">
+  <strong id="zSelectionCount">0 distritos seleccionados</strong>
+  <button type="button" class="quiet" id="zSelectFiltered">Seleccionar todos los filtrados</button>
+  <button type="button" class="quiet" id="zClearSelected">Quitar selección</button>
+  <label class="field tariff-bulk-field"><span>Tarifa zonal para selección (S/)</span><input id="zBatchAmount" type="number" min="0" step="0.01" placeholder="Ej.: 6.50"></label>
+  <button type="button" class="primary" id="zApplyBatch">Aplicar a seleccionados</button>
+  <button type="button" class="quiet" id="zRemoveBatch">Restablecer estándar</button>
+ </div>
+ <p id="zZoneCount" class="tariff-count" aria-live="polite"></p>
+ <div class="tariff-zone-head" aria-hidden="true"><span></span><span>Departamento</span><span>Provincia</span><span>Distrito</span><span>Tarifa especial (S/)</span></div>
+ <div id="zoneRates" class="zones" role="group" aria-label="Lista de distritos del PDV"></div>
+ <p class="tariff-zone-help">Las selecciones se conservan al cambiar el buscador. Las tarifas solo se guardan al pulsar «Guardar tarifas».</p>
+ </div><p id="tariffSaveStatus" role="status" aria-live="polite" class="subdued"></p><div class="dialog-actions"><button value="cancel" class="quiet" formnovalidate>Cancelar</button><button value="save" class="primary">Guardar tarifas</button></div></form></dialog>
 <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
 </body></html>

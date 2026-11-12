@@ -1,6 +1,7 @@
-/* Facturación PDV V2.6 - resumen filtrado por PDV y buscadores de opciones. */
+/* Facturación PDV V2.7 - tarifas zonales por búsqueda geográfica y selección múltiple. */
 (()=>{'use strict';
 const M=window.FacturacionMotor,Cloud=window.FacturacionCloud,Drafts=window.FacturacionBorradores,$=id=>document.getElementById(id),money=n=>n==null?'—':new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'}).format(n),fnum=(n,dp=2)=>n==null?'—':new Intl.NumberFormat('es-PE',{minimumFractionDigits:0,maximumFractionDigits:dp}).format(n),safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),csvSafe=v=>typeof v==='string'&&/^[=+@\-\t\r]/.test(v)?"'"+v:v;
+let tariffDistricts=[],zoneRateDraft=new Map(),selectedTariffDistricts=new Set(),tariffPeriod=null,zoneSearchTimer=null;
 let publishedList=[],publishedSummary=[],publishedCurrent=null,pubPage=0,pubCount=0,pubBusy=false;
 let reviews=new Map(),fullRows=new Map(),sourceSignatures=new Map(),db=null,config=null,rows=[],referenceRows=[],sourceStats=null,result=null,view={details:[],summary:[],totals:null},sumPage=0,detPage=0,currentTimeKey=null,currentTariffPDV=null,selectedPDVs=new Set(),allPDVs=[],periods=[],currentSnapshot=null,filterTimer=null,simulationTimer=null,simulationHours=48,importing=false,dbReady=false,cloudDraftBusy=false,cloudMeta=null,selectedSummaryKeys=new Set(),bulkSaving=false;
 const todayMonth=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
@@ -427,22 +428,73 @@ function toggleCompactSummary(){
  const shell=$('summaryTableShell'),compact=shell.classList.toggle('compact');
  $('btnCompactSummary').textContent=compact?'Vista normal':'Vista compacta';$('btnCompactSummary').setAttribute('aria-pressed',String(compact));
 }
-function openTariff(pdv){currentTariffPDV=pdv;const t=config.tariffs[pdv]||{mode:'ESTANDAR',standard:null,zones:{}};$('tariffIdentity').textContent=pdv;$('tMode').value=t.mode||'ESTANDAR';$('tStandard').value=t.standard??'';
- const distinct=new Map();for(const r of rows)if(r.pdv===pdv){const key=M.districtKey(r.dept,r.prov,r.dist);distinct.set(key,`${r.dept} / ${r.prov} / ${r.dist}`);}
- for(const k of Object.keys(t.zones||{}))if(!distinct.has(k))distinct.set(k,k.replaceAll('|',' / '));
- $('zoneRates').innerHTML=[...distinct.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([key,name])=>`<div class="zone-row"><label>${safe(name)}</label><input data-zone-key="${safe(key)}" type="number" step="0.01" min="0" placeholder="Estándar" value="${t.zones?.[key]??''}"></div>`).join('');toggleZones();$('tariffSaveStatus').textContent='';$('tariffDialog').showModal();}
+// El borrador de excepciones se mantiene aunque una fila quede fuera del filtro.
+function tariffSearchNorm(value){return M.norm(value);}
+function filteredTariffDistricts(){
+ const a=tariffSearchNorm($('zSearchDept').value),b=tariffSearchNorm($('zSearchProv').value),c=tariffSearchNorm($('zSearchDist').value);
+ return tariffDistricts.filter(r=>r.dept.includes(a)&&r.prov.includes(b)&&r.dist.includes(c));
+}
+function renderTariffDistricts(){
+ const filtered=filteredTariffDistricts(),visible=filtered.slice(0,300);
+ $('zoneRates').innerHTML=visible.map(r=>{
+  const value=zoneRateDraft.get(r.key)??'',chosen=selectedTariffDistricts.has(r.key);
+  return `<div class="zone-row ${chosen?'zone-row-selected':''}" data-zone-row="${safe(r.key)}"><label class="zone-check"><input type="checkbox" data-zone-select="${safe(r.key)}" ${chosen?'checked':''} aria-label="Seleccionar ${safe(r.dept)} / ${safe(r.prov)} / ${safe(r.dist)}"></label><span title="${safe(r.dept)}">${safe(r.dept)}</span><span title="${safe(r.prov)}">${safe(r.prov)}</span><span title="${safe(r.dist)}">${safe(r.dist)}</span><input aria-label="Tarifa zonal ${safe(r.dept)} / ${safe(r.prov)} / ${safe(r.dist)}" data-zone-key="${safe(r.key)}" type="number" step="0.01" min="0" placeholder="Estándar" value="${safe(value)}"></div>`;
+ }).join('')||'<p class="tariff-no-matches">No hay distritos para la búsqueda.</p>';
+ const remaining=filtered.length-visible.length;
+ $('zZoneCount').textContent=`${filtered.length} distritos encontrados · ${selectedTariffDistricts.size} seleccionados${remaining>0?` · mostrando los primeros ${visible.length}; refina la búsqueda para editar individualmente`:''}`;
+ $('zSelectionCount').textContent=`${selectedTariffDistricts.size} distritos seleccionados`;
+ $('zSelectFiltered').disabled=filtered.length===0;
+ $('zClearSelected').disabled=selectedTariffDistricts.size===0;
+ $('zApplyBatch').disabled=selectedTariffDistricts.size===0;
+ $('zRemoveBatch').disabled=selectedTariffDistricts.size===0;
+}
+function openTariff(pdv){
+ currentTariffPDV=pdv;tariffPeriod=selectedPeriod();
+ const t=config.tariffs[pdv]||{mode:'ESTANDAR',standard:null,zones:{}};
+ $('tariffIdentity').textContent=pdv+' · '+tariffPeriod;
+ $('tMode').value=t.mode||'ESTANDAR';$('tStandard').value=t.standard??'';
+ const distinct=new Map();
+ for(const r of rows)if(r.pdv===pdv){const key=M.districtKey(r.dept,r.prov,r.dist);distinct.set(key,{key,dept:M.norm(r.dept),prov:M.norm(r.prov),dist:M.norm(r.dist)});}
+ for(const k of Object.keys(t.zones||{}))if(!distinct.has(k)){
+  const [dept='',prov='',...rest]=k.split('|');distinct.set(k,{key:k,dept,prov,dist:rest.join('|')});
+ }
+ tariffDistricts=[...distinct.values()].sort((a,b)=>a.dept.localeCompare(b.dept)||a.prov.localeCompare(b.prov)||a.dist.localeCompare(b.dist));
+ zoneRateDraft=new Map(tariffDistricts.map(r=>[r.key,t.zones?.[r.key]===undefined?'':String(t.zones[r.key])]));
+ selectedTariffDistricts.clear();
+ for(const id of ['zSearchDept','zSearchProv','zSearchDist','zBatchAmount'])$(id).value='';
+ toggleZones();renderTariffDistricts();$('tariffSaveStatus').textContent='';$('tariffDialog').showModal();
+}
 function toggleZones(){$('zonesBox').hidden=$('tMode').value!=='ZONAL';}
+function applyTariffBatch(clear=false){
+ if(!selectedTariffDistricts.size)return notify('Selecciona al menos un distrito.',true);
+ let value='';
+ if(!clear){
+  value=$('zBatchAmount').value.trim();const n=M.num(value);
+  if(!value||n===null||n<0)return notify('Ingresa una tarifa zonal válida, de cero o más.',true);
+  value=String(n);
+ }
+ for(const key of selectedTariffDistricts)zoneRateDraft.set(key,value);
+ renderTariffDistricts();
+ $('tariffSaveStatus').classList.remove('is-error');
+ $('tariffSaveStatus').textContent=clear?'Excepciones retiradas de '+selectedTariffDistricts.size+' distritos. Pulsa Guardar tarifas para confirmar.':'Tarifa aplicada a '+selectedTariffDistricts.size+' distritos. Pulsa Guardar tarifas para confirmar.';
+}
 async function saveTariff(){
  if(!Cloud.admin())throw Error('No autorizado.');
+ if(tariffPeriod!==selectedPeriod())throw Error('Cambió el periodo; vuelve a abrir el tarifario antes de guardar.');
  const standard=M.num($('tStandard').value);
  if(standard==null||standard<0)throw Error('Debes definir una tarifa estándar (puede ser 0).');
- const zones={};if($('tMode').value==='ZONAL')for(const el of $('zoneRates').querySelectorAll('[data-zone-key]'))if(el.value.trim()){
-  const n=M.num(el.value);if(n===null||n<0)throw Error('Tarifa zonal inválida');zones[el.dataset.zoneKey]=n;
+ const zones={};
+ if($('tMode').value==='ZONAL')for(const [key,raw] of zoneRateDraft){
+  if(!String(raw).trim())continue;
+  const n=M.num(raw);if(n===null||n<0)throw Error('Tarifa zonal inválida para '+key.replaceAll('|',' / '));
+  zones[key]=n;
  }
  const value={mode:$('tMode').value,standard,zones,updatedAt:new Date().toISOString()};
- await Cloud.saveTariff(selectedPeriod(),currentTariffPDV,value);
+ await Cloud.saveTariff(tariffPeriod,currentTariffPDV,value);
  for(const [k,g] of fullRows)if(g.pdv===currentTariffPDV)reviews.delete(k);
- config.tariffs[currentTariffPDV]=value;await calculate();syncStatus('Tarifas guardadas en Supabase · '+selectedPeriod());notify('Tarifario guardado en Supabase para '+currentTariffPDV);
+ config.tariffs[currentTariffPDV]=value;await calculate();
+ syncStatus('Tarifas guardadas en Supabase · '+tariffPeriod);
+ notify('Tarifario guardado en Supabase para '+currentTariffPDV);
 }
 async function saveRules(){
  if(!Cloud.admin())throw Error('No autorizado.');
@@ -804,6 +856,14 @@ function bindEvents(){document.querySelectorAll('[data-tab]').forEach(btn=>btn.a
  $('bulkTimeDialog').addEventListener('cancel',e=>{if(bulkSaving)e.preventDefault();});
  $('sumPrev').addEventListener('click' ,()=>{sumPage=Math.max(0,sumPage-1);renderSummary();});$('sumNext').addEventListener('click',()=>{sumPage++;renderSummary();});$('detPrev').addEventListener('click',()=>{detPage=Math.max(0,detPage-1);renderDetail();});$('detNext').addEventListener('click',()=>{detPage++;renderDetail();});
  $('summaryBody').addEventListener('click',e=>{const b=e.target.closest('[data-time]');if(b)openTime(b.dataset.time);});$('tariffBody').addEventListener('click',e=>{const b=e.target.closest('[data-tariff]');if(b)openTariff(b.dataset.tariff);});$('tMode').addEventListener('change',toggleZones);
+ for(const id of ['zSearchDept','zSearchProv','zSearchDist'])$(id).addEventListener('input',()=>{clearTimeout(zoneSearchTimer);zoneSearchTimer=setTimeout(renderTariffDistricts,90);});
+ $('zClearSearch').addEventListener('click',()=>{for(const id of ['zSearchDept','zSearchProv','zSearchDist'])$(id).value='';renderTariffDistricts();});
+ $('zSelectFiltered').addEventListener('click',()=>{for(const r of filteredTariffDistricts())selectedTariffDistricts.add(r.key);renderTariffDistricts();});
+ $('zClearSelected').addEventListener('click',()=>{selectedTariffDistricts.clear();renderTariffDistricts();});
+ $('zApplyBatch').addEventListener('click',()=>applyTariffBatch(false));
+ $('zRemoveBatch').addEventListener('click',()=>applyTariffBatch(true));
+ $('zoneRates').addEventListener('change',e=>{const box=e.target.closest('[data-zone-select]');if(!box)return;if(box.checked)selectedTariffDistricts.add(box.dataset.zoneSelect);else selectedTariffDistricts.delete(box.dataset.zoneSelect);renderTariffDistricts();});
+ $('zoneRates').addEventListener('input',e=>{const input=e.target.closest('[data-zone-key]');if(input)zoneRateDraft.set(input.dataset.zoneKey,input.value);});
  $('timeForm').addEventListener('submit',e=>saveDialog(e,'timeDialog',saveTime,'timeSaveStatus'));
  $('tariffForm').addEventListener('submit',e=>saveDialog(e,'tariffDialog',saveTariff,'tariffSaveStatus'));
  $('btnSaveRules').addEventListener('click',async e=>{const btn=e.currentTarget,status=$('rulesSaveStatus');btn.disabled=true;status.classList.remove('is-error');status.textContent='Guardando reglas en Supabase…';try{await saveRules();status.textContent='Reglas guardadas en Supabase.';}catch(err){status.classList.add('is-error');status.textContent='No se guardaron: '+err.message;syncStatus('Error al guardar reglas: '+err.message,true);notify(err.message,true);}finally{btn.disabled=false;}});$('refPeriod').addEventListener('change',calculate);$('btnClose').addEventListener('click',closePeriod);$('historyList').addEventListener('click',e=>{

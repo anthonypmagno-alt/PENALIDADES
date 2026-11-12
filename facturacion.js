@@ -2,7 +2,7 @@
 (()=>{'use strict';
 const M=window.FacturacionMotor,Cloud=window.FacturacionCloud,Drafts=window.FacturacionBorradores,$=id=>document.getElementById(id),money=n=>n==null?'—':new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'}).format(n),fnum=(n,dp=2)=>n==null?'—':new Intl.NumberFormat('es-PE',{minimumFractionDigits:0,maximumFractionDigits:dp}).format(n),safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),csvSafe=v=>typeof v==='string'&&/^[=+@\-\t\r]/.test(v)?"'"+v:v;
 let publishedList=[],publishedSummary=[],publishedCurrent=null,pubPage=0,pubCount=0,pubBusy=false;
-let reviews=new Map(),fullRows=new Map(),sourceSignatures=new Map(),db=null,config=null,rows=[],referenceRows=[],sourceStats=null,result=null,view={details:[],summary:[],totals:null},sumPage=0,detPage=0,currentTimeKey=null,currentTariffPDV=null,selectedPDVs=new Set(),allPDVs=[],periods=[],currentSnapshot=null,filterTimer=null,simulationTimer=null,simulationHours=48,importing=false,dbReady=false,cloudDraftBusy=false,cloudMeta=null;
+let reviews=new Map(),fullRows=new Map(),sourceSignatures=new Map(),db=null,config=null,rows=[],referenceRows=[],sourceStats=null,result=null,view={details:[],summary:[],totals:null},sumPage=0,detPage=0,currentTimeKey=null,currentTariffPDV=null,selectedPDVs=new Set(),allPDVs=[],periods=[],currentSnapshot=null,filterTimer=null,simulationTimer=null,simulationHours=48,importing=false,dbReady=false,cloudDraftBusy=false,cloudMeta=null,selectedSummaryKeys=new Set(),bulkSaving=false;
 const todayMonth=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
 function notify(msg,error=false){const el=$('toast');el.hidden=false;el.textContent=window.FacturacionI18n?.translateMessage(msg)||msg;el.classList.toggle('error',error);clearTimeout(notify.timeout);notify.timeout=setTimeout(()=>el.hidden=true,4500)}
 function setStatus(msg){$('importStatus').textContent=msg}
@@ -115,6 +115,7 @@ async function loadPeriod({skipRemote=false}={}){
  config.rule={...initialConfig().rule,...(config.rule||{})};
  config.times=config.times||{};config.tariffs=config.tariffs||{};
  reviews=new Map((await Cloud.loadReviews(p)).map(x=>[x.clave,x]));
+ selectedSummaryKeys.clear();
  $('rate').value=config.rule.rate;$('step').value=config.rule.step;
  $('maxExcess').value=config.rule.maxExcess;$('minGuides').value=config.minGuides;
  renderExamples();
@@ -228,7 +229,9 @@ function accumulate(filtered){const groups=new Map(),look=new Map((result?.summa
    g.gross=M.money(g.gross+r.tarifa);g.discount=M.money(g.discount+r.descuento);g.net=M.money(g.net+r.neto);g.billable++;tot.bruto=M.money(tot.bruto+r.tarifa);tot.descuentos=M.money(tot.descuentos+r.descuento);tot.neto=M.money(tot.neto+r.neto);tot.calculadas++;if(r.exceso>0){tot.fuera++;g.breached++;}if(r.pagoPct===0){tot.cero++;g.zero++;}}else{g.excluded++;tot.pendientes++;}
  }
  const summary=[...groups.values()].map(g=>({...g,promedio:g.timeSum/g.count})).sort((a,b)=>a.dept.localeCompare(b.dept)||a.prov.localeCompare(b.prov)||a.dist.localeCompare(b.dist)||a.pdv.localeCompare(b.pdv));return {summary,tot};}
-function applyFilters(){const det=filteredDetailRows(),data=accumulate(det);view={details:det,summary:data.summary,totals:data.tot};sumPage=0;detPage=0;renderAll();}
+function applyFilters(){const det=filteredDetailRows(),data=accumulate(det);view={details:det,summary:data.summary,totals:data.tot};
+ const permitted=new Set(data.summary.map(g=>g.key));for(const key of selectedSummaryKeys)if(!permitted.has(key))selectedSummaryKeys.delete(key);
+ sumPage=0;detPage=0;renderAll();}
 function refreshSimulation(){
  if(!view.details.length){renderSimulationInfo();return;}
  const data=accumulate(view.details);view.summary=data.summary;view.totals=data.tot;
@@ -245,10 +248,25 @@ function formatDifference(n){return n==null?'—':(n>0?'+':'')+money(n);}
 function differenceClass(n){return n>0?'diff-positive':n<0?'diff-negative':'diff-neutral';}
 function renderAll(){renderKPIs();renderSummary();renderDetail();renderSimulationInfo();renderTariffs();renderCloseStatus();}
 function renderKPIs(){const t=view.totals;$('kGuias').textContent=t?fnum(t.guias,0):'—';$('kBruto').textContent=t?money(t.bruto):'—';$('kDescuento').textContent=t?money(t.descuentos):'—';$('kNeto').textContent=t?money(t.neto):'—';$('kPendientes').textContent=t?fnum(t.pendientes,0):'—';}
-function renderSummary(){const list=view.summary,per=40,n=Math.max(1,Math.ceil(list.length/per));sumPage=Math.min(sumPage,n-1);const okCount=list.reduce((n,g)=>n+(approvalFor(g)?1:0),0);$('summaryCount').textContent=`${fnum(list.length,0)} filas · ${fnum(view.details.length,0)} guías · ${okCount} con OK`;
- $('summaryBody').innerHTML=list.length?list.slice(sumPage*per,(sumPage+1)*per).map(g=>`<tr><td>${safe(g.dept)}</td><td>${safe(g.prov)}</td><td>${safe(g.dist)}</td><td><b>${safe(g.pdv)}</b></td><td class="summary-approval ${approvalFor(g)?'ok-row':reviews.get(g.key)?.aprobado_ok?'stale-row':''}" title="${approvalFor(g)?'Aprobado por '+safe(approvalFor(g).aprobado_por)+' el '+safe(approvalFor(g).aprobado_en):reviews.get(g.key)?.aprobado_ok?'Se modificó información. Requiere nuevo OK.':'Sin OK'}"><input type="checkbox" aria-label="OK ${safe(g.pdv)} ${safe(g.dist)}" data-review="${safe(g.key)}" ${approvalFor(g)?'checked':''} ${g.umbralEst==null||g.tariffOrigin==='SIN_TARIFA'?'disabled':''}></td><td>${fnum(g.count,0)}</td><td>${th(g.promedio)}</td><td>${g.bestPDV?safe(g.bestPDV):'<span class="bad">Muestra insuficiente</span>'}</td><td>${th(g.bestHours)}</td><td>${th(g.umbral)}</td><td>${th(g.consolidacion)}</td><td>${th(g.retraslado)}</td><td>${th(g.adicional)}</td><td>${th(g.necesario)}</td><td>${th(g.establecido)}</td><td class="${g.umbralEst==null?'bad':'warn'}">${th(g.umbralEst)}</td><td>${safe(g.tariffOrigin)}</td><td>${money(g.gross)}</td><td>${money(g.discount)}</td><td class="simulated-amount">${money(g.simNet)}</td><td class="${differenceClass(g.diffNet)}">${formatDifference(g.diffNet)}</td><td class="amount">${money(g.net)}</td><td class="truncate" title="${safe(g.observaciones)}">${safe(g.observaciones)}</td><td><button class="btn-mini" data-time="${safe(g.key)}">Configurar</button></td></tr>`).join(''):`<tr><td colspan="24" class="empty">Sin registros para estos filtros.</td></tr>`;
- const t=view.totals;$('summaryFoot').innerHTML=t&&t.guias?`<tr><td colspan="5">TOTAL FILTRADO</td><td>${fnum(t.guias,0)}</td><td colspan="11"></td><td>${money(t.bruto)}</td><td>${money(t.descuentos)}</td><td class="simulated-amount">${money(t.simNet)}</td><td class="${differenceClass(t.diffNet)}">${formatDifference(t.diffNet)}</td><td>${money(t.neto)}</td><td colspan="2"></td></tr>`:'';$('sumPage').textContent=`Página ${sumPage+1} de ${n}`;$('sumPrev').disabled=sumPage<=0;$('sumNext').disabled=sumPage>=n-1;
+function pageSummaryRows(){return view.summary.slice(sumPage*40,(sumPage+1)*40);}
+function updateSummarySelectionUI(){
+ const page=pageSummaryRows(),pageKeys=page.map(g=>g.key),pageSelected=pageKeys.filter(k=>selectedSummaryKeys.has(k)).length;
+ const head=$('summarySelectPage');head.disabled=!pageKeys.length;head.checked=!!pageKeys.length&&pageSelected===pageKeys.length;head.indeterminate=pageSelected>0&&pageSelected<pageKeys.length;
+ $('summarySelectionCount').textContent=selectedSummaryKeys.size+' filas seleccionadas';
+ $('btnBulkTime').textContent='Configurar selección ('+selectedSummaryKeys.size+')';$('btnBulkTime').disabled=!selectedSummaryKeys.size||bulkSaving;
+ $('btnClearSummarySelection').disabled=!selectedSummaryKeys.size||bulkSaving;
+ $('btnSelectSummaryPage').disabled=!pageKeys.length||bulkSaving;$('btnSelectSummaryFiltered').disabled=!view.summary.length||bulkSaving;
+ for(const tr of $('summaryBody').querySelectorAll('[data-summary-row]')){
+   const active=selectedSummaryKeys.has(tr.dataset.summaryRow);tr.classList.toggle('is-summary-selected',active);
+   const box=tr.querySelector('[data-select-summary]');if(box)box.checked=active;
+ }
 }
+function renderSummary(){const list=view.summary,per=40,n=Math.max(1,Math.ceil(list.length/per));sumPage=Math.min(sumPage,n-1);const okCount=list.reduce((n,g)=>n+(approvalFor(g)?1:0),0);$('summaryCount').textContent=`${fnum(list.length,0)} filas · ${fnum(view.details.length,0)} guías · ${okCount} con OK`;
+ $('summaryBody').innerHTML=list.length?list.slice(sumPage*per,(sumPage+1)*per).map(g=>`<tr data-summary-row="${safe(g.key)}" class="${selectedSummaryKeys.has(g.key)?'is-summary-selected':''}"><td class="summary-select-cell"><input type="checkbox" data-select-summary="${safe(g.key)}" aria-label="Seleccionar ${safe(g.pdv)} ${safe(g.dist)}" ${selectedSummaryKeys.has(g.key)?'checked':''}></td><td>${safe(g.dept)}</td><td>${safe(g.prov)}</td><td>${safe(g.dist)}</td><td><b>${safe(g.pdv)}</b></td><td class="summary-approval ${approvalFor(g)?'ok-row':reviews.get(g.key)?.aprobado_ok?'stale-row':''}" title="${approvalFor(g)?'Aprobado por '+safe(approvalFor(g).aprobado_por)+' el '+safe(approvalFor(g).aprobado_en):reviews.get(g.key)?.aprobado_ok?'Se modificó información. Requiere nuevo OK.':'Sin OK'}"><input type="checkbox" aria-label="OK ${safe(g.pdv)} ${safe(g.dist)}" data-review="${safe(g.key)}" ${approvalFor(g)?'checked':''} ${g.umbralEst==null||g.tariffOrigin==='SIN_TARIFA'?'disabled':''}></td><td>${fnum(g.count,0)}</td><td>${th(g.promedio)}</td><td>${g.bestPDV?safe(g.bestPDV):'<span class="bad">Muestra insuficiente</span>'}</td><td>${th(g.bestHours)}</td><td>${th(g.umbral)}</td><td>${th(g.consolidacion)}</td><td>${th(g.retraslado)}</td><td>${th(g.adicional)}</td><td>${th(g.necesario)}</td><td>${th(g.establecido)}</td><td class="${g.umbralEst==null?'bad':'warn'}">${th(g.umbralEst)}</td><td>${safe(g.tariffOrigin)}</td><td>${money(g.gross)}</td><td>${money(g.discount)}</td><td class="simulated-amount">${money(g.simNet)}</td><td class="${differenceClass(g.diffNet)}">${formatDifference(g.diffNet)}</td><td class="amount">${money(g.net)}</td><td class="truncate" title="${safe(g.observaciones)}">${safe(g.observaciones)}</td><td><button class="btn-mini" data-time="${safe(g.key)}">Configurar</button></td></tr>`).join(''):`<tr><td colspan="25" class="empty">Sin registros para estos filtros.</td></tr>`;
+ const t=view.totals;$('summaryFoot').innerHTML=t&&t.guias?`<tr><td colspan="6">TOTAL FILTRADO</td><td>${fnum(t.guias,0)}</td><td colspan="11"></td><td>${money(t.bruto)}</td><td>${money(t.descuentos)}</td><td class="simulated-amount">${money(t.simNet)}</td><td class="${differenceClass(t.diffNet)}">${formatDifference(t.diffNet)}</td><td>${money(t.neto)}</td><td colspan="2"></td></tr>`:'';$('sumPage').textContent=`Página ${sumPage+1} de ${n}`;$('sumPrev').disabled=sumPage<=0;$('sumNext').disabled=sumPage>=n-1;
+ updateSummarySelectionUI();
+}
+
 function renderDetail(){const list=view.details,per=100,n=Math.max(1,Math.ceil(list.length/per));detPage=Math.min(detPage,n-1);
  $('detailBody').innerHTML=list.length?list.slice(detPage*per,(detPage+1)*per).map(r=>{const sim=M.simulatedNet(r,simulationHours,config.rule),diff=sim==null?null:M.money(r.neto-sim);return `<tr><td><b>${safe(r.guia)}</b></td><td>${safe(r.pdv)}</td><td>${safe(r.dept)}</td><td>${safe(r.prov)}</td><td>${safe(r.dist)}</td><td>${safe(r.fecha)}</td><td>${th(r.horas)}</td><td>${th(r.establecido)}</td><td class="${r.umbralEst==null?'bad':'warn'}">${th(r.umbralEst)}</td><td>${th(r.exceso)}</td><td>${money(r.tarifa)}</td><td class="${r.reduccion>0?'bad':''}">${r.reduccion==null?'—':fnum(r.reduccion)+'%'}</td><td class="${r.pagoPct===0?'bad':'ok'}">${r.pagoPct==null?'—':fnum(r.pagoPct)+'%'}</td><td>${money(r.descuento)}</td><td class="simulated-amount">${money(sim)}</td><td class="${differenceClass(diff)}">${formatDifference(diff)}</td><td class="amount">${money(r.neto)}</td><td>${r.ceroMax?'<span class="bad">CERO POR EXCESO</span>':safe(r.estado)}</td></tr>`}).join(''):`<tr><td colspan="18" class="empty">Sin guías para estos filtros.</td></tr>`;
  $('detPage').textContent=`Página ${detPage+1} de ${n} · ${fnum(list.length,0)} registros`;$('detPrev').disabled=detPage<=0;$('detNext').disabled=detPage>=n-1;
@@ -268,6 +286,80 @@ async function saveTime(){
  const value={...Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,v===''?null:Number(v)])),observaciones:$('tObs').value.trim()};
  await Cloud.saveTime(selectedPeriod(),g,value);
  reviews.delete(currentTimeKey);config.times[currentTimeKey]=value;await calculate();syncStatus('Tiempos guardados en Supabase · '+selectedPeriod());notify('Tiempos compartidos guardados en Supabase.');
+}
+const BULK_TIME_FIELDS=[
+ ['consolidacion','bulkApplyConsolidacion','bulkConsolidacion'],
+ ['retraslado','bulkApplyRetraslado','bulkRetraslado'],
+ ['adicional','bulkApplyAdicional','bulkAdicional'],
+ ['necesario','bulkApplyNecesario','bulkNecesario'],
+ ['manualBase','bulkApplyManual','bulkManual'],
+ ['observaciones','bulkApplyObs','bulkObs']
+];
+function openBulkTime(){
+ if(!Cloud.admin()||!selectedSummaryKeys.size||bulkSaving)return;
+ const ids=new Set(view.summary.map(g=>g.key));for(const key of selectedSummaryKeys)if(!ids.has(key))selectedSummaryKeys.delete(key);
+ if(!selectedSummaryKeys.size){updateSummarySelectionUI();return;}
+ $('bulkTimeIdentity').textContent=selectedSummaryKeys.size+' filas del periodo '+selectedPeriod()+' · distintas combinaciones PDV / distrito';
+ for(const [,applyId,inputId] of BULK_TIME_FIELDS){$(applyId).checked=false;$(inputId).disabled=true;$(inputId).value='';}
+ $('bulkTimeSaveStatus').textContent='';$('bulkTimeSaveStatus').classList.remove('is-error');
+ $('bulkTimeDialog').showModal();
+}
+function numEquals(a,b){return a==null&&b==null||a!=null&&b!=null&&Number(a)===Number(b);}
+async function saveBulkTime(e){
+ if(e.submitter?.value!=='save')return;
+ e.preventDefault();if(bulkSaving)return;
+ if(!Cloud.admin())throw Error('No tienes permisos de administrador.');
+ const patches={};
+ for(const [prop,applyId,inputId] of BULK_TIME_FIELDS){
+   if(!$(applyId).checked)continue;
+   const raw=$(inputId).value.trim();
+   if(prop==='observaciones'){patches[prop]=raw;continue;}
+   const value=raw===''?null:Number(raw);
+   if(value!==null&&(!Number.isFinite(value)||value<0)){
+     $('bulkTimeSaveStatus').textContent='Valor inválido en '+prop+'.';$('bulkTimeSaveStatus').classList.add('is-error');return;
+   }
+   patches[prop]=value;
+ }
+ if(!Object.keys(patches).length){$('bulkTimeSaveStatus').textContent='Marca al menos un campo «Aplicar».';$('bulkTimeSaveStatus').classList.add('is-error');return;}
+ const chosen=[...selectedSummaryKeys],period=selectedPeriod(),entries=[];
+ for(const key of chosen){
+  const row=fullRows.get(key);if(!row)continue;
+  const existing=config.times[key]||{};
+  const value={...existing,...patches};
+  let changed=false;
+  for(const [prop,newValue] of Object.entries(patches)){
+    if(prop==='observaciones'?String(existing[prop]??'')!==String(newValue):!numEquals(existing[prop],newValue)){changed=true;break;}
+  }
+  if(changed)entries.push({row,data:value});
+ }
+ const status=$('bulkTimeSaveStatus'),button=$('btnSaveBulkTimes');
+ if(!entries.length){status.textContent='Las filas seleccionadas ya tienen esos valores; no se modificó nada.';status.classList.remove('is-error');return;}
+ if(!confirm('Se actualizarán '+entries.length+' filas en Supabase. Los OK previos de esas filas dejarán de estar vigentes. ¿Confirmar?'))return;
+ bulkSaving=true;button.disabled=true;status.classList.remove('is-error');status.textContent='Guardando 0 de '+entries.length+' filas en Supabase…';updateSummarySelectionUI();
+ try{
+  await Cloud.saveTimesBulk(period,entries,patches,(saved,total)=>{status.textContent='Guardando '+saved+' de '+total+' filas en Supabase…';});
+  if(selectedPeriod()!==period)throw Error('Cambió el periodo mientras se guardaban los tiempos. Recarga antes de editar nuevamente.');
+  // Releer la configuración compartida para mostrar incluso cambios concurrentes
+  // de otros administradores sobre campos que no se seleccionaron.
+  const latest=await Cloud.loadConfig(period);config.times=latest.times||{};
+  for(const {row} of entries)reviews.delete(row.key);
+  selectedSummaryKeys.clear();$('bulkTimeDialog').close('saved');
+  await calculate();syncStatus('Configuración múltiple guardada · '+entries.length+' filas · '+period);
+  notify(entries.length+' filas guardadas en Supabase.');
+ }catch(err){
+  status.classList.add('is-error');status.textContent='No se completó el guardado: '+err.message+' Se recuperará la configuración de Supabase.';
+  syncStatus('Guardado masivo no confirmado: '+err.message,true);notify(err.message,true);
+  try{const latest=await Cloud.loadConfig(period);if(selectedPeriod()===period){config.times=latest.times||{};await calculate();}}catch(reloadError){status.textContent+=' Error de recarga: '+reloadError.message;}
+ }finally{bulkSaving=false;button.disabled=false;updateSummarySelectionUI();}
+}
+function toggleExpandedSummary(){
+ const shell=$('summaryTableShell'),expanded=shell.classList.toggle('expanded');
+ document.body.classList.toggle('summary-table-expanded',expanded);
+ $('btnExpandSummary').textContent=expanded?'Cerrar vista ampliada':'Ampliar tabla';$('btnExpandSummary').setAttribute('aria-pressed',String(expanded));
+}
+function toggleCompactSummary(){
+ const shell=$('summaryTableShell'),compact=shell.classList.toggle('compact');
+ $('btnCompactSummary').textContent=compact?'Vista normal':'Vista compacta';$('btnCompactSummary').setAttribute('aria-pressed',String(compact));
 }
 function openTariff(pdv){currentTariffPDV=pdv;const t=config.tariffs[pdv]||{mode:'ESTANDAR',standard:null,zones:{}};$('tariffIdentity').textContent=pdv;$('tMode').value=t.mode||'ESTANDAR';$('tStandard').value=t.standard??'';
  const distinct=new Map();for(const r of rows)if(r.pdv===pdv){const key=M.districtKey(r.dept,r.prov,r.dist);distinct.set(key,`${r.dept} / ${r.prov} / ${r.dist}`);}
@@ -626,7 +718,17 @@ function bindEvents(){document.querySelectorAll('[data-tab]').forEach(btn=>btn.a
  $('pdvChecks').addEventListener('change',e=>{if(!e.target.matches('input'))return;if(e.target.hasAttribute('data-pdv-all'))selectedPDVs.clear();else{const p=e.target.dataset.pdv;if(e.target.checked)selectedPDVs.add(p);else selectedPDVs.delete(p);}renderPDVFilter();applyFilters();});
  for(const id of summaryFilterIds)$(id).addEventListener('change',applyFilters);
  $('btnClearSummary').addEventListener('click',()=>{for(const id of summaryFilterIds)$(id).value='';applyFilters();});
- $('summaryBody').addEventListener('change',e=>{const box=e.target.closest('[data-review]');if(box)toggleReview(box.dataset.review,box.checked,box);});
+ $('summaryBody').addEventListener('change',e=>{const sel=e.target.closest('[data-select-summary]');if(sel){if(sel.checked)selectedSummaryKeys.add(sel.dataset.selectSummary);else selectedSummaryKeys.delete(sel.dataset.selectSummary);updateSummarySelectionUI();return;}const box=e.target.closest('[data-review]');if(box)toggleReview(box.dataset.review,box.checked,box);});
+ $('summarySelectPage').addEventListener('change',e=>{for(const row of pageSummaryRows()){if(e.target.checked)selectedSummaryKeys.add(row.key);else selectedSummaryKeys.delete(row.key);}updateSummarySelectionUI();});
+ $('btnSelectSummaryPage').addEventListener('click',()=>{for(const row of pageSummaryRows())selectedSummaryKeys.add(row.key);updateSummarySelectionUI();});
+ $('btnSelectSummaryFiltered').addEventListener('click',()=>{for(const row of view.summary)selectedSummaryKeys.add(row.key);updateSummarySelectionUI();});
+ $('btnClearSummarySelection').addEventListener('click',()=>{selectedSummaryKeys.clear();updateSummarySelectionUI();});
+ $('btnBulkTime').addEventListener('click',openBulkTime);
+ $('btnExpandSummary').addEventListener('click',toggleExpandedSummary);
+ $('btnCompactSummary').addEventListener('click',toggleCompactSummary);
+ for(const [,applyId,inputId] of BULK_TIME_FIELDS)$(applyId).addEventListener('change',()=>{$(inputId).disabled=!$(applyId).checked;if($(applyId).checked)$(inputId).focus();});
+ $('bulkTimeForm').addEventListener('submit',saveBulkTime);
+ $('bulkTimeDialog').addEventListener('cancel',e=>{if(bulkSaving)e.preventDefault();});
  $('sumPrev').addEventListener('click' ,()=>{sumPage=Math.max(0,sumPage-1);renderSummary();});$('sumNext').addEventListener('click',()=>{sumPage++;renderSummary();});$('detPrev').addEventListener('click',()=>{detPage=Math.max(0,detPage-1);renderDetail();});$('detNext').addEventListener('click',()=>{detPage++;renderDetail();});
  $('summaryBody').addEventListener('click',e=>{const b=e.target.closest('[data-time]');if(b)openTime(b.dataset.time);});$('tariffBody').addEventListener('click',e=>{const b=e.target.closest('[data-tariff]');if(b)openTariff(b.dataset.tariff);});$('tMode').addEventListener('change',toggleZones);
  $('timeForm').addEventListener('submit',e=>saveDialog(e,'timeDialog',saveTime,'timeSaveStatus'));

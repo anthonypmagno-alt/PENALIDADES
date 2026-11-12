@@ -128,6 +128,29 @@
       datos:data
     }, {onConflict:'periodo,clave'}).select('periodo,clave,datos').single(), 'Guardar tiempo');
   }
+  // Las modificaciones son parches JSONB atomicos en Supabase: nunca se envian
+  // datos completos desactualizados que sobrescriban otros campos del mismo PDV.
+  async function saveTimesBulk(period, entries, changes, onProgress) {
+    assertAdmin();
+    if(!/^\d{4}-(?:0[1-9]|1[0-2])$/.test(period)) throw Error('Periodo inválido para guardar en bloque.');
+    const allowed=['consolidacion','retraslado','adicional','necesario','manualBase','observaciones'];
+    if(!changes||!Object.keys(changes).length||Object.keys(changes).some(k=>!allowed.includes(k)))throw Error('Campos inválidos para actualización masiva.');
+    const unique=new Set();
+    for(const entry of entries){if(!entry?.row?.key||unique.has(entry.row.key))throw Error('Fila duplicada o inválida en guardado múltiple.');unique.add(entry.row.key);}
+    const size=75;
+    for(let i=0;i<entries.length;i+=size){
+      const payload=entries.slice(i,i+size).map(({row})=>({
+        clave:row.key,pdv:row.pdv,
+        departamento:row.dept,provincia:row.prov,distrito:row.dist
+      }));
+      const result=ensure(await create().rpc('facturacion_actualizar_tiempos_masivo',{
+        p_periodo:period,p_filas:payload,p_cambios:changes
+      }), 'Guardar tiempos masivos');
+      if(Number(result)!==payload.length)throw Error('La base no confirmó todas las filas del lote. Revisa y recarga la configuración.');
+      if(onProgress)onProgress(Math.min(i+size,entries.length),entries.length);
+    }
+    return entries.length;
+  }
   async function loadReviews(period) {
     assertAdmin();
     return allPages(TABLES.reviews,'periodo,clave,pdv,aprobado_ok,aprobado_por,aprobado_en,huella',
@@ -256,6 +279,6 @@
       .select('configuracion,estadisticas,totales').eq('liquidacion_id',id).single(),'Cierre privado');
   }
   root.FacturacionCloud={create,restore,refreshProfile,login,logout,profile:()=>profile,
-    user:()=>currentUser,admin,loadConfig,saveRules,saveTariff,saveTime,loadReviews,saveReview,refreshReviews,
+    user:()=>currentUser,admin,loadConfig,saveRules,saveTariff,saveTime,saveTimesBulk,loadReviews,saveReview,refreshReviews,
     listMembers,upsertMember,publish,listSettlements,readSummary,readDetails,readAllDetails,readPrivate};
 })(window);

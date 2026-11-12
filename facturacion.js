@@ -1,4 +1,4 @@
-/* Facturación PDV V2.4 - trabajo local y cierre multiusuario con RLS en Supabase. */
+/* Facturación PDV V2.6 - resumen filtrado por PDV y buscadores de opciones. */
 (()=>{'use strict';
 const M=window.FacturacionMotor,Cloud=window.FacturacionCloud,Drafts=window.FacturacionBorradores,$=id=>document.getElementById(id),money=n=>n==null?'—':new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'}).format(n),fnum=(n,dp=2)=>n==null?'—':new Intl.NumberFormat('es-PE',{minimumFractionDigits:0,maximumFractionDigits:dp}).format(n),safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),csvSafe=v=>typeof v==='string'&&/^[=+@\-\t\r]/.test(v)?"'"+v:v;
 let publishedList=[],publishedSummary=[],publishedCurrent=null,pubPage=0,pubCount=0,pubBusy=false;
@@ -152,7 +152,49 @@ async function chooseReferenceRows(){
  return src.rows;
 }
 async function calculate(){if(!rows.length){result=null;view={details:[],summary:[],totals:null};allPDVs=[];fullRows.clear();sourceSignatures.clear();renderAll();return;}try{referenceRows=await chooseReferenceRows();result=M.run(rows,{period:selectedPeriod(),...config},referenceRows);fullRows=new Map(result.summary.map(x=>[x.key,x]));indexSourceSignatures();allPDVs=[...new Set(result.summary.map(x=>x.pdv))].sort();renderPDVFilter();populateGeoOptions();populateSummaryOptions();applyFilters();}catch(e){result=null;view={details:[],summary:[],totals:null};renderAll();setStatus(e.message);notify('Error calculando resultados: '+e.message,true);console.error(e);}}
-function renderPDVFilter(){selectedPDVs=new Set([...selectedPDVs].filter(p=>allPDVs.includes(p)));const zone=$('pdvChecks');zone.innerHTML=`<label class="pdv-option"><input type="checkbox" data-pdv-all ${selectedPDVs.size===0?'checked':''}> Todos los PDV</label>`+allPDVs.map(p=>`<label class="pdv-option"><input type="checkbox" data-pdv="${safe(p)}" ${selectedPDVs.has(p)?'checked':''}> ${safe(p)}</label>`).join('');$('pdvLabel').textContent=selectedPDVs.size?`${selectedPDVs.size} PDV seleccionados`:'Todos los PDV';}
+function searchNorm(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();}
+function filterPDVOptions(){
+ const input=$('pdvSearch');if(!input)return;
+ const q=searchNorm(input.value),choices=$('pdvChecks'),options=[...choices.querySelectorAll('label[data-pdv-option]')];let visible=0;
+ for(const label of options){const matched=!q||searchNorm(label.dataset.pdvOption).includes(q);label.hidden=!matched;if(matched)visible++;}
+ $('pdvSearchCount').textContent=q?`${visible} de ${options.length} PDV`:`${options.length} PDV disponibles`;
+}
+function renderPDVFilter(){
+ selectedPDVs=new Set([...selectedPDVs].filter(p=>allPDVs.includes(p)));
+ const zone=$('pdvChecks');zone.innerHTML=`<label class="pdv-option"><input type="checkbox" data-pdv-all ${selectedPDVs.size===0?'checked':''}> Todos los PDV</label>`+allPDVs.map(p=>`<label class="pdv-option" data-pdv-option="${safe(p)}"><input type="checkbox" data-pdv="${safe(p)}" ${selectedPDVs.has(p)?'checked':''}> ${safe(p)}</label>`).join('');
+ $('pdvLabel').textContent=selectedPDVs.size?`${selectedPDVs.size} PDV seleccionados`:'Todos los PDV';filterPDVOptions();
+}
+// Buscador de listas que no cambia el valor del filtro hasta elegir una opción.
+// Se construye sobre el SELECT existente: siguen funcionando todos los listeners originales.
+function installFilterSearches(){
+ const ids=['fDept','fProv','fDist','fMuestra','fMejorPDV','fOK','fUmbral','fTiempo','fTarifa','fObs','fEstado','pubSettlement','pubPDV'];
+ let opened=null;
+ function close(){if(opened){opened.wrapper.classList.remove('search-open');opened.button.setAttribute('aria-expanded','false');opened.menu.hidden=true;opened=null;}}
+ for(const id of ids){
+  const sel=$(id);if(!sel||sel.closest('.filter-search-wrap'))continue;
+  const label=sel.closest('label.field');if(!label)continue;
+  const wrapper=document.createElement('div');wrapper.className='filter-search-wrap';label.before(wrapper);wrapper.appendChild(label);
+  const button=document.createElement('button');button.type='button';button.className='filter-search-toggle';button.textContent='⌕';button.title='Buscar opción en '+(label.querySelector('span')?.textContent||id);button.setAttribute('aria-label',button.title);button.setAttribute('aria-expanded','false');wrapper.appendChild(button);
+  const menu=document.createElement('div');menu.className='filter-search-menu';menu.hidden=true;
+  const search=document.createElement('input');search.type='search';search.className='filter-search-input';search.autocomplete='off';search.placeholder='Escribe para buscar…';search.setAttribute('aria-label','Buscar opción de '+id);menu.appendChild(search);
+  const items=document.createElement('div');items.className='filter-search-results';items.setAttribute('role','listbox');menu.appendChild(items);wrapper.appendChild(menu);
+  function draw(){
+   const q=searchNorm(search.value),opts=Array.from(sel.options).filter(o=>!o.disabled),matched=opts.filter(o=>!q||searchNorm(o.textContent).includes(q)||searchNorm(o.value).includes(q));
+   items.replaceChildren();const limit=100;
+   for(const option of matched.slice(0,limit)){
+    const item=document.createElement('button');item.type='button';item.className='filter-search-result';item.setAttribute('role','option');item.setAttribute('aria-selected',String(sel.value===option.value));item.textContent=option.textContent||option.value;
+    item.addEventListener('click',()=>{sel.value=option.value;sel.dispatchEvent(new Event('change',{bubbles:true}));close();sel.focus();});items.appendChild(item);
+   }
+   if(!matched.length||matched.length>limit){const hint=document.createElement('p');hint.className='filter-search-note';hint.textContent=!matched.length?'Sin coincidencias.':`Mostrando ${limit} de ${matched.length}. Escribe para afinar.`;items.appendChild(hint);}
+  }
+  button.addEventListener('click',e=>{e.preventDefault();if(opened?.wrapper===wrapper){close();return;}close();opened={wrapper,button,menu};wrapper.classList.add('search-open');button.setAttribute('aria-expanded','true');menu.hidden=false;search.value='';draw();search.focus();});
+  search.addEventListener('input',draw);
+  search.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close();button.focus();}if(e.key==='Enter'){const first=items.querySelector('.filter-search-result');if(first){e.preventDefault();first.click();}}});
+ }
+ document.addEventListener('pointerdown',e=>{if(opened&&!opened.wrapper.contains(e.target))close();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
+}
+
 function populateGeoOptions(){const s=result?.summary||[];const oldD=$('fDept').value,oldP=$('fProv').value,oldZ=$('fDist').value;
  for(const [id,key,fn] of [['fDept','dept',()=>true],['fProv','prov',x=>!$('fDept').value||x.dept===$('fDept').value],['fDist','dist',x=>(!$('fDept').value||x.dept===$('fDept').value)&&(!$('fProv').value||x.prov===$('fProv').value)]]){const el=$(id),old={fDept:oldD,fProv:oldP,fDist:oldZ}[id],items=[...new Set(s.filter(fn).map(x=>x[key]))].sort();el.innerHTML=`<option value="">${id==='fProv'?'Todas':'Todos'}</option>`+items.map(x=>`<option value="${safe(x)}">${safe(x)}</option>`).join('');if(items.includes(old))el.value=old;}}
 const summaryFilterIds=['fMuestra','fMejorPDV','fOK','fUmbral','fTiempo','fTarifa','fObs'];
@@ -235,7 +277,7 @@ function applyFilters(){const det=filteredDetailRows(),data=accumulate(det);view
 function refreshSimulation(){
  if(!view.details.length){renderSimulationInfo();return;}
  const data=accumulate(view.details);view.summary=data.summary;view.totals=data.tot;
- renderSummary();renderDetail();renderSimulationInfo();
+ renderPDVSummary();renderSummary();renderDetail();renderSimulationInfo();
 }
 function renderSimulationInfo(){
  const label=fnum(simulationHours,2)+' h';
@@ -246,7 +288,7 @@ function renderSimulationInfo(){
 }
 function formatDifference(n){return n==null?'—':(n>0?'+':'')+money(n);}
 function differenceClass(n){return n>0?'diff-positive':n<0?'diff-negative':'diff-neutral';}
-function renderAll(){renderKPIs();renderSummary();renderDetail();renderSimulationInfo();renderTariffs();renderCloseStatus();}
+function renderAll(){renderKPIs();renderPDVSummary();renderSummary();renderDetail();renderSimulationInfo();renderTariffs();renderCloseStatus();}
 function renderKPIs(){const t=view.totals;$('kGuias').textContent=t?fnum(t.guias,0):'—';$('kBruto').textContent=t?money(t.bruto):'—';$('kDescuento').textContent=t?money(t.descuentos):'—';$('kNeto').textContent=t?money(t.neto):'—';$('kPendientes').textContent=t?fnum(t.pendientes,0):'—';}
 function pageSummaryRows(){return view.summary.slice(sumPage*40,(sumPage+1)*40);}
 function updateSummarySelectionUI(){
@@ -260,6 +302,30 @@ function updateSummarySelectionUI(){
    const active=selectedSummaryKeys.has(tr.dataset.summaryRow);tr.classList.toggle('is-summary-selected',active);
    const box=tr.querySelector('[data-select-summary]');if(box)box.checked=active;
  }
+}
+// Agrupación a partir de las mismas filas del resumen filtrado. No sumamos promedio de promedios.
+function summarizeByPDV(summary,overrideSim){
+ const groups=new Map();
+ for(const g of summary){
+  let x=groups.get(g.pdv);
+  if(!x){x={pdv:g.pdv,districts:new Set(),guias:0,hours:0,ok:0,pending:0,bruto:0,descuentos:0,simNet:0,diffNet:0,neto:0};groups.set(g.pdv,x);}
+  x.districts.add([g.dept,g.prov,g.dist].join('|'));
+  x.guias+=Number(g.count)||0;x.hours+=Number(g.timeSum??(g.promedio*g.count))||0;
+  x.ok+=(approvalFor(g)||g.revisionOk===true)?1:0;
+  x.pending+=Number(g.excluded)||0;
+  x.bruto=M.money(x.bruto+(Number(g.gross)||0));x.descuentos=M.money(x.descuentos+(Number(g.discount)||0));x.neto=M.money(x.neto+(Number(g.net)||0));
+  const sim=overrideSim?overrideSim.get(g.key):g;
+  x.simNet=M.money(x.simNet+(Number(sim?.simNet)||0));x.diffNet=M.money(x.diffNet+(Number(sim?.diffNet)||0));
+ }
+ return [...groups.values()].map(x=>({...x,distritos:x.districts.size,promedio:x.guias?x.hours/x.guias:null})).sort((a,b)=>a.pdv.localeCompare(b.pdv));
+}
+function renderPDVSummary(){
+ const list=summarizeByPDV(view.summary),total=view.totals;
+ $('pdvSummaryCount').textContent=`${fnum(list.length,0)} PDV · ${fnum(total?.guias||0,0)} guías`;
+ const h=fnum(simulationHours,2)+' h';$('pdvSimHeading').textContent='Neto simulación '+h;$('pdvDiffHeading').textContent='Diferencia vs '+h;
+ $('pdvSummaryBody').innerHTML=list.length?list.map(g=>`<tr><td><b>${safe(g.pdv)}</b></td><td>${fnum(g.distritos,0)}</td><td>${fnum(g.guias,0)}</td><td>${th(g.promedio)}</td><td>${fnum(g.ok,0)}</td><td>${fnum(g.pending,0)}</td><td>${money(g.bruto)}</td><td>${money(g.descuentos)}</td><td class="simulated-amount">${money(g.simNet)}</td><td class="${differenceClass(g.diffNet)}">${formatDifference(g.diffNet)}</td><td class="amount">${money(g.neto)}</td><td><button type="button" class="btn-mini" data-pdv-drill="${safe(g.pdv)}">Ver distritos</button></td></tr>`).join(''):'<tr><td colspan="12" class="empty">Sin resultados para estos filtros.</td></tr>';
+ const totalDistritos=list.reduce((a,g)=>a+g.distritos,0),totalOK=list.reduce((a,g)=>a+g.ok,0),totalHours=list.reduce((a,g)=>a+g.hours,0);
+ $('pdvSummaryFoot').innerHTML=list.length?`<tr><td>TOTAL FILTRADO</td><td>${fnum(totalDistritos,0)}</td><td>${fnum(total.guias,0)}</td><td>${th(total.guias?totalHours/total.guias:null)}</td><td>${fnum(totalOK,0)}</td><td>${fnum(total.pendientes,0)}</td><td>${money(total.bruto)}</td><td>${money(total.descuentos)}</td><td class="simulated-amount">${money(total.simNet)}</td><td class="${differenceClass(total.diffNet)}">${formatDifference(total.diffNet)}</td><td class="amount">${money(total.neto)}</td><td></td></tr>`:'';
 }
 function renderSummary(){const list=view.summary,per=40,n=Math.max(1,Math.ceil(list.length/per));sumPage=Math.min(sumPage,n-1);const okCount=list.reduce((n,g)=>n+(approvalFor(g)?1:0),0);$('summaryCount').textContent=`${fnum(list.length,0)} filas · ${fnum(view.details.length,0)} guías · ${okCount} con OK`;
  $('summaryBody').innerHTML=list.length?list.slice(sumPage*per,(sumPage+1)*per).map(g=>`<tr data-summary-row="${safe(g.key)}" class="${selectedSummaryKeys.has(g.key)?'is-summary-selected':''}"><td class="summary-select-cell"><input type="checkbox" data-select-summary="${safe(g.key)}" aria-label="Seleccionar ${safe(g.pdv)} ${safe(g.dist)}" ${selectedSummaryKeys.has(g.key)?'checked':''}></td><td>${safe(g.dept)}</td><td>${safe(g.prov)}</td><td>${safe(g.dist)}</td><td><b>${safe(g.pdv)}</b></td><td class="summary-approval ${approvalFor(g)?'ok-row':reviews.get(g.key)?.aprobado_ok?'stale-row':''}" title="${approvalFor(g)?'Aprobado por '+safe(approvalFor(g).aprobado_por)+' el '+safe(approvalFor(g).aprobado_en):reviews.get(g.key)?.aprobado_ok?'Se modificó información. Requiere nuevo OK.':'Sin OK'}"><input type="checkbox" aria-label="OK ${safe(g.pdv)} ${safe(g.dist)}" data-review="${safe(g.key)}" ${approvalFor(g)?'checked':''} ${g.umbralEst==null||g.tariffOrigin==='SIN_TARIFA'?'disabled':''}></td><td>${fnum(g.count,0)}</td><td>${th(g.promedio)}</td><td>${g.bestPDV?safe(g.bestPDV):'<span class="bad">Muestra insuficiente</span>'}</td><td>${th(g.bestHours)}</td><td>${th(g.umbral)}</td><td>${th(g.consolidacion)}</td><td>${th(g.retraslado)}</td><td>${th(g.adicional)}</td><td>${th(g.necesario)}</td><td>${th(g.establecido)}</td><td class="${g.umbralEst==null?'bad':'warn'}">${th(g.umbralEst)}</td><td>${safe(g.tariffOrigin)}</td><td>${money(g.gross)}</td><td>${money(g.discount)}</td><td class="simulated-amount">${money(g.simNet)}</td><td class="${differenceClass(g.diffNet)}">${formatDifference(g.diffNet)}</td><td class="amount">${money(g.net)}</td><td class="truncate" title="${safe(g.observaciones)}">${safe(g.observaciones)}</td><td><button class="btn-mini" data-time="${safe(g.key)}">Configurar</button></td></tr>`).join(''):`<tr><td colspan="25" class="empty">Sin registros para estos filtros.</td></tr>`;
@@ -461,6 +527,10 @@ function exportData(summary,details,name,settings,stats){
  const resHeaders=['DEPARTAMENTO','PROVINCIA','DISTRITO','PDV','OK','OK POR','OK FECHA','GUIAS','PROMEDIO LOGRADO H','MEJOR PDV','MEJOR TIEMPO H','UMBRAL H','CONSOLIDACION H','RETRASLADO H','TIEMPO ADICIONAL H','NECESARIO DESPACHO H','TIEMPO ESTABLECIDO H','UMBRAL ESTABLECIDO H','ORIGEN BASE','BRUTO S/','DESCUENTOS S/',simLabel,diffLabel,'NETO S/','OBSERVACIONES'];
  const drHeaders=['GUIA','PDV','DEPARTAMENTO','PROVINCIA','DISTRITO','DIA REPARTO','TIEMPO LOGRADO H','TIEMPO ESTABLECIDO H','UMBRAL ESTABLECIDO H','EXCESO H','TARIFA S/','TIPO TARIFA','REDUCCION %','PAGO %','DESCUENTO S/',simLabel,diffLabel,'NETO S/','ESTADO'];
  const summaryRows=[resHeaders,...summary.map(g=>{const sim=simGroups.get(g.key)||{simNet:0,diffNet:0};return[g.dept,g.prov,g.dist,g.pdv,approvalFor(g)?'SI':'NO',approvalFor(g)?.aprobado_por||'',approvalFor(g)?.aprobado_en||'',g.count,g.promedio,g.bestPDV,g.bestHours,g.umbral,g.consolidacion,g.retraslado,g.adicional,g.necesario,g.establecido,g.umbralEst,g.origen,g.gross,g.discount,sim.simNet,sim.diffNet,g.net,g.observaciones];})];
+ const pdvRows=summarizeByPDV(summary,simGroups);
+ const pdvHeaders=['PDV','DISTRITOS CUBIERTOS','GUIAS','PROMEDIO LOGRADO H','FILAS CON OK','GUIAS SIN CALCULO','BRUTO S/','DESCUENTOS S/',simLabel,diffLabel,'NETO S/'];
+ const pdvSheet=[pdvHeaders,...pdvRows.map(g=>[g.pdv,g.distritos,g.guias,g.promedio,g.ok,g.pending,g.bruto,g.descuentos,g.simNet,g.diffNet,g.neto])];
+ if(pdvRows.length){pdvSheet.push(['TOTAL FILTRADO',pdvRows.reduce((a,g)=>a+g.distritos,0),details.length,details.length?details.reduce((a,r)=>a+(Number(r.horas)||0),0)/details.length:null,pdvRows.reduce((a,g)=>a+g.ok,0),pdvRows.reduce((a,g)=>a+g.pending,0),M.money(pdvRows.reduce((a,g)=>a+g.bruto,0)),M.money(pdvRows.reduce((a,g)=>a+g.descuentos,0)),totalSim,totalDiff,M.money(pdvRows.reduce((a,g)=>a+g.neto,0))]);}
  const detailRows=[drHeaders,...details.map(r=>{const sim=rSim.get(r);return[r.guia,r.pdv,r.dept,r.prov,r.dist,r.fecha,r.horas,r.establecido,r.umbralEst,r.exceso,r.tarifa,r.tarifaTipo,r.reduccion,r.pagoPct,r.descuento,sim?.sim??null,sim?.diff??null,r.neto,r.ceroMax?'CERO POR EXCESO':r.estado];})];
  // El total se obtiene de las mismas guías exportadas, no de resúmenes fuera del filtro.
  if(summary.length){summaryRows.push(['TOTAL FILTRADO','','','','','','',details.length,'','','','','','','','','','','',
@@ -469,7 +539,7 @@ function exportData(summary,details,name,settings,stats){
  for(const [pdv,t] of Object.entries(settings.tariffs||{})){tarifRows.push([pdv,t.mode,t.standard,'','']);for(const [key,value] of Object.entries(t.zones||{}))tarifRows.push([pdv,t.mode,t.standard,key.replaceAll('|',' / '),value]);}
  const ruleRows=[['PARAMETRO','VALOR'],['Periodo',settings.period||selectedPeriod()],['Periodo referencia',settings.refPeriod||selectedPeriod()],['Porcentaje reducción (%)',rule.rate],['Horas por bloque',rule.step],['Exceso máximo permitido (h)',rule.maxExcess],['Mínimo guías mejor PDV',settings.minGuides],['Umbral simulado (h)',base],['Neto simulado del Excel (S/)',totalSim],['Diferencia neto real - simulado (S/)',totalDiff],['Guías fuente',stats?.valid||''],['Duplicados descartados',stats?.duplicates||0],['Conflictos entre PDV',stats?.pdvConflicts||0],['Guías de otros meses excluidas',stats?.excludedOtherMonths||0],['Filas inválidas',stats?.invalid||0],['Simulación','Comparación únicamente; NO modifica liquidaciones ni parámetros guardados. Se utilizan solo guías con neto real y tarifa calculados.'],['Regla exceso máximo','Pago 0% si horas excedentes > máximo (no >=)'],['Primera reducción','Inmediatamente al superar umbral; en cada frontera adicional, siguiente descuento']];
  const book=XLSX.utils.book_new();
- for(const [sheetName,data] of [['RESUMEN',summaryRows],['DETALLE',detailRows],['TARIFAS',tarifRows],['REGLAS',ruleRows]]){
+ for(const [sheetName,data] of [['RESUMEN',summaryRows],['RESUMEN_PDV',pdvSheet],['DETALLE',detailRows],['TARIFAS',tarifRows],['REGLAS',ruleRows]]){
   const sh=XLSX.utils.aoa_to_sheet(clean(data));
   sh['!cols']=data[0].map(v=>({wch:Math.min(36,Math.max(13,String(v).length+2))}));
   XLSX.utils.book_append_sheet(book,sh,sheetName);
@@ -715,6 +785,9 @@ function bindEvents(){document.querySelectorAll('[data-tab]').forEach(btn=>btn.a
    clearTimeout(simulationTimer);simulationTimer=setTimeout(refreshSimulation,140);
  });
  for(const id of ['fDept','fProv','fDist'])$(id).addEventListener('change',()=>{if(id==='fDept'){$('fProv').value='';$('fDist').value='';}if(id==='fProv')$('fDist').value='';populateGeoOptions();applyFilters();});$('fEstado').addEventListener('change',applyFilters);$('fSearch').addEventListener('input',()=>{clearTimeout(filterTimer);filterTimer=setTimeout(applyFilters,140)});$('btnClear').addEventListener('click',()=>{for(const id of ['fDept','fProv','fDist','fSearch','fEstado',...summaryFilterIds])$(id).value='';selectedPDVs.clear();renderPDVFilter();populateGeoOptions();applyFilters();});
+ $('pdvSearch').addEventListener('input',filterPDVOptions);
+ installFilterSearches();
+ $('pdvSummaryBody').addEventListener('click',e=>{const b=e.target.closest('[data-pdv-drill]');if(!b)return;selectedPDVs=new Set([b.dataset.pdvDrill]);renderPDVFilter();applyFilters();$('summaryTableShell').scrollIntoView({behavior:'smooth',block:'start'});});
  $('pdvChecks').addEventListener('change',e=>{if(!e.target.matches('input'))return;if(e.target.hasAttribute('data-pdv-all'))selectedPDVs.clear();else{const p=e.target.dataset.pdv;if(e.target.checked)selectedPDVs.add(p);else selectedPDVs.delete(p);}renderPDVFilter();applyFilters();});
  for(const id of summaryFilterIds)$(id).addEventListener('change',applyFilters);
  $('btnClearSummary').addEventListener('click',()=>{for(const id of summaryFilterIds)$(id).value='';applyFilters();});

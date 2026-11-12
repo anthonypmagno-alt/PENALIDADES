@@ -1,10 +1,10 @@
-/* Facturación PDV V2.3 - trabajo local y cierre multiusuario con RLS en Supabase. */
+/* Facturación PDV V2.4 - trabajo local y cierre multiusuario con RLS en Supabase. */
 (()=>{'use strict';
-const M=window.FacturacionMotor,Cloud=window.FacturacionCloud,$=id=>document.getElementById(id),money=n=>n==null?'—':new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'}).format(n),fnum=(n,dp=2)=>n==null?'—':new Intl.NumberFormat('es-PE',{minimumFractionDigits:0,maximumFractionDigits:dp}).format(n),safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),csvSafe=v=>typeof v==='string'&&/^[=+@\-\t\r]/.test(v)?"'"+v:v;
+const M=window.FacturacionMotor,Cloud=window.FacturacionCloud,Drafts=window.FacturacionBorradores,$=id=>document.getElementById(id),money=n=>n==null?'—':new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'}).format(n),fnum=(n,dp=2)=>n==null?'—':new Intl.NumberFormat('es-PE',{minimumFractionDigits:0,maximumFractionDigits:dp}).format(n),safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),csvSafe=v=>typeof v==='string'&&/^[=+@\-\t\r]/.test(v)?"'"+v:v;
 let publishedList=[],publishedSummary=[],publishedCurrent=null,pubPage=0,pubCount=0,pubBusy=false;
-let reviews=new Map(),fullRows=new Map(),sourceSignatures=new Map(),db=null,config=null,rows=[],referenceRows=[],sourceStats=null,result=null,view={details:[],summary:[],totals:null},sumPage=0,detPage=0,currentTimeKey=null,currentTariffPDV=null,selectedPDVs=new Set(),allPDVs=[],periods=[],currentSnapshot=null,filterTimer=null,simulationTimer=null,simulationHours=48,importing=false,dbReady=false;
+let reviews=new Map(),fullRows=new Map(),sourceSignatures=new Map(),db=null,config=null,rows=[],referenceRows=[],sourceStats=null,result=null,view={details:[],summary:[],totals:null},sumPage=0,detPage=0,currentTimeKey=null,currentTariffPDV=null,selectedPDVs=new Set(),allPDVs=[],periods=[],currentSnapshot=null,filterTimer=null,simulationTimer=null,simulationHours=48,importing=false,dbReady=false,cloudDraftBusy=false,cloudMeta=null;
 const todayMonth=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
-function notify(msg,error=false){const el=$('toast');el.hidden=false;el.textContent=msg;el.classList.toggle('error',error);clearTimeout(notify.timeout);notify.timeout=setTimeout(()=>el.hidden=true,4500)}
+function notify(msg,error=false){const el=$('toast');el.hidden=false;el.textContent=window.FacturacionI18n?.translateMessage(msg)||msg;el.classList.toggle('error',error);clearTimeout(notify.timeout);notify.timeout=setTimeout(()=>el.hidden=true,4500)}
 function setStatus(msg){$('importStatus').textContent=msg}
 function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open('facturacion_pdv_v1',1);req.onupgradeneeded=()=>{const d=req.result;for(const name of ['dataset','kv','snapshots'])if(!d.objectStoreNames.contains(name))d.createObjectStore(name,{keyPath:'id'});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
 function put(store,obj){return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readwrite');tx.objectStore(store).put(obj);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
@@ -22,6 +22,77 @@ async function restoreWorkingState(){
  const sim=M.num(readSetting(LAST_SIM_PREFIX));if(sim!==null&&sim>0){simulationHours=sim;$('simHours').value=String(sim);}
 }
 function syncStatus(message,error=false){const badge=$('syncBadge');if(!badge)return;badge.textContent=message;badge.classList.toggle('is-error',error);}
+function draftStatus(message,error=false){const b=$('draftCloudStatus');if(!b)return;b.textContent=message;b.classList.toggle('is-error',error);}
+function freezeDraftButtons(busy){for(const id of ['btnSaveCloudDraft','btnLoadCloudDraft']){const el=$(id);if(el)el.disabled=!!busy;}}
+function safeDraftSource(src,period){
+ if(!src||!Array.isArray(src.rows)||src.rows.length>500000)throw Error('Cantidad de guías inválida.');
+ const clean=src.rows.map(r=>({guia:M.norm(r.guia),pdv:M.normalizePDV(r.pdv),dept:M.norm(r.dept),
+   prov:M.norm(r.prov),dist:M.norm(r.dist),horas:M.num(r.horas),fecha:String(r.fecha||''),period}));
+ if(clean.some(r=>!r.guia||!r.pdv||!r.dept||!r.prov||!r.dist||r.horas===null||r.horas<0))throw Error('Borrador contiene filas incompletas o inválidas.');
+ return {id:period,rows:clean,stats:{...src.stats,valid:clean.length},headers:src.headers||[],
+   file:src.file||'Borrador Supabase',uploadedAt:src.uploadedAt||'',remoteVersion:src.remoteVersion||0,sourceId:src.sourceId||('remote-'+Date.now())};
+}
+async function fetchDraftMeta(period){cloudMeta=await Drafts.meta(period);return cloudMeta;}
+async function restoreCloudDraft({automatic=false}={}){
+ if(!Cloud.admin()||cloudDraftBusy)return;
+ const p=selectedPeriod();cloudDraftBusy=true;freezeDraftButtons(true);
+ try{
+  draftStatus('Consultando borrador de '+p+'…');
+  const current=await Drafts.meta(p);cloudMeta=current;
+  if(!current){draftStatus('No hay borrador guardado en Supabase para '+p);if(!automatic)notify('No existe borrador en Supabase para '+p,true);return;}
+  const local=await get('dataset',p);
+  if(local?.rows?.length){
+    if(automatic){
+      if((local.remoteVersion||0)<current.version)draftStatus('Hay una versión nueva en Supabase (v'+current.version+'). Pulsa Recuperar para reemplazar la copia local.',true);
+      else draftStatus('Borrador sincronizado v'+current.version+' · '+current.filas+' guías');
+      return;
+    }
+    if(!confirm('La recuperación reemplazará tu borrador LOCAL de '+p+' ('+local.rows.length+' guías) con la versión v'+current.version+' de Supabase. ¿Continuar?'))return;
+  }
+  draftStatus('Descargando versión '+current.version+'…');
+  const src=await Drafts.download(current);if(selectedPeriod()!==p)throw Error('El periodo cambió durante la descarga. Repite la operación.');
+  const clean=safeDraftSource(src,p);clean.remoteVersion=current.version;
+  await put('dataset',clean);draftStatus('Borrador recuperado v'+current.version+' · '+clean.rows.length+' guías');
+  notify('Borrador recuperado desde Supabase: '+clean.rows.length+' guías.');
+  await loadPeriod({skipRemote:true});
+ }catch(e){draftStatus('No se recuperó: '+e.message,true);notify('Recuperación Supabase: '+e.message,true);console.error(e);}
+ finally{cloudDraftBusy=false;freezeDraftButtons(false);}
+}
+async function saveCloudDraft({automatic=false}={}){
+ if(!Cloud.admin()||cloudDraftBusy)return;
+ const p=selectedPeriod(),src=await get('dataset',p);
+ if(!src?.rows?.length){if(!automatic)notify('No hay guías para guardar en '+p,true);return;}
+ cloudDraftBusy=true;freezeDraftButtons(true);
+ try{
+  draftStatus('Comprobando versión remota…');
+  const server=await Drafts.meta(p);cloudMeta=server;
+  const expected=src.remoteVersion||0;
+  // No reemplazar silenciosamente un cambio remoto: bloqueo optimista.
+  if(server&&expected&&server.version!==expected)throw Error('Otra persona guardó la versión v'+server.version+'; recupera el borrador o revisa las diferencias antes de guardar.');
+  if(server&&!expected){
+    if(automatic){draftStatus('Borrador remoto v'+server.version+' ya existe. Confirma manualmente el reemplazo para evitar sobrescribirlo.',true);return;}
+    if(!confirm('Ya existe un borrador compartido v'+server.version+' de '+p+'. ¿Quieres REEMPLAZARLO con tu copia local?'))return;
+  }
+  draftStatus('Comprimiendo y subiendo '+src.rows.length+' guías a Supabase…');
+  const saved=await Drafts.save(p,src,server?.version||0);
+  const now=await get('dataset',p);
+  if(now&&now.rows?.length===src.rows.length&&now.file===src.file&&now.uploadedAt===src.uploadedAt&&now.sourceId===src.sourceId){
+    await put('dataset',{...now,remoteVersion:saved.version,remotePath:saved.objeto});
+  }else{draftStatus('Se guardó la versión anterior, pero el borrador local cambió durante la subida. Vuelve a guardar.',true);}
+  draftStatus('Guardado en Supabase · v'+saved.version+' · '+saved.filas+' guías');
+  syncStatus('Borrador de '+p+' guardado en Supabase v'+saved.version);
+  notify('Borrador guardado en Supabase ('+saved.filas+' guías).');
+  // Limpieza selectiva de la versión anterior para ahorrar espacio, después del commit.
+  // NO borrar si existe la mínima duda de que ahora es el objeto vigente.
+  if(server?.objeto&&server.objeto!==saved.objeto){
+    try{const latest=await Drafts.meta(p);if(latest?.objeto===saved.objeto){
+      await Cloud.create().storage.from('facturacion-borradores').remove([server.objeto]);
+    }}catch(e){console.warn('Archivo de borrador anterior no eliminado',e);}
+  }
+ }catch(e){draftStatus('No se guardó: '+e.message,true);syncStatus('Borrador local sin sincronizar',true);notify('Error borrador remoto: '+e.message,true);console.error(e);}
+ finally{cloudDraftBusy=false;freezeDraftButtons(false);}
+}
+
 
 function initialConfig(){return{rule:{rate:10,step:24,maxExcess:120},minGuides:10,times:{},tariffs:{}};}
 async function saveConfig(){throw Error('Configuración compartida: usa guardar tiempos, tarifas o reglas en Supabase.');}
@@ -35,7 +106,7 @@ async function updateAvailablePeriods(){
  $('refPeriod').innerHTML=opts.map(p=>`<option value="${safe(p)}">${safe(p)}${p===current?' · periodo actual':''}${p===previous&&p!==current?' · referencia guardada':''}</option>`).join('');
  $('refPeriod').value=opts.includes(previous)?previous:current;
 }
-async function loadPeriod(){
+async function loadPeriod({skipRemote=false}={}){
  if(!Cloud.profile())return;
  const p=selectedPeriod();
  syncStatus('Cargando configuración de '+p+' desde Supabase…');
@@ -47,7 +118,25 @@ async function loadPeriod(){
  $('rate').value=config.rule.rate;$('step').value=config.rule.step;
  $('maxExcess').value=config.rule.maxExcess;$('minGuides').value=config.minGuides;
  renderExamples();
- const src=await get('dataset',p);rows=src?.rows||[];sourceStats=src?.stats||null;
+ let src=await get('dataset',p);
+ if(!skipRemote&&!cloudDraftBusy){
+   try{const remote=await Drafts.meta(p);cloudMeta=remote;
+     if(remote){
+       if(!src?.rows?.length){
+         draftStatus('Recuperando automáticamente v'+remote.version+' desde Supabase…');
+         const data=await Drafts.download(remote);
+         if(selectedPeriod()!==p)return;
+         src=safeDraftSource(data,p);src.remoteVersion=remote.version;await put('dataset',src);
+         draftStatus('Borrador remoto v'+remote.version+' recuperado · '+remote.filas+' guías');
+       } else if(src.remoteVersion===remote.version){
+         draftStatus('Borrador sincronizado v'+remote.version+' · '+remote.filas+' guías');
+       } else if(!src.remoteVersion||src.remoteVersion<remote.version){
+         draftStatus('Existe un borrador remoto v'+remote.version+' diferente del local. Usa Recuperar o Guardar con confirmación.',true);
+       }else{draftStatus('Borrador local más reciente: revisa la sincronización.',true);}
+     }else draftStatus(src?.rows?.length?'Borrador solo local; guarda en Supabase.':'Aún no existe borrador remoto.');
+   }catch(e){draftStatus('No se pudo consultar el borrador remoto: '+e.message,true);}
+ }
+ rows=src?.rows||[];sourceStats=src?.stats||null;
  selectedPDVs.clear();
  for(const id of ['fDept','fProv','fDist','fSearch','fEstado',...summaryFilterIds])$(id).value='';
  await updateAvailablePeriods();await calculate();
@@ -229,8 +318,9 @@ async function restoreDraft(file){
  const existing=await get('dataset',data.periodo);
  if(existing?.rows?.length&&!confirm('Ya existen '+existing.rows.length+' guías locales de '+data.periodo+'. ¿Deseas reemplazar el borrador de ese periodo con este respaldo?'))return;
  await put('dataset',{id:data.periodo,rows:clean,stats:{...data.fuente.stats,valid:clean.length},headers:data.fuente.headers||[],file:data.fuente.file||file.name,
-   uploadedAt:'Restaurado '+new Date().toLocaleString('es-PE')});
+   uploadedAt:'Restaurado '+new Date().toISOString(),remoteVersion:0,sourceId:crypto.randomUUID()});
  $('period').value=data.periodo;rememberWorkingState();await loadPeriod();notify('Borrador restaurado: '+clean.length.toLocaleString('es-PE')+' guías en '+data.periodo+'.');
+ await saveCloudDraft({automatic:true});
 }
 async function saveDialog(e,id,callback,statusId){
  if(e.submitter?.value!=='save')return;
@@ -254,8 +344,10 @@ async function importFile(file){if(!Cloud.admin())return notify('Solo un adminis
   if(!parsed.rows.length)throw Error('Ninguna guía corresponde al periodo seleccionado.');
   for(const r of parsed.rows)r.period=destPeriod;
   const previous=await get('dataset',destPeriod);if(previous&&(!rows.length||previous.id!==$('period').dataset.periodLoaded)&&!confirm(`Ya existen datos de ${destPeriod}. ¿Reemplazarlos?`))return;
-  await put('dataset',{id:destPeriod,rows:parsed.rows,stats:parsed.stats,headers:parsed.headers,file:file.name,uploadedAt:new Date().toLocaleString('es-PE')});
+  await put('dataset',{id:destPeriod,rows:parsed.rows,stats:parsed.stats,headers:parsed.headers,file:file.name,uploadedAt:new Date().toISOString(),remoteVersion:0,sourceId:crypto.randomUUID()});
   setStatus('Importación finalizada: '+file.name);await loadPeriod();notify(`${fnum(parsed.stats.valid,0)} guías importadas · ${parsed.stats.invalid} filas inválidas · ${parsed.stats.duplicates} duplicadas.`,false);
+  // La carga local queda hecha aun si falla la nube. Estado visible y reintento manual.
+  await saveCloudDraft({automatic:true});
  }catch(e){setStatus('Error de carga: '+e.message);notify('No se pudo cargar: '+e.message,true);console.error(e);}finally{importing=false;$('fileInput').value='';renderCloseStatus();}}
 function exportData(summary,details,name,settings,stats){
  const newBase=M.num($('simHours').value);if(newBase==null||newBase<=0)throw Error('Ingresa un umbral de simulación válido y mayor que cero antes de exportar.');
@@ -519,6 +611,8 @@ function bindCloudEvents(){
 function bindEvents(){document.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('.tab-panel').forEach(x=>x.classList.toggle('active',x.id===`tab-${btn.dataset.tab}`));if(btn.dataset.tab==='historico')renderHistory();}));
  $('period').addEventListener('change',async()=>{rememberWorkingState();try{await loadPeriod();}catch(err){syncStatus('No se pudo recuperar el periodo: '+err.message,true);notify(err.message,true);}});$('fileInput').addEventListener('change',e=>importFile(e.target.files?.[0]));$('btnExport').addEventListener('click',exportCurrent);
  $('btnBackupDraft').addEventListener('click',()=>backupDraft().catch(e=>notify('Respaldo: '+e.message,true)));
+ $('btnSaveCloudDraft').addEventListener('click',()=>saveCloudDraft());
+ $('btnLoadCloudDraft').addEventListener('click',()=>restoreCloudDraft());
  $('backupFile').addEventListener('change',async e=>{try{await restoreDraft(e.target.files?.[0]);}catch(err){notify('Restauración: '+err.message,true);}finally{e.target.value='';}});
  $('simHours').addEventListener('input',()=>{
    const n=M.num($('simHours').value),invalid=n==null||n<=0;

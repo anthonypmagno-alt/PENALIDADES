@@ -69,7 +69,7 @@
     modal.setAttribute('aria-labelledby', prefix + 'Title');
     // Static markup, no user content interpolated.
     modal.innerHTML = `<div id="factPermPanel">
-      <div class="line"><h2 id="factPermTitle">Autorizar usuarios para Facturación</h2><button type="button" id="factPermClose">Cerrar ✕</button></div>
+      <div class="line"><h2 id="factPermTitle">Autorizar usuarios para Facturación</h2><label class="language-field" style="display:flex;align-items:center;gap:6px;margin:0">Idioma <select id="factPermLang" data-fact-lang aria-label="Idioma"><option value="es">Español</option><option value="en">English</option><option value="zh">简体中文</option></select></label><button type="button" id="factPermClose">Cerrar ✕</button></div>
       <p>Usa la misma cuenta de Penalidades. Busca su correo de inicio de sesión y define qué PDV podrá consultar en Facturación.</p>
       <form id="factPermForm">
         <div class="tools"><label>Correo del usuario (ya existe en Supabase Auth)
@@ -91,6 +91,9 @@
       <div style="overflow:auto"><table><thead><tr><th>UID</th><th>Rol</th><th>PDV</th><th>Activo</th></tr></thead><tbody id="factPermList"></tbody></table></div>
     </div>`;
     document.body.appendChild(modal);
+    window.FacturacionI18n?.translateUi(modal);
+    window.FacturacionI18n?.translateUi(button);
+    window.FacturacionI18n?.translateUi(link);
     button.addEventListener('click', async () => {
       if (!isAdmin) return;
       modal.hidden = false;

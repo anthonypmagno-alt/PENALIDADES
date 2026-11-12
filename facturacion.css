@@ -43,3 +43,10 @@
 #timeSaveStatus.is-error,#tariffSaveStatus.is-error,#rulesSaveStatus.is-error{color:#aa2929}
 .small-upload{position:relative;cursor:pointer;padding:.55rem .75rem;border:1px solid #c6d5ec;border-radius:7px;display:inline-flex;align-items:center;gap:4px}
 .small-upload input{position:absolute;opacity:0;width:1px;height:1px;overflow:hidden}
+
+/* Facturacion V2.4: selector idiomas y estado de sincronizacion */
+.language-field{display:flex;align-items:center;gap:.4rem;white-space:nowrap;font-size:.8rem}
+.language-field select{max-width:130px;padding:.45rem;border-radius:7px;border:1px solid #cad5e3;background:#fff;color:#162130}
+#draftCloudStatus{font-size:.78rem;display:inline-block;max-width:440px;overflow-wrap:anywhere}
+#draftCloudStatus.is-error{color:#b42318}
+@media(max-width:760px){.language-field span{display:none}.header-actions{flex-wrap:wrap}}

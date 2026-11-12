@@ -12,7 +12,7 @@
 <script defer src="facturacion-tarifas-masivas.js"></script>
 <script defer src="facturacion.js"></script>
 </head><body>
-<header class="topbar"><div class="brand"><span class="logo">F</span><div><h1>Facturación <span>PDV</span></h1><small>Tarifas, tiempos y liquidaciones · V2.9 · importación y exportación masiva de tarifas</small></div></div><div class="header-actions"><label class="language-field"><span>Idioma</span><select id="factLang" aria-label="Idioma de la interfaz"><option value="es">Español</option><option value="en">English</option><option value="zh">简体中文</option></select></label><span class="environment" id="sessionLabel">SUPABASE AUTH · SIN SESIÓN</span><button id="btnLogout" type="button" class="quiet" hidden>Salir</button><a href="gestion-v2.html" class="button ghost" title="Regresar a Gestión de Guías si están en el mismo directorio">Gestión de Guías</a></div></header>
+<header class="topbar"><div class="brand"><span class="logo">F</span><div><h1>Facturación <span>PDV</span></h1><small>Tarifas, tiempos y liquidaciones · V3.0 · agrupaciones de PDV y tarifario masivo</small></div></div><div class="header-actions"><label class="language-field"><span>Idioma</span><select id="factLang" aria-label="Idioma de la interfaz"><option value="es">Español</option><option value="en">English</option><option value="zh">简体中文</option></select></label><span class="environment" id="sessionLabel">SUPABASE AUTH · SIN SESIÓN</span><button id="btnLogout" type="button" class="quiet" hidden>Salir</button><a href="gestion-v2.html" class="button ghost" title="Regresar a Gestión de Guías si están en el mismo directorio">Gestión de Guías</a></div></header>
 <section id="authPanel" class="auth-layout">
  <form id="authForm" class="panel auth-card">
   <h2>Iniciar sesión</h2><p>Utiliza el mismo usuario y contraseña que en Gestión de Guías.</p>
@@ -61,7 +61,18 @@
 <p class="summary-filter-hint">Los filtros también se aplican a los indicadores, el detalle y el Excel del periodo. El OK se guarda en Supabase y se invalida cuando cambian los datos revisados. La simulación usa únicamente las guías con neto real calculado, para comparar los mismos casos.</p>
 <details class="pdv-summary-panel" id="pdvSummaryPanel" open>
   <summary><strong>Resumen por PDV</strong><span class="pdv-summary-description">Consolidado de los PDV visibles según los filtros, sin duplicar guías</span><span class="pdv-summary-count" id="pdvSummaryCount">Sin registros</span></summary>
-  <div class="table-wrap pdv-summary-table-wrap"><table class="pdv-summary-table"><thead><tr><th>PDV</th><th>Distritos</th><th>Guías</th><th>Promedio logrado</th><th>Filas con OK</th><th>Sin cálculo</th><th>Bruto</th><th>Descuentos</th><th id="pdvSimHeading">Neto simulación 48 h</th><th id="pdvDiffHeading">Diferencia vs 48 h</th><th>Neto</th><th>Acción</th></tr></thead><tbody id="pdvSummaryBody"><tr><td colspan="12" class="empty">Carga el Excel para comenzar.</td></tr></tbody><tfoot id="pdvSummaryFoot"></tfoot></table></div>
+  <div class="pdv-group-toolbar" data-admin-only>
+    <label class="field"><span>Filtrar agrupación</span><select id="pdvGroupFilter"><option value="">Todas las agrupaciones</option><option value="__SIN_GRUPO__">Sin agrupación</option></select></label>
+    <label class="field pdv-group-name-field"><span>Nombre de agrupación</span><input id="pdvGroupName" type="text" maxlength="80" placeholder="Ej.: Áncash" autocomplete="off"></label>
+    <label class="field pdv-group-extra-field"><span>Otros PDV (opcional)</span><input id="pdvGroupExtra" type="text" maxlength="2500" placeholder="ANC-01, ANC-02…" autocomplete="off"></label>
+    <button type="button" class="quiet" id="pdvGroupSelectFiltered">Seleccionar PDV filtrados</button>
+    <button type="button" class="quiet" id="pdvGroupClearSelection">Quitar selección</button>
+    <button type="button" class="primary" id="pdvGroupSave" disabled>Agrupar selección (0)</button>
+    <button type="button" class="quiet" id="pdvGroupRemove" disabled>Desagrupar seleccionados</button>
+    <button type="button" class="quiet" id="pdvGroupDelete" disabled>Eliminar grupo</button>
+    <span class="pdv-group-status" id="pdvGroupStatus" aria-live="polite">Selecciona varios PDV para formar un grupo.</span>
+  </div>
+  <div class="table-wrap pdv-summary-table-wrap"><table class="pdv-summary-table"><thead><tr><th class="pdv-group-select-col"><input id="pdvGroupSelectAll" type="checkbox" aria-label="Seleccionar todos los PDV filtrados" title="Seleccionar todos los PDV del filtro actual"></th><th>PDV / Agrupación</th><th>Distritos</th><th>Guías</th><th>Promedio logrado</th><th>Filas con OK</th><th>Sin cálculo</th><th>Bruto</th><th>Descuentos</th><th id="pdvSimHeading">Neto simulación 48 h</th><th id="pdvDiffHeading">Diferencia vs 48 h</th><th>Neto</th><th>Acción</th></tr></thead><tbody id="pdvSummaryBody"><tr><td colspan="13" class="empty">Carga el Excel para comenzar.</td></tr></tbody><tfoot id="pdvSummaryFoot"></tfoot></table></div>
   <p class="pdv-summary-note">Los importes consideran todas las guías de cada PDV dentro del filtro actual. El promedio se pondera por cantidad de guías. «Distritos» representa coberturas PDV-distrito.</p>
 </details>
 <div id="summaryTableShell" class="summary-table-shell">
@@ -122,7 +133,7 @@
  </form><small>Los roles PDV y Encargado solo consultan liquidaciones finalizadas de sus PDV asignados. Únicamente Administrador puede cambiar tarifas, tiempos y publicar cierres.</small></div>
  <div class="table-wrap"><table><thead><tr><th>UID</th><th>Rol</th><th>PDV autorizados</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="membersBody"><tr><td colspan="5">Cargando…</td></tr></tbody></table></div>
 </section>
-<footer>Facturación PDV V2.9 · Supabase Auth y RLS · Borradores y cierres en Supabase; copia local en IndexedDB.</footer>
+<footer>Facturación PDV V3.0 · Supabase Auth y RLS · Borradores y cierres en Supabase; copia local en IndexedDB.</footer>
 </main>
 <dialog id="timeDialog"><form method="dialog" id="timeForm"><div class="dialog-head"><div><h2>Configurar tiempos del PDV</h2><p id="timeIdentity"></p></div><button class="quiet" value="cancel" formnovalidate>✕</button></div><div class="form-grid"><label class="field"><span>Consolidación (h)</span><input id="tConsolidacion" type="number" min="0" step="0.01" placeholder="En blanco = sin asignar"></label><label class="field"><span>Retraslado (h)</span><input id="tRetraslado" type="number" min="0" step="0.01"></label><label class="field"><span>Tiempo adicional (h)</span><input id="tAdicional" type="number" min="0" step="0.01"></label><label class="field"><span>Tiempo necesario de despacho (h)</span><input id="tNecesario" type="number" min="0" step="0.01"></label><label class="field full"><span>Referencia manual (si los cuatro componentes están vacíos)</span><input id="tManual" type="number" min="0" step="0.01" placeholder="Opcional"></label><label class="field full"><span>Observaciones</span><textarea id="tObs" rows="3" maxlength="1000"></textarea></label></div><p id="timeSaveStatus" role="status" aria-live="polite" class="subdued"></p><div class="dialog-actions"><button value="cancel" class="quiet" formnovalidate>Cancelar</button><button value="save" class="primary">Guardar tiempos</button></div></form></dialog>
 <dialog id="bulkTimeDialog" class="bulk-config-dialog"><form method="dialog" id="bulkTimeForm">

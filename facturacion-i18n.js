@@ -3,7 +3,27 @@
 (function(root){'use strict';
  const KEY='facturacion_pdv_idioma';
  const translations={
-  'Idioma':['Language','语言'],
+  'Idioma':['Language','语言'],  'Tarifas, tiempos y liquidaciones · V3.0 · agrupaciones de PDV y tarifario masivo':['Rates, delivery times and settlements · V3.0 · PDV groups and bulk tariffs','费率、时效与结算 · V3.0 · PDV分组与批量费率'],
+  'Facturación PDV V3.0 · Supabase Auth y RLS · Borradores y cierres en Supabase; copia local en IndexedDB.':['PDV billing V3.0 · Supabase Auth/RLS · Cloud drafts and settlements; local IndexedDB copy.','PDV结算 V3.0 · Supabase Auth/RLS · 云端草稿与结算，本地IndexedDB副本。'],
+  'Filtrar agrupación':['Filter by group','按分组筛选'],
+  'Todas las agrupaciones':['All groups','所有分组'],
+  'Sin agrupación':['Ungrouped','未分组'],
+  'SIN GRUPO':['UNGROUPED','未分组'],
+  'Nombre de agrupación':['Group name','分组名称'],
+  'Otros PDV (opcional)':['Other PDVs (optional)','其他PDV（可选）'],
+  'ANC-01, ANC-02…':['ANC-01, ANC-02…','ANC-01、ANC-02…'],
+  'Ej.: Áncash':['e.g. Áncash','例如：Áncash'],
+  'Seleccionar PDV filtrados':['Select filtered PDVs','选择筛选后的PDV'],
+  'Agrupar selección (0)':['Group selected (0)','将所选PDV分组（0）'],
+  'Desagrupar seleccionados':['Remove selected from group','将所选PDV移出分组'],
+  'Eliminar grupo':['Delete group','删除分组'],
+  'Selecciona varios PDV para formar un grupo.':['Select several PDVs to form a group.','选择多个PDV以创建分组。'],
+  'PDV / Agrupación':['PDV / Group','PDV / 分组'],
+  'Seleccionar todos los PDV filtrados':['Select all filtered PDVs','全选筛选结果中的PDV'],
+  'Mostrar u ocultar PDV':['Expand or collapse PDVs','展开或折叠PDV'],
+  'Ver grupo':['View group','查看分组'],
+  'Los grupos se comparten entre administradores.':['Groups are shared across administrators.','分组在管理员之间共享。'],
+
   'Tarifas, tiempos y liquidaciones · V2.9 · importación y exportación masiva de tarifas':['Rates, delivery times and settlements · V2.9 · bulk rate import and export','费率、时效与结算 · V2.9 · 费率批量导入与导出'],
   'Facturación PDV V2.9 · Supabase Auth y RLS · Borradores y cierres en Supabase; copia local en IndexedDB.':['PDV billing V2.9 · Supabase Auth/RLS · Cloud drafts and finalized settlements; local IndexedDB cache.','PDV结算 V2.9 · Supabase Auth/RLS · 云端草稿和结算，本地IndexedDB缓存。'],
   'Tarifario masivo en Excel':['Bulk rate spreadsheet','批量费率Excel'],
@@ -309,6 +329,10 @@
   'Marca uno o varios departamentos, provincias o distritos. Dentro de cada filtro se aplica cualquiera de los elegidos; entre filtros se combinan los criterios. La búsqueda solo localiza opciones, no las marca automáticamente.':['Select multiple departments, provinces or districts. Within a filter, any selected item matches; across filters, conditions combine. Searching locates options but does not select them.','可多选大区、省市或区县。同一筛选内匹配任一选项，不同筛选之间组合条件。搜索只定位选项，不会自动勾选。']
  };
  const dynamicPatterns=[
+  [/^Agrupar selección \(?(\d+)\)?$/,n=>[`Group selected (${n})`,`将所选PDV分组（${n}）`]],
+  [/^([\d.,]+) PDV · ([\d.,]+) guías · ([\d.,]+) grupos$/, (a,b,c)=>[`${a} PDVs · ${b} waybills · ${c} groups`,`${a}个PDV · ${b}票运单 · ${c}个分组`]],
+  [/^([\d.,]+) agrupaciones disponibles\. Los grupos se comparten entre administradores\.$/, n=>[`${n} available groups. Groups are shared across administrators.`,`可用分组${n}个。管理员共享分组。`]],
+  [/^([\d.,]+) PDV$/,n=>[`${n} PDVs`,`${n}个PDV`]],
   [/^(Departamentos|Provincias|Distritos) · (\d+) seleccionados$/, (kind,n)=>[`${({Departamentos:'Departments',Provincias:'Provinces',Distritos:'Districts'})[kind]} · ${n} selected`,`${({Departamentos:'大区',Provincias:'省市',Distritos:'区县'})[kind]} · 已选${n}项`]],
   [/^(\d+) opciones · (\d+) seleccionadas(.*)$/, (all,sel,extra)=>[`${all} options · ${sel} selected${extra?' · refine search':''}`,`${all}项 · 已选${sel}项${extra?' · 请缩小搜索范围':''}`]],
   [/^Borrador remoto v(\d+) recuperado · (\d+) guías$/, (v,n)=>[`Cloud draft v${v} restored · ${n} waybills`,`已恢复云端草稿 v${v} · ${n}票运单`]],

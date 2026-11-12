@@ -176,3 +176,27 @@ body.summary-table-expanded{overflow:hidden}
 .tariff-import-issues{font-size:11px;line-height:1.6;color:#8a2a19;padding:8px 0;max-height:100px;overflow-y:auto}
 .tariff-import-bottom-note{font-size:11px;color:#4b6681}
 #tariffImportSaveStatus.is-error{color:#b42318}
+
+/* V3.0: Agrupaciones de PDV, selección múltiple y subtotales */
+.pdv-group-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:end;background:#f5f8fd;border-bottom:1px solid #d7e3f1;padding:12px}
+.pdv-group-toolbar .field{min-width:185px;flex:0 1 230px}
+.pdv-group-toolbar .pdv-group-name-field{min-width:160px;flex:0 1 210px}
+.pdv-group-toolbar input,.pdv-group-toolbar select{min-height:34px;height:34px}
+.pdv-group-toolbar button{min-height:34px;height:auto;font-size:11px;padding:7px 10px}
+.pdv-group-status{width:100%;font-size:11px;color:#536c85;line-height:1.35}
+.pdv-group-status.is-error{color:#a71c28}
+.pdv-summary-table .pdv-group-select-col{width:38px;min-width:38px;text-align:center}
+.pdv-summary-table input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#2268c1}
+.pdv-summary-table .pdv-group-subtotal td{background:#e6effb!important;color:#19456f;font-weight:700;border-top:2px solid #a4c1e4;border-bottom:1px solid #a4c1e4}
+.pdv-summary-table .pdv-group-subtotal td:first-child{text-align:center}
+.pdv-group-subtotal small,.pdv-group-member small{display:block;font-size:10px;color:#72869d;font-weight:500}
+.pdv-group-collapse{padding:2px 6px;min-height:24px;height:24px;min-width:26px;border:1px solid #b3c8e4;border-radius:4px;background:#fff;color:#224f84}
+.pdv-group-member td:nth-child(2){padding-left:20px}
+.pdv-group-caption:empty{display:none}
+.pdv-summary-table th,.pdv-summary-table td{white-space:nowrap}
+.pdv-summary-table{min-width:1260px}
+.pdv-summary-panel .pdv-summary-table-wrap{max-height:490px}
+@media(max-width:850px){.pdv-group-toolbar .field{min-width:140px;flex:1 1 180px}.pdv-group-toolbar button{flex:1 1 130px}}
+
+.pdv-group-toolbar .pdv-group-extra-field{flex:1 1 200px;max-width:280px}
+.pdv-group-extra-field input:invalid{border-color:#c94646;background:#fff5f4}

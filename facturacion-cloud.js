@@ -109,6 +109,22 @@
       times: Object.fromEntries(times.map(r => [r.clave, r.datos]))
     };
   }
+  // Agrupaciones globales de PDV, compartidas por los administradores de Facturacion.
+  // RLS restringe SELECT; un RPC atomico autorizado realiza cada cambio.
+  async function loadPDVGroups() {
+    assertAdmin();
+    const [groups,members]=await Promise.all([
+      allPages('facturacion_grupos_pdv','id,nombre',q=>q.order('nombre',{ascending:true})),
+      allPages('facturacion_grupos_pdv_miembros','pdv,grupo_id',q=>q.order('pdv',{ascending:true}))
+    ]);
+    return {groups,members};
+  }
+  async function managePDVGroup(action,name,pdvs=[]) {
+    assertAdmin();
+    return ensure(await create().rpc('facturacion_gestionar_grupo_pdv',{
+      p_accion:action,p_nombre:name,p_pdvs:pdvs
+    }), 'Guardar agrupacion de PDV');
+  }
   async function saveRules(period, rule, minGuides, refPeriod) {
     assertAdmin();
     ensure(await create().from(TABLES.config).upsert({
@@ -294,6 +310,6 @@
       .select('configuracion,estadisticas,totales').eq('liquidacion_id',id).single(),'Cierre privado');
   }
   root.FacturacionCloud={create,restore,refreshProfile,login,logout,profile:()=>profile,
-    user:()=>currentUser,admin,loadConfig,saveRules,saveTariff, importTariffsBulk,saveTime,saveTimesBulk,loadReviews,saveReview,refreshReviews,
+    user:()=>currentUser,admin,loadConfig,loadPDVGroups,managePDVGroup,saveRules,saveTariff, importTariffsBulk,saveTime,saveTimesBulk,loadReviews,saveReview,refreshReviews,
     listMembers,upsertMember,publish,listSettlements,readSummary,readDetails,readAllDetails,readPrivate};
 })(window);

@@ -1,0 +1,5 @@
+Añade esta línea justo antes de </body> en el archivo penalidades.html ACTUAL:
+
+<script src="./facturacion-accesos-penalidades.js?v=1"></script>
+
+NO reemplaces el archivo penalidades.html por una versión antigua.

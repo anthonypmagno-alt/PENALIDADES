@@ -449,7 +449,7 @@ function a4(e){if(e==null||String(e).trim()==="")return NaN;let t=String(e).trim
   // del Último punto de operación REAL (Track Break), jamás por PDV destino.
   // La UI decide si visualizar <120 o <168 h; esto no suma al TOTAL.
   if(cola.some(caso=>caso.devolucion==="NO")){
-    const ultimo=ma(guia.ultimoPuntoOperacion||"");
+    const ultimo=ha.resolve(guia.ultimoPuntoOperacion||"");
     const msEntrada=a4(guia.tiempoEntradaExportacion),horas=(t-msEntrada)/36e5;
     if(!ultimo.pdvSinResolver&&Number.isFinite(horas)&&horas>=0&&horas<168){
       agregar(ultimo.pdv,"enColaLarga","EN COLA LARGA\n<168 H · INFORMATIVO · No devuelto");

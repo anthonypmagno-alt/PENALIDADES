@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" data-app-build="20261114-V18-11-FECHA-GRAFICA-FUERA"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261114-v18-9-fuera-resumen"></script>
+<script src="./bridge.js?v=20261114-v18-12-filtros-fechas"></script>
   <base target="_top">
 <style>/* v9 only */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden]{display:none!important}</style>
   <meta charset="UTF-8">
@@ -141,14 +141,14 @@
 #fueraResumenArchivo{min-width:210px;max-width:320px}
 #fueraResumenOrdenFecha{border:1px solid #cbd5e1;border-radius:6px;padding:8px;background:white;height:36px}
 
-/* V18.11 - Gráfica diaria del complemento de guías fuera del resumen. */
+/* V18.12 - Gráfica diaria del complemento de guías fuera del resumen. */
 #fueraGraficaPanel{margin:10px 0 13px;border:1px solid #cbdcf0;border-radius:9px;background:#f8fbff;overflow:hidden}
 #fueraGraficaPanel>summary{padding:11px 13px;cursor:pointer;background:#eaf2ff;color:#194473;font-weight:800;font-size:12px}
 .fuera-grafica-interior{padding:12px}
 .fuera-grafica-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:8px}
 .fuera-grafica-toolbar label{display:flex;flex-direction:column;gap:4px;min-width:160px;font-size:11px;color:#334155;font-weight:700}
 .fuera-grafica-toolbar select{height:34px;padding:5px 9px;border:1px solid #bdcde2;border-radius:6px;background:#fff;color:#1e293b}
-#fueraGraficaPdv{max-width:min(340px,90vw)}
+#fueraGraficaFiltroPdv{max-width:min(340px,90vw)}
 #fueraGraficaEstado{font-size:11px;color:#475569;margin:4px 0 9px}
 #fueraGraficaWrap{overflow-x:auto;overflow-y:hidden;max-width:100%;border:1px solid #dce6f3;background:white;border-radius:7px;padding:3px 3px 0}
 #fueraGraficaSvg{display:block;height:280px;max-width:none}
@@ -636,6 +636,32 @@
 #tablaDetalle .close-case-check:has(input:checked){border-color:#86efac;background:#f0fdf4;color:#166534}
 #tablaDetalle .close-case-check:focus-within{outline:2px solid #60a5fa;outline-offset:1px}
 </style>
+<style>
+/* V18.12 - Filtros independientes de Guías fuera del resumen. */
+.fuera-filtro-multiple{position:relative;display:flex;flex-direction:column;gap:4px;min-width:190px;max-width:270px;flex:1 1 190px;font-size:11px;color:#334155;font-weight:700}
+.fuera-filtro-multiple .fuera-filtro-boton{height:36px;width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#1e293b;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;font-size:12px;font-weight:600}
+.fuera-filtro-boton .fuera-filtro-etiqueta{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fuera-filtro-boton[aria-expanded=true]{outline:2px solid #93c5fd;border-color:#2563eb}
+.fuera-filtro-menu{position:absolute;z-index:150;top:calc(100% + 5px);left:0;width:max(260px,100%);max-width:min(350px,calc(100vw - 32px));border:1px solid #cbd5e1;border-radius:9px;background:#fff;box-shadow:0 12px 30px rgba(15,23,42,.20);padding:8px;min-width:0;color:#334155}
+.fuera-filtro-menu[hidden]{display:none!important}
+.fuera-filtro-buscar{box-sizing:border-box;width:100%;height:34px;padding:7px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px}
+.fuera-filtro-acciones{display:flex;gap:6px;flex-wrap:wrap;margin:7px 0}
+.fuera-filtro-acciones button{font-size:10px!important;min-height:29px;padding:5px 8px!important;background:#eff6ff!important;color:#1d4ed8!important;border:1px solid #bfdbfe!important;border-radius:6px!important}
+.fuera-filtro-opciones{max-height:210px;overflow:auto;border-top:1px solid #e2e8f0;padding-top:4px}
+.fuera-filtro-opcion{display:flex;flex-direction:row!important;align-items:center;gap:7px;min-width:0!important;padding:6px 5px;cursor:pointer;font-size:11px!important;font-weight:500!important;color:#334155!important}
+.fuera-filtro-opcion:hover{background:#eff6ff}
+.fuera-filtro-opcion input[type=checkbox]{height:auto!important;min-width:15px!important;width:15px!important;margin:0!important;padding:0!important;accent-color:#2563eb}
+.fuera-filtro-opcion span{overflow-wrap:anywhere}
+.fuera-filtro-vacio{padding:12px 5px;color:#64748b;font-size:11px}
+.fuera-fechas-filtro{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;padding:7px 10px;background:#f0f7ff;border:1px solid #cde0f8;border-radius:8px}
+.fuera-fechas-filtro label{min-width:125px}
+.fuera-fechas-filtro input[type=date]{height:36px;min-width:132px;max-width:155px}
+.fuera-fechas-filtro button{height:36px;white-space:nowrap}
+#fueraGraficaFiltroPdv{max-width:280px}
+#fueraGraficaSvg .fuera-conteo{font-size:11px;font-weight:800;fill:#16456f;pointer-events:none;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+#fueraResumenEstado .fuera-fecha-error{color:#b91c1c}
+@media(max-width:700px){.fuera-filtro-multiple{max-width:none;flex:1 1 100%}.fuera-fechas-filtro{width:100%;box-sizing:border-box}}
+</style>
 </head>
 <body>
   <section id="login" class="login">
@@ -651,7 +677,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V18.11 <span class="build-stamp" id="buildStamp">Edición 20261114-V18-11-FECHA-GRAFICA-FUERA</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V18.12 <span class="build-stamp" id="buildStamp">Edición 20261114-V18-12-FILTROS-FECHAS-CONTEOS</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel filtrado · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -728,10 +754,12 @@
     <div class="fuera-resumen-controles">
       <button type="button" id="fueraResumenCargar" class="secondary" onclick="cargarGuiasFueraResumen()">Consultar fuente publicada</button>
       <label>O leer Exportación directamente desde Excel<input type="file" id="fueraResumenArchivo" accept=".xlsx,.xls" onchange="cargarArchivoGuiasFueraResumen(this)"></label>
-      <label>Último punto de escaneo<input type="search" id="fueraResumenBuscarPunto" placeholder="Ej.: Callao.SC" oninput="renderGuiasFueraResumen()"></label>
-      <label>PDV de entrega<input type="search" id="fueraResumenBuscarPdv" placeholder="Ej.: ANC-05" oninput="renderGuiasFueraResumen()"></label>
-      <label>Tipo de escaneo<input type="search" id="fueraResumenBuscarEscaneo" placeholder="Ej.: HUB de envío" oninput="renderGuiasFueraResumen()"></label>
+      <div class="fuera-filtro-multiple" id="fueraFiltroPunto" data-fuera-tipo="punto"><span>Último punto de escaneo</span><button type="button" class="fuera-filtro-boton" aria-expanded="false" aria-controls="fueraMenuPunto" onclick="abrirFiltroFueraResumen('punto')"><span class="fuera-filtro-etiqueta">Todos los puntos</span><span>▾</span></button><div class="fuera-filtro-menu" id="fueraMenuPunto" hidden><input class="fuera-filtro-buscar" type="search" placeholder="Buscar punto..." aria-label="Buscar último punto" oninput="dibujarOpcionesFiltroFueraResumen('punto')"><div class="fuera-filtro-acciones"><button type="button" onclick="marcarOpcionesFiltroFueraResumen('punto',true)">Marcar resultados</button><button type="button" onclick="marcarOpcionesFiltroFueraResumen('punto',false)">Quitar selección</button></div><div class="fuera-filtro-opciones"></div></div></div>
+      <div class="fuera-filtro-multiple" id="fueraFiltroPdv" data-fuera-tipo="pdv"><span>PDV de entrega</span><button type="button" class="fuera-filtro-boton" aria-expanded="false" aria-controls="fueraMenuPdv" onclick="abrirFiltroFueraResumen('pdv')"><span class="fuera-filtro-etiqueta">Todos los PDV</span><span>▾</span></button><div class="fuera-filtro-menu" id="fueraMenuPdv" hidden><input class="fuera-filtro-buscar" type="search" placeholder="Buscar PDV..." aria-label="Buscar PDV de entrega" oninput="dibujarOpcionesFiltroFueraResumen('pdv')"><div class="fuera-filtro-acciones"><button type="button" onclick="marcarOpcionesFiltroFueraResumen('pdv',true)">Marcar resultados</button><button type="button" onclick="marcarOpcionesFiltroFueraResumen('pdv',false)">Quitar selección</button></div><div class="fuera-filtro-opciones"></div></div></div>
+      <div class="fuera-filtro-multiple" id="fueraFiltroEscaneo" data-fuera-tipo="escaneo"><span>Tipo de escaneo</span><button type="button" class="fuera-filtro-boton" aria-expanded="false" aria-controls="fueraMenuEscaneo" onclick="abrirFiltroFueraResumen('escaneo')"><span class="fuera-filtro-etiqueta">Todos los tipos</span><span>▾</span></button><div class="fuera-filtro-menu" id="fueraMenuEscaneo" hidden><input class="fuera-filtro-buscar" type="search" placeholder="Buscar escaneo..." aria-label="Buscar tipo de escaneo" oninput="dibujarOpcionesFiltroFueraResumen('escaneo')"><div class="fuera-filtro-acciones"><button type="button" onclick="marcarOpcionesFiltroFueraResumen('escaneo',true)">Marcar resultados</button><button type="button" onclick="marcarOpcionesFiltroFueraResumen('escaneo',false)">Quitar selección</button></div><div class="fuera-filtro-opciones"></div></div></div>
+      <div class="fuera-fechas-filtro"><label>Tiempo de entrada · Desde<input type="date" id="fueraFechaDesde" onchange="renderGuiasFueraResumen()"></label><label>Hasta<input type="date" id="fueraFechaHasta" onchange="renderGuiasFueraResumen()"></label><button type="button" class="secondary" onclick="limpiarFechasFueraResumen()">Limpiar fechas</button></div>
       <label>Orden de fecha<select id="fueraResumenOrdenFecha" onchange="renderGuiasFueraResumen()"><option value="asc">Más antigua → reciente</option><option value="desc">Más reciente → antigua</option></select></label>
+      <button type="button" class="secondary" onclick="limpiarTodosFiltrosFueraResumen()">Limpiar filtros</button>
       <button type="button" class="secondary" id="fueraResumenExcel" onclick="descargarExcelFueraResumen()" disabled>Excel · resumen y detalle</button>
     </div>
     <div id="fueraResumenEstado" class="fuera-resumen-estado" role="status">Consulta la fuente publicada o selecciona el Excel. Al cargar una Exportación nueva desde Fuentes, también se actualizará esta tabla.</div>
@@ -740,11 +768,11 @@
       <div class="fuera-grafica-interior">
         <div class="fuera-grafica-toolbar">
           <label>Visualización<select id="fueraGraficaTipo" onchange="renderGraficaFueraResumen()"><option value="barras">Barras</option><option value="linea">Curva (línea)</option></select></label>
-          <label>PDV de entrega<select id="fueraGraficaPdv" onchange="renderGraficaFueraResumen()"><option value="__TODOS__">Todos los PDV filtrados</option></select></label>
+          <div class="fuera-filtro-multiple" id="fueraGraficaFiltroPdv" data-fuera-tipo="graficaPdv"><span>PDV de entrega en la gráfica</span><button type="button" class="fuera-filtro-boton" aria-expanded="false" aria-controls="fueraMenuGraficaPdv" onclick="abrirFiltroFueraResumen('graficaPdv')"><span class="fuera-filtro-etiqueta">Todos los PDV filtrados</span><span>▾</span></button><div class="fuera-filtro-menu" id="fueraMenuGraficaPdv" hidden><input class="fuera-filtro-buscar" type="search" placeholder="Buscar PDV..." aria-label="Buscar PDV de gráfica" oninput="dibujarOpcionesFiltroFueraResumen('graficaPdv')"><div class="fuera-filtro-acciones"><button type="button" onclick="marcarOpcionesFiltroFueraResumen('graficaPdv',true)">Marcar resultados</button><button type="button" onclick="marcarOpcionesFiltroFueraResumen('graficaPdv',false)">Quitar selección</button></div><div class="fuera-filtro-opciones"></div></div></div>
           <span id="fueraGraficaEstado" role="status">Carga una Exportación para ver las cantidades por día.</span>
         </div>
         <div id="fueraGraficaWrap"><svg id="fueraGraficaSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 280" width="760" height="280" role="img" aria-label="Paquetes fuera del resumen por día"><text x="380" y="135" text-anchor="middle" fill="#64748b" font-size="14">Sin datos cargados</text></svg></div>
-        <div id="fueraGraficaLeyenda">Fecha: Tiempo de entrada (DD-MM-YY). Haz clic en una barra o punto para consultar las guías de ese día. Orden cronológico: antigua → reciente.</div>
+        <div id="fueraGraficaLeyenda">Fecha: Tiempo de entrada (DD-MM-YY). El número encima de cada barra indica paquetes; haz clic para consultar las guías de ese día. Orden cronológico: antigua → reciente.</div>
       </div>
     </details>
     <div class="fuera-resumen-wrap">
@@ -1812,7 +1840,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   }
 
 
-  // V18.11: complemento de guías NO clasificadas en el resumen.
+  // V18.12: complemento de guías NO clasificadas en el resumen.
   // Se puede leer desde Supabase o directamente desde un Excel; no modifica datos.
   let fueraResumenFuente=null;
   let fueraResumenFilasVisibles=[];
@@ -1821,6 +1849,100 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   let fueraResumenPdvsAbiertos=new Set();
   let fueraResumenConsultaEnCurso=false;
   let fueraResumenMatrizTrasGuardar=null;
+  // V18.12. Los cuatro selectores mantienen selección independiente y búsqueda.
+  // Un conjunto vacío significa "todos". Los valores proceden exclusivamente del Excel leído.
+  const fueraFiltrosMultiple={punto:new Set(),pdv:new Set(),escaneo:new Set(),graficaPdv:new Set()};
+  const fueraOpcionesMultiple={punto:[],pdv:[],escaneo:[],graficaPdv:[]};
+  const fueraMultiIds={punto:'fueraFiltroPunto',pdv:'fueraFiltroPdv',escaneo:'fueraFiltroEscaneo',graficaPdv:'fueraGraficaFiltroPdv'};
+  const fueraMultiEtiquetas={punto:'Todos los puntos',pdv:'Todos los PDV',escaneo:'Todos los tipos',graficaPdv:'Todos los PDV filtrados'};
+  function filtroMultiFueraContenedor(tipo){return document.getElementById(fueraMultiIds[tipo]);}
+  function actualizarEtiquetaFiltroFueraResumen(tipo){
+    const cont=filtroMultiFueraContenedor(tipo);if(!cont)return;
+    const valores=fueraFiltrosMultiple[tipo];
+    const span=cont.querySelector('.fuera-filtro-etiqueta');
+    span.textContent=!valores.size?fueraMultiEtiquetas[tipo]:valores.size===1?[...valores][0]:valores.size+' seleccionados';
+    cont.querySelector('.fuera-filtro-boton').title=valores.size?[...valores].join(' / '):fueraMultiEtiquetas[tipo];
+  }
+  function opcionesBuscadasFiltroFueraResumen(tipo){
+    const cont=filtroMultiFueraContenedor(tipo);
+    const q=normalizarPuntoFueraResumen(cont?.querySelector('.fuera-filtro-buscar')?.value||'');
+    return fueraOpcionesMultiple[tipo].filter(x=>!q||normalizarPuntoFueraResumen(x).includes(q));
+  }
+  function dibujarOpcionesFiltroFueraResumen(tipo){
+    const cont=filtroMultiFueraContenedor(tipo);if(!cont)return;
+    const lista=cont.querySelector('.fuera-filtro-opciones');lista.replaceChildren();
+    const items=opcionesBuscadasFiltroFueraResumen(tipo);
+    if(!items.length){const vacio=document.createElement('div');vacio.className='fuera-filtro-vacio';vacio.textContent='Sin coincidencias';lista.appendChild(vacio);}
+    const frag=document.createDocumentFragment();
+    for(const value of items){
+      const fila=document.createElement('label');fila.className='fuera-filtro-opcion';
+      const check=document.createElement('input');check.type='checkbox';check.value=value;check.checked=fueraFiltrosMultiple[tipo].has(value);
+      check.addEventListener('change',()=>{if(check.checked)fueraFiltrosMultiple[tipo].add(value);else fueraFiltrosMultiple[tipo].delete(value);actualizarEtiquetaFiltroFueraResumen(tipo);if(tipo==='graficaPdv')renderGraficaFueraResumen();else renderGuiasFueraResumen();});
+      const texto=document.createElement('span');texto.textContent=value;fila.append(check,texto);frag.appendChild(fila);
+    }
+    lista.appendChild(frag);
+    actualizarEtiquetaFiltroFueraResumen(tipo);
+  }
+  function abrirFiltroFueraResumen(tipo){
+    const cont=filtroMultiFueraContenedor(tipo);if(!cont)return;
+    const menu=cont.querySelector('.fuera-filtro-menu'),abrir=menu.hidden;
+    for(const clave of Object.keys(fueraMultiIds)){
+      const otro=filtroMultiFueraContenedor(clave);if(!otro)continue;
+      otro.querySelector('.fuera-filtro-menu').hidden=true;
+      otro.querySelector('.fuera-filtro-boton').setAttribute('aria-expanded','false');
+    }
+    menu.hidden=!abrir;cont.querySelector('.fuera-filtro-boton').setAttribute('aria-expanded',String(abrir));
+    if(abrir){dibujarOpcionesFiltroFueraResumen(tipo);cont.querySelector('.fuera-filtro-buscar').focus();}
+  }
+  function marcarOpcionesFiltroFueraResumen(tipo,marcar){
+    const valores=fueraFiltrosMultiple[tipo];
+    // Los botones trabajan con los resultados del buscador, sin desmarcar otras selecciones.
+    for(const value of opcionesBuscadasFiltroFueraResumen(tipo)){if(marcar)valores.add(value);else valores.delete(value);}
+    dibujarOpcionesFiltroFueraResumen(tipo);
+    if(tipo==='graficaPdv')renderGraficaFueraResumen();else renderGuiasFueraResumen();
+  }
+  function llenarOpcionesFiltroFueraResumen(tipo,valores){
+    fueraOpcionesMultiple[tipo]=[...new Set(valores.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+    dibujarOpcionesFiltroFueraResumen(tipo);
+  }
+  function reiniciarFiltrosMultiplesFueraResumen(){
+    for(const tipo of Object.keys(fueraFiltrosMultiple)){
+      fueraFiltrosMultiple[tipo].clear();fueraOpcionesMultiple[tipo]=[];
+      const cont=filtroMultiFueraContenedor(tipo);if(!cont)continue;
+      cont.querySelector('.fuera-filtro-menu').hidden=true;
+      cont.querySelector('.fuera-filtro-boton').setAttribute('aria-expanded','false');
+      cont.querySelector('.fuera-filtro-buscar').value='';dibujarOpcionesFiltroFueraResumen(tipo);
+    }
+    for(const id of ['fueraFechaDesde','fueraFechaHasta']){const el=document.getElementById(id);if(el)el.value='';}
+  }
+  function limpiarFechasFueraResumen(){
+    document.getElementById('fueraFechaDesde').value='';document.getElementById('fueraFechaHasta').value='';renderGuiasFueraResumen();
+  }
+  function limpiarTodosFiltrosFueraResumen(){
+    for(const tipo of Object.keys(fueraFiltrosMultiple)){
+      fueraFiltrosMultiple[tipo].clear();
+      const cont=filtroMultiFueraContenedor(tipo);
+      if(cont){cont.querySelector('.fuera-filtro-buscar').value='';dibujarOpcionesFiltroFueraResumen(tipo);}
+    }
+    document.getElementById('fueraFechaDesde').value='';document.getElementById('fueraFechaHasta').value='';
+    renderGuiasFueraResumen();
+  }
+  document.addEventListener('click',event=>{
+    if(event.target.closest('.fuera-filtro-multiple'))return;
+    for(const tipo of Object.keys(fueraMultiIds)){
+      const cont=filtroMultiFueraContenedor(tipo);if(!cont)continue;
+      cont.querySelector('.fuera-filtro-menu').hidden=true;
+      cont.querySelector('.fuera-filtro-boton').setAttribute('aria-expanded','false');
+    }
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key!=='Escape')return;
+    for(const tipo of Object.keys(fueraMultiIds)){
+      const cont=filtroMultiFueraContenedor(tipo);if(!cont)continue;
+      cont.querySelector('.fuera-filtro-menu').hidden=true;
+      cont.querySelector('.fuera-filtro-boton').setAttribute('aria-expanded','false');
+    }
+  });
   function claveGuiaFueraResumen(v){return String(v??'').replace(/\s+/g,'').trim().toUpperCase();}
   function normalizarPuntoFueraResumen(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase();}
   function codigoEntregaFueraResumen(v){return normalizarPuntoFueraResumen(v).split('|')[0].replace(/\.PDV$/i,'');}
@@ -1866,6 +1988,11 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   function usarMatrizFueraResumen(filas,archivo,revision){
     const calculado=extraerGuiasFueraResumen(filas,guias);
     fueraResumenFuente={...calculado,archivo:String(archivo||'Exportación'),revision};
+    reiniciarFiltrosMultiplesFueraResumen();
+    llenarOpcionesFiltroFueraResumen('punto',calculado.fuera.map(x=>x.punto));
+    llenarOpcionesFiltroFueraResumen('pdv',calculado.fuera.map(x=>x.entrega));
+    llenarOpcionesFiltroFueraResumen('escaneo',calculado.fuera.map(x=>x.escaneo));
+    llenarOpcionesFiltroFueraResumen('graficaPdv',calculado.fuera.map(x=>codigoEntregaFueraResumen(x.entrega)));
     fueraResumenGruposCerrados.clear();fueraResumenPdvsAbiertos.clear();
     document.getElementById('fueraResumenExcel').disabled=false;
     renderGuiasFueraResumen();
@@ -1873,6 +2000,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   function reiniciarGuiasFueraResumen(){
     fueraResumenFuente=null;fueraResumenFilasVisibles=[];fueraResumenGuiasDetalle=[];
     fueraResumenGruposCerrados.clear();fueraResumenPdvsAbiertos.clear();
+    reiniciarFiltrosMultiplesFueraResumen();
     const p=document.getElementById('fueraResumenPanel');if(!p)return;
     p.hidden=sesion?.rol!=='ADMINISTRADOR';
     document.getElementById('fueraResumenExcel').disabled=true;
@@ -1919,9 +2047,10 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   }
   function datosVisiblesFueraResumen(){
     if(!fueraResumenFuente)return [];
-    const p=normalizarPuntoFueraResumen(document.getElementById('fueraResumenBuscarPunto')?.value),d=normalizarPuntoFueraResumen(document.getElementById('fueraResumenBuscarPdv')?.value),t=normalizarPuntoFueraResumen(document.getElementById('fueraResumenBuscarEscaneo')?.value);
+    const f=fueraFiltrosMultiple,desde=document.getElementById('fueraFechaDesde')?.value||'',hasta=document.getElementById('fueraFechaHasta')?.value||'';
+    if(desde&&hasta&&desde>hasta)return [];
     const seleccion=pdvsSeleccionadosResumen();
-    return fueraResumenFuente.fuera.filter(x=>(!p||normalizarPuntoFueraResumen(x.punto).includes(p))&&(!d||normalizarPuntoFueraResumen(x.entrega).includes(d))&&(!t||normalizarPuntoFueraResumen(x.escaneo).includes(t))&&(!seleccion.size||seleccion.has(codigoEntregaFueraResumen(x.entrega))));
+    return fueraResumenFuente.fuera.filter(x=>(!f.punto.size||f.punto.has(x.punto))&&(!f.pdv.size||f.pdv.has(x.entrega))&&(!f.escaneo.size||f.escaneo.has(x.escaneo))&&(!desde||(x.fechaKey&&x.fechaKey>=desde))&&(!hasta||(x.fechaKey&&x.fechaKey<=hasta))&&(!seleccion.size||seleccion.has(codigoEntregaFueraResumen(x.entrega))));
   }
   function agruparGuiasFueraResumen(datos){
     const porPunto=new Map(),tipos=new Set(),totalTipos=new Map();
@@ -1963,7 +2092,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
         const filas=destinos.get(destino),key=punto+'\u0000'+destino,abierto=fueraResumenPdvsAbiertos.has(key);
         const tr=document.createElement('tr');tr.className='fuera-pdv';celda(tr,'');
         const td=document.createElement('td'),b=document.createElement('button');b.type='button';b.className='fuera-toggle-pdv';b.textContent=(abierto?'▾ ':'▸ ')+destino;
-        b.addEventListener('click',()=>{if(abierto)fueraResumenPdvsAbiertos.delete(key);else fueraResumenPdvsAbiertos.add(key);const selector=document.getElementById('fueraGraficaPdv');if(selector)selector.value=codigoEntregaFueraResumen(destino);renderGuiasFueraResumen();});td.appendChild(b);tr.appendChild(td);
+        b.addEventListener('click',()=>{if(abierto)fueraResumenPdvsAbiertos.delete(key);else fueraResumenPdvsAbiertos.add(key);fueraFiltrosMultiple.graficaPdv.clear();fueraFiltrosMultiple.graficaPdv.add(codigoEntregaFueraResumen(destino));dibujarOpcionesFiltroFueraResumen('graficaPdv');renderGuiasFueraResumen();});td.appendChild(b);tr.appendChild(td);
         celda(tr,abierto?'Fechas desplegadas':'Ver fechas');for(const tipo of orden)numero(tr,filas.filter(x=>x.escaneo===tipo),tipo);numero(tr,filas,'Todas las fechas');fragment.appendChild(tr);
         if(abierto)for(const entrada of fechasPorDestinoFueraResumen(filas)){
           const sub=document.createElement('tr');sub.className='fuera-fecha';celda(sub,'');celda(sub,'');celda(sub,entrada.etiqueta,'fuera-fecha-celda');
@@ -1976,16 +2105,17 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     const total=document.createElement('tr');total.className='fuera-total';celda(total,'TOTAL GENERAL');celda(total,'');celda(total,'');for(const tipo of orden)numero(total,datos.filter(x=>x.escaneo===tipo),tipo);numero(total,datos,'Todos los tipos');fragment.appendChild(total);
     if(!datos.length){const vacio=document.createElement('tr'),td=document.createElement('td');td.colSpan=colspan;td.textContent='Sin guías fuera del resumen para estos filtros. Comprueba que la Exportación publicada tenga más guías que el resumen principal.';vacio.appendChild(td);fragment.appendChild(vacio);}
     tbody.appendChild(fragment);
-    estado.textContent='Fuera del resumen: '+num(datos.length)+' de '+num(fueraResumenFuente.fuera.length)+' · En resumen principal: '+num(fueraResumenFuente.incluidas)+' · Universo Exportación: '+num(fueraResumenFuente.exportadas)+' · Fuente: '+fueraResumenFuente.archivo;
+    const desde=document.getElementById('fueraFechaDesde')?.value||'',hasta=document.getElementById('fueraFechaHasta')?.value||'';
+    estado.textContent=(desde&&hasta&&desde>hasta?'Rango inválido: «Desde» no puede ser posterior a «Hasta». · ':'')+'Fuera del resumen: '+num(datos.length)+' de '+num(fueraResumenFuente.fuera.length)+' · En resumen principal: '+num(fueraResumenFuente.incluidas)+' · Universo Exportación: '+num(fueraResumenFuente.exportadas)+' · Fuente: '+fueraResumenFuente.archivo+(desde||hasta?' · Tiempo de entrada: '+(desde||'inicio')+' a '+(hasta||'fin'):'');
     actualizarOpcionesGraficaFueraResumen(datos);
     renderGraficaFueraResumen();
   }
-  // V18.11. Una sola serie calculada sobre el mismo conjunto de guías de la tabla.
+  // V18.12. Una sola serie calculada sobre el mismo conjunto de guías de la tabla.
   // No incluye guías ya presentes en el resumen principal y respeta filtros activos.
-  function serieDiariaFueraResumen(datos,codigo='__TODOS__'){
+  function serieDiariaFueraResumen(datos,codigos=null){
     const porDia=new Map();let sinFecha=0,total=0;
     for(const reg of datos||[]){
-      if(codigo!=='__TODOS__'&&codigoEntregaFueraResumen(reg.entrega)!==codigo)continue;
+      if(codigos&&codigos.size&&!codigos.has(codigoEntregaFueraResumen(reg.entrega)))continue;
       total++;
       if(!reg.fechaKey){sinFecha++;continue;}
       if(!porDia.has(reg.fechaKey))porDia.set(reg.fechaKey,[]);
@@ -2004,33 +2134,29 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     return {dias: dias.map(fecha=>({fecha,etiqueta:fecha.slice(8,10)+'-'+fecha.slice(5,7)+'-'+fecha.slice(2,4),filas:porDia.get(fecha)||[],cantidad:(porDia.get(fecha)||[]).length})),total,sinFecha};
   }
   function actualizarOpcionesGraficaFueraResumen(datos){
-    const select=document.getElementById('fueraGraficaPdv');if(!select)return;
-    const previo=select.value||'__TODOS__',codigos=[...new Set(datos.map(x=>codigoEntregaFueraResumen(x.entrega)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
-    const frag=document.createDocumentFragment();
-    const opcion=(value,label)=>{const o=document.createElement('option');o.value=value;o.textContent=label;frag.appendChild(o);};
-    opcion('__TODOS__','Todos los PDV filtrados');
-    for(const codigo of codigos)opcion(codigo,codigo);
-    select.replaceChildren(frag);
-    select.value=codigos.includes(previo)?previo:'__TODOS__';
+    // Las opciones ya proceden de la Exportación cargada; conservar selecciones aunque
+    // cambien otros filtros para no perder la combinación de PDV escogida.
+    dibujarOpcionesFiltroFueraResumen('graficaPdv');
   }
   function reiniciarGraficaFueraResumen(){
-    const select=document.getElementById('fueraGraficaPdv');if(select){select.replaceChildren(new Option('Todos los PDV filtrados','__TODOS__'));select.value='__TODOS__';}
+    fueraFiltrosMultiple.graficaPdv.clear();dibujarOpcionesFiltroFueraResumen('graficaPdv');
     const s=document.getElementById('fueraGraficaSvg');if(s){s.setAttribute('viewBox','0 0 760 280');s.setAttribute('width','760');s.replaceChildren();}
     const e=document.getElementById('fueraGraficaEstado');if(e)e.textContent='Carga una Exportación para ver las cantidades por día.';
   }
   function renderGraficaFueraResumen(){
     const svg=document.getElementById('fueraGraficaSvg'),estado=document.getElementById('fueraGraficaEstado');if(!svg||!estado)return;
-    const codigo=document.getElementById('fueraGraficaPdv')?.value||'__TODOS__';
+    const codigos=fueraFiltrosMultiple.graficaPdv;
+    const descripcion=codigos.size===0?'Todos los PDV filtrados':codigos.size===1?[...codigos][0]:codigos.size+' PDV seleccionados';
     const modo=document.getElementById('fueraGraficaTipo')?.value||'barras';
-    const serie=serieDiariaFueraResumen(fueraResumenFilasVisibles,codigo),dias=serie.dias;
+    const serie=serieDiariaFueraResumen(fueraResumenFilasVisibles,codigos),dias=serie.dias;
     const ancho=Math.max(760,90+Math.max(1,dias.length)*44),alto=280;
-    svg.setAttribute('viewBox',`0 0 ${ancho} ${alto}`);svg.setAttribute('width',String(ancho));svg.setAttribute('height',String(alto));svg.setAttribute('aria-label','Guías fuera del resumen por día de entrada, '+(codigo==='__TODOS__'?'todos los PDV':codigo));
+    svg.setAttribute('viewBox',`0 0 ${ancho} ${alto}`);svg.setAttribute('width',String(ancho));svg.setAttribute('height',String(alto));svg.setAttribute('aria-label','Guías fuera del resumen por día de entrada, '+descripcion);
     svg.replaceChildren();
     const ns='http://www.w3.org/2000/svg';
     function elemento(tag,attrs={},texto){const el=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));if(texto!==undefined)el.textContent=texto;svg.appendChild(el);return el;}
-    estado.textContent=(codigo==='__TODOS__'?'Todos los PDV filtrados':codigo)+' · '+num(serie.total)+' guías · '+num(dias.filter(x=>x.cantidad>0).length)+' día(s) con paquetes'+(serie.sinFecha?' · '+num(serie.sinFecha)+' sin fecha':'');
+    estado.textContent=descripcion+' · '+num(serie.total)+' guías · '+num(dias.filter(x=>x.cantidad>0).length)+' día(s) con paquetes'+(serie.sinFecha?' · '+num(serie.sinFecha)+' sin fecha':'');
     if(!dias.length){elemento('text',{x:ancho/2,y:132,'text-anchor':'middle',fill:'#64748b','font-size':14},serie.sinFecha?'No hay fechas válidas para representar.':'Sin datos para los filtros actuales.');return;}
-    const izq=70,der=20,arriba=20,abajo=218,largo=ancho-izq-der,altura=abajo-arriba;
+    const izq=70,der=20,arriba=38,abajo=218,largo=ancho-izq-der,altura=abajo-arriba;
     const maximo=Math.max(1,...dias.map(x=>x.cantidad)),escala=Math.max(1,Math.ceil(maximo/4)*4);
     for(let i=0;i<=4;i++){
       const y=abajo-i*altura/4;
@@ -2048,6 +2174,8 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
         const t=document.createElementNS(ns,'title');t.textContent=dia.etiqueta+' · '+num(dia.cantidad)+' guías. Pulsar para consultar.';rect.appendChild(t);
         rect.addEventListener('click',()=>{if(dia.filas.length)mostrarDetalleGuiasFueraResumen(dia.filas,'Fecha '+dia.etiqueta+' · '+(codigo==='__TODOS__'?'Todos los PDV':codigo));});
         rect.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rect.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
+        // Etiqueta numérica visible encima de cada barra, sin depender del tooltip.
+        elemento('text',{x,y:Math.max(14,y-7),'text-anchor':'middle',class:'fuera-conteo'},num(dia.cantidad));
       }
       if(dias.length<=55||i%Math.ceil(dias.length/55)===0||i===dias.length-1){
         const texto=elemento('text',{x,y:229,'text-anchor':'end','font-size':10,fill:'#64748b',transform:`rotate(-50 ${x} 229)`},dia.etiqueta);
@@ -2061,6 +2189,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
         const t=document.createElementNS(ns,'title');t.textContent=dia.etiqueta+' · '+num(dia.cantidad)+' guías. Pulsar para consultar.';circulo.appendChild(t);
         circulo.addEventListener('click',()=>{if(dia.filas.length)mostrarDetalleGuiasFueraResumen(dia.filas,'Fecha '+dia.etiqueta+' · '+(codigo==='__TODOS__'?'Todos los PDV':codigo));});
         circulo.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();circulo.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
+        elemento('text',{x,y:Math.max(14,y-9),'text-anchor':'middle',class:'fuera-conteo'},num(dia.cantidad));
       });
     }
   }

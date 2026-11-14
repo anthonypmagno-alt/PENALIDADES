@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261114-V18-9-FUERA-DEL-RESUMEN"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261114-V18-11-FECHA-GRAFICA-FUERA"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
 <script src="./bridge.js?v=20261114-v18-9-fuera-resumen"></script>
   <base target="_top">
 <style>/* v9 only */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden]{display:none!important}</style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261114-V18-9-FUERA-DEL-RESUMEN</title><meta name="app-build" content="20261114-V18-9-FUERA-DEL-RESUMEN">
+  <title>Gestión de guías V2 · 20261114-V18-11-FECHA-GRAFICA-FUERA</title><meta name="app-build" content="20261114-V18-11-FECHA-GRAFICA-FUERA">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -132,6 +132,29 @@
 .fuera-detalle-panel[hidden]{display:none!important}
 .fuera-detalle-guia{display:inline-block;background:#fff;color:#1e3a5f;padding:4px 7px;margin:3px;border:1px solid #dbeafe;border-radius:4px;font:11px monospace}
 .fuera-detalle-lista{max-height:165px;overflow:auto;padding:6px;background:#fff;border-radius:4px}
+
+#tablaFueraResumen tr.fuera-pdv td{background:#f3f7ff;font-weight:700}
+#tablaFueraResumen tr.fuera-fecha td{background:#fff}
+#tablaFueraResumen tr.fuera-fecha td.fuera-fecha-celda{color:#0f5191;font-weight:700;padding-left:18px}
+#tablaFueraResumen tr.fuera-fecha:hover td{background:#eff6ff}
+#tablaFueraResumen .fuera-toggle-pdv{border:0;background:transparent;color:#1e40af;font-weight:800;cursor:pointer}
+#fueraResumenArchivo{min-width:210px;max-width:320px}
+#fueraResumenOrdenFecha{border:1px solid #cbd5e1;border-radius:6px;padding:8px;background:white;height:36px}
+
+/* V18.11 - Gráfica diaria del complemento de guías fuera del resumen. */
+#fueraGraficaPanel{margin:10px 0 13px;border:1px solid #cbdcf0;border-radius:9px;background:#f8fbff;overflow:hidden}
+#fueraGraficaPanel>summary{padding:11px 13px;cursor:pointer;background:#eaf2ff;color:#194473;font-weight:800;font-size:12px}
+.fuera-grafica-interior{padding:12px}
+.fuera-grafica-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:8px}
+.fuera-grafica-toolbar label{display:flex;flex-direction:column;gap:4px;min-width:160px;font-size:11px;color:#334155;font-weight:700}
+.fuera-grafica-toolbar select{height:34px;padding:5px 9px;border:1px solid #bdcde2;border-radius:6px;background:#fff;color:#1e293b}
+#fueraGraficaPdv{max-width:min(340px,90vw)}
+#fueraGraficaEstado{font-size:11px;color:#475569;margin:4px 0 9px}
+#fueraGraficaWrap{overflow-x:auto;overflow-y:hidden;max-width:100%;border:1px solid #dce6f3;background:white;border-radius:7px;padding:3px 3px 0}
+#fueraGraficaSvg{display:block;height:280px;max-width:none}
+#fueraGraficaSvg [data-fuera-dia]{cursor:pointer}
+#fueraGraficaSvg [data-fuera-dia]:focus{outline:2px solid #1d4ed8;outline-offset:1px}
+#fueraGraficaLeyenda{font-size:10px;color:#64748b;margin-top:6px}
 </style>
 <style>.lista-guias-panel{margin:12px 0;padding:12px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc}.lista-guias-panel>summary{cursor:pointer;font-weight:700;color:#1e3a5f}.lista-guias-panel label{display:block;margin:10px 0 6px}.lista-guias-panel textarea{display:block;width:100%;max-width:680px;box-sizing:border-box;padding:8px;border:1px solid #cbd5e1;border-radius:6px;resize:vertical;margin:8px 0;font-family:monospace}.lista-guias-panel small,.lista-guias-panel p{display:block;font-size:12px;margin:8px 0;color:#475569}</style><style>/* Tabla centrada y compacta: conserva todas las columnas y permite ajustar encabezados. */
 #tablaResumen,#tablaResumenV2{width:100%!important;max-width:1100px!important;min-width:0!important;table-layout:fixed!important;margin:0 auto!important}
@@ -628,7 +651,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V18.9 <span class="build-stamp" id="buildStamp">Edición 20261114-V18-9-FUERA-DEL-RESUMEN</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V18.11 <span class="build-stamp" id="buildStamp">Edición 20261114-V18-11-FECHA-GRAFICA-FUERA</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel filtrado · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -699,19 +722,33 @@
         </table></div>
 
 <details id="fueraResumenPanel" open hidden>
-  <summary>Guías fuera del resumen principal · por último punto, PDV de entrega y tipo de escaneo</summary>
+  <summary>Guías fuera del resumen principal · último punto → PDV de entrega → fecha de entrada</summary>
   <div class="fuera-resumen-contenido">
-    <div class="fuera-resumen-nota">Cruza la <b>Exportación de guías publicada</b> con las guías que tienen algún caso en el resumen principal (incluidos los informativos). Se cuenta cada número de guía una sola vez. Los filtros del resumen principal no hacen que una guía clasificada pase artificialmente a esta tabla. La consulta completa está habilitada para Administrador.</div>
+    <div class="fuera-resumen-nota">Se comparan las guías de <b>Exportación de guías</b> contra las que ya aparecen en el resumen principal (también las informativas). Las demás se agrupan por último punto de escaneo, PDV de entrega, <b>fecha de «Tiempo de entrada» (DD-MM-YY)</b> y tipo de escaneo. Solo Administrador. La lectura directa del Excel es local y <b>no vuelve a publicarlo</b>.</div>
     <div class="fuera-resumen-controles">
-      <button type="button" id="fueraResumenCargar" class="secondary" onclick="cargarGuiasFueraResumen()">Consultar / actualizar guías</button>
+      <button type="button" id="fueraResumenCargar" class="secondary" onclick="cargarGuiasFueraResumen()">Consultar fuente publicada</button>
+      <label>O leer Exportación directamente desde Excel<input type="file" id="fueraResumenArchivo" accept=".xlsx,.xls" onchange="cargarArchivoGuiasFueraResumen(this)"></label>
       <label>Último punto de escaneo<input type="search" id="fueraResumenBuscarPunto" placeholder="Ej.: Callao.SC" oninput="renderGuiasFueraResumen()"></label>
       <label>PDV de entrega<input type="search" id="fueraResumenBuscarPdv" placeholder="Ej.: ANC-05" oninput="renderGuiasFueraResumen()"></label>
       <label>Tipo de escaneo<input type="search" id="fueraResumenBuscarEscaneo" placeholder="Ej.: HUB de envío" oninput="renderGuiasFueraResumen()"></label>
+      <label>Orden de fecha<select id="fueraResumenOrdenFecha" onchange="renderGuiasFueraResumen()"><option value="asc">Más antigua → reciente</option><option value="desc">Más reciente → antigua</option></select></label>
       <button type="button" class="secondary" id="fueraResumenExcel" onclick="descargarExcelFueraResumen()" disabled>Excel · resumen y detalle</button>
     </div>
-    <div id="fueraResumenEstado" class="fuera-resumen-estado" role="status">Pulsa «Consultar / actualizar guías» para cargar la información.</div>
+    <div id="fueraResumenEstado" class="fuera-resumen-estado" role="status">Consulta la fuente publicada o selecciona el Excel. Al cargar una Exportación nueva desde Fuentes, también se actualizará esta tabla.</div>
+    <details id="fueraGraficaPanel" open>
+      <summary>Gráfica diaria de paquetes fuera del resumen · barras / línea</summary>
+      <div class="fuera-grafica-interior">
+        <div class="fuera-grafica-toolbar">
+          <label>Visualización<select id="fueraGraficaTipo" onchange="renderGraficaFueraResumen()"><option value="barras">Barras</option><option value="linea">Curva (línea)</option></select></label>
+          <label>PDV de entrega<select id="fueraGraficaPdv" onchange="renderGraficaFueraResumen()"><option value="__TODOS__">Todos los PDV filtrados</option></select></label>
+          <span id="fueraGraficaEstado" role="status">Carga una Exportación para ver las cantidades por día.</span>
+        </div>
+        <div id="fueraGraficaWrap"><svg id="fueraGraficaSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 280" width="760" height="280" role="img" aria-label="Paquetes fuera del resumen por día"><text x="380" y="135" text-anchor="middle" fill="#64748b" font-size="14">Sin datos cargados</text></svg></div>
+        <div id="fueraGraficaLeyenda">Fecha: Tiempo de entrada (DD-MM-YY). Haz clic en una barra o punto para consultar las guías de ese día. Orden cronológico: antigua → reciente.</div>
+      </div>
+    </details>
     <div class="fuera-resumen-wrap">
-      <table id="tablaFueraResumen"><thead id="fueraResumenHead"><tr><th>Punto de escaneo</th><th>PDV de entrega</th><th>Total general</th></tr></thead><tbody id="fueraResumenBody"><tr><td colspan="3">Aún no se ha consultado la exportación.</td></tr></tbody></table>
+      <table id="tablaFueraResumen"><thead id="fueraResumenHead"><tr><th>Último punto</th><th>PDV de entrega</th><th>Fecha entrada</th><th>Total general</th></tr></thead><tbody id="fueraResumenBody"><tr><td colspan="4">Sin información. Consulta la fuente o elige un Excel.</td></tr></tbody></table>
     </div>
     <div id="fueraResumenDetalle" class="fuera-detalle-panel" hidden>
       <strong id="fueraResumenDetalleTitulo">Guías seleccionadas</strong>
@@ -981,7 +1018,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
     if(vista==="sla")window.SlaPaquetesV2?.alAbrir();
     if(vista==="comentarios")renderConfiguracionComentarios();
-    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261114-V18-9-FUERA-DEL-RESUMEN";frame.dataset.loaded="1";}}
+    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261114-V18-11-FECHA-GRAFICA-FUERA";frame.dataset.loaded="1";}}
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
 
@@ -1153,6 +1190,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
       google.script.run.withSuccessHandler(r=>{
         mostrarLoading(false);input.value="";mostrarSeleccionExportacionMultiple(input);renderEstadoFuentes(r&&r.estadoFuentes?r.estadoFuentes:null);
         if(tipo==="DESPACHOS AYER"){const resumenDespachos=resumirConteoDespachos(filas);toast("Despachos ayer actualizado: "+num(resumenDespachos.guias)+" guías únicas resumidas en "+num(resumenDespachos.pdvs)+" PDV. Se almacenó solo el conteo por PDV.",true);}else toast(tipo+" actualizado: "+num(r.guiasUnicas)+" guías únicas. "+num(r.guiasActivas)+" guías activas en total."+(union?" "+union.archivos+" Excel unidos, "+num(union.duplicadas)+" duplicados resueltos.":""),true);
+        if(tipo==='EXPORTACION GUIAS')fueraResumenMatrizTrasGuardar={filas,archivo:nombreArchivo};
         cargarDatos();
       }).withFailureHandler(manejarError).cargarFuenteOperativa(token,{tipo:tipo,nombreArchivo,filas:filas});
     }catch(error){mostrarLoading(false);toast("No se pudo preparar el archivo: "+errorTexto(error),false);}
@@ -1271,7 +1309,9 @@ async function guardarInformacionCargada(){
   // Borrar el selector SOLO cuando Supabase confirmó toda la publicación.
   for(const x of lecturas){x.input.value='';if(x.tipo==='EXPORTACION GUIAS')mostrarSeleccionExportacionMultiple(x.input);}
   const fuenteDespachos=lecturas.find(x=>x.tipo==='DESPACHOS AYER'),resumenDespachos=fuenteDespachos?resumirConteoDespachos(fuenteDespachos.filas):null;
-  const fuenteExportacion=lecturas.find(x=>x.tipo==='EXPORTACION GUIAS')?.estadisticas;
+  const nuevaExportacionFuera=lecturas.find(x=>x.tipo==='EXPORTACION GUIAS');
+  if(nuevaExportacionFuera&&!r.advertencia)fueraResumenMatrizTrasGuardar={filas:nuevaExportacionFuera.filas,archivo:nuevaExportacionFuera.nombreArchivo};
+  const fuenteExportacion=nuevaExportacionFuera?.estadisticas;
   toast(guardadas.length?'Información guardada y confirmada.'+(fuenteExportacion?' Exportación: '+fuenteExportacion.archivos+' Excel, '+num(fuenteExportacion.guiasUnicas)+' guías únicas; '+num(fuenteExportacion.duplicadas)+' repetidas consolidadas.':'')+(resumenDespachos?' Despachos ayer: '+num(resumenDespachos.guias)+' guías únicas en '+num(resumenDespachos.pdvs)+' PDV.':''):'Se verificó la información que ya estaba guardada. No había nuevos archivos seleccionados.',true);
   if(r.advertencia){toast(r.advertencia,false);}else if(regionesGuardadas.size){const regiones=[...regionesGuardadas];guardarRegionesGestion(regiones);cargarDatos(regiones);}else cargarDatos();
  }catch(e){actualizarBotonesPublicacionV9();mostrarLoading(false);const texto=(guardadas.length?'Preparadas, todavía sin publicar: '+guardadas.join(', ')+'. ':'No se confirmó ningún archivo nuevo. ')+'No terminó '+actual+': '+errorTexto(e)+'. Los archivos pendientes siguen seleccionados para reintentar.';estado.textContent=texto;toast(texto,false);
@@ -1772,118 +1812,266 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   }
 
 
-  // V18.9 - Las guías fuera del resumen se calculan exclusivamente desde
-  // la fuente EXPORTACION GUIAS, deduplicadas por Número de Guía.
+  // V18.11: complemento de guías NO clasificadas en el resumen.
+  // Se puede leer desde Supabase o directamente desde un Excel; no modifica datos.
   let fueraResumenFuente=null;
   let fueraResumenFilasVisibles=[];
   let fueraResumenGuiasDetalle=[];
   let fueraResumenGruposCerrados=new Set();
+  let fueraResumenPdvsAbiertos=new Set();
   let fueraResumenConsultaEnCurso=false;
-  function claveGuiaFueraResumen(v){return String(v??"").replace(/\s+/g,"").trim().toUpperCase();}
-  function normalizarPuntoFueraResumen(v){return String(v??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toUpperCase();}
-  function codigoEntregaFueraResumen(v){return normalizarPuntoFueraResumen(v).split("|")[0].replace(/\.PDV$/i,"");}
+  let fueraResumenMatrizTrasGuardar=null;
+  function claveGuiaFueraResumen(v){return String(v??'').replace(/\s+/g,'').trim().toUpperCase();}
+  function normalizarPuntoFueraResumen(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase();}
+  function codigoEntregaFueraResumen(v){return normalizarPuntoFueraResumen(v).split('|')[0].replace(/\.PDV$/i,'');}
+  function fechaEntradaFueraResumen(v){
+    const vacío={key:'',etiqueta:'SIN FECHA'};
+    if(v===null||v===undefined||v==='')return vacío;
+    let año,mes,dia;
+    if(v instanceof Date&&!isNaN(v.getTime())){año=v.getFullYear();mes=v.getMonth()+1;dia=v.getDate();}
+    else if(typeof v==='number'||/^\d{5}(?:\.\d+)?$/.test(String(v).trim())){
+      const d=new Date(Date.UTC(1899,11,30)+Math.floor(Number(v))*86400000);
+      if(isNaN(d.getTime()))return vacío;
+      año=d.getUTCFullYear();mes=d.getUTCMonth()+1;dia=d.getUTCDate();
+    }else{
+      const s=String(v).trim();
+      let m=s.match(/^(\d{4})[-\/]([01]?\d)[-\/]([0-3]?\d)/);
+      if(m){año=+m[1];mes=+m[2];dia=+m[3];}
+      else {m=s.match(/^([0-3]?\d)[\/-]([01]?\d)[\/-](\d{2,4})/);if(!m)return vacío;dia=+m[1];mes=+m[2];año=+m[3];if(año<100)año+=año>=70?1900:2000;}
+    }
+    const d=new Date(Date.UTC(año,mes-1,dia));
+    if(d.getUTCFullYear()!==año||d.getUTCMonth()!==mes-1||d.getUTCDate()!==dia)return vacío;
+    const p=n=>String(n).padStart(2,'0');
+    return {key:String(año).padStart(4,'0')+'-'+p(mes)+'-'+p(dia),etiqueta:p(dia)+'-'+p(mes)+'-'+p(año%100)};
+  }
   function extraerGuiasFueraResumen(filasFuente,guiasClasificadas){
-    if(!Array.isArray(filasFuente)||!Array.isArray(filasFuente[0]))throw new Error("La Exportación publicada no tiene encabezados válidos.");
+    if(!Array.isArray(filasFuente)||!Array.isArray(filasFuente[0]))throw new Error('La Exportación no tiene una cabecera válida.');
     const cabezas=filasFuente[0].map(normalizarPuntoFueraResumen);
-    const buscar=(variantes)=>variantes.map(x=>cabezas.indexOf(normalizarPuntoFueraResumen(x))).find(x=>x>=0)??-1;
-    const ig=buscar(["Número de Guía","Número de guía"]),ip=buscar(["Punto de escaneo más reciente","Último punto de escaneo"]),id=buscar(["Punto de entrega","PDV de destino"]),it=buscar(["Tipo de escaneo más reciente"]);
-    if([ig,ip,id,it].some(i=>i<0))throw new Error("La Exportación debe tener Número de Guía, Punto de escaneo más reciente, Punto de entrega y Tipo de escaneo más reciente.");
-    const guiaPrincipal=new Set((guiasClasificadas||[]).filter(x=>Array.isArray(x.casosResumen)&&x.casosResumen.length&&normalizarPuntoFueraResumen(x.fr).replace(/\s+/g,"")!=="TRUE-TRUE").map(x=>claveGuiaFueraResumen(x.guia)).filter(Boolean));
-    const unicas=new Map(); let sinGuia=0;
+    const buscar=variantes=>variantes.map(x=>cabezas.indexOf(normalizarPuntoFueraResumen(x))).find(x=>x>=0)??-1;
+    const ig=buscar(['Número de Guía','Número de guía']), ip=buscar(['Punto de escaneo más reciente','Último punto de escaneo']),id=buscar(['Punto de entrega','PDV de destino']),it=buscar(['Tipo de escaneo más reciente']),ifc=buscar(['Tiempo de entrada']);
+    if([ig,ip,id,it,ifc].some(i=>i<0))throw new Error('Faltan columnas: Número de Guía, Punto de escaneo más reciente, Punto de entrega, Tipo de escaneo más reciente o Tiempo de entrada.');
+    // No depender de la selección visual del resumen: se excluyen TODOS los casos clasificados.
+    const guiaPrincipal=new Set((guiasClasificadas||[]).filter(x=>Array.isArray(x.casosResumen)&&x.casosResumen.length&&normalizarPuntoFueraResumen(x.fr).replace(/\s+/g,'')!=='TRUE-TRUE').map(x=>claveGuiaFueraResumen(x.guia)).filter(Boolean));
+    const unicas=new Map();let sinGuia=0;
     for(let i=1;i<filasFuente.length;i++){
       const f=filasFuente[i];if(!Array.isArray(f))continue;
       const guia=claveGuiaFueraResumen(f[ig]);if(!guia){sinGuia++;continue;}
-      unicas.set(guia,{guia,punto:String(f[ip]||"").trim()||"SIN DATO",entrega:String(f[id]||"").trim()||"SIN DATO",escaneo:String(f[it]||"").trim()||"SIN DATO"});
+      const fecha=fechaEntradaFueraResumen(f[ifc]);
+      unicas.set(guia,{guia,punto:String(f[ip]||'').trim()||'SIN DATO',entrega:String(f[id]||'').trim()||'SIN DATO',escaneo:String(f[it]||'').trim()||'SIN DATO',fecha:fecha.etiqueta,fechaKey:fecha.key});
     }
     const fuera=[];let incluidas=0;
     for(const reg of unicas.values()){if(guiaPrincipal.has(reg.guia)){incluidas++;continue;}fuera.push(reg);}
-    return {fuera,exportadas:unicas.size,incluidas,sinGuia,filasDuplicadas:filasFuente.length-1-sinGuia-unicas.size};
+    return {fuera,exportadas:unicas.size,incluidas,sinGuia,filasDuplicadas:Math.max(0,filasFuente.length-1-sinGuia-unicas.size)};
+  }
+  function usarMatrizFueraResumen(filas,archivo,revision){
+    const calculado=extraerGuiasFueraResumen(filas,guias);
+    fueraResumenFuente={...calculado,archivo:String(archivo||'Exportación'),revision};
+    fueraResumenGruposCerrados.clear();fueraResumenPdvsAbiertos.clear();
+    document.getElementById('fueraResumenExcel').disabled=false;
+    renderGuiasFueraResumen();
   }
   function reiniciarGuiasFueraResumen(){
-    fueraResumenFuente=null;fueraResumenFilasVisibles=[];fueraResumenGuiasDetalle=[];fueraResumenGruposCerrados.clear();
-    const p=document.getElementById("fueraResumenPanel");if(!p)return;
-    p.hidden=sesion?.rol!=="ADMINISTRADOR";
-    document.getElementById("fueraResumenExcel").disabled=true;
-    document.getElementById("fueraResumenEstado").textContent=p.hidden?"Consulta disponible para el administrador.":"Pulsa «Consultar / actualizar guías» para obtener la Exportación vigente.";
-    document.getElementById("fueraResumenDetalle").hidden=true;
-    document.getElementById("fueraResumenHead").innerHTML="<tr><th>Punto de escaneo</th><th>PDV de entrega</th><th>Total general</th></tr>";
-    document.getElementById("fueraResumenBody").innerHTML='<tr><td colspan="3">Aún no se ha consultado la exportación.</td></tr>';
+    fueraResumenFuente=null;fueraResumenFilasVisibles=[];fueraResumenGuiasDetalle=[];
+    fueraResumenGruposCerrados.clear();fueraResumenPdvsAbiertos.clear();
+    const p=document.getElementById('fueraResumenPanel');if(!p)return;
+    p.hidden=sesion?.rol!=='ADMINISTRADOR';
+    document.getElementById('fueraResumenExcel').disabled=true;
+    document.getElementById('fueraResumenEstado').textContent=p.hidden?'Solo Administrador.':'Consulta la fuente publicada o selecciona un Excel para ver las guías fuera del resumen.';
+    document.getElementById('fueraResumenDetalle').hidden=true;
+    document.getElementById('fueraResumenHead').innerHTML='<tr><th>Último punto</th><th>PDV de entrega</th><th>Fecha de entrada</th><th>Total general</th></tr>';
+    document.getElementById('fueraResumenBody').innerHTML='<tr><td colspan="4">Sin información. Consulta la fuente publicada o elige un Excel.</td></tr>';
+    reiniciarGraficaFueraResumen();
+  }
+  async function cargarArchivoGuiasFueraResumen(input){
+    const file=input?.files?.[0];if(!file)return;
+    const estado=document.getElementById('fueraResumenEstado');
+    if(sesion?.rol!=='ADMINISTRADOR'){input.value='';return toast('Solo el administrador puede consultar estas guías.',false);}
+    if(!/\.(xlsx|xls)$/i.test(file.name)||file.size>30*1024*1024){input.value='';return toast('Selecciona un Excel XLSX/XLS de hasta 30 MB.',false);}
+    if(typeof XLSX==='undefined')return toast('No está disponible el lector XLSX.',false);
+    estado.textContent='Leyendo '+file.name+' localmente…';input.disabled=true;
+    try{
+      const wb=XLSX.read(await file.arrayBuffer(),{type:'array',dense:true,cellDates:false});
+      const sheet=wb.Sheets[wb.SheetNames[0]];
+      if(!sheet)throw new Error('El Excel no tiene hojas disponibles.');
+      const matrix=XLSX.utils.sheet_to_json(sheet,{header:1,raw:true,defval:''});
+      usarMatrizFueraResumen(matrix,file.name,'local');
+    }catch(e){estado.textContent='No se pudo leer el Excel: '+errorTexto(e);toast(errorTexto(e),false);}
+    finally{input.disabled=false;input.value='';}
   }
   async function cargarGuiasFueraResumen(){
     if(fueraResumenConsultaEnCurso)return;
-    if(sesion?.rol!=="ADMINISTRADOR")return toast("Solo el administrador puede consultar la exportación completa.",false);
+    if(sesion?.rol!=='ADMINISTRADOR')return toast('Solo el administrador puede consultar la Exportación completa.',false);
     const api=window.V16SeguimientoApi;
-    if(!api||typeof api.exportacion!=="function")return toast("Actualiza bridge.js: no está disponible la lectura segura de Exportación de guías.",false);
+    if(!api||typeof api.exportacion!=='function'){
+      document.getElementById('fueraResumenEstado').textContent='El bridge.js publicado no admite consulta completa. Puedes usar «Leer Exportación directamente desde Excel» sin modificar Supabase.';
+      return;
+    }
     fueraResumenConsultaEnCurso=true;
-    const boton=document.getElementById("fueraResumenCargar"),estado=document.getElementById("fueraResumenEstado");
-    boton.disabled=true;estado.textContent="Consultando Exportación de guías publicada; puede tardar si contiene muchos registros…";
+    const boton=document.getElementById('fueraResumenCargar'),estado=document.getElementById('fueraResumenEstado');
+    boton.disabled=true;estado.textContent='Consultando la Exportación publicada en Supabase…';
     const tokenConsulta=token;
     try{
       const respuesta=await api.exportacion();
-      if(tokenConsulta!==token||sesion?.rol!=="ADMINISTRADOR")return;
-      const calculado=extraerGuiasFueraResumen(respuesta.filas,guias);
-      fueraResumenFuente={...calculado,archivo:String(respuesta.archivo||""),revision:respuesta.revision};
-      fueraResumenGruposCerrados.clear();document.getElementById("fueraResumenExcel").disabled=false;
-      renderGuiasFueraResumen();
-    }catch(error){estado.textContent="No se pudo consultar el complemento: "+errorTexto(error);toast(errorTexto(error),false);}
+      if(tokenConsulta!==token||sesion?.rol!=='ADMINISTRADOR')return;
+      usarMatrizFueraResumen(respuesta.filas,String(respuesta.archivo||'Exportación publicada'),respuesta.revision);
+    }catch(error){estado.textContent='Error al consultar fuente publicada: '+errorTexto(error)+' · Alternativa: selecciona el Excel directamente arriba.';toast(errorTexto(error),false);}
     finally{fueraResumenConsultaEnCurso=false;boton.disabled=false;}
   }
   function datosVisiblesFueraResumen(){
     if(!fueraResumenFuente)return [];
-    const p=normalizarPuntoFueraResumen(document.getElementById("fueraResumenBuscarPunto")?.value),d=normalizarPuntoFueraResumen(document.getElementById("fueraResumenBuscarPdv")?.value),t=normalizarPuntoFueraResumen(document.getElementById("fueraResumenBuscarEscaneo")?.value);
+    const p=normalizarPuntoFueraResumen(document.getElementById('fueraResumenBuscarPunto')?.value),d=normalizarPuntoFueraResumen(document.getElementById('fueraResumenBuscarPdv')?.value),t=normalizarPuntoFueraResumen(document.getElementById('fueraResumenBuscarEscaneo')?.value);
     const seleccion=pdvsSeleccionadosResumen();
     return fueraResumenFuente.fuera.filter(x=>(!p||normalizarPuntoFueraResumen(x.punto).includes(p))&&(!d||normalizarPuntoFueraResumen(x.entrega).includes(d))&&(!t||normalizarPuntoFueraResumen(x.escaneo).includes(t))&&(!seleccion.size||seleccion.has(codigoEntregaFueraResumen(x.entrega))));
   }
   function agruparGuiasFueraResumen(datos){
     const porPunto=new Map(),tipos=new Set(),totalTipos=new Map();
-    for(const guia of datos){
-      if(!porPunto.has(guia.punto))porPunto.set(guia.punto,new Map());
-      const destinos=porPunto.get(guia.punto);if(!destinos.has(guia.entrega))destinos.set(guia.entrega,[]);
-      destinos.get(guia.entrega).push(guia);tipos.add(guia.escaneo);totalTipos.set(guia.escaneo,(totalTipos.get(guia.escaneo)||0)+1);
+    for(const g of datos){
+      if(!porPunto.has(g.punto))porPunto.set(g.punto,new Map());
+      const destinos=porPunto.get(g.punto);if(!destinos.has(g.entrega))destinos.set(g.entrega,[]);
+      destinos.get(g.entrega).push(g);tipos.add(g.escaneo);totalTipos.set(g.escaneo,(totalTipos.get(g.escaneo)||0)+1);
     }
-    const preferidos=["Entrada a valija","Escaneo de excepción","HUB de envío","Llegada al centro","Salida de PDV"];
+    const preferidos=['Entrada a valija','Escaneo de excepción','HUB de envío','Llegada al centro','Salida de PDV'];
     const orden=[...tipos].sort((a,b)=>{
       const ia=preferidos.findIndex(x=>normalizarPuntoFueraResumen(x)===normalizarPuntoFueraResumen(a));
       const ib=preferidos.findIndex(x=>normalizarPuntoFueraResumen(x)===normalizarPuntoFueraResumen(b));
-      return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b,"es");
+      return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b,'es');
     });
     return {porPunto,orden,totalTipos};
   }
+  function fechasPorDestinoFueraResumen(filas){
+    const mapa=new Map();
+    for(const f of filas){const key=f.fechaKey||'';if(!mapa.has(key))mapa.set(key,{etiqueta:f.fecha,filas:[]});mapa.get(key).filas.push(f);}
+    const asc=document.getElementById('fueraResumenOrdenFecha')?.value!=='desc';
+    return [...mapa.entries()].sort(([a],[b])=>(a===''?1:b===''?-1:asc?a.localeCompare(b):b.localeCompare(a))).map(([,v])=>v);
+  }
   function renderGuiasFueraResumen(){
-    const tbody=document.getElementById("fueraResumenBody"),thead=document.getElementById("fueraResumenHead"),estado=document.getElementById("fueraResumenEstado");
+    const tbody=document.getElementById('fueraResumenBody'),thead=document.getElementById('fueraResumenHead'),estado=document.getElementById('fueraResumenEstado');
     if(!fueraResumenFuente||!tbody||!thead)return;
     const datos=datosVisiblesFueraResumen();fueraResumenFilasVisibles=datos;
-    fueraResumenGuiasDetalle=[];document.getElementById("fueraResumenDetalle").hidden=true;
-    const {porPunto,orden,totalTipos}=agruparGuiasFueraResumen(datos),colspan=orden.length+3;
-    thead.innerHTML='<tr><th>Punto de escaneo más reciente</th><th>Punto de entrega (PDV)</th>'+orden.map(t=>'<th>'+esc(t)+'</th>').join('')+'<th>Total general</th></tr>';
+    fueraResumenGuiasDetalle=[];document.getElementById('fueraResumenDetalle').hidden=true;
+    const {porPunto,orden}=agruparGuiasFueraResumen(datos),colspan=orden.length+4;
+    thead.innerHTML='<tr><th>Punto de escaneo más reciente</th><th>PDV de entrega</th><th>Fecha entrada (DD-MM-YY)</th>'+orden.map(t=>'<th>'+esc(t)+'</th>').join('')+'<th>Total general</th></tr>';
     tbody.replaceChildren();const fragment=document.createDocumentFragment();
     const celda=(tr,valor,clase='')=>{const td=document.createElement('td');td.textContent=valor;td.className=clase;tr.appendChild(td);return td;};
-    const numero=(tr,lista,tipo)=>{const td=document.createElement('td');td.className='fuera-tipo-celda';const n=lista.length;if(n){const b=document.createElement('button');b.type='button';b.textContent=num(n);b.title='Ver las '+n+' guías';b.addEventListener('click',()=>mostrarDetalleGuiasFueraResumen(lista,tipo));td.appendChild(b);}tr.appendChild(td);};
-    const puntos=[...porPunto.keys()].sort((a,b)=>a.localeCompare(b,"es"));
-    for(const punto of puntos){
+    const numero=(tr,lista,tipo)=>{const td=document.createElement('td');td.className='fuera-tipo-celda';if(lista.length){const b=document.createElement('button');b.type='button';b.textContent=num(lista.length);b.title='Ver '+lista.length+' guías';b.addEventListener('click',()=>mostrarDetalleGuiasFueraResumen(lista,tipo));td.appendChild(b);}tr.appendChild(td);};
+    for(const punto of [...porPunto.keys()].sort((a,b)=>a.localeCompare(b,'es'))){
       const destinos=porPunto.get(punto),listaPunto=[...destinos.values()].flat(),cerrado=fueraResumenGruposCerrados.has(punto);
       const cab=document.createElement('tr');cab.className='fuera-punto';const c=document.createElement('td');c.colSpan=colspan;
-      const boton=document.createElement('button');boton.type='button';boton.className='fuera-toggle';boton.textContent=(cerrado?'▸ ':'▾ ')+punto+' · '+num(listaPunto.length)+' guías';boton.addEventListener('click',()=>{if(cerrado)fueraResumenGruposCerrados.delete(punto);else fueraResumenGruposCerrados.add(punto);renderGuiasFueraResumen();});c.appendChild(boton);cab.appendChild(c);fragment.appendChild(cab);
+      const bP=document.createElement('button');bP.type='button';bP.className='fuera-toggle';bP.textContent=(cerrado?'▸ ':'▾ ')+punto+' · '+num(listaPunto.length)+' guías';bP.addEventListener('click',()=>{if(cerrado)fueraResumenGruposCerrados.delete(punto);else fueraResumenGruposCerrados.add(punto);renderGuiasFueraResumen();});c.appendChild(bP);cab.appendChild(c);fragment.appendChild(cab);
       if(cerrado)continue;
       for(const destino of [...destinos.keys()].sort((a,b)=>a.localeCompare(b,'es'))){
-        const filas=destinos.get(destino),tr=document.createElement('tr');celda(tr,'');celda(tr,destino);
-        for(const tipo of orden)numero(tr,filas.filter(x=>x.escaneo===tipo),tipo);
-        numero(tr,filas,'Todos los tipos');fragment.appendChild(tr);
+        const filas=destinos.get(destino),key=punto+'\u0000'+destino,abierto=fueraResumenPdvsAbiertos.has(key);
+        const tr=document.createElement('tr');tr.className='fuera-pdv';celda(tr,'');
+        const td=document.createElement('td'),b=document.createElement('button');b.type='button';b.className='fuera-toggle-pdv';b.textContent=(abierto?'▾ ':'▸ ')+destino;
+        b.addEventListener('click',()=>{if(abierto)fueraResumenPdvsAbiertos.delete(key);else fueraResumenPdvsAbiertos.add(key);const selector=document.getElementById('fueraGraficaPdv');if(selector)selector.value=codigoEntregaFueraResumen(destino);renderGuiasFueraResumen();});td.appendChild(b);tr.appendChild(td);
+        celda(tr,abierto?'Fechas desplegadas':'Ver fechas');for(const tipo of orden)numero(tr,filas.filter(x=>x.escaneo===tipo),tipo);numero(tr,filas,'Todas las fechas');fragment.appendChild(tr);
+        if(abierto)for(const entrada of fechasPorDestinoFueraResumen(filas)){
+          const sub=document.createElement('tr');sub.className='fuera-fecha';celda(sub,'');celda(sub,'');celda(sub,entrada.etiqueta,'fuera-fecha-celda');
+          for(const tipo of orden)numero(sub,entrada.filas.filter(x=>x.escaneo===tipo),tipo);
+          numero(sub,entrada.filas,'Fecha '+entrada.etiqueta);fragment.appendChild(sub);
+        }
       }
-      const subtotal=document.createElement('tr');subtotal.className='fuera-subtotal';celda(subtotal,'Subtotal '+punto);celda(subtotal,'');for(const tipo of orden)numero(subtotal,listaPunto.filter(x=>x.escaneo===tipo),tipo);numero(subtotal,listaPunto,'Todos los tipos');fragment.appendChild(subtotal);
+      const subtotal=document.createElement('tr');subtotal.className='fuera-subtotal';celda(subtotal,'Subtotal '+punto);celda(subtotal,'');celda(subtotal,'');for(const tipo of orden)numero(subtotal,listaPunto.filter(x=>x.escaneo===tipo),tipo);numero(subtotal,listaPunto,'Todos los tipos');fragment.appendChild(subtotal);
     }
-    const total=document.createElement('tr');total.className='fuera-total';celda(total,'TOTAL GENERAL');celda(total,'');for(const tipo of orden)numero(total,datos.filter(x=>x.escaneo===tipo),tipo);numero(total,datos,'Todos los tipos');fragment.appendChild(total);
-    if(!datos.length){const vacio=document.createElement('tr');const td=document.createElement('td');td.colSpan=colspan;td.textContent='No hay guías fuera del resumen para los filtros actuales.';vacio.appendChild(td);fragment.appendChild(vacio);}
+    const total=document.createElement('tr');total.className='fuera-total';celda(total,'TOTAL GENERAL');celda(total,'');celda(total,'');for(const tipo of orden)numero(total,datos.filter(x=>x.escaneo===tipo),tipo);numero(total,datos,'Todos los tipos');fragment.appendChild(total);
+    if(!datos.length){const vacio=document.createElement('tr'),td=document.createElement('td');td.colSpan=colspan;td.textContent='Sin guías fuera del resumen para estos filtros. Comprueba que la Exportación publicada tenga más guías que el resumen principal.';vacio.appendChild(td);fragment.appendChild(vacio);}
     tbody.appendChild(fragment);
-    estado.textContent='Fuera del resumen: '+num(datos.length)+' guías visibles de '+num(fueraResumenFuente.fuera.length)+' · En el resumen principal: '+num(fueraResumenFuente.incluidas)+' guías de Exportación · Universo único: '+num(fueraResumenFuente.exportadas)+' · Archivo: '+fueraResumenFuente.archivo;
+    estado.textContent='Fuera del resumen: '+num(datos.length)+' de '+num(fueraResumenFuente.fuera.length)+' · En resumen principal: '+num(fueraResumenFuente.incluidas)+' · Universo Exportación: '+num(fueraResumenFuente.exportadas)+' · Fuente: '+fueraResumenFuente.archivo;
+    actualizarOpcionesGraficaFueraResumen(datos);
+    renderGraficaFueraResumen();
   }
+  // V18.11. Una sola serie calculada sobre el mismo conjunto de guías de la tabla.
+  // No incluye guías ya presentes en el resumen principal y respeta filtros activos.
+  function serieDiariaFueraResumen(datos,codigo='__TODOS__'){
+    const porDia=new Map();let sinFecha=0,total=0;
+    for(const reg of datos||[]){
+      if(codigo!=='__TODOS__'&&codigoEntregaFueraResumen(reg.entrega)!==codigo)continue;
+      total++;
+      if(!reg.fechaKey){sinFecha++;continue;}
+      if(!porDia.has(reg.fechaKey))porDia.set(reg.fechaKey,[]);
+      porDia.get(reg.fechaKey).push(reg);
+    }
+    let dias=[...porDia.keys()].sort();
+    // Mostrar días con 0 guías entre extremos, siempre que el rango sea manejable.
+    if(dias.length>1){
+      const inicio=Date.parse(dias[0]+'T00:00:00Z'),fin=Date.parse(dias[dias.length-1]+'T00:00:00Z');
+      if(Number.isFinite(inicio)&&Number.isFinite(fin)&&(fin-inicio)/86400000<=180){
+        const calendario=[];
+        for(let t=inicio;t<=fin;t+=86400000)calendario.push(new Date(t).toISOString().slice(0,10));
+        dias=calendario;
+      }
+    }
+    return {dias: dias.map(fecha=>({fecha,etiqueta:fecha.slice(8,10)+'-'+fecha.slice(5,7)+'-'+fecha.slice(2,4),filas:porDia.get(fecha)||[],cantidad:(porDia.get(fecha)||[]).length})),total,sinFecha};
+  }
+  function actualizarOpcionesGraficaFueraResumen(datos){
+    const select=document.getElementById('fueraGraficaPdv');if(!select)return;
+    const previo=select.value||'__TODOS__',codigos=[...new Set(datos.map(x=>codigoEntregaFueraResumen(x.entrega)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+    const frag=document.createDocumentFragment();
+    const opcion=(value,label)=>{const o=document.createElement('option');o.value=value;o.textContent=label;frag.appendChild(o);};
+    opcion('__TODOS__','Todos los PDV filtrados');
+    for(const codigo of codigos)opcion(codigo,codigo);
+    select.replaceChildren(frag);
+    select.value=codigos.includes(previo)?previo:'__TODOS__';
+  }
+  function reiniciarGraficaFueraResumen(){
+    const select=document.getElementById('fueraGraficaPdv');if(select){select.replaceChildren(new Option('Todos los PDV filtrados','__TODOS__'));select.value='__TODOS__';}
+    const s=document.getElementById('fueraGraficaSvg');if(s){s.setAttribute('viewBox','0 0 760 280');s.setAttribute('width','760');s.replaceChildren();}
+    const e=document.getElementById('fueraGraficaEstado');if(e)e.textContent='Carga una Exportación para ver las cantidades por día.';
+  }
+  function renderGraficaFueraResumen(){
+    const svg=document.getElementById('fueraGraficaSvg'),estado=document.getElementById('fueraGraficaEstado');if(!svg||!estado)return;
+    const codigo=document.getElementById('fueraGraficaPdv')?.value||'__TODOS__';
+    const modo=document.getElementById('fueraGraficaTipo')?.value||'barras';
+    const serie=serieDiariaFueraResumen(fueraResumenFilasVisibles,codigo),dias=serie.dias;
+    const ancho=Math.max(760,90+Math.max(1,dias.length)*44),alto=280;
+    svg.setAttribute('viewBox',`0 0 ${ancho} ${alto}`);svg.setAttribute('width',String(ancho));svg.setAttribute('height',String(alto));svg.setAttribute('aria-label','Guías fuera del resumen por día de entrada, '+(codigo==='__TODOS__'?'todos los PDV':codigo));
+    svg.replaceChildren();
+    const ns='http://www.w3.org/2000/svg';
+    function elemento(tag,attrs={},texto){const el=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));if(texto!==undefined)el.textContent=texto;svg.appendChild(el);return el;}
+    estado.textContent=(codigo==='__TODOS__'?'Todos los PDV filtrados':codigo)+' · '+num(serie.total)+' guías · '+num(dias.filter(x=>x.cantidad>0).length)+' día(s) con paquetes'+(serie.sinFecha?' · '+num(serie.sinFecha)+' sin fecha':'');
+    if(!dias.length){elemento('text',{x:ancho/2,y:132,'text-anchor':'middle',fill:'#64748b','font-size':14},serie.sinFecha?'No hay fechas válidas para representar.':'Sin datos para los filtros actuales.');return;}
+    const izq=70,der=20,arriba=20,abajo=218,largo=ancho-izq-der,altura=abajo-arriba;
+    const maximo=Math.max(1,...dias.map(x=>x.cantidad)),escala=Math.max(1,Math.ceil(maximo/4)*4);
+    for(let i=0;i<=4;i++){
+      const y=abajo-i*altura/4;
+      elemento('line',{x1:izq,x2:ancho-der,y1:y,y2:y,stroke:'#d9e4f0','stroke-width':1});
+      elemento('text',{x:izq-9,y:y+4,'text-anchor':'end','font-size':10,fill:'#64748b'},String(Math.round(escala*i/4)));
+    }
+    const paso=largo/dias.length;
+    const puntos=[];
+    dias.forEach((dia,i)=>{
+      const x=izq+(i+0.5)*paso,y=abajo-dia.cantidad/escala*altura;
+      puntos.push([x,y]);
+      if(modo==='barras'){
+        const anchoBarra=Math.min(32,Math.max(6,paso*.74));
+        const rect=elemento('rect',{x:x-anchoBarra/2,y,width:anchoBarra,height:Math.max(0,abajo-y),rx:2,fill:'#3486ce','data-fuera-dia':dia.fecha,role:'button',tabindex:0,'aria-label':dia.etiqueta+': '+dia.cantidad+' guías'});
+        const t=document.createElementNS(ns,'title');t.textContent=dia.etiqueta+' · '+num(dia.cantidad)+' guías. Pulsar para consultar.';rect.appendChild(t);
+        rect.addEventListener('click',()=>{if(dia.filas.length)mostrarDetalleGuiasFueraResumen(dia.filas,'Fecha '+dia.etiqueta+' · '+(codigo==='__TODOS__'?'Todos los PDV':codigo));});
+        rect.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rect.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
+      }
+      if(dias.length<=55||i%Math.ceil(dias.length/55)===0||i===dias.length-1){
+        const texto=elemento('text',{x,y:229,'text-anchor':'end','font-size':10,fill:'#64748b',transform:`rotate(-50 ${x} 229)`},dia.etiqueta);
+      }
+    });
+    if(modo==='linea'){
+      elemento('path',{d:puntos.map(([x,y],i)=>(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1)).join(' '),fill:'none',stroke:'#246ab0','stroke-width':2.5,'stroke-linejoin':'round'});
+      dias.forEach((dia,i)=>{
+        const [x,y]=puntos[i];
+        const circulo=elemento('circle',{cx:x,cy:y,r:Math.max(3,Math.min(5,paso*.18)),fill:'#247bbf',stroke:'#fff','stroke-width':1,'data-fuera-dia':dia.fecha,role:'button',tabindex:0,'aria-label':dia.etiqueta+': '+dia.cantidad+' guías'});
+        const t=document.createElementNS(ns,'title');t.textContent=dia.etiqueta+' · '+num(dia.cantidad)+' guías. Pulsar para consultar.';circulo.appendChild(t);
+        circulo.addEventListener('click',()=>{if(dia.filas.length)mostrarDetalleGuiasFueraResumen(dia.filas,'Fecha '+dia.etiqueta+' · '+(codigo==='__TODOS__'?'Todos los PDV':codigo));});
+        circulo.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();circulo.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
+      });
+    }
+  }
+
   function mostrarDetalleGuiasFueraResumen(lista,tipo){
     fueraResumenGuiasDetalle=lista;
     const panel=document.getElementById('fueraResumenDetalle');panel.hidden=false;
     document.getElementById('fueraResumenDetalleTitulo').textContent=num(lista.length)+' guía(s) · '+tipo;
     const cont=document.getElementById('fueraResumenDetalleLista');cont.replaceChildren();
-    const frag=document.createDocumentFragment();for(const x of lista.slice(0,150)){const span=document.createElement('span');span.className='fuera-detalle-guia';span.textContent=x.guia;frag.appendChild(span);}cont.appendChild(frag);
-    if(lista.length>150){const extra=document.createElement('p');extra.textContent='Vista previa de las primeras 150 guías. Copiar y Excel incluyen la selección completa.';cont.appendChild(extra);}
+    const frag=document.createDocumentFragment();for(const x of lista.slice(0,150)){const span=document.createElement('span');span.className='fuera-detalle-guia';span.textContent=x.guia+' · '+x.fecha;frag.appendChild(span);}cont.appendChild(frag);
+    if(lista.length>150){const extra=document.createElement('p');extra.textContent='Se muestran las primeras 150; copiar y Excel incluirán todas.';cont.appendChild(extra);}
     panel.scrollIntoView({behavior:'smooth',block:'nearest'});
   }
   async function copiarGuiasFueraResumen(){
@@ -1896,18 +2084,22 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     const lista=detalleSolo?fueraResumenGuiasDetalle:fueraResumenFilasVisibles;
     const libro=XLSX.utils.book_new();
     if(!detalleSolo){
-      const g=agruparGuiasFueraResumen(lista),filas=[['Punto de escaneo más reciente','Punto de entrega',...g.orden,'Total general']];
+      const g=agruparGuiasFueraResumen(lista),filas=[['Punto de escaneo más reciente','Punto de entrega','Fecha entrada (DD-MM-YY)',...g.orden,'Total general']];
       for(const punto of [...g.porPunto.keys()].sort((a,b)=>a.localeCompare(b,'es'))){
         const dest=g.porPunto.get(punto),sub=[...dest.values()].flat();
-        for(const pdv of [...dest.keys()].sort((a,b)=>a.localeCompare(b,'es'))){const docs=dest.get(pdv);filas.push([punto,pdv,...g.orden.map(t=>docs.filter(x=>x.escaneo===t).length),docs.length]);}
-        filas.push(['TOTAL '+punto,'',...g.orden.map(t=>sub.filter(x=>x.escaneo===t).length),sub.length]);
+        for(const pdv of [...dest.keys()].sort((a,b)=>a.localeCompare(b,'es'))){
+          const docs=dest.get(pdv);
+          filas.push([punto,pdv,'TOTAL PDV',...g.orden.map(t=>docs.filter(x=>x.escaneo===t).length),docs.length]);
+          for(const dia of fechasPorDestinoFueraResumen(docs))filas.push([punto,pdv,dia.etiqueta,...g.orden.map(t=>dia.filas.filter(x=>x.escaneo===t).length),dia.filas.length]);
+        }
+        filas.push(['SUBTOTAL '+punto,'','',...g.orden.map(t=>sub.filter(x=>x.escaneo===t).length),sub.length]);
       }
-      filas.push(['TOTAL GENERAL','',...g.orden.map(t=>lista.filter(x=>x.escaneo===t).length),lista.length]);
-      const hoja=XLSX.utils.aoa_to_sheet(filas);hoja['!cols']=[{wch:28},{wch:23},...g.orden.map(()=>({wch:22})),{wch:16}];hoja['!autofilter']={ref:'A1:'+XLSX.utils.encode_col(g.orden.length+2)+Math.max(1,filas.length-1)};
+      filas.push(['TOTAL GENERAL','','',...g.orden.map(t=>lista.filter(x=>x.escaneo===t).length),lista.length]);
+      const hoja=XLSX.utils.aoa_to_sheet(filas);hoja['!cols']=[{wch:28},{wch:23},{wch:22},...g.orden.map(()=>({wch:22})),{wch:16}];hoja['!autofilter']={ref:'A1:'+XLSX.utils.encode_col(g.orden.length+3)+Math.max(1,filas.length-1)};
       XLSX.utils.book_append_sheet(libro,hoja,'RESUMEN_FUERA');
     }
-    const detalle=[['Número de Guía','Punto de escaneo más reciente','Punto de entrega','Tipo de escaneo más reciente'],...lista.map(x=>[x.guia,x.punto,x.entrega,x.escaneo])];
-    const hojaD=XLSX.utils.aoa_to_sheet(detalle);hojaD['!cols']=[{wch:24},{wch:30},{wch:25},{wch:28}];hojaD['!autofilter']={ref:'A1:D'+Math.max(1,detalle.length)};
+    const detalle=[['Número de Guía','Punto de escaneo más reciente','Punto de entrega','Fecha de entrada (DD-MM-YY)','Tipo de escaneo más reciente'],...lista.map(x=>[x.guia,x.punto,x.entrega,x.fecha,x.escaneo])];
+    const hojaD=XLSX.utils.aoa_to_sheet(detalle);hojaD['!cols']=[{wch:24},{wch:30},{wch:25},{wch:24},{wch:28}];hojaD['!autofilter']={ref:'A1:E'+Math.max(1,detalle.length)};
     XLSX.utils.book_append_sheet(libro,hojaD,'GUIAS_FUERA');
     const nombre='Guias_Fuera_Resumen_'+new Date().toISOString().slice(0,10)+(detalleSolo?'_seleccion':'')+'.xlsx';
     const bytes=XLSX.write(libro,{bookType:'xlsx',type:'array'}),url=URL.createObjectURL(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
@@ -1923,7 +2115,13 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
     google.script.run.withSuccessHandler(r=>{
       if(version!==versionCargaPortal||actualToken!==token)return;
       mostrarLoading(false);mostrarEstadoV2(r.v2);sesion=r.sesion;comentarioGestionEncargadoDisponible=r.comentariosGestionEncargadoDisponible===true;cargarBorradoresRevisionUsuario();const guiasNuevas=Array.isArray(r.guias)?r.guias:[],estadoBorradores=reconciliarBorradoresRevision(guiasNuevas);guias=guiasNuevas;filtradasParaResumenComentario=[];filtroComentarioJerarquiaActivo=null;resumenBase=r.resumen||{filas:[],total:{}};actualizarEstadoComentarioGestion(r.errorComentariosGestionEncargado||"");cargarClasificacionesComentarios();seleccionadas.clear();renderEstadoFuentes(r.fuentes);mostrarGuardadoFuentes(r.ultimoGuardado);
-      asignarDescargasGuias();cargarDescargaPdvBD();reiniciarGuiasFueraResumen();cargarFiltros();cargarFiltrosResumen();if(Array.isArray(regionesImportadas))enfocarResumenImportado(regionesImportadas);else restaurarRegionesGestion();aplicarFiltrosResumen();if(estadoBorradores.conflictos)toast("Se conservaron borradores locales. El comentario, clasificación o cierre guardado cambió mientras editabas; revisa el contenido antes de guardar.",false);else if(estadoBorradores.conservados)toast("Se conservaron "+estadoBorradores.conservados+" borrador(es) sin guardar.",true);
+      asignarDescargasGuias();cargarDescargaPdvBD();reiniciarGuiasFueraResumen();
+      if(sesion?.rol==='ADMINISTRADOR'&&fueraResumenMatrizTrasGuardar){
+        const pendiente=fueraResumenMatrizTrasGuardar;fueraResumenMatrizTrasGuardar=null;
+        try{usarMatrizFueraResumen(pendiente.filas,pendiente.archivo,'carga reciente');}
+        catch(e){document.getElementById('fueraResumenEstado').textContent='No se pudo mostrar la Exportación reciente: '+errorTexto(e);}
+      }
+      cargarFiltros();cargarFiltrosResumen();if(Array.isArray(regionesImportadas))enfocarResumenImportado(regionesImportadas);else restaurarRegionesGestion();aplicarFiltrosResumen();if(estadoBorradores.conflictos)toast("Se conservaron borradores locales. El comentario, clasificación o cierre guardado cambió mientras editabas; revisa el contenido antes de guardar.",false);else if(estadoBorradores.conservados)toast("Se conservaron "+estadoBorradores.conservados+" borrador(es) sin guardar.",true);
     }).withFailureHandler(manejarError).obtenerDatosPortal(token,forzar===true);
   }
 
@@ -3358,7 +3556,7 @@ function limpiarFiltros(){const filtroDescarga=document.getElementById("fDescarg
   function copiarGuia(guia){const texto=String(guia||"").trim();if(!texto){toast("No existe una guía para copiar.",false);return;}if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(texto).then(()=>toast("Guía "+texto+" copiada.",true)).catch(()=>copiarGuiaAlternativo(texto));return;}copiarGuiaAlternativo(texto);}
   function copiarGuiaAlternativo(texto){const campo=document.createElement("textarea");campo.value=texto;campo.setAttribute("readonly","");campo.style.position="fixed";campo.style.opacity="0";document.body.appendChild(campo);campo.select();campo.setSelectionRange(0,texto.length);let copiado=false;try{copiado=document.execCommand("copy");}catch(e){copiado=false;}document.body.removeChild(campo);toast(copiado?"Guía "+texto+" copiada.":"No se pudo copiar la guía.",copiado);}
   function salir(){const seguimiento=document.getElementById("seguimientoFrame");if(seguimiento){seguimiento.src="about:blank";delete seguimiento.dataset.loaded;}const t=token,clave=claveBorradoresRevision();try{if(clave)sessionStorage.removeItem(clave);}catch(e){}borradoresRevision.clear();borradoresRevisionUsuario="";limpiarSesion();google.script.run.cerrarSesion(t);mostrarLogin();}
-  function limpiarSesion(){descargaPdvCargaSecuencia++;descargaPdvPorGuia=new Map();cancelarRegionesFuente();token="";sesion=null;reiniciarGuiasFueraResumen();sessionStorage.removeItem("tokenGuiasSupabaseReplica");limpiarArchivoExcel(true);}
+  function limpiarSesion(){fueraResumenMatrizTrasGuardar=null;descargaPdvCargaSecuencia++;descargaPdvPorGuia=new Map();cancelarRegionesFuente();token="";sesion=null;reiniciarGuiasFueraResumen();sessionStorage.removeItem("tokenGuiasSupabaseReplica");limpiarArchivoExcel(true);}
   function mostrarLoading(si,texto){document.getElementById("loadingText").textContent=texto||"Procesando...";document.getElementById("loading").style.display=si?"flex":"none";}
   function manejarError(e){mostrarLoading(false);const t=errorTexto(e);toast(t,false);if(/sesión|sesion/i.test(t)){limpiarSesion();mostrarLogin();}}
   function toast(texto,ok){const e=document.getElementById("toast");e.textContent=texto;e.className="toast "+(ok?"ok":"bad");e.style.display="block";clearTimeout(e._timer);e._timer=setTimeout(()=>e.style.display="none",4200);}

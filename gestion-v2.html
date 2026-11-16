@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261114-V18-11-FECHA-GRAFICA-FUERA"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261115-V18-12-1-DESCARTAR-PENDIENTE"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
 <script src="./bridge.js?v=20261114-v18-12-filtros-fechas"></script>
   <base target="_top">
-<style>/* v9 only */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden]{display:none!important}</style>
+<style>/* v9 */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden],#v16DescartarPublicacionBtn[hidden]{display:none!important}</style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261114-V18-11-FECHA-GRAFICA-FUERA</title><meta name="app-build" content="20261114-V18-11-FECHA-GRAFICA-FUERA">
+  <title>Gestión de guías V2 · 20261115-V18-12-1-DESCARTAR-PENDIENTE</title><meta name="app-build" content="20261115-V18-12-1-DESCARTAR-PENDIENTE">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -677,7 +677,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V18.12 <span class="build-stamp" id="buildStamp">Edición 20261114-V18-12-FILTROS-FECHAS-CONTEOS</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V18.12.1 <span class="build-stamp" id="buildStamp">Edición 20261115-V18-12-1-DESCARTAR-PENDIENTE</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel filtrado · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -687,7 +687,7 @@
       <section id="sourceUploadPanel" class="panel hidden">
         <div class="panel-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Carga de información operativa <span class="readonly-note">SOLO ADMINISTRADOR</span><button type="button" id="sourceUploadToggle" class="secondary" style="margin-left:auto" aria-expanded="true" aria-controls="sourceUploadContent" onclick="toggleCargaOperativa()">Ocultar carga</button></div>
         <div id="sourceUploadContent" class="panel-body"><details><summary>Migración inicial desde Google (opcional)</summary><p>Solo en una réplica vacía. Seleccione el JSON privado generado por ExportarReplica.gs. No suba ese JSON a GitHub.</p><input type="file" accept=".json" onchange="importarReplica(this.files[0])"><span id="migrationStatus" role="status"></span></details>
-          <div class="source-actions" style="margin:12px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="guardarFuentesBtn" class="success" onclick="guardarInformacionCargada()">💾 Guardar información cargada</button><button type="button" id="v16VersionPublicadaBtn" class="secondary" onclick="comprobarVersionPublicadaV9()">Comprobar versión publicada</button><button type="button" id="v16VerificarPublicacionBtn" class="secondary" hidden onclick="verificarPublicacionV9()">Verificar publicación pendiente</button><button type="button" id="v16ReintentarPublicacionBtn" class="secondary" hidden onclick="reintentarPublicacionV9()">↻ Reintentar SOLO publicación</button><span id="guardadoFuentesEstado" role="status" style="margin-left:12px"></span></div><p class="source-note">Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada fuente reemplaza su versión anterior; para Exportación puedes elegir varios Excel y se guardarán unidos por guía. Para Track Break se guardan únicamente las regiones elegidas del nuevo archivo. COLA LARGA se calcula desde Exportación de guías. Espere la confirmación antes de cerrar.</p><div class="source-upload-grid"><div class="source-card"><div class="source-card-head"><div class="source-card-title">PDV_LISTA — cargar primero</div><span id="sourcePdvStatus" class="source-status">Sin verificar</span></div><input id="sourcePdvFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourcePdvMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('PDV LISTA')">Cargar PDV_LISTA — cargar primero</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Exportación de guías</div><span id="sourceEnvioStatus" class="source-status">Sin verificar</span></div><input id="sourceEnvioFile" class="source-file" type="file" accept=".xlsx,.xls" multiple onchange="mostrarSeleccionExportacionMultiple(this)"><small class="source-note">Puedes seleccionar varios Excel en una sola carga (Ctrl + clic). Se unen por Número de Guía y se conserva el registro con el escaneo más reciente. El conjunto reemplaza la exportación vigente al guardarse.</small><div id="sourceEnvioSeleccionados" class="source-meta" role="status" aria-live="polite"></div><div id="sourceEnvioMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('EXPORTACION GUIAS')">Cargar Exportación de guías</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Despachos ayer (opcional)</div><span id="sourceDespachosStatus" class="source-status">Sin verificar</span></div><input id="sourceDespachosFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceDespachosMeta" class="source-meta"></div><small class="source-note">También acepta Exportación de guías. Se cuenta cada guía única por Punto de entrega; si falta, usa el Punto de escaneo más reciente. Solo se guardan los conteos por PDV.</small><button onclick="cargarFuenteOperativaPortal('DESPACHOS AYER')">Cargar Despachos ayer (opcional)</button></div>
+          <div class="source-actions" style="margin:12px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="guardarFuentesBtn" class="success" onclick="guardarInformacionCargada()">💾 Guardar información cargada</button><button type="button" id="v16VersionPublicadaBtn" class="secondary" onclick="comprobarVersionPublicadaV9()">Comprobar versión publicada</button><button type="button" id="v16VerificarPublicacionBtn" class="secondary" hidden onclick="verificarPublicacionV9()">Verificar publicación pendiente</button><button type="button" id="v16ReintentarPublicacionBtn" class="secondary" hidden onclick="reintentarPublicacionV9()">↻ Reintentar SOLO publicación</button><button type="button" id="v16DescartarPublicacionBtn" hidden onclick="descartarPublicacionPendienteV19()" style="background:#b91c1c;color:#fff;border:1px solid #991b1b">🗑 Eliminar carga pendiente</button><span id="guardadoFuentesEstado" role="status" style="margin-left:12px"></span></div><p class="source-note">Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada fuente reemplaza su versión anterior; para Exportación puedes elegir varios Excel y se guardarán unidos por guía. Para Track Break se guardan únicamente las regiones elegidas del nuevo archivo. COLA LARGA se calcula desde Exportación de guías. Espere la confirmación antes de cerrar.</p><div class="source-upload-grid"><div class="source-card"><div class="source-card-head"><div class="source-card-title">PDV_LISTA — cargar primero</div><span id="sourcePdvStatus" class="source-status">Sin verificar</span></div><input id="sourcePdvFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourcePdvMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('PDV LISTA')">Cargar PDV_LISTA — cargar primero</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Exportación de guías</div><span id="sourceEnvioStatus" class="source-status">Sin verificar</span></div><input id="sourceEnvioFile" class="source-file" type="file" accept=".xlsx,.xls" multiple onchange="mostrarSeleccionExportacionMultiple(this)"><small class="source-note">Puedes seleccionar varios Excel en una sola carga (Ctrl + clic). Se unen por Número de Guía y se conserva el registro con el escaneo más reciente. El conjunto reemplaza la exportación vigente al guardarse.</small><div id="sourceEnvioSeleccionados" class="source-meta" role="status" aria-live="polite"></div><div id="sourceEnvioMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('EXPORTACION GUIAS')">Cargar Exportación de guías</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Despachos ayer (opcional)</div><span id="sourceDespachosStatus" class="source-status">Sin verificar</span></div><input id="sourceDespachosFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceDespachosMeta" class="source-meta"></div><small class="source-note">También acepta Exportación de guías. Se cuenta cada guía única por Punto de entrega; si falta, usa el Punto de escaneo más reciente. Solo se guardan los conteos por PDV.</small><button onclick="cargarFuenteOperativaPortal('DESPACHOS AYER')">Cargar Despachos ayer (opcional)</button></div>
             <div class="source-card">
               <div class="source-card-head"><div class="source-card-title">Track break más informes</div><span id="sourceBrechaStatus" class="source-status">Sin verificar</span></div>
               <input id="sourceBrechaFile" class="source-file" type="file" accept=".xlsx,.xls">
@@ -1277,7 +1277,7 @@ async function elegirRegionesGuardado(tipo,filas){
 // Publicación V9: recuperación de un commit fallido sin enviar nuevamente los Excel.
 function actualizarBotonesPublicacionV9(){
  const pendiente=!!window.V16PublicacionV9?.hayPendiente?.();
- for(const id of ['v16VerificarPublicacionBtn','v16ReintentarPublicacionBtn']){
+ for(const id of ['v16VerificarPublicacionBtn','v16ReintentarPublicacionBtn','v16DescartarPublicacionBtn']){
    const b=document.getElementById(id);if(b)b.hidden=!pendiente;
  }
 }
@@ -1309,6 +1309,39 @@ async function reintentarPublicacionV9(){
    if(r.estado==='publicada'){const inputs=document.querySelectorAll('#sourceEnvioFile,#sourcePdvFile,#sourceDespachosFile,#sourceBrechaFile');inputs.forEach(x=>{x.value='';});cargarDatos();}
  }catch(e){estado.textContent=errorTexto(e);toast(estado.textContent,false);}
  finally{mostrarLoading(false);guardadoFuentesEnCurso=false;if(b)b.disabled=false;if(g)g.disabled=false;actualizarBotonesPublicacionV9();}
+}
+// V18.12.1: la eliminación remota solo afecta cargas temporales del administrador,
+// verificadas por la función SQL v16_descartar_publicacion_pendiente.
+async function descartarPublicacionPendienteV19(){
+ if(guardadoFuentesEnCurso)return toast('Hay un guardado en curso. Espera a que termine antes de descartar.',false);
+ if(!sesion||sesion.rol!=='ADMINISTRADOR')return toast('Solo el administrador puede eliminar una carga pendiente.',false);
+ if(!window.V16PublicacionV9?.hayPendiente?.())return toast('No se encontró una carga pendiente en esta pestaña.',false);
+ const mensaje='Se ELIMINARÁN los lotes temporales de la publicación pendiente en Supabase y la referencia guardada en esta pestaña.\n\nNO se borrarán las guías ya publicadas, los comentarios ni las gestiones.\n\nPara cargar estos Excel de nuevo, tendrás que seleccionarlos y enviarlos otra vez.\n\n¿Confirmas que deseas eliminar la carga pendiente?';
+ if(!window.confirm(mensaje))return;
+ const estado=document.getElementById('guardadoFuentesEstado');
+ const b=document.getElementById('v16DescartarPublicacionBtn'),g=document.getElementById('guardarFuentesBtn');
+ guardadoFuentesEnCurso=true;if(b)b.disabled=true;if(g)g.disabled=true;
+ try{
+   mostrarLoading(true,'Comprobando estado y eliminando lotes temporales...');
+   const resultado=await window.V16PublicacionV9.descartar();
+   if(resultado.estado==='descartada'){
+     for(const id of ['sourceEnvioFile','sourcePdvFile','sourceDespachosFile','sourceBrechaFile']){
+       const input=document.getElementById(id);if(input)input.value='';
+     }
+     const envio=document.getElementById('sourceEnvioFile');
+     if(envio&&typeof mostrarSeleccionExportacionMultiple==='function')mostrarSeleccionExportacionMultiple(envio);
+   }
+   estado.textContent=resultado.mensaje;
+   toast(resultado.mensaje,true);
+ }catch(e){
+   const msg=errorTexto(e);
+   estado.textContent='No se eliminó la carga pendiente: '+msg;
+   toast(estado.textContent,false);
+ }finally{
+   mostrarLoading(false);guardadoFuentesEnCurso=false;
+   if(b)b.disabled=false;if(g)g.disabled=false;
+   actualizarBotonesPublicacionV9();
+ }
 }
 async function guardarInformacionCargada(){
  if(guardadoFuentesEnCurso)return;if(!sesion||sesion.rol!=='ADMINISTRADOR'){toast('Solo el administrador puede guardar las fuentes.',false);return;}

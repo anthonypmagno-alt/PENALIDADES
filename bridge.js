@@ -580,6 +580,7 @@ function v16QuitarPublicacionPendiente(){
   window.dispatchEvent(new CustomEvent("v16-publicacion-pendiente"));
 }
 let v16ReintentoPublicacionEnCurso=false;
+let v16DescartePublicacionEnCurso=false;
 async function v16EstadoPublicacionPendiente(){
   const pendiente=v16ObtenerPublicacionPendiente();
   if(!pendiente)return {estado:"sin_pendiente",mensaje:"No hay una publicación V9 pendiente en esta pestaña. Los bloques de la versión V8 no pueden recuperarse desde el navegador."};
@@ -597,6 +598,34 @@ async function v16EstadoPublicacionPendiente(){
 window.V16PublicacionV9={
   hayPendiente:()=>!!v16ObtenerPublicacionPendiente(),
   verificar:v16EstadoPublicacionPendiente,
+  async descartar(){
+    if(v16ReintentoPublicacionEnCurso || v16DescartePublicacionEnCurso)throw new Error('Hay una acción de publicación en curso. No se puede eliminar todavía.');
+    v16DescartePublicacionEnCurso=true;
+    try{
+      const estado=await v16EstadoPublicacionPendiente();
+      if(estado.estado==='sin_pendiente')return {estado:'sin_pendiente',mensaje:'No existe una publicación pendiente en esta pestaña.'};
+      if(estado.estado==='revision_cambiada')return {estado:'revision_cambiada',mensaje:'La revisión publicada ya cambió. No se eliminó ninguna guía publicada; la referencia local pendiente fue limpiada. Verifica la versión vigente.'};
+      if(estado.estado!=='pendiente')throw new Error('No fue posible validar el estado de esta carga.');
+      const registro=v16ObtenerPublicacionPendiente();
+      if(!registro)throw new Error('Ya no están disponibles los identificadores de la carga.');
+      const payload=registro.payload;
+      const ids=[payload.registros,payload.catalogo,...(Array.isArray(payload.fuentes)?payload.fuentes:[]),...(payload.migracion?[payload.migracion]:[])];
+      const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if(!ids.length||ids.length>16||ids.some(id=>typeof id!=='string'||!uuid.test(id))||new Set(ids).size!==ids.length)
+        throw new Error('Los identificadores de la carga no son válidos. No se eliminó nada.');
+      const {data,error}=await po.rpc('v16_descartar_publicacion_pendiente',{p_base:payload.base,p_lotes:ids});
+      if(error){
+        if(['PGRST202','42883'].includes(error.code))throw new Error('Falta ejecutar 11_ELIMINAR_CARGA_PENDIENTE.sql en Supabase.');
+        if(error.code==='55P03')throw new Error('Otra publicación sigue ejecutándose. Verifica su estado antes de descartar.');
+        throw new Error(error.message||'Supabase rechazó la eliminación.');
+      }
+      if(!data?.ok)throw new Error('Supabase no confirmó la eliminación de lotes.');
+      v16QuitarPublicacionPendiente();
+      ti.clear();Ua=null;Lc=null;
+      v16AvisoCarga('Carga pendiente eliminada',1,1);
+      return {estado:'descartada',eliminados:Number(data.eliminados||0),mensaje:'Carga pendiente eliminada. Supabase descartó '+Number(data.eliminados||0)+' lote(s) temporales. La información ya publicada se conserva. Puedes seleccionar otra vez los Excel.'};
+    }finally{v16DescartePublicacionEnCurso=false;}
+  },
   async versionPublicada(){
     const actual=await ra("inicio");
     if(actual?.perfil?.rol!=="ADMINISTRADOR")throw new Error("Solo el administrador puede consultar el estado de publicación.");

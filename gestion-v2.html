@@ -677,12 +677,12 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V18.12.1 <span class="build-stamp" id="buildStamp">Edición 20261115-V18-12-1-DESCARTAR-PENDIENTE</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V18.13 <span class="build-stamp" id="buildStamp">Edición 20261116-V18-13-CALENDARIO</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel filtrado · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
     <main>
-      <div class="view-tabs"><button id="tabGestion" data-view-tab="gestion" data-module-key="gestion_v2" class="view-tab active" onclick="mostrarVista('gestion')">Gestión de guías V2</button><button id="tabExcel" data-view-tab="excel" data-module-key="consulta_excel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabComentariosConfig" data-view-tab="comentarios" data-module-key="catalogo_comentarios" class="view-tab" onclick="mostrarVista('comentarios')">⚙️ Catálogo de comentarios</button><button id="tabSeguimiento" data-view-tab="seguimiento" data-module-key="gestion_v2" class="view-tab" onclick="mostrarVista('seguimiento')">📦 Seguimiento general de guías</button><a data-modulo-penalidades="true" data-module-key="penalidades" href="./penalidades.html?v=20261029-sla-zonificacion-traslado-detalle-v1" class="view-tab">💰 Penalidades</a></div>
+      <div class="view-tabs"><button id="tabGestion" data-view-tab="gestion" data-module-key="gestion_v2" class="view-tab active" onclick="mostrarVista('gestion')">Gestión de guías V2</button><button id="tabExcel" data-view-tab="excel" data-module-key="consulta_excel" class="view-tab" onclick="mostrarVista('excel')">📤 Consulta desde Excel</button><button id="tabComentariosConfig" data-view-tab="comentarios" data-module-key="catalogo_comentarios" class="view-tab" onclick="mostrarVista('comentarios')">⚙️ Catálogo de comentarios</button><button id="tabCalendario" data-view-tab="calendario" data-module-key="gestion_v2" class="view-tab" onclick="mostrarVista('calendario')">📅 Calendario de incidencias</button><a data-modulo-penalidades="true" data-module-key="penalidades" href="./penalidades.html?v=20261029-sla-zonificacion-traslado-detalle-v1" class="view-tab">💰 Penalidades</a></div>
       <div id="viewGestion" class="app-view">
       <section id="sourceUploadPanel" class="panel hidden">
         <div class="panel-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Carga de información operativa <span class="readonly-note">SOLO ADMINISTRADOR</span><button type="button" id="sourceUploadToggle" class="secondary" style="margin-left:auto" aria-expanded="true" aria-controls="sourceUploadContent" onclick="toggleCargaOperativa()">Ocultar carga</button></div>
@@ -835,7 +835,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
       </section>
       </div>
 
-      <div id="viewSeguimiento" class="app-view hidden"><iframe id="seguimientoFrame" title="Seguimiento General de Guías" src="about:blank" loading="lazy" style="display:block;width:100%;height:1900px;min-height:950px;border:0;background:#f4f7fb;border-radius:10px" referrerpolicy="same-origin"></iframe></div>
+      <div id="viewCalendario" class="app-view hidden"><iframe id="calendarioFrame" title="Calendario de incidencias" src="about:blank" loading="lazy" style="display:block;width:100%;height:1450px;min-height:950px;border:0;background:#f4f7fb;border-radius:10px" referrerpolicy="same-origin"></iframe></div>
       <div id="viewExcel" class="app-view hidden">
         <section class="panel">
           <div class="panel-title">Consulta de actualización mediante archivo Excel</div>
@@ -1030,15 +1030,15 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     }).withFailureHandler(e=>{btn.disabled=false;btn.textContent="INGRESAR";mostrarErrorLogin(errorTexto(e));}).iniciarSesion(usuario,clave);
   }
 
-  function abrirApp(){document.body.classList.toggle("no-summary-comments",sesion.rol==="PDV");document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");actualizarBadgeUsuarioIdioma();document.getElementById("sourceUploadPanel").classList.toggle("hidden",sesion.rol!=="ADMINISTRADOR");document.getElementById("tabComentariosConfig").hidden=sesion.rol!=="ADMINISTRADOR";if(document.getElementById("tabSla"))document.getElementById("tabSla").hidden=!(["ADMINISTRADOR","ENCARGADO"].includes(sesion.rol));window.SlaPaquetesV2?.establecerRol(sesion.rol);window.V16ModulePermissions?.apply();if(window.V16ModulePermissions?.canView("gestion_v2")||window.V16ModulePermissions?.canView("catalogo_comentarios"))cargarCatalogoComentarios();const solicitada=location.hash.replace(/^#/,"");mostrarVista(["gestion","excel","comentarios","seguimiento"].includes(solicitada)&&(solicitada!=="comentarios"||sesion.rol==="ADMINISTRADOR")&&(solicitada!=="sla"||["ADMINISTRADOR","ENCARGADO"].includes(sesion.rol))?solicitada:"gestion");cargarDatos();cargarConsultaCompartida();}
+  function abrirApp(){document.body.classList.toggle("no-summary-comments",sesion.rol==="PDV");document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");actualizarBadgeUsuarioIdioma();document.getElementById("sourceUploadPanel").classList.toggle("hidden",sesion.rol!=="ADMINISTRADOR");document.getElementById("tabComentariosConfig").hidden=sesion.rol!=="ADMINISTRADOR";if(document.getElementById("tabSla"))document.getElementById("tabSla").hidden=!(["ADMINISTRADOR","ENCARGADO"].includes(sesion.rol));window.SlaPaquetesV2?.establecerRol(sesion.rol);window.V16ModulePermissions?.apply();if(window.V16ModulePermissions?.canView("gestion_v2")||window.V16ModulePermissions?.canView("catalogo_comentarios"))cargarCatalogoComentarios();const solicitada=location.hash.replace(/^#/,"");mostrarVista(["gestion","excel","comentarios","calendario"].includes(solicitada)&&(solicitada!=="comentarios"||sesion.rol==="ADMINISTRADOR")&&(solicitada!=="sla"||["ADMINISTRADOR","ENCARGADO"].includes(sesion.rol))?solicitada:"gestion");cargarDatos();cargarConsultaCompartida();}
   function mostrarLogin(){document.getElementById("login").classList.remove("hidden");document.getElementById("app").classList.add("hidden");}
   function mostrarErrorLogin(t){const e=document.getElementById("loginError");e.textContent=t;e.style.display="block";}
 
   function mostrarVista(vista){
-    const vistas={gestion:"viewGestion",excel:"viewExcel",comentarios:"viewComentariosConfig",seguimiento:"viewSeguimiento"};
-    const modulos={gestion:"gestion_v2",excel:"consulta_excel",comentarios:"catalogo_comentarios",seguimiento:"gestion_v2"};
+    const vistas={gestion:"viewGestion",excel:"viewExcel",comentarios:"viewComentariosConfig",calendario:"viewCalendario"};
+    const modulos={gestion:"gestion_v2",excel:"consulta_excel",comentarios:"catalogo_comentarios",calendario:"gestion_v2"};
     if(!vistas[vista]||(vista==="comentarios"&&sesion?.rol!=="ADMINISTRADOR")||(vista==="sla"&&!(["ADMINISTRADOR","ENCARGADO"].includes(sesion?.rol))))vista="gestion";
-    if(!window.V16ModulePermissions?.canView(modulos[vista]))vista=["gestion","excel","comentarios","seguimiento"].find(opcion=>window.V16ModulePermissions?.canView(modulos[opcion])&&(opcion!=="comentarios"||sesion?.rol==="ADMINISTRADOR")&&(opcion!=="sla"||["ADMINISTRADOR","ENCARGADO"].includes(sesion?.rol)));
+    if(!window.V16ModulePermissions?.canView(modulos[vista]))vista=["gestion","excel","comentarios","calendario"].find(opcion=>window.V16ModulePermissions?.canView(modulos[opcion])&&(opcion!=="comentarios"||sesion?.rol==="ADMINISTRADOR")&&(opcion!=="sla"||["ADMINISTRADOR","ENCARGADO"].includes(sesion?.rol)));
     if(!vista){Object.values(vistas).forEach(id=>document.getElementById(id)?.classList.add("hidden"));toast("Tu usuario no tiene módulos disponibles. Solicita acceso al administrador.",false);return;}
     Object.entries(vistas).forEach(([clave,id])=>document.getElementById(id)?.classList.toggle("hidden",clave!==vista));
     window.V16ModulePermissions?.apply();
@@ -1046,7 +1046,7 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     if(vista==="estadisticas")window.BrechaCostosCompartidos?.renderizarEstadisticasInterrupciones();
     if(vista==="sla")window.SlaPaquetesV2?.alAbrir();
     if(vista==="comentarios")renderConfiguracionComentarios();
-    if(vista==="seguimiento"){const frame=document.getElementById("seguimientoFrame");if(frame&&!frame.dataset.loaded){frame.src="./seguimiento-general.html?v=20261114-V18-11-FECHA-GRAFICA-FUERA";frame.dataset.loaded="1";}}
+    if(vista==="calendario"){const frame=document.getElementById("calendarioFrame");if(frame&&!frame.dataset.loaded){frame.src="./calendario-incidencias.html?v=20261116-CALENDARIO-V1";frame.dataset.loaded="1";}}
     if(location.hash!=="#"+vista)history.replaceState(null,"","#"+vista);
   }
 
@@ -3717,7 +3717,7 @@ function limpiarFiltros(){const filtroDescarga=document.getElementById("fDescarg
   function cerrarQR(){document.getElementById("qrModal").style.display="none";}
   function copiarGuia(guia){const texto=String(guia||"").trim();if(!texto){toast("No existe una guía para copiar.",false);return;}if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(texto).then(()=>toast("Guía "+texto+" copiada.",true)).catch(()=>copiarGuiaAlternativo(texto));return;}copiarGuiaAlternativo(texto);}
   function copiarGuiaAlternativo(texto){const campo=document.createElement("textarea");campo.value=texto;campo.setAttribute("readonly","");campo.style.position="fixed";campo.style.opacity="0";document.body.appendChild(campo);campo.select();campo.setSelectionRange(0,texto.length);let copiado=false;try{copiado=document.execCommand("copy");}catch(e){copiado=false;}document.body.removeChild(campo);toast(copiado?"Guía "+texto+" copiada.":"No se pudo copiar la guía.",copiado);}
-  function salir(){const seguimiento=document.getElementById("seguimientoFrame");if(seguimiento){seguimiento.src="about:blank";delete seguimiento.dataset.loaded;}const t=token,clave=claveBorradoresRevision();try{if(clave)sessionStorage.removeItem(clave);}catch(e){}borradoresRevision.clear();borradoresRevisionUsuario="";limpiarSesion();google.script.run.cerrarSesion(t);mostrarLogin();}
+  function salir(){const calendario=document.getElementById("calendarioFrame");if(calendario){calendario.src="about:blank";delete calendario.dataset.loaded;}const t=token,clave=claveBorradoresRevision();try{if(clave)sessionStorage.removeItem(clave);}catch(e){}borradoresRevision.clear();borradoresRevisionUsuario="";limpiarSesion();google.script.run.cerrarSesion(t);mostrarLogin();}
   function limpiarSesion(){fueraResumenMatrizTrasGuardar=null;descargaPdvCargaSecuencia++;descargaPdvPorGuia=new Map();cancelarRegionesFuente();token="";sesion=null;reiniciarGuiasFueraResumen();sessionStorage.removeItem("tokenGuiasSupabaseReplica");limpiarArchivoExcel(true);}
   function mostrarLoading(si,texto){document.getElementById("loadingText").textContent=texto||"Procesando...";document.getElementById("loading").style.display=si?"flex":"none";}
   function manejarError(e){mostrarLoading(false);const t=errorTexto(e);toast(t,false);if(/sesión|sesion/i.test(t)){limpiarSesion();mostrarLogin();}}
@@ -4368,9 +4368,9 @@ function actualizarClasificacionV2(){
 }
 setInterval(actualizarClasificacionV2,60000);
 </script><script>window.addEventListener('message',function(event){
-  const frame=document.getElementById('seguimientoFrame');
+  const frame=document.getElementById('calendarioFrame');
   if(!frame||event.origin!==location.origin||event.source!==frame.contentWindow)return;
-  if(event.data?.type==='V16_SEGUIMIENTO_ALTURA'){
+  if(event.data?.type==='V16_CALENDARIO_ALTURA'){
     const height=Number(event.data.height);
     if(Number.isFinite(height)&&height>500&&height<12000)frame.style.height=(height+12)+'px';
   }

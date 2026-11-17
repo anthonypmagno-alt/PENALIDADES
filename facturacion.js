@@ -1,4 +1,4 @@
-/* Facturación PDV V3.0 - agrupaciones por PDV, filtro y subtotales. */
+/* Facturación PDV V3.1 - calendario de incidencias y horas reales. */
 (()=>{'use strict';
 const M=window.FacturacionMotor,Cloud=window.FacturacionCloud,Drafts=window.FacturacionBorradores,$=id=>document.getElementById(id),money=n=>n==null?'—':new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'}).format(n),fnum=(n,dp=2)=>n==null?'—':new Intl.NumberFormat('es-PE',{minimumFractionDigits:0,maximumFractionDigits:dp}).format(n),safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),csvSafe=v=>typeof v==='string'&&/^[=+@\-\t\r]/.test(v)?"'"+v:v;
 let tariffDistricts=[],zoneRateDraft=new Map(),selectedTariffDistricts=new Set(),tariffPeriod=null,zoneSearchTimer=null,tariffImportDraft=null,tariffImportSaving=false;
@@ -8,6 +8,7 @@ function tariffFacetValue(r,facet){return facet==='dept'?r.dept:facet==='prov'?r
 
 let pdvGroups=[],pdvGroupMembership=new Map(),selectedGroupPDVs=new Set(),collapsedGroups=new Set(),groupBusy=false;
 let publishedList=[],publishedSummary=[],publishedCurrent=null,pubPage=0,pubCount=0,pubBusy=false;
+let incidenciasReady=false,incidenciasError="";
 let reviews=new Map(),fullRows=new Map(),sourceSignatures=new Map(),db=null,config=null,rows=[],referenceRows=[],sourceStats=null,result=null,view={details:[],summary:[],totals:null},sumPage=0,detPage=0,currentTimeKey=null,currentTariffPDV=null,selectedPDVs=new Set(),allPDVs=[],periods=[],currentSnapshot=null,filterTimer=null,simulationTimer=null,simulationHours=48,importing=false,dbReady=false,cloudDraftBusy=false,cloudMeta=null,selectedSummaryKeys=new Set(),bulkSaving=false;
 const todayMonth=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
 function notify(msg,error=false){const el=$('toast');el.hidden=false;el.textContent=window.FacturacionI18n?.translateMessage(msg)||msg;el.classList.toggle('error',error);clearTimeout(notify.timeout);notify.timeout=setTimeout(()=>el.hidden=true,4500)}
@@ -33,7 +34,8 @@ function freezeDraftButtons(busy){for(const id of ['btnSaveCloudDraft','btnLoadC
 function safeDraftSource(src,period){
  if(!src||!Array.isArray(src.rows)||src.rows.length>500000)throw Error('Cantidad de guías inválida.');
  const clean=src.rows.map(r=>({guia:M.norm(r.guia),pdv:M.normalizePDV(r.pdv),dept:M.norm(r.dept),
-   prov:M.norm(r.prov),dist:M.norm(r.dist),horas:M.num(r.horas),fecha:String(r.fecha||''),period}));
+   prov:M.norm(r.prov),dist:M.norm(r.dist),horas:M.num(r.horas),fecha:String(r.fecha||''),period,
+   recepcionAt:r.recepcionAt||null,entregaAt:r.entregaAt||null}));
  if(clean.some(r=>!r.guia||!r.pdv||!r.dept||!r.prov||!r.dist||r.horas===null||r.horas<0))throw Error('Borrador contiene filas incompletas o inválidas.');
  return {id:period,rows:clean,stats:{...src.stats,valid:clean.length},headers:src.headers||[],
    file:src.file||'Borrador Supabase',uploadedAt:src.uploadedAt||'',remoteVersion:src.remoteVersion||0,sourceId:src.sourceId||('remote-'+Date.now())};
@@ -120,6 +122,7 @@ async function loadPeriod({skipRemote=false}={}){
  config={...initialConfig(),...await Cloud.loadConfig(p)};
  config.rule={...initialConfig().rule,...(config.rule||{})};
  config.times=config.times||{};config.tariffs=config.tariffs||{};
+ await refreshApprovedIncidents({recalculate:false});
  reviews=new Map((await Cloud.loadReviews(p)).map(x=>[x.clave,x]));
  selectedSummaryKeys.clear();selectedGroupPDVs.clear();
  $('rate').value=config.rule.rate;$('step').value=config.rule.step;
@@ -157,6 +160,48 @@ async function chooseReferenceRows(){
  const src=await get('dataset',rp);
  if(!src?.rows?.length)throw Error('Falta importar localmente el periodo de referencia '+rp+' para calcular el ranking de tiempos. No se utilizará silenciosamente otro periodo.');
  return src.rows;
+}
+async function refreshApprovedIncidents({recalculate=true}={}){
+  try{config.incidents=await Cloud.loadApprovedIncidents();incidenciasReady=true;incidenciasError='';
+    const status=$('incEventsStatus');if(status)status.textContent=config.incidents.length+' eventos aprobados sincronizados';
+  }catch(e){config.incidents=[];incidenciasReady=false;incidenciasError=e.message;
+    const status=$('incEventsStatus');if(status)status.textContent='Sin validar eventos: '+e.message;
+    notify('Calendario no disponible: '+e.message+' · No finalices hasta corregirlo.',true);
+  }
+  if(recalculate)await calculate();
+}
+
+async function importIncidenceDates(file){
+ if(!Cloud.admin()||!file)return;
+ const period=selectedPeriod(),src=await get('dataset',period);
+ if(!src?.rows?.length){notify('Primero importa MODULADOR.xlsx en el periodo.',true);return;}
+ if(!window.XLSX)throw Error('No se pudo cargar XLSX');
+ const workbook=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+ const sheet=workbook.Sheets[workbook.SheetNames[0]];const matrix=XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:true});
+ if(!matrix.length)throw Error('Archivo de fechas vacío');
+ const canonical=v=>M.norm(v).replace(/[^A-Z0-9]/g,'');const header=matrix[0].map(canonical);
+ const lookup=alts=>alts.map(a=>header.indexOf(a)).find(i=>i>=0)??-1;
+ const iGuia=lookup(['GUIA','NUMERODEGUIA','WAYBILLNO','NROGUIA']);
+ const iRec=lookup(['FECHAHORARECEPCION','RECEPCIONPDV','HORADELLEGADAALPDV','HORADERECEPCION']);
+ const iEnt=lookup(['FECHAHORAENTREGA','HORADEENTREGA','FECHAHORAFIRMA']);
+ if([iGuia,iRec,iEnt].some(x=>x<0))throw Error('El Excel debe tener GUIA, FECHA_HORA_RECEPCION y FECHA_HORA_ENTREGA.');
+ const byGuide=new Map(),duplicates=new Set();let errors=0;
+ for(const row of matrix.slice(1)){
+   const key=M.norm(row[iGuia]);if(!key)continue;
+   const reception=window.IncidenciasCore.limaMoment(row[iRec]),delivery=window.IncidenciasCore.limaMoment(row[iEnt]);
+   if(!reception||!delivery||Date.parse(delivery)<=Date.parse(reception)){errors++;continue;}
+   if(byGuide.has(key))duplicates.add(key);else byGuide.set(key,{recepcionAt:reception,entregaAt:delivery});
+ }
+ for(const key of duplicates)byGuide.delete(key);
+ const matched=src.rows.filter(r=>byGuide.has(r.guia)).length;
+ if(!matched){notify('No hay guías coincidentes con fechas válidas. Revisa el formato.',true);return;}
+ if(!confirm(`Se actualizarán las fechas verificadas de ${matched} guías de ${period}. ${errors} filas inválidas y ${duplicates.size} duplicadas se omitirán. ¿Continuar?`))return;
+ const updated=src.rows.map(r=>byGuide.has(r.guia)?{...r,...byGuide.get(r.guia)}:r);
+ await put('dataset',{...src,rows:updated,sourceId:crypto.randomUUID()});
+ await loadPeriod({skipRemote:true});
+ notify('Fechas vinculadas: '+matched+' guías. Guarda el borrador en Supabase para compartirlas.');
+ // Guardado automático protegido por version de borrador compartido.
+ await saveCloudDraft({automatic:true});
 }
 async function calculate(){if(!rows.length){result=null;view={details:[],summary:[],totals:null};allPDVs=[];fullRows.clear();sourceSignatures.clear();renderAll();return;}try{referenceRows=await chooseReferenceRows();result=M.run(rows,{period:selectedPeriod(),...config},referenceRows);fullRows=new Map(result.summary.map(x=>[x.key,x]));indexSourceSignatures();allPDVs=[...new Set(result.summary.map(x=>x.pdv))].sort();renderPDVFilter();populateGeoOptions();populateSummaryOptions();applyFilters();}catch(e){result=null;view={details:[],summary:[],totals:null};renderAll();setStatus(e.message);notify('Error calculando resultados: '+e.message,true);console.error(e);}}
 function searchNorm(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();}
@@ -295,7 +340,13 @@ function renderSimulationInfo(){
 }
 function formatDifference(n){return n==null?'—':(n>0?'+':'')+money(n);}
 function differenceClass(n){return n>0?'diff-positive':n<0?'diff-negative':'diff-neutral';}
-function renderAll(){renderKPIs();renderPDVSummary();renderSummary();renderDetail();renderSimulationInfo();renderTariffs();renderCloseStatus();}
+function renderAll(){renderKPIs();renderIncidenceSummary();renderPDVSummary();renderSummary();renderDetail();renderSimulationInfo();renderTariffs();renderCloseStatus();}
+function renderIncidenceSummary(){
+ const el=$('incEventsStatus');if(!el)return;
+ if(!incidenciasReady){el.textContent='Calendario sin verificar: '+(incidenciasError||'Consulta pendiente');return;}
+ const t=result?.totals;
+ el.textContent=(config?.incidents?.length||0)+' eventos aprobados · '+(t?.incidenciaGuias||0)+' guías afectadas · Compensación: '+money(t?.incidenciaCompensacion||0)+(t?.incidenciaSinFechas?' · '+t.incidenciaSinFechas+' guías sin fechas verificables':'');
+}
 function renderKPIs(){const t=view.totals;$('kGuias').textContent=t?fnum(t.guias,0):'—';$('kBruto').textContent=t?money(t.bruto):'—';$('kDescuento').textContent=t?money(t.descuentos):'—';$('kNeto').textContent=t?money(t.neto):'—';$('kPendientes').textContent=t?fnum(t.pendientes,0):'—';}
 function pageSummaryRows(){return view.summary.slice(sumPage*40,(sumPage+1)*40);}
 function updateSummarySelectionUI(){
@@ -462,12 +513,14 @@ function renderSummary(){const list=view.summary,per=40,n=Math.max(1,Math.ceil(l
 }
 
 function renderDetail(){const list=view.details,per=100,n=Math.max(1,Math.ceil(list.length/per));detPage=Math.min(detPage,n-1);
- $('detailBody').innerHTML=list.length?list.slice(detPage*per,(detPage+1)*per).map(r=>{const sim=M.simulatedNet(r,simulationHours,config.rule),diff=sim==null?null:M.money(r.neto-sim);return `<tr><td><b>${safe(r.guia)}</b></td><td>${safe(r.pdv)}</td><td>${safe(r.dept)}</td><td>${safe(r.prov)}</td><td>${safe(r.dist)}</td><td>${safe(r.fecha)}</td><td>${th(r.horas)}</td><td>${th(r.establecido)}</td><td class="${r.umbralEst==null?'bad':'warn'}">${th(r.umbralEst)}</td><td>${th(r.exceso)}</td><td>${money(r.tarifa)}</td><td class="${r.reduccion>0?'bad':''}">${r.reduccion==null?'—':fnum(r.reduccion)+'%'}</td><td class="${r.pagoPct===0?'bad':'ok'}">${r.pagoPct==null?'—':fnum(r.pagoPct)+'%'}</td><td>${money(r.descuento)}</td><td class="simulated-amount">${money(sim)}</td><td class="${differenceClass(diff)}">${formatDifference(diff)}</td><td class="amount">${money(r.neto)}</td><td>${r.ceroMax?'<span class="bad">CERO POR EXCESO</span>':safe(r.estado)}</td></tr>`}).join(''):`<tr><td colspan="18" class="empty">Sin guías para estos filtros.</td></tr>`;
+ $('detailBody').innerHTML=list.length?list.slice(detPage*per,(detPage+1)*per).map(r=>{const sim=M.simulatedNet(r,simulationHours,config.rule),diff=sim==null?null:M.money(r.neto-sim);return `<tr><td><b>${safe(r.guia)}</b></td><td>${safe(r.pdv)}</td><td>${safe(r.dept)}</td><td>${safe(r.prov)}</td><td>${safe(r.dist)}</td><td>${safe(r.fecha)}</td><td>${th(r.horas)}</td><td>${th(r.establecido)}</td><td class="${r.umbralEst==null?'bad':'warn'}">${th(r.umbralEst)}</td><td>${th(r.incidenciaHoras)}</td><td>${th(r.umbralAjustado)}</td><td>${th(r.exceso)}</td><td>${money(r.tarifa)}</td><td class="${r.reduccion>0?'bad':''}">${r.reduccion==null?'—':fnum(r.reduccion)+'%'}</td><td class="${r.pagoPct===0?'bad':'ok'}">${r.pagoPct==null?'—':fnum(r.pagoPct)+'%'}</td><td>${money(r.descuento)}</td><td class="simulated-amount">${money(sim)}</td><td class="${differenceClass(diff)}">${formatDifference(diff)}</td><td class="amount">${money(r.neto)}</td><td>${r.ceroMax?'<span class="bad">CERO POR EXCESO</span>':safe(r.estado)}</td></tr>`}).join(''):`<tr><td colspan="20" class="empty">Sin guías para estos filtros.</td></tr>`;
  $('detPage').textContent=`Página ${detPage+1} de ${n} · ${fnum(list.length,0)} registros`;$('detPrev').disabled=detPage<=0;$('detNext').disabled=detPage>=n-1;
 }
 function renderTariffs(){const list=[...new Set([...(result?.summary||[]).map(g=>g.pdv),...Object.keys(config.tariffs||{})])].sort();$('tariffBody').innerHTML=list.length?list.map(p=>{const t=config.tariffs[p]||{},zones=Object.keys(t.zones||{}).filter(k=>M.num(t.zones[k])!==null);return `<tr><td><b>${safe(p)}</b></td><td>${safe(t.mode||'NO DEFINIDA')}</td><td>${money(M.num(t.standard))}</td><td>${zones.length}</td><td><button class="btn-mini" data-tariff="${safe(p)}">Configurar</button></td></tr>`}).join(''):'<tr><td colspan="5" class="empty">No hay PDV cargados.</td></tr>';}
 function renderCloseStatus(){const t=result?.totals||null;if(!t){$('closeTitle').textContent='Sin guías cargadas';$('closeMessage').textContent='Carga un archivo para comenzar.';$('btnClose').disabled=true;return;}
- $('closeTitle').textContent=`Periodo ${selectedPeriod()} · ${fnum(t.guias,0)} guías`;$('closeMessage').textContent=(sourceStats?.pdvConflicts>0)?`Existen ${sourceStats.pdvConflicts} guías con más de un PDV en el Excel. Corrige esos casos en el archivo original y vuelve a importar antes del cierre.`:t.pendientes?`${fnum(t.pendientes,0)} guías no tienen tarifa o tiempo base. Debes resolverlas antes de finalizar. El cierre usa TODAS las guías del periodo, no solo los filtros visibles.`:`Todas las ${fnum(t.calculadas,0)} guías tienen tarifa y tiempo base. Puedes congelar una versión final de esta liquidación.`;$('btnClose').disabled=t.pendientes>0||(sourceStats?.pdvConflicts||0)>0||importing;
+ $('closeTitle').textContent=`Periodo ${selectedPeriod()} · ${fnum(t.guias,0)} guías`;$('closeMessage').textContent=(sourceStats?.pdvConflicts>0)?`Existen ${sourceStats.pdvConflicts} guías con más de un PDV en el Excel. Corrige esos casos en el archivo original y vuelve a importar antes del cierre.`:t.pendientes?`${fnum(t.pendientes,0)} guías no tienen tarifa o tiempo base. Debes resolverlas antes de finalizar. El cierre usa TODAS las guías del periodo, no solo los filtros visibles.`:`Todas las ${fnum(t.calculadas,0)} guías tienen tarifa y tiempo base. Puedes congelar una versión final de esta liquidación.`;$('btnClose').disabled=t.pendientes>0||(sourceStats?.pdvConflicts||0)>0||importing||!incidenciasReady||t.incidenciaSinFechas>0;
+ if(!incidenciasReady)$('closeMessage').textContent+=' Calendario no verificado: '+incidenciasError+'; cierre bloqueado.';
+ if(t.incidenciaSinFechas)$('closeMessage').textContent+=' '+t.incidenciaSinFechas+' guías de PDV afectados requieren horas de recepción–entrega verificadas; cierre bloqueado.';
 }
 function openTime(k){const g=result?.summary.find(x=>x.key===k);if(!g)return;currentTimeKey=k;const t=config.times[k]||{};$('timeIdentity').textContent=`${g.pdv} · ${g.dept} / ${g.prov} / ${g.dist} · Mejor tiempo: ${th(g.bestHours)}`;
  for(const [id,prop] of [['tConsolidacion','consolidacion'],['tRetraslado','retraslado'],['tAdicional','adicional'],['tNecesario','necesario'],['tManual','manualBase']])$(id).value=t[prop]??'';$('tObs').value=t.observaciones||'';$('timeSaveStatus').textContent='';$('timeDialog').showModal();}
@@ -746,7 +799,7 @@ async function restoreDraft(file){
  const raw=data.fuente?.rows;
  if(!Array.isArray(raw)||!raw.length||raw.length>500000)throw Error('El respaldo no contiene una cantidad válida de guías.');
  const clean=raw.map(r=>({guia:M.norm(r.guia),pdv:M.normalizePDV(r.pdv),dept:M.norm(r.dept),prov:M.norm(r.prov),dist:M.norm(r.dist),
-   horas:M.num(r.horas),fecha:String(r.fecha||''),period:data.periodo}));
+   horas:M.num(r.horas),fecha:String(r.fecha||''),period:data.periodo,recepcionAt:r.recepcionAt||null,entregaAt:r.entregaAt||null}));
  if(clean.some(r=>!r.guia||!r.pdv||!r.dept||!r.prov||!r.dist||r.horas===null||r.horas<0))throw Error('El respaldo contiene guías incompletas o inválidas.');
  const existing=await get('dataset',data.periodo);
  if(existing?.rows?.length&&!confirm('Ya existen '+existing.rows.length+' guías locales de '+data.periodo+'. ¿Deseas reemplazar el borrador de ese periodo con este respaldo?'))return;
@@ -800,7 +853,7 @@ function exportData(summary,details,name,settings,stats){
  }
  const simLabel=`NETO SIMULACION ${fnum(base,2)} H S/`,diffLabel=`DIFERENCIA VS ${fnum(base,2)} H S/`;
  const resHeaders=['DEPARTAMENTO','PROVINCIA','DISTRITO','PDV','OK','OK POR','OK FECHA','GUIAS','PROMEDIO LOGRADO H','MEJOR PDV','MEJOR TIEMPO H','UMBRAL H','CONSOLIDACION H','RETRASLADO H','TIEMPO ADICIONAL H','NECESARIO DESPACHO H','TIEMPO ESTABLECIDO H','UMBRAL ESTABLECIDO H','ORIGEN BASE','BRUTO S/','DESCUENTOS S/',simLabel,diffLabel,'NETO S/','OBSERVACIONES'];
- const drHeaders=['GUIA','PDV','DEPARTAMENTO','PROVINCIA','DISTRITO','DIA REPARTO','TIEMPO LOGRADO H','TIEMPO ESTABLECIDO H','UMBRAL ESTABLECIDO H','EXCESO H','TARIFA S/','TIPO TARIFA','REDUCCION %','PAGO %','DESCUENTO S/',simLabel,diffLabel,'NETO S/','ESTADO'];
+ const drHeaders=['GUIA','PDV','DEPARTAMENTO','PROVINCIA','DISTRITO','DIA REPARTO','TIEMPO LOGRADO H','TIEMPO ESTABLECIDO H','UMBRAL ESTABLECIDO H','EXCESO H','TARIFA S/','TIPO TARIFA','REDUCCION %','PAGO %','DESCUENTO S/',simLabel,diffLabel,'NETO S/','ESTADO','FECHA HORA RECEPCION','FECHA HORA ENTREGA','HORAS INCIDENCIA','UMBRAL AJUSTADO','COMPENSACION INCIDENCIA S/','EVENTOS ID'];
  const summaryRows=[resHeaders,...summary.map(g=>{const sim=simGroups.get(g.key)||{simNet:0,diffNet:0};return[g.dept,g.prov,g.dist,g.pdv,approvalFor(g)?'SI':'NO',approvalFor(g)?.aprobado_por||'',approvalFor(g)?.aprobado_en||'',g.count,g.promedio,g.bestPDV,g.bestHours,g.umbral,g.consolidacion,g.retraslado,g.adicional,g.necesario,g.establecido,g.umbralEst,g.origen,g.gross,g.discount,sim.simNet,sim.diffNet,g.net,g.observaciones];})];
  const pdvRows=summarizeByPDV(summary,simGroups);
  const pdvHeaders=['AGRUPACION','PDV','DISTRITOS CUBIERTOS','GUIAS','PROMEDIO LOGRADO H','FILAS CON OK','GUIAS SIN CALCULO','BRUTO S/','DESCUENTOS S/',simLabel,diffLabel,'NETO S/'];
@@ -811,15 +864,17 @@ function exportData(summary,details,name,settings,stats){
    const members=g.rows,agg=aggregatePDVRows(members);
    groupSheet.push([g.name,members.map(x=>x.pdv).join(', '),agg.distritos,agg.guias,agg.promedio,agg.ok,agg.pending,agg.bruto,agg.descuentos,agg.simNet,agg.diffNet,agg.neto]);
  }
- const detailRows=[drHeaders,...details.map(r=>{const sim=rSim.get(r);return[r.guia,r.pdv,r.dept,r.prov,r.dist,r.fecha,r.horas,r.establecido,r.umbralEst,r.exceso,r.tarifa,r.tarifaTipo,r.reduccion,r.pagoPct,r.descuento,sim?.sim??null,sim?.diff??null,r.neto,r.ceroMax?'CERO POR EXCESO':r.estado];})];
+ const detailRows=[drHeaders,...details.map(r=>{const sim=rSim.get(r);return[r.guia,r.pdv,r.dept,r.prov,r.dist,r.fecha,r.horas,r.establecido,r.umbralEst,r.exceso,r.tarifa,r.tarifaTipo,r.reduccion,r.pagoPct,r.descuento,sim?.sim??null,sim?.diff??null,r.neto,r.ceroMax?'CERO POR EXCESO':r.estado,r.recepcionAt||'',r.entregaAt||'',r.incidenciaHoras||0,r.umbralAjustado,r.incidenciaCompensacion,(r.incidenciaEventos||[]).map(e=>e.id).join(' | ')];})];
  // El total se obtiene de las mismas guías exportadas, no de resúmenes fuera del filtro.
  if(summary.length){summaryRows.push(['TOTAL FILTRADO','','','','','','',details.length,'','','','','','','','','','','',
   M.money(details.reduce((x,r)=>x+(r.neto==null?0:(r.tarifa??0)),0)),M.money(details.reduce((x,r)=>x+(r.descuento??0),0)),totalSim,totalDiff,M.money(details.reduce((x,r)=>x+(r.neto??0),0)),'']);}
+ const incRows=[['GUIA','PDV','DEPARTAMENTO','PROVINCIA','DISTRITO','RECEPCION (UTC ISO)','ENTREGA (UTC ISO)','UMBRAL ORIGINAL H','HORAS RECONOCIDAS','UMBRAL AJUSTADO H','NETO SIN EVENTO S/','NETO CON EVENTO S/','COMPENSACION S/','ESTADO FECHAS','ID EVENTOS']];
+ for(const r of details){if(r.incidenciaHoras>0||r.incidenciaEstado==='SIN_FECHAS')incRows.push([r.guia,r.pdv,r.dept,r.prov,r.dist,r.recepcionAt||'',r.entregaAt||'',r.umbralEst,r.incidenciaHoras||0,r.umbralAjustado,r.netoSinIncidencia,r.neto,r.incidenciaCompensacion,r.incidenciaEstado,(r.incidenciaEventos||[]).map(e=>e.id).join(' | ')]);}
  const tarifRows=[['PDV','MODALIDAD','TARIFA ESTANDAR S/','DEPARTAMENTO/PROVINCIA/DISTRITO','TARIFA ZONAL S/']];
  for(const [pdv,t] of Object.entries(settings.tariffs||{})){tarifRows.push([pdv,t.mode,t.standard,'','']);for(const [key,value] of Object.entries(t.zones||{}))tarifRows.push([pdv,t.mode,t.standard,key.replaceAll('|',' / '),value]);}
- const ruleRows=[['PARAMETRO','VALOR'],['Periodo',settings.period||selectedPeriod()],['Periodo referencia',settings.refPeriod||selectedPeriod()],['Porcentaje reducción (%)',rule.rate],['Horas por bloque',rule.step],['Exceso máximo permitido (h)',rule.maxExcess],['Mínimo guías mejor PDV',settings.minGuides],['Umbral simulado (h)',base],['Neto simulado del Excel (S/)',totalSim],['Diferencia neto real - simulado (S/)',totalDiff],['Guías fuente',stats?.valid||''],['Duplicados descartados',stats?.duplicates||0],['Conflictos entre PDV',stats?.pdvConflicts||0],['Guías de otros meses excluidas',stats?.excludedOtherMonths||0],['Filas inválidas',stats?.invalid||0],['Simulación','Comparación únicamente; NO modifica liquidaciones ni parámetros guardados. Se utilizan solo guías con neto real y tarifa calculados.'],['Regla exceso máximo','Pago 0% si horas excedentes > máximo (no >=)'],['Primera reducción','Inmediatamente al superar umbral; en cada frontera adicional, siguiente descuento']];
+ const ruleRows=[['PARAMETRO','VALOR'],['Periodo',settings.period||selectedPeriod()],['Periodo referencia',settings.refPeriod||selectedPeriod()],['Porcentaje reducción (%)',rule.rate],['Horas por bloque',rule.step],['Exceso máximo permitido (h)',rule.maxExcess],['Mínimo guías mejor PDV',settings.minGuides],['Umbral simulado (h)',base],['Neto simulado del Excel (S/)',totalSim],['Diferencia neto real - simulado (S/)',totalDiff],['Guías fuente',stats?.valid||''],['Duplicados descartados',stats?.duplicates||0],['Conflictos entre PDV',stats?.pdvConflicts||0],['Guías de otros meses excluidas',stats?.excludedOtherMonths||0],['Filas inválidas',stats?.invalid||0],['Simulación','Comparación únicamente; NO modifica liquidaciones ni parámetros guardados. Se utilizan solo guías con neto real y tarifa calculados.'],['Guías con horas de incidencia',details.filter(r=>r.incidenciaHoras>0).length],['Compensación por incidencias S/',M.money(details.reduce((sum,r)=>sum+(r.incidenciaCompensacion||0),0))],['Eventos aprobados',(settings.incidents||[]).length],['Regla exceso máximo','Pago 0% si horas excedentes > máximo (no >=)'],['Primera reducción','Inmediatamente al superar umbral; en cada frontera adicional, siguiente descuento']];
  const book=XLSX.utils.book_new();
- for(const [sheetName,data] of [['RESUMEN',summaryRows],['RESUMEN_PDV',pdvSheet],['RESUMEN_GRUPOS',groupSheet],['DETALLE',detailRows],['TARIFAS',tarifRows],['REGLAS',ruleRows]]){
+ for(const [sheetName,data] of [['RESUMEN',summaryRows],['RESUMEN_PDV',pdvSheet],['RESUMEN_GRUPOS',groupSheet],['DETALLE',detailRows],['INCIDENCIAS',incRows],['TARIFAS',tarifRows],['REGLAS',ruleRows]]){
   const sh=XLSX.utils.aoa_to_sheet(clean(data));
   sh['!cols']=data[0].map(v=>({wch:Math.min(36,Math.max(13,String(v).length+2))}));
   XLSX.utils.book_append_sheet(book,sh,sheetName);
@@ -829,6 +884,18 @@ function exportData(summary,details,name,settings,stats){
 async function exportCurrent(){if(!view.details.length){notify('No hay información que exportar.',true);return;}setStatus(`Generando Excel de ${fnum(view.details.length,0)} guías filtradas…`);await new Promise(r=>setTimeout(r,50));try{const configSnapshot=structuredClone({...config,period:selectedPeriod(),refPeriod:$('refPeriod').value});exportData(view.summary,view.details,`FACTURACION_${selectedPeriod()}_${selectedPDVs.size?Array.from(selectedPDVs).join('_'):'SELECCION'}`,configSnapshot,sourceStats);setStatus(`Excel generado: ${fnum(view.details.length,0)} guías del filtro actual.`);}catch(e){setStatus('Error de exportación: '+e.message);notify(e.message,true);}}
 async function closePeriod(){
  if(!Cloud.admin())return notify('Solo administrador puede cerrar liquidaciones.',true);
+ if(!incidenciasReady)return notify('Verifica la sincronización del calendario antes de cerrar.',true);
+ // Consultar otra vez justo antes del cierre: nunca publicar con eventos desactualizados.
+ let latestEvents;
+ try{latestEvents=await Cloud.loadApprovedIncidents();}
+ catch(e){incidenciasReady=false;incidenciasError=e.message;return notify('No se pudo validar Calendario antes del cierre: '+e.message,true);}
+ const revisionKey=a=>(a||[]).map(x=>x.id+':'+x.revision).sort().join('|');
+ if(revisionKey(latestEvents)!==revisionKey(config.incidents)){
+   config.incidents=latestEvents;await calculate();
+   return notify('Los eventos aprobados cambiaron. Recalculé los importes; revisa los resultados y vuelve a cerrar.',true);
+ }
+
+ if(result?.totals?.incidenciaSinFechas)return notify('Faltan fechas exactas en '+result.totals.incidenciaSinFechas+' guías vinculadas a PDV con eventos; no se puede cerrar.',true);
  if(!result||!result.details.length)return;
  const total=result.totals;
  if(total.pendientes){notify('Hay '+total.pendientes+' guías sin tiempo base o tarifa. No se puede finalizar.',true);return;}
@@ -1051,7 +1118,7 @@ function bindCloudEvents(){
 }
 
 function bindEvents(){document.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('.tab-panel').forEach(x=>x.classList.toggle('active',x.id===`tab-${btn.dataset.tab}`));if(btn.dataset.tab==='historico')renderHistory();}));
- $('period').addEventListener('change',async()=>{rememberWorkingState();try{await loadPeriod();}catch(err){syncStatus('No se pudo recuperar el periodo: '+err.message,true);notify(err.message,true);}});$('fileInput').addEventListener('change',e=>importFile(e.target.files?.[0]));$('btnExport').addEventListener('click',exportCurrent);
+ $('period').addEventListener('change',async()=>{rememberWorkingState();try{await loadPeriod();}catch(err){syncStatus('No se pudo recuperar el periodo: '+err.message,true);notify(err.message,true);}});$('fileInput').addEventListener('change',e=>importFile(e.target.files?.[0]));$('incFechasFile').addEventListener('change',async e=>{try{await importIncidenceDates(e.target.files?.[0]);}catch(err){notify('Fechas: '+err.message,true);}finally{e.target.value='';}});$('btnRefreshIncidents').addEventListener('click',()=>refreshApprovedIncidents());$('btnExport').addEventListener('click',exportCurrent);
  $('btnBackupDraft').addEventListener('click',()=>backupDraft().catch(e=>notify('Respaldo: '+e.message,true)));
  $('btnSaveCloudDraft').addEventListener('click',()=>saveCloudDraft());
  $('btnLoadCloudDraft').addEventListener('click',()=>restoreCloudDraft());

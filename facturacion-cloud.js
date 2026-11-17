@@ -125,6 +125,12 @@
       p_accion:action,p_nombre:name,p_pdvs:pdvs
     }), 'Guardar agrupacion de PDV');
   }
+  async function loadApprovedIncidents() {
+    assertAdmin();
+    return allPages('facturacion_incidencias',
+      'id,titulo,tipo,descripcion,fecha_inicio,fecha_fin,pdvs,zonas,estado,revision,aprobado_en',
+      q => q.eq('estado','APROBADO').order('fecha_inicio',{ascending:true}), 500);
+  }
   async function saveRules(period, rule, minGuides, refPeriod) {
     assertAdmin();
     ensure(await create().from(TABLES.config).upsert({
@@ -310,6 +316,6 @@
       .select('configuracion,estadisticas,totales').eq('liquidacion_id',id).single(),'Cierre privado');
   }
   root.FacturacionCloud={create,restore,refreshProfile,login,logout,profile:()=>profile,
-    user:()=>currentUser,admin,loadConfig,loadPDVGroups,managePDVGroup,saveRules,saveTariff, importTariffsBulk,saveTime,saveTimesBulk,loadReviews,saveReview,refreshReviews,
+    user:()=>currentUser,admin,loadConfig,loadApprovedIncidents,loadPDVGroups,managePDVGroup,saveRules,saveTariff, importTariffsBulk,saveTime,saveTimesBulk,loadReviews,saveReview,refreshReviews,
     listMembers,upsertMember,publish,listSettlements,readSummary,readDetails,readAllDetails,readPrivate};
 })(window);

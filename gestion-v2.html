@@ -677,7 +677,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V18.13 <span class="build-stamp" id="buildStamp">Edición 20261116-V18-13-CALENDARIO</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V18.14 <span class="build-stamp" id="buildStamp">Edición 20261119-V18-14-EXPORTACION-COMPLEMENTARIA</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel filtrado · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -687,7 +687,14 @@
       <section id="sourceUploadPanel" class="panel hidden">
         <div class="panel-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Carga de información operativa <span class="readonly-note">SOLO ADMINISTRADOR</span><button type="button" id="sourceUploadToggle" class="secondary" style="margin-left:auto" aria-expanded="true" aria-controls="sourceUploadContent" onclick="toggleCargaOperativa()">Ocultar carga</button></div>
         <div id="sourceUploadContent" class="panel-body"><details><summary>Migración inicial desde Google (opcional)</summary><p>Solo en una réplica vacía. Seleccione el JSON privado generado por ExportarReplica.gs. No suba ese JSON a GitHub.</p><input type="file" accept=".json" onchange="importarReplica(this.files[0])"><span id="migrationStatus" role="status"></span></details>
-          <div class="source-actions" style="margin:12px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="guardarFuentesBtn" class="success" onclick="guardarInformacionCargada()">💾 Guardar información cargada</button><button type="button" id="v16VersionPublicadaBtn" class="secondary" onclick="comprobarVersionPublicadaV9()">Comprobar versión publicada</button><button type="button" id="v16VerificarPublicacionBtn" class="secondary" hidden onclick="verificarPublicacionV9()">Verificar publicación pendiente</button><button type="button" id="v16ReintentarPublicacionBtn" class="secondary" hidden onclick="reintentarPublicacionV9()">↻ Reintentar SOLO publicación</button><button type="button" id="v16DescartarPublicacionBtn" hidden onclick="descartarPublicacionPendienteV19()" style="background:#b91c1c;color:#fff;border:1px solid #991b1b">🗑 Eliminar carga pendiente</button><span id="guardadoFuentesEstado" role="status" style="margin-left:12px"></span></div><p class="source-note">Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada fuente reemplaza su versión anterior; para Exportación puedes elegir varios Excel y se guardarán unidos por guía. Para Track Break se guardan únicamente las regiones elegidas del nuevo archivo. COLA LARGA se calcula desde Exportación de guías. Espere la confirmación antes de cerrar.</p><div class="source-upload-grid"><div class="source-card"><div class="source-card-head"><div class="source-card-title">PDV_LISTA — cargar primero</div><span id="sourcePdvStatus" class="source-status">Sin verificar</span></div><input id="sourcePdvFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourcePdvMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('PDV LISTA')">Cargar PDV_LISTA — cargar primero</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Exportación de guías</div><span id="sourceEnvioStatus" class="source-status">Sin verificar</span></div><input id="sourceEnvioFile" class="source-file" type="file" accept=".xlsx,.xls" multiple onchange="mostrarSeleccionExportacionMultiple(this)"><small class="source-note">Puedes seleccionar varios Excel en una sola carga (Ctrl + clic). Se unen por Número de Guía y se conserva el registro con el escaneo más reciente. El conjunto reemplaza la exportación vigente al guardarse.</small><div id="sourceEnvioSeleccionados" class="source-meta" role="status" aria-live="polite"></div><div id="sourceEnvioMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('EXPORTACION GUIAS')">Cargar Exportación de guías</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Despachos ayer (opcional)</div><span id="sourceDespachosStatus" class="source-status">Sin verificar</span></div><input id="sourceDespachosFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceDespachosMeta" class="source-meta"></div><small class="source-note">También acepta Exportación de guías. Se cuenta cada guía única por Punto de entrega; si falta, usa el Punto de escaneo más reciente. Solo se guardan los conteos por PDV.</small><button onclick="cargarFuenteOperativaPortal('DESPACHOS AYER')">Cargar Despachos ayer (opcional)</button></div>
+          <div class="source-actions" style="margin:12px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="guardarFuentesBtn" class="success" onclick="guardarInformacionCargada()">💾 Guardar información cargada</button><button type="button" id="v16VersionPublicadaBtn" class="secondary" onclick="comprobarVersionPublicadaV9()">Comprobar versión publicada</button><button type="button" id="v16VerificarPublicacionBtn" class="secondary" hidden onclick="verificarPublicacionV9()">Verificar publicación pendiente</button><button type="button" id="v16ReintentarPublicacionBtn" class="secondary" hidden onclick="reintentarPublicacionV9()">↻ Reintentar SOLO publicación</button><button type="button" id="v16DescartarPublicacionBtn" hidden onclick="descartarPublicacionPendienteV19()" style="background:#b91c1c;color:#fff;border:1px solid #991b1b">🗑 Eliminar carga pendiente</button><span id="guardadoFuentesEstado" role="status" style="margin-left:12px"></span></div><p class="source-note">Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada fuente reemplaza su versión anterior; para Exportación puedes elegir varios Excel y se guardarán unidos por guía. Para Track Break se guardan únicamente las regiones elegidas del nuevo archivo. COLA LARGA se calcula desde Exportación de guías. Espere la confirmación antes de cerrar.</p><div class="source-upload-grid"><div class="source-card"><div class="source-card-head"><div class="source-card-title">PDV_LISTA — cargar primero</div><span id="sourcePdvStatus" class="source-status">Sin verificar</span></div><input id="sourcePdvFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourcePdvMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('PDV LISTA')">Cargar PDV_LISTA — cargar primero</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Exportación de guías</div><span id="sourceEnvioStatus" class="source-status">Sin verificar</span></div><input id="sourceEnvioFile" class="source-file" type="file" accept=".xlsx,.xls" multiple onchange="mostrarSeleccionExportacionMultiple(this)"><small class="source-note">Puedes seleccionar varios Excel en una sola carga (Ctrl + clic). Se unen por Número de Guía y se conserva el registro con el escaneo más reciente. El conjunto reemplaza la exportación vigente al guardarse.</small><div id="sourceEnvioSeleccionados" class="source-meta" role="status" aria-live="polite"></div><div id="sourceEnvioMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('EXPORTACION GUIAS')">Cargar Exportación de guías</button></div><div class="source-card" id="sourceEnvioComplementoCard">
+ <div class="source-card-head"><div class="source-card-title">➕ Complementar Exportación de guías</div><span class="source-status" id="sourceEnvioComplementoStatus">Sin seleccionar</span></div>
+ <input id="sourceEnvioComplementoFile" class="source-file" type="file" accept=".xlsx,.xls" multiple onchange="actualizarSeleccionEnvioComplemento()" aria-label="Seleccionar varios Excel para complementar la Exportación sin reemplazarla">
+ <div id="sourceEnvioComplementoMeta" class="source-meta" role="status" aria-live="polite"></div>
+ <label style="display:flex;align-items:flex-start;gap:7px;margin:9px 0;font-size:11px;line-height:1.5;color:#334155"><input id="sourceEnvioComplementoActualizar" type="checkbox" style="margin-top:2px;flex-shrink:0">Actualizar una guía existente <b>solo si</b> el archivo nuevo tiene un escaneo posterior (predeterminado: conservar lo publicado)</label>
+ <small class="source-note">Modo complementario: conserva las guías actuales y agrega las nuevas de los Excel seleccionados. Las guías repetidas se mantienen intactas, salvo que actives la actualización por escaneo más reciente. Al publicar se recompone la fuente completa, por lo que una base grande puede requerir optimizar la publicación en Supabase.</small>
+ <div class="source-actions"><button type="button" class="secondary" id="sourceEnvioComplementoBtn" onclick="complementarExportacionGuiasPortal()">➕ Agregar sin reemplazar</button></div>
+ </div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Despachos ayer (opcional)</div><span id="sourceDespachosStatus" class="source-status">Sin verificar</span></div><input id="sourceDespachosFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourceDespachosMeta" class="source-meta"></div><small class="source-note">También acepta Exportación de guías. Se cuenta cada guía única por Punto de entrega; si falta, usa el Punto de escaneo más reciente. Solo se guardan los conteos por PDV.</small><button onclick="cargarFuenteOperativaPortal('DESPACHOS AYER')">Cargar Despachos ayer (opcional)</button></div>
             <div class="source-card">
               <div class="source-card-head"><div class="source-card-title">Track break más informes</div><span id="sourceBrechaStatus" class="source-status">Sin verificar</span></div>
               <input id="sourceBrechaFile" class="source-file" type="file" accept=".xlsx,.xls">
@@ -1199,6 +1206,55 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
       "Consolidado ("+lista.length+" Excel): "+lista.map(f=>f.name).join("; ").slice(0,180);
     return {filas,nombreArchivo:descripcion,archivos:lista.length,registros:leidas,
       guiasUnicas:elegidas.size,duplicadas:leidas-elegidas.size,sinGuia};
+  }
+
+  // V18.14: segunda entrada de Exportación, independiente de la que REEMPLAZA.
+  function actualizarSeleccionEnvioComplemento(){
+    const input=document.getElementById('sourceEnvioComplementoFile');
+    const lista=Array.from(input?.files||[]),estado=document.getElementById('sourceEnvioComplementoStatus');
+    const detalle=document.getElementById('sourceEnvioComplementoMeta');
+    if(estado){estado.textContent=lista.length?lista.length+' Excel seleccionados':'Sin seleccionar';estado.classList.toggle('ready',lista.length>0);}
+    if(detalle)detalle.textContent=lista.length?lista.map(x=>x.name).join(' · '):'Selecciona uno o varios archivos de Exportación.';
+  }
+  async function complementarExportacionGuiasPortal(){
+    if(guardadoFuentesEnCurso)return toast('Ya existe una carga o publicación en proceso.',false);
+    if(!sesion||sesion.rol!=='ADMINISTRADOR')return toast('Solo el administrador puede complementar Exportación.',false);
+    if(window.V16PublicacionV9?.hayPendiente?.())return toast('Hay una publicación pendiente: verifícala o elimínala antes de complementar.',false);
+    const input=document.getElementById('sourceEnvioComplementoFile');
+    const lista=Array.from(input?.files||[]);
+    if(!lista.length)return toast('Selecciona uno o varios Excel para complementar.',false);
+    if(lista.some(f=>!/\.(xlsx|xls)$/i.test(f.name)||!f.size||f.size>EXCEL_MAX_BYTES))return toast('Solo Excel XLSX/XLS válidos de hasta 30 MB por archivo.',false);
+    if(typeof XLSX==='undefined')return toast('No se cargó el lector de Excel.',false);
+    const cambiarRepetidas=!!document.getElementById('sourceEnvioComplementoActualizar')?.checked;
+    const descripcion=cambiarRepetidas?'Las guías existentes podrán actualizarse solo si el nuevo escaneo es posterior.':'Las guías existentes quedarán intactas, incluso si aparecen repetidas.';
+    if(!confirm('Se agregarán nuevas guías a la Exportación publicada utilizando '+lista.length+' Excel.\n'+descripcion+'\n\nNo se reemplazará el conjunto de guías vigente. Sin embargo, el servidor debe volver a publicar la fuente consolidada.\n¿Continuar?'))return;
+    const boton=document.getElementById('sourceEnvioComplementoBtn'),guardar=document.getElementById('guardarFuentesBtn');
+    const estado=document.getElementById('sourceEnvioComplementoMeta');
+    guardadoFuentesEnCurso=true;if(boton)boton.disabled=true;if(guardar)guardar.disabled=true;
+    try{
+      mostrarLoading(true,'Validando archivos complementarios…');
+      const union=await consolidarExportacionesGuias(lista,{onProgreso:(n,total,nombre)=>mostrarLoading(true,'Complemento '+n+'/'+total+': '+nombre)});
+      estado.textContent=union.guiasUnicas+' guías distintas en los archivos; consultando la fuente publicada…';
+      mostrarLoading(true,'Leyendo y conciliando con la Exportación vigente de Supabase…');
+      const preparado=await rpcFuentesGuardar('cargarFuenteOperativa',token,{tipo:'EXPORTACION GUIAS',nombreArchivo:'Complemento ('+lista.length+' Excel): '+lista.map(f=>f.name).join('; ').slice(0,170),filas:union.filas,modo:'COMPLEMENTAR',actualizarMasReciente:cambiarRepetidas,diferirProcesamiento:true});
+      const c=preparado?.complemento;
+      if(!c)throw new Error('El servidor no confirmó los conteos de complementación.');
+      const resumen='Publicadas: '+num(c.existentes)+' · Nuevas: '+num(c.agregadas)+' · Repetidas conservadas: '+num(c.conservadas)+' · Actualizadas: '+num(c.actualizadas)+' · Total: '+num(c.total);
+      estado.textContent=resumen;
+      if(c.sinCambios){mostrarLoading(false);toast('Sin cambios por publicar. '+resumen,true);return;}
+      mostrarLoading(true,'Publicando Exportación complementada · '+num(c.total)+' guías (conservando las anteriores)…');
+      const resultado=await rpcFuentesGuardar('confirmarGuardadoFuentes',token);
+      if(!resultado?.ok)throw new Error('Supabase no confirmó la publicación complementaria.');
+      if(resultado.advertencia){estado.textContent=resumen+' · '+resultado.advertencia;toast(resultado.advertencia,false);}
+      else{input.value='';actualizarSeleccionEnvioComplemento();estado.textContent='PUBLICADO · '+resumen;toast('Exportación complementada. '+resumen,true);}
+      // No usar solo el archivo delta para la tabla de guías fuera del resumen.
+      fueraResumenMatrizTrasGuardar=null;
+      cargarDatos();
+    }catch(error){
+      const msg='No se confirmó el complemento: '+errorTexto(error);
+      estado.textContent=msg;toast(msg,false);
+      // Conservar la selección local; si hubo timeout, usar Verificar/Reintentar publicación.
+    }finally{mostrarLoading(false);guardadoFuentesEnCurso=false;if(boton)boton.disabled=false;if(guardar)guardar.disabled=false;actualizarBotonesPublicacionV9();}
   }
 
   async function cargarFuenteOperativaPortal(tipo){
@@ -2822,6 +2878,12 @@ function coincideFiltroResumenIndividual(x,seleccion){if(!seleccion)return true;
     ["Cargar PDV_LISTA — cargar primero", "Upload PDV_LISTA — upload first", "上传 PDV_LISTA — 请先上传"],
     ["Exportación de guías", "Guide export", "指南导出"],
     ["Cargar Exportación de guías", "Upload guide export", "上传指南导出"],
+    ["➕ Complementar Exportación de guías", "➕ Supplement guide export", "➕ 补充运单导出"],
+    ["Sin seleccionar", "Nothing selected", "未选择"],
+    ["➕ Agregar sin reemplazar", "➕ Add without replacing", "➕ 添加而不替换"],
+    ["Actualizar una guía existente", "Update an existing guide", "更新已有运单"],
+    ["Solo si el archivo nuevo tiene un escaneo posterior (predeterminado: conservar lo publicado)", "Only if the new file has a later scan (default: keep the published record)", "仅在新文件扫描时间更晚时更新（默认保留已发布记录）"],
+
     ["Despachos ayer (opcional)", "Yesterday's dispatches (optional)", "昨日发货量（可选）"],
     ["También acepta Exportación de guías. Se cuenta cada guía única por Punto de entrega; si falta, usa el Punto de escaneo más reciente. Solo se guardan los conteos por PDV.", "Guide Export files are also accepted. Each unique guide is counted by Delivery Point; if it is blank, the latest scan point is used. Only counts by PDV are stored.", "也接受指南导出文件。按交付点统计每个唯一指南；若为空，则使用最近扫描点。仅保存每个 PDV 的计数。"],
     ["Cargar Despachos ayer (opcional)", "Upload yesterday's dispatches (optional)", "上传昨日发货量（可选）"],

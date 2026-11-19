@@ -1,6 +1,6 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Calendario de Incidencias Operativas</title>
-<script defer src="./config.js"></script><script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.js"></script><script defer src="./incidencias-core.js"></script><script defer src="./calendario-incidencias.js"></script>
-<link rel="stylesheet" href="./calendario-incidencias.css"></head><body>
+<script defer src="./config.js"></script><script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.js"></script><script defer src="./incidencias-core.js"></script><script defer src="./calendario-zonas.js?v=20261118-geo-v11"></script><script defer src="./calendario-zonas-selector.js?v=20261118-geo-v11"></script><script defer src="./calendario-incidencias.js?v=20261118-geo-v11"></script>
+<link rel="stylesheet" href="./calendario-incidencias.css?v=20261118-geo-v11"></head><body>
 <header class="top"><div><h1>📅 <span data-t="title">Calendario de incidencias operativas</span></h1><p data-t="subtitle">Horas extraordinarias aplicadas únicamente durante la recepción–entrega de cada guía.</p></div><label><span data-t="language">Idioma</span><select id="language"><option value="es">Español</option><option value="en">English</option><option value="zh-CN">简体中文</option></select></label></header>
 <main><div id="status" role="status" class="status">Conectando a Supabase…</div><div id="app" hidden>
 <section class="toolbar"><div><button id="prevMonth">‹</button><strong id="monthTitle"></strong><button id="nextMonth">›</button><button id="thisMonth" data-t="today">Hoy</button></div><div><label><span data-t="filterPDV">PDV</span><select id="filterPDV"><option value="">Todos</option></select></label><label><span data-t="filterStatus">Estado</span><select id="filterStatus"><option value="">Todos</option><option value="APROBADO">Aprobado</option><option value="PENDIENTE">Pendiente</option><option value="RECHAZADO">Rechazado</option><option value="ANULADO">Anulado</option></select></label><button id="createBtn" class="primary" hidden data-t="create">+ Registrar evento</button></div></section>
@@ -12,6 +12,27 @@
 <div class="formgrid"><label><span data-t="event">Nombre del evento</span><input id="title" required maxlength="180" placeholder="Paro de transportistas"></label><label><span data-t="type">Tipo</span><select id="kind"><option value="PARO">Paro</option><option value="BLOQUEO">Bloqueo</option><option value="HUAICO">Huaico</option><option value="CLIMA">Clima extremo</option><option value="COMBUSTIBLE">Combustible</option><option value="TRANSPORTE">Interrupción de transporte</option><option value="OTRO">Otro</option></select></label><label><span data-t="start">Inicio (hora Perú)</span><input id="start" type="datetime-local" required></label><label><span data-t="end">Fin (hora Perú)</span><input id="end" type="datetime-local" required></label></div>
 <label><span data-t="description">Descripción</span><textarea id="description" rows="2" maxlength="3000"></textarea></label>
 <div class="scope"><strong data-t="affected">PDV afectados (selección múltiple)</strong><input id="pdvSearch" type="search" placeholder="Buscar UCA-02, ANC-05…"><div class="pdvlist" id="pdvList"></div><p id="selectedCount"></p></div>
-<label><span data-t="zones">Distritos afectados (opcional; una línea por departamento | provincia | distrito)</span><textarea id="zones" rows="3" placeholder="UCAYALI | CORONEL PORTILLO | CALLERIA"></textarea></label>
+<section class="scope zone-scope" id="zonesScope" aria-labelledby="zonesHeading">
+  <strong id="zonesHeading" data-t="zones">Distritos afectados (selección múltiple)</strong>
+  <p class="zone-note" data-t="zonesHelp">Busca por departamento, provincia o distrito. Selecciona las localidades afectadas; las selecciones se conservan al cambiar filtros. Si no marcas ninguna, el evento se aplica a todos los distritos de los PDV seleccionados.</p>
+  <div class="zone-search-grid">
+    <div class="geo-filter"><label for="geoDeptSearch" data-t="dept">Departamento</label><input id="geoDeptSearch" type="search" autocomplete="off" placeholder="Ej.: UCAYALI"><div class="geo-optionlist" id="geoDeptOptions" role="group" aria-label="Filtrar departamentos"></div></div>
+    <div class="geo-filter"><label for="geoProvSearch" data-t="prov">Provincia</label><input id="geoProvSearch" type="search" autocomplete="off" placeholder="Ej.: CORONEL PORTILLO"><div class="geo-optionlist" id="geoProvOptions" role="group" aria-label="Filtrar provincias"></div></div>
+    <div class="geo-filter"><label for="geoDistSearch" data-t="dist">Distrito</label><input id="geoDistSearch" type="search" autocomplete="off" placeholder="Ej.: CALLERIA"><div class="geo-optionlist" id="geoDistOptions" role="group" aria-label="Filtrar distritos"></div></div>
+  </div>
+  <div class="zone-actions">
+    <strong id="zoneFilteredCount" aria-live="polite"></strong>
+    <button type="button" id="zoneSelectFiltered" data-t="selectFiltered">Seleccionar todos los filtrados</button>
+    <button type="button" id="zoneRemoveFiltered" data-t="removeFiltered">Quitar selección filtrada</button>
+    <button type="button" id="zoneClear" data-t="clearZones">Limpiar zonas</button>
+    <label class="zone-visibility"><input id="zoneOnlySelected" type="checkbox"><span data-t="onlySelected">Solo seleccionados</span></label>
+  </div>
+  <div class="zone-results" id="geoZoneList" role="group" aria-label="Distritos afectados"></div>
+  <p id="zoneSelectedCount" class="zone-count" aria-live="polite"></p>
+  <div class="zone-selected-preview" id="zonePreview"></div>
+  <details class="zone-manual"><summary data-t="manualZone">¿No encuentras una localidad? Agregar manualmente</summary>
+    <div class="zone-manual-grid"><input id="manualDept" aria-label="Departamento manual" placeholder="Departamento"><input id="manualProv" aria-label="Provincia manual" placeholder="Provincia"><input id="manualDist" aria-label="Distrito manual" placeholder="Distrito"><button type="button" id="manualAddZone" data-t="addZone">Agregar zona</button></div>
+  </details>
+</section>
 <label><span data-t="evidence">URL de evidencia (opcional)</span><input id="evidence" type="url" maxlength="1000" placeholder="https://..."></label><p id="dialogStatus" role="status"></p><div class="right"><button type="button" id="cancelDialog" data-t="cancel">Cancelar</button><button type="submit" class="primary" id="saveEvent" data-t="save">Guardar pendiente</button></div></form></dialog>
 </body></html>

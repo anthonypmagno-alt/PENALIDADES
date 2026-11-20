@@ -21,3 +21,20 @@
 .summary th:nth-child(8),.summary td:nth-child(8){background:#f2f8ff}
 .summary th:nth-child(14),.summary td:nth-child(14){background:#fff0f0}
 .summary td:nth-child(15){font-weight:800;color:#1769d3}
+
+/* V1.3 — filtros cruzados al pulsar celdas y gráficos */
+.drill-bar{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:14px 16px;background:#f0f6fd;border:1px dashed #b3cce6;border-radius:12px;margin-bottom:17px}
+.drill-bar.drill-active{background:#e9f3ff;border:1px solid #71a9dd;box-shadow:0 2px 10px #1a58921a}
+.drill-intro{display:flex;flex-direction:column;gap:4px;min-width:180px}.drill-intro strong{font-size:12px;color:#184f86}.drill-intro span{font-size:11px;color:#597897}
+.drill-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex:1}
+.drill-chip{border:1px solid #8fbde9;background:white;border-radius:999px;color:#19568f;padding:7px 11px;font-size:11px;cursor:pointer;font-weight:700}
+.drill-chip:hover{background:#d9eaff}.drill-chip b{font-size:14px;padding-left:3px}.drill-chip.return-chip{border-color:#db8282;color:#b42318;background:#fff5f5}
+.drill-bar-actions{display:flex;gap:6px;flex-wrap:wrap}
+.drill-bar-actions .btn{padding:8px 11px;font-size:11px}
+.drill-cell{padding:3px 5px;border:1px solid transparent;background:transparent;color:#1769b4;font:inherit;font-weight:700;cursor:pointer;border-radius:6px;white-space:nowrap;min-width:20px}
+.drill-cell:hover,.drill-cell:focus-visible{border-color:#7cacdc;background:#e0efff;color:#104678;text-decoration:underline;outline:none}
+.drill-geo{text-align:left;font-weight:600;color:#254f7f}
+.devolucion-num .drill-cell{color:#b42318}.devolucion-num .drill-cell:hover{background:#ffe4e6;border-color:#ef9999}
+.chart-card canvas{cursor:crosshair}.chart-card canvas:focus-visible{outline:3px solid #7cacdc}
+#detailSection{scroll-margin-top:15px}
+@media(max-width:650px){.drill-intro{width:100%}.drill-bar-actions{width:100%}}

@@ -121,7 +121,7 @@ function renderSummary(rows){
  $('pdvRows').innerHTML=gs.map(g=>{
   const p=safe(g.pdv),cnt=(v,action,band)=>v?`<button type="button" class="drill-cell" data-drill-action="${action}" data-pdv="${p}" ${band!==undefined?`data-band="${band}"`:''} title="Filtrar ${action==='returns'?'devoluciones':action==='band'?C.LABELS[band]:'guías'} · ${p}">${fmt(v)}</button>`:'–';
   return `<tr data-row-pdv="${p}" class="${state.drill.pdv===g.pdv?'active-pdv':''}"><td><input type="checkbox" data-select-pdv="${p}" ${sel.has(g.pdv)?'checked':''}> <button class="pdv-link" data-drill-action="pdv" data-pdv="${p}">${p}</button></td><td>${cnt(g.n,'pdv')}</td><td class="devolucion-num">${cnt(g.devoluciones,'returns')}</td><td>${g.depts}</td><td>${g.provinces}</td><td>${g.districts}</td><td>${g.n?num(g.avg,2):'–'}</td>${g.bands.map((n,i)=>`<td>${cnt(n,'band',i)}</td>`).join('')}<td>${g.n?num(g.payAvg,1)+'%':'–'}</td></tr>`;
- }).join('')||'<tr><td colspan="15" class="empty">No hay guías que coincidan con los filtros. Quita la selección interactiva para volver al total.</td></tr>';
+ }).join('')||'<tr><td colspan="16" class="empty">No hay guías que coincidan con los filtros. Quita la selección interactiva para volver al total.</td></tr>';
  const general=(v,action,band)=>v?`<button type="button" class="drill-cell" data-drill-action="${action}" ${band!==undefined?`data-band="${band}"`:''} title="Ver guías del total general">${fmt(v)}</button>`:'–';
  $('pdvFoot').innerHTML=`<tr><td>TOTAL GENERAL</td><td>${general(tot.n,'all')}</td><td class="devolucion-num">${general(tot.devoluciones,'returns')}</td><td>${tot.depts}</td><td>${tot.provinces}</td><td>${tot.districts}</td><td>${tot.n?num(tot.avg,2):'–'}</td>${tot.bands.map((n,i)=>`<td>${general(n,'band',i)}</td>`).join('')}<td>${tot.n?num(tot.payAvg,1)+'%':'–'}</td></tr>`;
  $('selectedCount').textContent=`${sel.size} PDV seleccionados`;
@@ -135,7 +135,7 @@ function renderCoverage(rows){
   const attr=`data-department="${safe(g.department)}" data-province="${safe(g.province)}" data-district="${safe(g.district)}"`,geo=`${g.department} / ${g.province} / ${g.district}`;
   const cell=(n,action,band)=>n?`<button class="drill-cell" data-drill-action="${action}" ${attr} ${band!==undefined?`data-band="${band}"`:''} title="Ver ${safe(geo)}${action==='geo-band'?' · '+C.LABELS[band]:''}">${fmt(n)}</button>`:'–';
   return `<tr ${attr}><td><button class="drill-cell drill-geo" data-drill-action="geo" ${attr}>${safe(g.department)}</button></td><td><button class="drill-cell drill-geo" data-drill-action="geo" ${attr}>${safe(g.province)}</button></td><td><button class="drill-cell drill-geo" data-drill-action="geo" ${attr}>${safe(g.district)}</button></td><td>${cell(g.n,'geo')}</td><td class="devolucion-num">${cell(g.devoluciones,'geo-returns')}</td>${g.bands.map((n,i)=>`<td>${cell(n,'geo-band',i)}</td>`).join('')}<td>${g.n?num(g.avg,2):'–'}</td><td>${g.n?num(g.payAvg,1)+'%':'–'}</td></tr>`;
- }).join('')||'<tr><td colspan="14" class="empty">No hay datos en esta selección.</td></tr>';
+ }).join('')||'<tr><td colspan="15" class="empty">No hay datos en esta selección.</td></tr>';
  $('coverageNote').textContent=`${fmt(gr.length)} combinaciones territoriales · las devoluciones no participan en los promedios.${gr.length>450?' Mostrando 450; el ZIP incluye todas.':''} Haz clic en una cantidad o localidad para cruzar los filtros.`;
 }
 function renderDetail(rows){
@@ -155,9 +155,9 @@ function drawBands(canvas,bands,{title='',w=1060,h=400,selected=null}={}){
  canvas._logicalW=w;canvas._logicalH=h;canvas._hits=[];
  ctx.font='bold 18px Arial';ctx.fillStyle='#203958';ctx.fillText(title||'Guías por tramo de cumplimiento',left,30);
  ctx.strokeStyle='#dde6f0';ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,h-bottom);ctx.lineTo(w-right,h-bottom);ctx.stroke();
- const colors=['#398fe1','#62b1e8','#6bb899','#d8b86a','#f49b54','#d77d6c','#cb576b'];
+ const colors=['#1872c4','#398fe1','#62b1e8','#6bb899','#d8b86a','#f49b54','#d77d6c','#cb576b'];
  bands.forEach((n,i)=>{
-  const bw=width/7*.61,x=left+width*(i+.5)/7-bw/2,barH=(h-top-bottom-30)*n/max,y=h-bottom-barH;
+  const bw=width/bands.length*.61,x=left+width*(i+.5)/bands.length-bw/2,barH=(h-top-bottom-30)*n/max,y=h-bottom-barH;
   ctx.fillStyle=colors[i];ctx.fillRect(x,y,bw,barH);
   if(selected===i){ctx.strokeStyle='#183858';ctx.lineWidth=4;ctx.strokeRect(x-2,y-2,bw+4,barH+4)}
   ctx.fillStyle='#1c3553';ctx.font='bold 18px Arial';ctx.textAlign='center';ctx.fillText(String(n),x+bw/2,Math.max(top+14,y-12));
@@ -196,21 +196,21 @@ function formatCount(cell){cell.numFmt='#,##0'}
 function workbookPDV(pdv,rows){
  const wb=new ExcelJS.Workbook();wb.creator='Módulo Descarga PDV · Cobertura';wb.created=new Date();wb.modified=new Date();
  const summary=wb.addWorksheet('RESUMEN_PDV',{views:[{state:'frozen',ySplit:4}]});summary.properties.defaultRowHeight=18;
- [22,24,27,14,14,14,14,14,14,14,14,15,17,16].forEach((w,i)=>summary.getColumn(i+1).width=w);
- summary.mergeCells('A1:N2');const title=summary.getCell('A1');title.value=`COBERTURA Y CUMPLIMIENTO · ${pdv}`;title.font={bold:true,size:20,color:{argb:'FF'+WHITE}};title.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+DARK}};title.alignment={vertical:'middle',indent:1};summary.getRow(1).height=29;summary.getRow(2).height=25;
+ [22,24,27,14,14,14,14,14,14,14,14,14,15,17,16].forEach((w,i)=>summary.getColumn(i+1).width=w);
+ summary.mergeCells('A1:O2');const title=summary.getCell('A1');title.value=`COBERTURA Y CUMPLIMIENTO · ${pdv}`;title.font={bold:true,size:20,color:{argb:'FF'+WHITE}};title.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+DARK}};title.alignment={vertical:'middle',indent:1};summary.getRow(1).height=29;summary.getRow(2).height=25;
  const st=C.stats(rows),geo=C.groupGeo(rows);
  const cards=[['GUÍAS SIN DEVOLUCIÓN',st.n],['DEPARTAMENTOS',st.depts],['PROVINCIAS',st.provinces],['DISTRITOS',st.districts],['TIEMPO PROMEDIO (H)',st.avg],['PAGO PROMEDIO (%)',st.payAvg]];
  cards.forEach(([lab,v],i)=>{const col=i<3?1+i*2:1+(i-3)*2,row=i<3?4:6;const a=summary.getCell(row,col),b=summary.getCell(row+1,col);a.value=lab;a.font={size:9,bold:true,color:{argb:'FF5E7190'}};b.value=v;b.font={size:18,bold:true,color:{argb:'FF174E89'}};if(i>=4)b.numFmt='0.00'});
  summary.getCell('G4').value='DEVOLUCIÓN';summary.getCell('G4').font={size:10,bold:true,color:{argb:'FFB42318'}};summary.getCell('G5').value=st.devoluciones;summary.getCell('G5').font={size:20,bold:true,color:{argb:'FFB42318'}};summary.getCell('I5').value='No se incluyen en promedio ni tramos de pago';summary.getCell('I5').font={size:10,italic:true,color:{argb:'FFB42318'}};
  summary.getRow(10).values=['TRAMO','% PAGO','GUÍAS','% SOBRE GUÍAS SIN DEVOLUCIÓN'];headerStyle(summary.getRow(10));
- for(let i=0;i<7;i++){const r=summary.getRow(11+i);r.getCell(1).value=C.LABELS[i];r.getCell(2).value=C.PAGOS[i]/100;r.getCell(2).numFmt='0%';r.getCell(3).value=st.bands[i];r.getCell(4).value=st.n?st.bands[i]/st.n:0;r.getCell(4).numFmt='0.0%'}
+ for(let i=0;i<C.PAGOS.length;i++){const r=summary.getRow(11+i);r.getCell(1).value=C.LABELS[i];r.getCell(2).value=C.PAGOS[i]/100;r.getCell(2).numFmt='0%';r.getCell(3).value=st.bands[i];r.getCell(4).value=st.n?st.bands[i]/st.n:0;r.getCell(4).numFmt='0.0%'}
  summary.getCell('A19').value='TOTAL GUÍAS PARA PAGO';summary.getCell('C19').value=st.n;summary.getCell('D19').value=st.n?1:0;summary.getCell('D19').numFmt='0%';summary.getRow(19).font={bold:true};
  summary.getCell('A20').value='DEVOLUCIÓN';summary.getCell('C20').value=st.devoluciones;summary.getCell('A20').font={bold:true,color:{argb:'FFB42318'}};summary.getCell('C20').font={bold:true,color:{argb:'FFB42318'}};
  const i1=wb.addImage({base64:makeChartData('bands',st.bands),extension:'png'}),i2=wb.addImage({base64:makeChartData('coverage',geo),extension:'png'});summary.addImage(i1,{tl:{col:5.4,row:9},ext:{width:750,height:250}});summary.addImage(i2,{tl:{col:5.4,row:22},ext:{width:750,height:260}});
  summary.getCell('A36').value='COBERTURA TERRITORIAL POR TRAMOS';summary.getCell('A36').font={bold:true,size:14,color:{argb:'FF174E89'}};
- const cols=['DEPARTAMENTO','PROVINCIA','DISTRITO','GUÍAS','≤48 / 100%','48–72 / 90%','72–96 / 80%','96–120 / 70%','120–144 / 60%','144–168 / 50%','>168 / 0%','PROMEDIO HORAS','PAGO PROMEDIO','DEVOLUCIÓN'];summary.getRow(38).values=cols;headerStyle(summary.getRow(38));summary.getCell('N38').fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFB42318'}};
- geo.forEach((g,i)=>{const n=39+i;summary.getRow(n).values=[excelText(g.department),excelText(g.province),excelText(g.district),g.n,...g.bands,g.n?g.avg:null,g.n?g.payAvg/100:null,g.devoluciones];summary.getCell(n,12).numFmt='0.00';summary.getCell(n,13).numFmt='0.0%';summary.getCell(n,14).font={bold:true,color:{argb:'FFB42318'}};if(i%2)summary.getRow(n).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF1F6FC'}}});
- const totalRow=39+geo.length;summary.getRow(totalRow).values=['TOTAL GENERAL','','',st.n,...st.bands,st.n?st.avg:null,st.n?st.payAvg/100:null,st.devoluciones];summary.getRow(totalRow).font={bold:true,color:{argb:'FF174E89'}};summary.getCell(totalRow,13).numFmt='0.0%';summary.getCell(totalRow,12).numFmt='0.00';summary.getCell(totalRow,14).font={bold:true,color:{argb:'FFB42318'}};summary.autoFilter={from:'A38',to:`N${Math.max(38,totalRow-1)}`};
+ const cols=['DEPARTAMENTO','PROVINCIA','DISTRITO','GUÍAS','≤24 / 100%','>24–48 / 100%','48–72 / 90%','72–96 / 80%','96–120 / 70%','120–144 / 60%','144–168 / 50%','>168 / 0%','PROMEDIO HORAS','PAGO PROMEDIO','DEVOLUCIÓN'];summary.getRow(38).values=cols;headerStyle(summary.getRow(38));summary.getCell('O38').fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFB42318'}};
+ geo.forEach((g,i)=>{const n=39+i;summary.getRow(n).values=[excelText(g.department),excelText(g.province),excelText(g.district),g.n,...g.bands,g.n?g.avg:null,g.n?g.payAvg/100:null,g.devoluciones];summary.getCell(n,13).numFmt='0.00';summary.getCell(n,14).numFmt='0.0%';summary.getCell(n,15).font={bold:true,color:{argb:'FFB42318'}};if(i%2)summary.getRow(n).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF1F6FC'}}});
+ const totalRow=39+geo.length;summary.getRow(totalRow).values=['TOTAL GENERAL','','',st.n,...st.bands,st.n?st.avg:null,st.n?st.payAvg/100:null,st.devoluciones];summary.getRow(totalRow).font={bold:true,color:{argb:'FF174E89'}};summary.getCell(totalRow,14).numFmt='0.0%';summary.getCell(totalRow,13).numFmt='0.00';summary.getCell(totalRow,15).font={bold:true,color:{argb:'FFB42318'}};summary.autoFilter={from:'A38',to:`O${Math.max(38,totalRow-1)}`};
  const det=wb.addWorksheet('DETALLE_GUIAS',{views:[{state:'frozen',ySplit:5}]});
  const dcols=[['GUÍA',22],['PDV',14],['DEPARTAMENTO',19],['PROVINCIA',24],['DISTRITO',28],['DESCARGA PDV',17],['FIRMA EFECTIVA',17],['HORAS LOGRADAS',17],['TRAMO',19],['% PAGO',13],['DEVOLUCIÓN',16],['ESTADO DEVOLUCIÓN',28],['% EN ORIGEN',15],['ESTADO',17],['STATUS',25],['ARCHIVO ORIGEN',42],['FILA ORIGEN',12]];
  dcols.forEach(([h,w],i)=>det.getColumn(i+1).width=w);det.mergeCells('A1:Q2');det.getCell('A1').value=`DETALLE DE GUÍAS · ${pdv}`;det.getCell('A1').fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+DARK}};det.getCell('A1').font={bold:true,color:{argb:'FF'+WHITE},size:18};det.getCell('A1').alignment={vertical:'middle',indent:1};det.getCell('A3').value=`${fmt(rows.length)} registros · ${fmt(st.n)} para promedio · ${fmt(st.devoluciones)} devoluciones`;det.getRow(5).values=dcols.map(x=>x[0]);headerStyle(det.getRow(5));det.getCell('K5').fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFB42318'}};
@@ -221,11 +221,11 @@ function workbookPDV(pdv,rows){
 function makeChartData(kind,data){const canvas=document.createElement('canvas');return kind==='bands'?drawBands(canvas,data,{w:1050,h:400}):drawCoverage(canvas,data,{w:1050,h:400})}
 function controlWorkbook(pdvs,all,conflicts,invalid){
  const wb=new ExcelJS.Workbook();wb.creator='Descarga PDV';const sheet=wb.addWorksheet('CONTROL_GENERAL');
- [18,13,16,14,14,14,19,...Array(7).fill(17),18].forEach((w,i)=>sheet.getColumn(i+1).width=w);
- sheet.getRow(1).values=['PDV','GUÍAS','DEVOLUCIÓN','DEPTOS','PROVINCIAS','DISTRITOS','PROMEDIO H','≤48','48–72','72–96','96–120','120–144','144–168','>168','PAGO PROM.'];headerStyle(sheet.getRow(1));sheet.getCell('C1').fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFB42318'}};
+ [18,13,16,14,14,14,19,...Array(C.PAGOS.length).fill(17),18].forEach((w,i)=>sheet.getColumn(i+1).width=w);
+ sheet.getRow(1).values=['PDV','GUÍAS','DEVOLUCIÓN','DEPTOS','PROVINCIAS','DISTRITOS','PROMEDIO H','≤24','>24–48','48–72','72–96','96–120','120–144','144–168','>168','PAGO PROM.'];headerStyle(sheet.getRow(1));sheet.getCell('C1').fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFB42318'}};
  for(const g of pdvs)sheet.addRow([excelText(g.pdv),g.n,g.devoluciones,g.depts,g.provinces,g.districts,g.n?g.avg:null,...g.bands,g.n?g.payAvg/100:null]);
  const st=C.stats(all),tr=sheet.addRow(['TOTAL',st.n,st.devoluciones,st.depts,st.provinces,st.districts,st.n?st.avg:null,...st.bands,st.n?st.payAvg/100:null]);tr.font={bold:true};
- for(let r=2;r<=sheet.rowCount;r++){sheet.getCell(r,3).font={bold:true,color:{argb:'FFB42318'}};sheet.getCell(r,7).numFmt='0.00';sheet.getCell(r,15).numFmt='0.0%'}sheet.autoFilter={from:'A1',to:`O${Math.max(1,sheet.rowCount-1)}`};
+ for(let r=2;r<=sheet.rowCount;r++){sheet.getCell(r,3).font={bold:true,color:{argb:'FFB42318'}};sheet.getCell(r,7).numFmt='0.00';sheet.getCell(r,16).numFmt='0.0%'}sheet.autoFilter={from:'A1',to:`P${Math.max(1,sheet.rowCount-1)}`};
  const inc=wb.addWorksheet('INCIDENCIAS');[25,22,20,26,30,15,19,40,13,38].forEach((w,i)=>inc.getColumn(i+1).width=w);inc.addRow(['GUÍA','PROBLEMA','PDV','PROVINCIA','DISTRITO','HORAS','% PAGO','ARCHIVO','FILA','OBSERVACIÓN']);headerStyle(inc.getRow(1));
  for(const c of conflicts)for(const r of c.options)inc.addRow([c.guia,'Duplicado contradictorio',r.pdv,r.province,r.district,r.horas,r.esDevolucion?null:r.pago/100,r.fuente,r.fila,'Pendiente de seleccionar versión. Estado: '+r.devolver]);
  for(const r of invalid)inc.addRow([r.guia||'','Dato inválido','','','',null,null,r.fuente,r.fila,r.error]);inc.autoFilter={from:'A1',to:`J${Math.max(1,inc.rowCount)}`};

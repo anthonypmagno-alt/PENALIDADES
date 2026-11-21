@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Descarga PDV · Centro.xlsx | Cobertura y cumplimiento</title>
-<meta name="app-build" content="20261120-CENTRO-V1-3-DRILLDOWN">
-<link rel="stylesheet" href="./descarga-pdv.css?v=20261120-13">
+<meta name="app-build" content="20261121-CENTRO-V1-4-24H">
+<link rel="stylesheet" href="./descarga-pdv.css?v=20261121-14">
 <script src="./config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script defer src="./centro-core.js?v=20261120-13"></script>
-<script defer src="./descarga-pdv.js?v=20261120-13"></script>
+<script defer src="./centro-core.js?v=20261121-14"></script>
+<script defer src="./descarga-pdv.js?v=20261121-14"></script>
 </head>
 <body>
 <div class="shell">
 <header class="topbar">
-  <div class="brand"><div class="brand-icon">▦</div><div><div class="eyebrow">MÓDULO INDEPENDIENTE · V1.3</div><h1>Descarga PDV · Centro.xlsx</h1><div class="sub">Cobertura geográfica, umbrales, devoluciones y pago por guía</div></div></div>
+  <div class="brand"><div class="brand-icon">▦</div><div><div class="eyebrow">MÓDULO INDEPENDIENTE · V1.4</div><h1>Descarga PDV · Centro.xlsx</h1><div class="sub">Cobertura geográfica, umbrales, devoluciones y pago por guía</div></div></div>
   <div class="top-actions"><span id="sessionStatus" class="pill neutral">Validando acceso…</span><a href="./gestion-v2.html" class="btn outline">← Gestión V2</a></div>
 </header>
 <div id="authGate" class="gate hidden"><h2>Acceso al módulo</h2><p id="authMessage">Debes iniciar sesión como administrador en el portal para usar este módulo.</p><a class="btn primary" href="./index.html">Abrir inicio de sesión</a></div>
@@ -48,17 +48,17 @@
 <div class="filter-grid"><div class="field"><label for="pdvGroupFilter">Agrupación de PDV</label><select id="pdvGroupFilter"><option value="">Todos los grupos / PDV</option></select></div><div class="multi-filter" data-field="pdv"></div><div class="multi-filter" data-field="department"></div><div class="multi-filter" data-field="province"></div><div class="multi-filter" data-field="district"></div><div class="field"><label for="guideSearch">Buscar guía</label><input id="guideSearch" type="search" placeholder="JPE0000…" autocomplete="off"></div></div></section>
 <div class="drill-bar" id="drillBar" aria-live="polite"></div>
 <section class="panel"><div class="panel-heading"><div><h2>5. Resumen por PDV</h2><p>Haz clic en una cantidad o tramo para ver sus guías. La clasificación se calcula con las horas de <code>horas_48</code>, usando límites exactos. Las guías «Por Devolver» se cuentan aparte y no participan en los promedios ni en los tramos.</p></div><div class="heading-tools"><span id="selectedCount" class="tiny muted">0 PDV seleccionados</span><button id="btnSelectFiltered" class="btn outline">Seleccionar PDV filtrados</button><button id="btnDeselect" class="btn ghost">Quitar selección</button><button id="btnZip" class="btn primary">↓ Descargar ZIP por PDV</button></div></div>
-<div class="table-scroll"><table class="summary"><thead><tr><th class="sticky-left"><input type="checkbox" id="selectVisible" title="Seleccionar todos los PDV filtrados" aria-label="Seleccionar todos los PDV filtrados"> PDV</th><th>Guías</th><th class="devolucion-head">Devolución</th><th>Deptos.</th><th>Provincias</th><th>Distritos</th><th>Promedio (h)</th><th>≤48 h · 100%</th><th>48–72 h · 90%</th><th>72–96 h · 80%</th><th>96–120 h · 70%</th><th>120–144 h · 60%</th><th>144–168 h · 50%</th><th>&gt;168 h · 0%</th><th>Pago promedio</th></tr></thead><tbody id="pdvRows"></tbody><tfoot id="pdvFoot"></tfoot></table></div>
+<div class="table-scroll"><table class="summary"><thead><tr><th class="sticky-left"><input type="checkbox" id="selectVisible" title="Seleccionar todos los PDV filtrados" aria-label="Seleccionar todos los PDV filtrados"> PDV</th><th>Guías</th><th class="devolucion-head">Devolución</th><th>Deptos.</th><th>Provincias</th><th>Distritos</th><th>Promedio (h)</th><th>≤24 h · 100%</th><th>&gt;24–48 h · 100%</th><th>48–72 h · 90%</th><th>72–96 h · 80%</th><th>96–120 h · 70%</th><th>120–144 h · 60%</th><th>144–168 h · 50%</th><th>&gt;168 h · 0%</th><th>Pago promedio</th></tr></thead><tbody id="pdvRows"></tbody><tfoot id="pdvFoot"></tfoot></table></div>
 </section>
 <section class="panel"><div class="panel-heading"><div><h2>6. Visualización de cumplimiento</h2><p id="chartScope">Todos los PDV filtrados</p></div><button class="btn outline" id="btnAllCharts">Ver todos los filtrados</button></div><div class="chart-grid"><div class="chart-card"><h3>Guías por tramo de tiempo · haz clic en una barra</h3><canvas id="chartBands" height="330" aria-label="Gráfico de guías por tramo" role="img"></canvas></div><div class="chart-card"><h3>Cobertura · 10 distritos con más guías · haz clic en una barra</h3><canvas id="chartDistricts" height="330" aria-label="Gráfico de cobertura por distrito" role="img"></canvas></div></div></section>
-<section class="panel"><div class="panel-heading"><div><h2>7. Cobertura por departamento, provincia y distrito</h2><p>Pulsa el nombre de una localidad o cualquier cantidad de tramo para filtrar el resumen y detalle; puedes combinarla con el PDV seleccionado.</p></div><span id="coverageScope" class="pill">Todos los PDV</span></div><div class="table-scroll"><table class="coverage"><thead><tr><th>Departamento</th><th>Provincia</th><th>Distrito</th><th>Guías</th><th class="devolucion-head">Devolución</th><th>≤48 h</th><th>48–72 h</th><th>72–96 h</th><th>96–120 h</th><th>120–144 h</th><th>144–168 h</th><th>&gt;168 h</th><th>Promedio (h)</th><th>Pago promedio</th></tr></thead><tbody id="coverageRows"></tbody></table></div><div id="coverageNote" class="tiny muted"></div></section>
+<section class="panel"><div class="panel-heading"><div><h2>7. Cobertura por departamento, provincia y distrito</h2><p>Pulsa el nombre de una localidad o cualquier cantidad de tramo para filtrar el resumen y detalle; puedes combinarla con el PDV seleccionado.</p></div><span id="coverageScope" class="pill">Todos los PDV</span></div><div class="table-scroll"><table class="coverage"><thead><tr><th>Departamento</th><th>Provincia</th><th>Distrito</th><th>Guías</th><th class="devolucion-head">Devolución</th><th>≤24 h · 100%</th><th>&gt;24–48 h · 100%</th><th>48–72 h</th><th>72–96 h</th><th>96–120 h</th><th>120–144 h</th><th>144–168 h</th><th>&gt;168 h</th><th>Promedio (h)</th><th>Pago promedio</th></tr></thead><tbody id="coverageRows"></tbody></table></div><div id="coverageNote" class="tiny muted"></div></section>
 <section class="panel" id="detailSection"><div class="panel-heading"><div><h2>8. Detalle de guías</h2><p>Se muestran 100 registros por página; la selección interactiva también se aplica al Excel descargado de los PDV marcados.</p></div><div class="heading-tools"><span id="detailInfo" class="tiny muted"></span><button id="prevPage" class="btn outline" type="button">Anterior</button><span id="pageInfo" class="tiny">1/1</span><button id="nextPage" class="btn outline" type="button">Siguiente</button></div></div><div class="table-scroll"><table class="detail"><thead><tr><th>Guía</th><th>PDV</th><th>Departamento</th><th>Provincia</th><th>Distrito</th><th>Descarga PDV</th><th>Firma efectiva</th><th>Horas</th><th>Tramo</th><th>Pago %</th><th class="devolucion-head">Devolución</th><th>Estado devolución</th><th>Pago de origen</th><th>Fuente</th></tr></thead><tbody id="detailRows"></tbody></table></div></section>
 <section class="panel"><div class="panel-heading"><div><h2>9. Validación de guías duplicadas</h2><p>Si la misma guía tiene tiempos o destino distintos, selecciona cuál registro debe contabilizarse. Hasta resolverla, queda fuera de los indicadores.</p></div><span id="conflictBadge" class="pill">0 conflictos</span></div><div id="conflictList" class="conflict-list"></div></section>
 <section class="panel" id="signedAudit"><div class="panel-heading"><div><h2>10. Auditoría de guías retiradas por firma</h2><p>Lista de las guías de Centro encontradas como firmadas en la Exportación. Las guías solo se ocultan del cálculo mientras esté activa la exclusión.</p></div><span id="signedAuditCount" class="pill">0 coincidentes</span></div>
 <div class="table-scroll"><table><thead><tr><th>Guía</th><th>PDV Centro</th><th>Firma en Exportación</th><th>Punto de entrega</th><th>Archivo de evidencia</th><th>Estado</th></tr></thead><tbody id="signedAuditRows"></tbody></table></div><p class="tiny muted" id="signedAuditNote"></p></section>
 </section>
 </main>
-<footer>Descarga PDV · Centro.xlsx · Los indicadores son informativos y no alteran Gestión V2 ni Facturación · V1.3</footer>
+<footer>Descarga PDV · Centro.xlsx · Los indicadores son informativos y no alteran Gestión V2 ni Facturación · V1.4</footer>
 </div>
 </body>
 </html>

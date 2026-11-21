@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261121-V18-15-1-ACCESO-CENTRO"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261121-V18-15-2-FILAS-COMPACTAS"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
 <script src="./bridge.js?v=20261121-v18-15-brecha-transito"></script>
   <base target="_top">
 <style>/* v9 */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden],#v16DescartarPublicacionBtn[hidden]{display:none!important}</style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261121-V18-15-1-ACCESO-CENTRO</title><meta name="app-build" content="20261121-V18-15-1-ACCESO-CENTRO">
+  <title>Gestión de guías V2 · 20261121-V18-15-2-FILAS-COMPACTAS</title><meta name="app-build" content="20261121-V18-15-2-FILAS-COMPACTAS">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -667,7 +667,40 @@
 #tablaResumenV2 thead tr:nth-child(3) > th:nth-child(11),#tablaResumenV2 tbody tr > td.summary-clickable[data-resumen-categoria="brechaMenor48NoLlegado"]:not(.summary-selected){background:#e0f2fe!important;color:#075985!important}
 #tablaResumenV2 thead tr:nth-child(3) > th:nth-child(11),#tablaResumenV2 tbody tr[data-excel-pdv] > td:nth-child(14),#tablaResumenV2 tbody tr.area-subtotal-nested > td:nth-child(14),#tablaResumenV2 tbody tr.region-subtotal > td:nth-child(14),#tablaResumenV2 tbody tr.total-row > td:nth-child(14){border-left:4px solid #1e293b!important}
 </style>
-<style>#tabCoberturaCentro[hidden]{display:none!important}</style></head>
+<style>#tabCoberturaCentro[hidden]{display:none!important}</style><style id="v18152-filas-pdv-compactas">
+/* Solo filas de PDV; no afecta encabezados, subtotales, otras tablas ni eventos. */
+#tablaResumenV2 > tbody > tr[data-excel-pdv] > td {
+  height: 25px !important;
+  padding-top: 1px !important;
+  padding-bottom: 1px !important;
+  line-height: 1.15;
+  vertical-align: middle;
+}
+#tablaResumenV2 > tbody > tr[data-excel-pdv] > td.comment-col {
+  padding-left: 1px !important;
+  padding-right: 1px !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  line-height: 1;
+}
+#tablaResumenV2 > tbody > tr[data-excel-pdv] > td.comment-col > button:is(.btn-comment,.btn-image) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  vertical-align: middle;
+  width: calc((100% - 2px) / 2);
+  max-width: 21px;
+  min-width: 0;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  border-radius: 5px;
+  font-size: 11px;
+  line-height: 1;
+}
+#tablaResumenV2 > tbody > tr[data-excel-pdv] > td.comment-col > .btn-image { margin-left: 2px; }
+</style></head>
 <body>
   <section id="login" class="login">
     <div class="login-card">
@@ -682,7 +715,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V18.15.1 <span class="build-stamp" id="buildStamp">Edición 20261121-V18-15-1-ACCESO-CENTRO</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V18.15.2 <span class="build-stamp" id="buildStamp">Edición 20261121-V18-15-2-FILAS-COMPACTAS</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel filtrado · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 

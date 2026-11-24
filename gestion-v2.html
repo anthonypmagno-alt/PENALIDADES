@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="es" data-app-build="20261121-V18-15-2-FILAS-COMPACTAS"><head><script>window.V16_GESTION_V2=true;</script>
+<html lang="es" data-app-build="20261124-V18-16-OPTIMIZAR-FUENTES"><head><script>window.V16_GESTION_V2=true;</script>
 <script src="./config.js"></script>
-<script src="./bridge.js?v=20261121-v18-15-brecha-transito"></script>
+<script src="./bridge.js?v=20261124-v18-16-fuentes-optimizadas"></script>
   <base target="_top">
 <style>/* v9 */ #v16VerificarPublicacionBtn[hidden],#v16ReintentarPublicacionBtn[hidden],#v16DescartarPublicacionBtn[hidden]{display:none!important}</style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestión de guías V2 · 20261121-V18-15-2-FILAS-COMPACTAS</title><meta name="app-build" content="20261121-V18-15-2-FILAS-COMPACTAS">
+  <title>Gestión de guías V2 · 20261124-V18-16-OPTIMIZAR-FUENTES</title><meta name="app-build" content="20261124-V18-16-OPTIMIZAR-FUENTES">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
@@ -715,7 +715,7 @@
 
   <div id="app" class="hidden">
     <header><div class="header-inner">
-      <div><div class="title">📋 Revisión de Guías · V18.15.2 <span class="build-stamp" id="buildStamp">Edición 20261121-V18-15-2-FILAS-COMPACTAS</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
+      <div><div class="title">📋 Revisión de Guías · V18.16 <span class="build-stamp" id="buildStamp">Edición 20261124-V18-16-OPTIMIZAR-FUENTES</span></div><div class="subtitle">Seguimiento de Brecha, Cola Larga y respuestas de los PDV</div></div>
       <div class="actions"><label class="page-language-control page-language-control--header" for="pageLanguageHeader"><span>Idioma</span><select id="pageLanguageHeader" data-page-language onchange="cambiarIdiomaComentario(this.value)" aria-label="Idioma de la página"><option value="es">Español</option><option value="zh-CN">简体中文</option><option value="en">English</option></select></label><span id="userBadge" class="badge"></span><button id="v16UsersButton" type="button" class="secondary" hidden="">👤 Usuarios</button><button data-module-key="gestion_v2" id="btnDescargarExcelCompleto" class="success" onclick="descargarExcelCompleto()">📥 Excel filtrado · 3 hojas</button><button class="secondary" onclick="cargarDatos(null,true)">🔄 Actualizar</button><button class="danger" onclick="salir()">Salir</button></div>
     </div></header>
 
@@ -725,7 +725,7 @@
       <section id="sourceUploadPanel" class="panel hidden">
         <div class="panel-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Carga de información operativa <span class="readonly-note">SOLO ADMINISTRADOR</span><button type="button" id="sourceUploadToggle" class="secondary" style="margin-left:auto" aria-expanded="true" aria-controls="sourceUploadContent" onclick="toggleCargaOperativa()">Ocultar carga</button></div>
         <div id="sourceUploadContent" class="panel-body"><details><summary>Migración inicial desde Google (opcional)</summary><p>Solo en una réplica vacía. Seleccione el JSON privado generado por ExportarReplica.gs. No suba ese JSON a GitHub.</p><input type="file" accept=".json" onchange="importarReplica(this.files[0])"><span id="migrationStatus" role="status"></span></details>
-          <div class="source-actions" style="margin:12px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="guardarFuentesBtn" class="success" onclick="guardarInformacionCargada()">💾 Guardar información cargada</button><button type="button" id="v16VersionPublicadaBtn" class="secondary" onclick="comprobarVersionPublicadaV9()">Comprobar versión publicada</button><button type="button" id="v16VerificarPublicacionBtn" class="secondary" hidden onclick="verificarPublicacionV9()">Verificar publicación pendiente</button><button type="button" id="v16ReintentarPublicacionBtn" class="secondary" hidden onclick="reintentarPublicacionV9()">↻ Reintentar SOLO publicación</button><button type="button" id="v16DescartarPublicacionBtn" hidden onclick="descartarPublicacionPendienteV19()" style="background:#b91c1c;color:#fff;border:1px solid #991b1b">🗑 Eliminar carga pendiente</button><span id="guardadoFuentesEstado" role="status" style="margin-left:12px"></span></div><p class="source-note">Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada fuente reemplaza su versión anterior; para Exportación puedes elegir varios Excel y se guardarán unidos por guía. Para Track Break se guardan únicamente las regiones elegidas del nuevo archivo. COLA LARGA se calcula desde Exportación de guías. Espere la confirmación antes de cerrar.</p><div class="source-upload-grid"><div class="source-card"><div class="source-card-head"><div class="source-card-title">PDV_LISTA — cargar primero</div><span id="sourcePdvStatus" class="source-status">Sin verificar</span></div><input id="sourcePdvFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourcePdvMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('PDV LISTA')">Cargar PDV_LISTA — cargar primero</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Exportación de guías</div><span id="sourceEnvioStatus" class="source-status">Sin verificar</span></div><input id="sourceEnvioFile" class="source-file" type="file" accept=".xlsx,.xls" multiple onchange="mostrarSeleccionExportacionMultiple(this)"><small class="source-note">Puedes seleccionar varios Excel en una sola carga (Ctrl + clic). Se unen por Número de Guía y se conserva el registro con el escaneo más reciente. El conjunto reemplaza la exportación vigente al guardarse.</small><div id="sourceEnvioSeleccionados" class="source-meta" role="status" aria-live="polite"></div><div id="sourceEnvioMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('EXPORTACION GUIAS')">Cargar Exportación de guías</button></div><div class="source-card" id="sourceEnvioComplementoCard">
+          <div class="source-actions" style="margin:12px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="guardarFuentesBtn" class="success" onclick="guardarInformacionCargada()">💾 Guardar información cargada</button><button type="button" id="v16VersionPublicadaBtn" class="secondary" onclick="comprobarVersionPublicadaV9()">Comprobar versión publicada</button><button type="button" id="v16VerificarPublicacionBtn" class="secondary" hidden onclick="verificarPublicacionV9()">Verificar publicación pendiente</button><button type="button" id="v16ReintentarPublicacionBtn" class="secondary" hidden onclick="reintentarPublicacionV9()">↻ Reintentar SOLO publicación</button><button type="button" id="v16DescartarPublicacionBtn" hidden onclick="descartarPublicacionPendienteV19()" style="background:#b91c1c;color:#fff;border:1px solid #991b1b">🗑 Eliminar carga pendiente</button><span id="guardadoFuentesEstado" role="status" style="margin-left:12px"></span></div><p class="source-note">Seleccione los Excel y pulse Guardar información cargada. Las fuentes sin un archivo seleccionado se conservan. Cada fuente reemplaza su versión anterior; para Exportación puedes elegir varios Excel y se guardarán unidos por guía. Para Track Break se guardan únicamente las regiones elegidas del nuevo archivo. COLA LARGA se calcula desde Exportación de guías. Espere la confirmación antes de cerrar.</p><div class="source-upload-grid"><div class="source-card"><div class="source-card-head"><div class="source-card-title">PDV_LISTA — cargar primero</div><span id="sourcePdvStatus" class="source-status">Sin verificar</span></div><input id="sourcePdvFile" class="source-file" type="file" accept=".xlsx,.xls"><div id="sourcePdvMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('PDV LISTA')">Cargar PDV_LISTA — cargar primero</button></div><div class="source-card"><div class="source-card-head"><div class="source-card-title">Exportación de guías</div><span id="sourceEnvioStatus" class="source-status">Sin verificar</span></div><input id="sourceEnvioFile" class="source-file" type="file" accept=".xlsx,.xls" multiple onchange="mostrarSeleccionExportacionMultiple(this)"><small class="source-note">Puedes seleccionar varios Excel en una sola carga (Ctrl + clic). Se unen por Número de Guía y se conserva el registro con el escaneo más reciente. El conjunto reemplaza la exportación vigente al guardarse. Se omiten cinco columnas administrativas no utilizadas en los cálculos; el archivo original permanece intacto.</small><div id="sourceEnvioSeleccionados" class="source-meta" role="status" aria-live="polite"></div><div id="sourceEnvioMeta" class="source-meta"></div><button onclick="cargarFuenteOperativaPortal('EXPORTACION GUIAS')">Cargar Exportación de guías</button></div><div class="source-card" id="sourceEnvioComplementoCard">
  <div class="source-card-head"><div class="source-card-title">➕ Complementar Exportación de guías</div><span class="source-status" id="sourceEnvioComplementoStatus">Sin seleccionar</span></div>
  <input id="sourceEnvioComplementoFile" class="source-file" type="file" accept=".xlsx,.xls" multiple onchange="actualizarSeleccionEnvioComplemento()" aria-label="Seleccionar varios Excel para complementar la Exportación sin reemplazarla">
  <div id="sourceEnvioComplementoMeta" class="source-meta" role="status" aria-live="polite"></div>
@@ -736,7 +736,7 @@
             <div class="source-card">
               <div class="source-card-head"><div class="source-card-title">Track break más informes</div><span id="sourceBrechaStatus" class="source-status">Sin verificar</span></div>
               <input id="sourceBrechaFile" class="source-file" type="file" accept=".xlsx,.xls">
-              <div id="sourceBrechaMeta" class="source-meta">Cargue PDV_LISTA y Exportación de guías antes de Track break.</div>
+              <div id="sourceBrechaMeta" class="source-meta">Cargue PDV_LISTA y Exportación de guías antes de Track break.</div><small class="source-note">Optimización V18.16: el Excel original no se modifica; únicamente se envían los 10 campos operativos (cuando estén presentes). Las columnas de cliente, peso, contenido y origen se omiten.</small>
               <div class="source-actions"><button class="small" onclick="cargarFuenteOperativaPortal('TRACK BREAK')">Cargar Track break</button></div>
             </div>
             <div class="source-card" id="sourceDescargaPdvCard">
@@ -1272,9 +1272,10 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     try{
       mostrarLoading(true,'Validando archivos complementarios…');
       const union=await consolidarExportacionesGuias(lista,{onProgreso:(n,total,nombre)=>mostrarLoading(true,'Complemento '+n+'/'+total+': '+nombre)});
+      const filasOptimizadas=optimizarMatrizFuenteV1816('EXPORTACION GUIAS',union.filas);
       estado.textContent=union.guiasUnicas+' guías distintas en los archivos; consultando la fuente publicada…';
       mostrarLoading(true,'Leyendo y conciliando con la Exportación vigente de Supabase…');
-      const preparado=await rpcFuentesGuardar('cargarFuenteOperativa',token,{tipo:'EXPORTACION GUIAS',nombreArchivo:'Complemento ('+lista.length+' Excel): '+lista.map(f=>f.name).join('; ').slice(0,170),filas:union.filas,modo:'COMPLEMENTAR',actualizarMasReciente:cambiarRepetidas,diferirProcesamiento:true});
+      const preparado=await rpcFuentesGuardar('cargarFuenteOperativa',token,{tipo:'EXPORTACION GUIAS',nombreArchivo:'Complemento ('+lista.length+' Excel): '+lista.map(f=>f.name).join('; ').slice(0,170),filas:filasOptimizadas,modo:'COMPLEMENTAR',actualizarMasReciente:cambiarRepetidas,diferirProcesamiento:true});
       const c=preparado?.complemento;
       if(!c)throw new Error('El servidor no confirmó los conteos de complementación.');
       const resumen='Publicadas: '+num(c.existentes)+' · Nuevas: '+num(c.agregadas)+' · Repetidas conservadas: '+num(c.conservadas)+' · Actualizadas: '+num(c.actualizadas)+' · Total: '+num(c.total);
@@ -1295,6 +1296,51 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     }finally{mostrarLoading(false);guardadoFuentesEnCurso=false;if(boton)boton.disabled=false;if(guardar)guardar.disabled=false;actualizarBotonesPublicacionV9();}
   }
 
+  // V18.16: reducir la carga transmitida, NO modificar el Excel de origen.
+  // Los nombres se normalizan con la misma regla del lector de hojas.
+  const COLUMNAS_TRACK_BREAK_OPERATIVAS_V1816=[
+    'Número de Guía',
+    'Último punto de operación',
+    'Tipo de operación más reciente',
+    'Duración del tiempo de espera',
+    'Último tiempo de funcionamiento',
+    'Punto de entrega',
+    'Nombre de la siguiente parada',
+    'Último tipo de problema',
+    'Escáner',
+    'Tipo de tiempo de espera'
+  ];
+  // Exclusiones conservadoras: no intervienen en gestión, trazabilidad, cola larga,
+  // firma, zona, reparto, fechas, casos o filtros de la versión actual.
+  // Otros encabezados de Exportación se conservan (incluidas columnas futuras).
+  const COLUMNAS_DESCARTADAS_EXPORTACION_V1816=[
+    'N° de artículos',
+    'Centro financiero origen',
+    'Código de punto de escaneo más reciente',
+    'N° de impresiones',
+    'Número de empleado de entrega'
+  ];
+  function optimizarMatrizFuenteV1816(tipo,filas){
+    if(tipo!=='TRACK BREAK'&&tipo!=='EXPORTACION GUIAS')return filas;
+    if(!Array.isArray(filas)||!Array.isArray(filas[0])||filas.length<2)return filas;
+    const encabezados=filas[0],norm=encabezados.map(normalizarExcel);
+    let indices=[];
+    if(tipo==='TRACK BREAK'){
+      const necesarios=new Set(COLUMNAS_TRACK_BREAK_OPERATIVAS_V1816.map(normalizarExcel));
+      indices=encabezados.map((_,i)=>i).filter(i=>necesarios.has(norm[i]));
+      // Rechazar un formato incompatible ANTES de guardar, sin eliminar datos esenciales.
+      const base=['Número de Guía','Último punto de operación','Tipo de operación más reciente',
+        'Duración del tiempo de espera','Último tiempo de funcionamiento','Punto de entrega'];
+      const faltantes=base.filter(c=>!norm.includes(normalizarExcel(c)));
+      if(faltantes.length)throw new Error('Track Break no contiene las columnas operativas necesarias: '+faltantes.join(', '));
+    }else{
+      const descartadas=new Set(COLUMNAS_DESCARTADAS_EXPORTACION_V1816.map(normalizarExcel));
+      indices=encabezados.map((_,i)=>i).filter(i=>!descartadas.has(norm[i]));
+    }
+    if(!indices.length||indices.length===encabezados.length)return filas;
+    return filas.map(fila=>indices.map(i=>Array.isArray(fila)?(fila[i]??''):''));
+  }
+
   async function cargarFuenteOperativaPortal(tipo){
     if(guardadoFuentesEnCurso){toast("Espere que termine el guardado general.",false);return;}
     if(!sesion||sesion.rol!=="ADMINISTRADOR"){toast("Solo el administrador puede cargar las fuentes operativas.",false);return;}
@@ -1306,7 +1352,8 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     mostrarLoading(true,"Validando y cargando "+tipo+"...");
     try{
       const union=tipo==="EXPORTACION GUIAS"?await consolidarExportacionesGuias(archivos,{onProgreso:(n,total,nombre)=>mostrarLoading(true,"Leyendo Excel "+n+"/"+total+": "+nombre)}):null;
-      const filas=union?union.filas:await leerFilasArchivoExcel(archivo,true,tipo);
+      const filasLeidas=union?union.filas:await leerFilasArchivoExcel(archivo,true,tipo);
+      const filas=optimizarMatrizFuenteV1816(tipo,filasLeidas);
       const nombreArchivo=union?union.nombreArchivo:archivo.name;
       if(['TRACK BREAK','COLA LARGA'].includes(tipo)){prepararRegionesFuente(tipo,archivo.name,filas,input);return;}
       google.script.run.withSuccessHandler(r=>{
@@ -1452,7 +1499,8 @@ async function guardarInformacionCargada(){
    for(const f of x.archivos)if(!/\.(xlsx|xls)$/i.test(f.name)||!f.size||f.size>EXCEL_MAX_BYTES)throw new Error('Excel inválido o mayor de 30 MB: '+f.name);
    mostrarLoading(true,'Leyendo '+x.tipo+'…');
    const union=x.tipo==='EXPORTACION GUIAS'?await consolidarExportacionesGuias(x.archivos,{onProgreso:(n,total,nombre)=>mostrarLoading(true,'Exportación '+n+'/'+total+': '+nombre)}):null;
-   const filas=union?union.filas:await leerFilasArchivoExcel(x.archivos[0],true,x.tipo);
+   const filasLeidas=union?union.filas:await leerFilasArchivoExcel(x.archivos[0],true,x.tipo);
+   const filas=optimizarMatrizFuenteV1816(x.tipo,filasLeidas);
    lecturas.push({...x,filas,nombreArchivo:union?union.nombreArchivo:x.archivos[0].name,estadisticas:union});
   }
   for(const x of lecturas){actual=x.tipo;estado.textContent='Guardando '+x.tipo+'…';let entrada={tipo:x.tipo,nombreArchivo:x.nombreArchivo,filas:x.filas,diferirProcesamiento:true};

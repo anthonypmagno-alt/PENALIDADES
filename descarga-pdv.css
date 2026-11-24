@@ -40,3 +40,13 @@
 @media(max-width:650px){.drill-intro{width:100%}.drill-bar-actions{width:100%}}
 
 .summary th:nth-child(9),.summary td:nth-child(9){background:#f2f8ff}
+
+/* V1.5 — selección y copia de guías */
+.guide-copy-toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;border:1px solid #cbdff3;border-radius:10px;background:#f3f8fe;padding:12px;margin:6px 0 12px}
+.guide-copy-toolbar .btn{font-size:11px;padding:9px 12px}
+.guide-count{font-size:12px;font-weight:800;color:#204d7e;margin-right:auto}
+.guide-selection-cell,.guide-check-header{width:42px;min-width:42px;max-width:42px;text-align:center!important;background:#edf6ff}
+.guide-selection-cell input,.guide-check-header input{width:16px;height:16px;accent-color:#1769d3;cursor:pointer}
+.detail tbody tr.guia-selected,.detail tbody tr.guia-selected .guide-selection-cell{background:#dfeeff!important}
+.detail tbody tr.fila-devolucion.guia-selected{background:#ffe6e6!important}
+@media(max-width:650px){.guide-count{width:100%}}

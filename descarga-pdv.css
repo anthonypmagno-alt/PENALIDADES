@@ -50,3 +50,14 @@
 .detail tbody tr.guia-selected,.detail tbody tr.guia-selected .guide-selection-cell{background:#dfeeff!important}
 .detail tbody tr.fila-devolucion.guia-selected{background:#ffe6e6!important}
 @media(max-width:650px){.guide-count{width:100%}}
+
+/* V1.6 · Firmados: indicador independiente de pendientes y devoluciones. */
+.firmados-head{background:#16734c!important;color:#fff!important}
+.firmados-num{background:#ecfdf5!important;color:#166534!important;font-weight:800!important}
+.firmados-num .drill-cell{color:#166534}.firmados-num .drill-cell:hover{background:#bbf7d0;border-color:#4ade80}
+.drill-chip.signed-chip{background:#ecfdf5;border-color:#86efac;color:#166534}
+.permission-readonly-banner{border:1px solid #b6d5ef;background:#f0f7ff;color:#194e78;padding:12px;border-radius:8px;margin-bottom:14px;font-size:12px}
+.shared-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.shared-actions .btn{padding:8px 12px;font-size:12px}
+/* No permitir que estilos display de botones anulen hidden. */
+[hidden]{display:none!important}

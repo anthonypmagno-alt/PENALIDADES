@@ -220,17 +220,17 @@ EOD`}return{to_workbook:a,to_sheet:r,from_sheet:s}})(),i1=(function(){function e
     ["gestion","Gestión de guías"],
     ["consulta_excel","Consulta desde Excel"],
     ["estadisticas","Estadísticas por PDV"],
-    ["gestion_v2","Gestión de guías V2"],
+    ["gestion_v2","Gestión de guías V2"],["descarga_pdv","Descarga PDV · Centro.xlsx"],
     ["sla_paquetes","SLA de paquetes"],
     ["catalogo_comentarios","Catálogo de comentarios"],
     ["penalidades","Penalidades"]
   ];
-  function fullPermissions(){const value={};moduleDefinitions.forEach(([key])=>value[key]={ver:true,ejecutar:true});return value;}
+  function fullPermissions(){const value={};moduleDefinitions.forEach(([key])=>value[key]={ver:key!=="descarga_pdv",ejecutar:key!=="descarga_pdv"});return value;}
   function renderPermissionMatrix(containerId,permissions){
     const container=byId(containerId);if(!container)return;
     const source=permissions||fullPermissions();
     container.innerHTML=moduleDefinitions.map(([key,label])=>{
-      const permission=source[key]||{ver:true,ejecutar:true};
+      const permission=source[key]||{ver:key!=="descarga_pdv",ejecutar:key!=="descarga_pdv"};
       const view=permission.ver!==false,execute=permission.ejecutar!==false&&view;
       return `<div class="v16-module-permission-row" data-module="${key}"><span>${label}</span><label><input type="checkbox" data-permission="ver" ${view?"checked":""}> Ver</label><label><input type="checkbox" data-permission="ejecutar" ${execute?"checked":""} ${view?"":"disabled"}> Ejecutar</label></div>`;
     }).join("");
@@ -462,13 +462,13 @@ function a4(e){if(e==null||String(e).trim()==="")return NaN;let t=String(e).trim
  return{guias:guiasV2,sinEntrada,sinEstado,calculadoEn:t};
 }window.XLSX=Hl;const V16_MODULES=[
   ["gestion","Gestión de guías"],["consulta_excel","Consulta desde Excel"],["estadisticas","Estadísticas por PDV"],
-  ["gestion_v2","Gestión de guías V2"],["sla_paquetes","SLA de paquetes"],["catalogo_comentarios","Catálogo de comentarios"],["penalidades","Penalidades"]
+  ["gestion_v2","Gestión de guías V2"],["descarga_pdv","Descarga PDV · Centro.xlsx"],["sla_paquetes","SLA de paquetes"],["catalogo_comentarios","Catálogo de comentarios"],["penalidades","Penalidades"]
 ];
 let v16ModulePermissionsCache=null,v16ModulePermissionsLoadedAt=0,v16ModulePermissionsPending=null,v16ModulePermissionsUser="";
-function v16FullModulePermissions(){const result={};V16_MODULES.forEach(([key])=>result[key]={ver:true,ejecutar:true});return result;}
+function v16FullModulePermissions(){const result={};V16_MODULES.forEach(([key])=>result[key]={ver:key!=="descarga_pdv",ejecutar:key!=="descarga_pdv"});return result;}
 function v16CanModule(module,action="ver"){
   if(String(Ut?.perfil?.rol||"").toUpperCase()==="ADMINISTRADOR")return true;
-  const permission=v16ModulePermissionsCache?.[module]||{ver:true,ejecutar:true};
+  const permission=v16ModulePermissionsCache?.[module]||{ver:module!=="descarga_pdv",ejecutar:module!=="descarga_pdv"};
   return action==="ejecutar"?permission.ver!==false&&permission.ejecutar!==false:permission.ver!==false;
 }
 function v16AssertModule(module,action="ver"){

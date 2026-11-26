@@ -68,7 +68,7 @@
 .detail-local-filters{margin:12px 0 6px}.detail-hours{display:flex;gap:5px}.detail-hours input{min-width:0;width:50%}.guide-qr-btn{white-space:nowrap;padding:4px 8px;font-size:12px}.guide-qr-dialog{border:1px solid #cbd5e1;border-radius:14px;padding:24px;text-align:center;max-width:95vw;color:#203958;background:#fff}.guide-qr-dialog::backdrop{background:rgba(15,23,42,.55)}#guideQrImage{display:flex;justify-content:center;padding:16px;background:white}#guideQrNumber{font-weight:700;overflow-wrap:anywhere}#guideQrError{min-height:1em}
 
 /* V1.9 — mayor ancho útil, resumen compacto y ambos tramos críticos en rojo. */
-.shell{width:100%;max-width:none;padding:20px 12px}
+.shell{width:100%;max-width:1460px;padding:20px 24px}
 .panel{min-width:0;padding:16px}
 .summary th,.summary td{padding:8px 5px}
 .summary th{white-space:normal;line-height:1.25;font-size:11px}
@@ -86,3 +86,8 @@
 .detail-date-missing input{width:auto;margin:0;accent-color:#1769d3}
 .detail-date-range input:disabled{background:#f0f4f9;color:#64748b}
 @media(max-width:650px){.shell{padding:10px}.panel{padding:12px}.detail-date-field{grid-column:auto}.summary th,.summary td{padding:7px 5px}}
+
+/* V1.9.1 — ancho moderado y centrado; el resumen adapta sus cabeceras. */
+.summary{width:100%;min-width:0}
+.summary th{overflow-wrap:normal}
+@media(min-width:651px) and (max-width:1400px){.shell{padding-left:18px;padding-right:18px}}

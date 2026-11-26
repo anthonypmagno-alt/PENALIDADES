@@ -64,3 +64,5 @@
 
 /* V1.7 - identificador visible del alcance consultado */
 .shared-scope{font-weight:600;font-size:12px;color:#1e4e7c;margin:8px 0 1px;padding:7px 10px;border-radius:8px;background:#eef5fc;word-break:break-word}
+
+.detail-local-filters{margin:12px 0 6px}.detail-hours{display:flex;gap:5px}.detail-hours input{min-width:0;width:50%}.guide-qr-btn{white-space:nowrap;padding:4px 8px;font-size:12px}.guide-qr-dialog{border:1px solid #cbd5e1;border-radius:14px;padding:24px;text-align:center;max-width:95vw;color:#203958;background:#fff}.guide-qr-dialog::backdrop{background:rgba(15,23,42,.55)}#guideQrImage{display:flex;justify-content:center;padding:16px;background:white}#guideQrNumber{font-weight:700;overflow-wrap:anywhere}#guideQrError{min-height:1em}

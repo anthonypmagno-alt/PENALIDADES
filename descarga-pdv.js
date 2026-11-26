@@ -100,7 +100,7 @@ async function publishSharedData(){
 }
 async function init(){
  if(!(await auth())){$('authGate').classList.remove('hidden');return}
- $('mainApp').classList.remove('hidden');$('sessionStatus').classList.remove('neutral');setup();setupExtra();
+ $('mainApp').classList.remove('hidden');$('sessionStatus').classList.remove('neutral');setup();setupExtra();setupDetailFilters();
  if($('btnPublishShared')){$('btnPublishShared').hidden=!access.isAdmin;$('btnPublishShared').onclick=publishSharedData}
  if($('btnLoadShared'))$('btnLoadShared').onclick=async()=>{if(state.raw.length&&!confirm('¿Abrir la última base compartida y reemplazar la vista local actual?'))return;try{await loadSharedData()}catch(e){message('No se pudo leer la base compartida: '+e.message,true)}};
  try{
@@ -282,7 +282,12 @@ function renderCoverage(rows){
  $('coverageNote').textContent=`${fmt(gr.length)} combinaciones territoriales · ${fmt(signRows.length)} firmadas independientes de pendientes.${gr.length>450?' Mostrando 450; Excel incluye todas.':''} Pulsa el conteo verde de Firmados para ver las guías.`;
 }
 /* V1.5 — selección persistente entre páginas; copiar guías únicas sin Excel ni SQL. */
-const filteredDetailRows=()=>state.drill.signed?signedFiltered():applyDrill(getFiltered());
+const detailBase=()=>state.drill.signed?signedFiltered():applyDrill(getFiltered());
+const detailKeys=['pdv','department','province','district','band','pay','status','devolver'];
+function detailValue(r,k){switch(k){case 'band':return r.esFirmado?'FIRMADO':r.esDevolucion?'No aplica':String(C.LABELS[r.band]||'');case 'pay':return r.esFirmado||r.esDevolucion?'No aplica':String(r.pago)+'%';case 'status':return r.esFirmado||state.signed[r.guia]?'Firmado':r.esDevolucion?'Devolución':'Pendiente';default:return String(r[k]??'').trim()||'Sin dato'}}
+function syncDetailFilters(rows){for(const k of detailKeys){const el=$('df-'+k),old=el.value,values=[...new Set(rows.map(r=>detailValue(r,k)))].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));if(old&&!values.includes(old))values.push(old);el.innerHTML='<option value="">Todos</option>'+values.map(v=>`<option value="${safe(v)}">${safe(v)}</option>`).join('');el.value=old}}
+function filteredDetailRows(){const rows=detailBase();const terms=$('df-guia').value.trim().toUpperCase().split(/[\s,;]+/).filter(Boolean);const filters=detailKeys.map(k=>[k,$('df-'+k).value]).filter(([,v])=>v);const min=$('df-min').value,max=$('df-max').value;return rows.filter(r=>(!terms.length||terms.some(t=>String(r.guia).toUpperCase().includes(t)))&&filters.every(([k,v])=>detailValue(r,k)===v)&&((min===''&&max==='')||(!r.esFirmado&&Number.isFinite(Number(r.horas))&&(min===''||Number(r.horas)>=Number(min))&&(max===''||Number(r.horas)<=Number(max)))))}
+function setupDetailFilters(){const refresh=()=>{state.page=0;renderDetail()};for(const k of detailKeys)$('df-'+k).addEventListener('change',refresh);for(const k of ['guia','min','max'])$('df-'+k).addEventListener('input',refresh);$('df-reset').onclick=()=>{for(const k of [...detailKeys,'guia','min','max'])$('df-'+k).value='';refresh()};const dialog=$('guideQrDialog');$('guideQrClose').onclick=()=>dialog.close();$('guideQrCopy').onclick=async()=>{const ok=await putOnClipboard($('guideQrNumber').textContent);$('guideQrError').textContent=ok?'Guía copiada.':'No se pudo copiar.'};$('detailRows').addEventListener('click',e=>{const b=e.target.closest('button[data-guide-qr]');if(!b||!access.canView)return;const guia=b.dataset.guideQr;const host=$('guideQrImage');host.replaceChildren();$('guideQrNumber').textContent=guia;$('guideQrError').textContent='';dialog.showModal();try{if(!window.QRCode)throw new Error('Biblioteca QR no disponible.');new window.QRCode(host,{text:guia,width:220,height:220,correctLevel:window.QRCode.CorrectLevel.M})}catch(err){$('guideQrError').textContent='No se pudo generar el QR. Revisa la conexión y recarga.'}})}
 function updateGuideSelectionToolbar(rows,visible){
  const selection=state.selectedGuides;
  const selectedInFilter=rows.reduce((n,r)=>n+(selection.has(r.guia)?1:0),0);
@@ -298,10 +303,11 @@ function updateGuideSelectionToolbar(rows,visible){
  $('btnClearGuideSelection').disabled=!selection.size||state.loading;
 }
 function renderDetail(rows){
- const x=state.drill.signed?signedFiltered():(rows||filteredDetailRows()),pp=100,totalPages=Math.max(1,Math.ceil(x.length/pp));
+ syncDetailFilters(detailBase());
+ const x=filteredDetailRows(),pp=100,totalPages=Math.max(1,Math.ceil(x.length/pp));
  state.page=Math.max(0,Math.min(state.page,totalPages-1));
  const visible=x.slice(state.page*pp,(state.page+1)*pp);
- $('detailRows').innerHTML=visible.map(r=>`<tr class="${r.esDevolucion?'fila-devolucion':''} ${state.selectedGuides.has(r.guia)?'guia-selected':''}"><td class="guide-selection-cell"><input type="checkbox" data-select-guia="${safe(r.guia)}" aria-label="Seleccionar guía ${safe(r.guia)}" ${state.selectedGuides.has(r.guia)?'checked':''}></td><td>${safe(r.guia)}</td><td>${safe(r.pdv)}</td><td>${safe(r.department)}</td><td>${safe(r.province)}</td><td>${safe(r.district)}</td><td>${safe(r.descarga)}</td><td>${safe(r.esFirmado?r.firma:(r.firma||''))}</td><td>${r.esFirmado?'–':num(r.horas,2)}</td><td>${r.esFirmado?'FIRMADO':r.esDevolucion?'No aplica':safe(C.LABELS[r.band])}</td><td>${r.esFirmado?'–':r.esDevolucion?'–':r.pago+'%'}</td><td class="devolucion-num">${r.esDevolucion?'1':'–'}</td><td>${safe(r.devolver||'')}</td><td>${safe(r.origenPct)}</td><td>${safe(r.fuente)}</td></tr>`).join('')||'<tr><td colspan="15" class="empty">No hay guías para esta selección.</td></tr>';
+ $('detailRows').innerHTML=visible.map(r=>`<tr class="${r.esDevolucion?'fila-devolucion':''} ${state.selectedGuides.has(r.guia)?'guia-selected':''}"><td class="guide-selection-cell"><input type="checkbox" data-select-guia="${safe(r.guia)}" aria-label="Seleccionar guía ${safe(r.guia)}" ${state.selectedGuides.has(r.guia)?'checked':''}></td><td>${safe(r.guia)}</td><td><button type="button" class="btn outline guide-qr-btn" data-guide-qr="${safe(r.guia)}" aria-label="Ver QR de ${safe(r.guia)}">Ver QR</button></td><td>${safe(r.pdv)}</td><td>${safe(r.department)}</td><td>${safe(r.province)}</td><td>${safe(r.district)}</td><td>${safe(r.descarga)}</td><td>${safe(r.esFirmado?r.firma:(r.firma||''))}</td><td>${r.esFirmado?'–':num(r.horas,2)}</td><td>${r.esFirmado?'FIRMADO':r.esDevolucion?'No aplica':safe(C.LABELS[r.band])}</td><td>${r.esFirmado?'–':r.esDevolucion?'–':r.pago+'%'}</td><td class="devolucion-num">${r.esDevolucion?'1':'–'}</td><td>${safe(r.devolver||'')}</td><td>${safe(r.origenPct)}</td><td>${safe(r.fuente)}</td></tr>`).join('')||'<tr><td colspan="16" class="empty">No hay guías para esta selección.</td></tr>';
  $('pageInfo').textContent=`${state.page+1}/${totalPages}`;
  const d=C.stats(x.filter(r=>!r.esFirmado));$('detailInfo').textContent=state.drill.signed?`${fmt(x.length)} guías firmadas confirmadas (Exportación)`:`${fmt(x.length)} registros · ${fmt(d.n)} guías para el promedio · ${fmt(d.devoluciones)} devoluciones`;
  $('prevPage').disabled=state.page===0;$('nextPage').disabled=state.page>=totalPages-1;
@@ -327,7 +333,7 @@ async function putOnClipboard(text){
  let done=false;try{done=document.execCommand('copy')}catch(e){done=false}area.remove();return done;
 }
 async function copyGuides(mode){
- const rows=mode==='selected'?getActiveRows().filter(r=>state.selectedGuides.has(r.guia)):filteredDetailRows();
+ const rows=mode==='selected'?[...getActiveRows(),...signedAugmented()].filter(r=>state.selectedGuides.has(r.guia)):filteredDetailRows();
  const ids=[...new Set(rows.map(r=>String(r.guia||'').trim()).filter(Boolean))];
  if(!ids.length)return message('No hay guías para copiar. Marca una casilla o ajusta los filtros.',true);
  const ok=await putOnClipboard(ids.join('\n'));

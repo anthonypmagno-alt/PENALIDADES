@@ -251,7 +251,7 @@ EOD`}return{to_workbook:a,to_sheet:r,from_sheet:s}})(),i1=(function(){function e
     container.addEventListener("change",event=>{
       const row=event.target.closest(".v16-module-permission-row");if(!row)return;
       const view=row.querySelector('[data-permission="ver"]'),execute=row.querySelector('[data-permission="ejecutar"]');
-      if(event.target===view&&!view.checked){execute.checked=false;execute.disabled=true;}else if(event.target===view&&view.checked)execute.disabled=false;
+      if(event.target===view&&!view.checked){execute.checked=false;execute.disabled=true;}else if(event.target===view&&view.checked)execute.disabled=row.dataset.module==="descarga_pdv";
     });
   }
   function closeModal(){

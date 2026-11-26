@@ -231,8 +231,8 @@ EOD`}return{to_workbook:a,to_sheet:r,from_sheet:s}})(),i1=(function(){function e
     const source=permissions||fullPermissions();
     container.innerHTML=moduleDefinitions.map(([key,label])=>{
       const permission=source[key]||{ver:key!=="descarga_pdv",ejecutar:key!=="descarga_pdv"};
-      const view=permission.ver!==false,execute=permission.ejecutar!==false&&view;
-      return `<div class="v16-module-permission-row" data-module="${key}"><span>${label}</span><label><input type="checkbox" data-permission="ver" ${view?"checked":""}> Ver</label><label><input type="checkbox" data-permission="ejecutar" ${execute?"checked":""} ${view?"":"disabled"}> Ejecutar</label></div>`;
+      const view=permission.ver!==false,execute=key==="descarga_pdv"?false:(permission.ejecutar!==false&&view);
+      return `<div class="v16-module-permission-row" data-module="${key}"><span>${label}</span><label><input type="checkbox" data-permission="ver" ${view?"checked":""}> Ver</label><label><input type="checkbox" data-permission="ejecutar" ${execute?"checked":""} ${key==="descarga_pdv"?"disabled title=\"Solo el administrador publica y modifica la base compartida\"":(view?"":"disabled")}> Ejecutar</label></div>`;
     }).join("");
   }
   function readPermissionMatrix(containerId){
@@ -240,7 +240,7 @@ EOD`}return{to_workbook:a,to_sheet:r,from_sheet:s}})(),i1=(function(){function e
     const container=byId(containerId);
     if(!container)return fullPermissions();
     container.querySelectorAll(".v16-module-permission-row").forEach(row=>{
-      const key=row.dataset.module,view=Boolean(row.querySelector('[data-permission="ver"]')?.checked),execute=Boolean(row.querySelector('[data-permission="ejecutar"]')?.checked)&&view;
+      const key=row.dataset.module,view=Boolean(row.querySelector('[data-permission="ver"]')?.checked),execute=key==="descarga_pdv"?false:(Boolean(row.querySelector('[data-permission="ejecutar"]')?.checked)&&view);
       result[key]={ver:view,ejecutar:execute};
     });
     return result;

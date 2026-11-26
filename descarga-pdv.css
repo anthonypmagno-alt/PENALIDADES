@@ -61,3 +61,6 @@
 .shared-actions .btn{padding:8px 12px;font-size:12px}
 /* No permitir que estilos display de botones anulen hidden. */
 [hidden]{display:none!important}
+
+/* V1.7 - identificador visible del alcance consultado */
+.shared-scope{font-weight:600;font-size:12px;color:#1e4e7c;margin:8px 0 1px;padding:7px 10px;border-radius:8px;background:#eef5fc;word-break:break-word}

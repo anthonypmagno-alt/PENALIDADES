@@ -66,3 +66,23 @@
 .shared-scope{font-weight:600;font-size:12px;color:#1e4e7c;margin:8px 0 1px;padding:7px 10px;border-radius:8px;background:#eef5fc;word-break:break-word}
 
 .detail-local-filters{margin:12px 0 6px}.detail-hours{display:flex;gap:5px}.detail-hours input{min-width:0;width:50%}.guide-qr-btn{white-space:nowrap;padding:4px 8px;font-size:12px}.guide-qr-dialog{border:1px solid #cbd5e1;border-radius:14px;padding:24px;text-align:center;max-width:95vw;color:#203958;background:#fff}.guide-qr-dialog::backdrop{background:rgba(15,23,42,.55)}#guideQrImage{display:flex;justify-content:center;padding:16px;background:white}#guideQrNumber{font-weight:700;overflow-wrap:anywhere}#guideQrError{min-height:1em}
+
+/* V1.9 — mayor ancho útil, resumen compacto y ambos tramos críticos en rojo. */
+.shell{width:100%;max-width:none;padding:20px 12px}
+.panel{min-width:0;padding:16px}
+.summary th,.summary td{padding:8px 5px}
+.summary th{white-space:normal;line-height:1.25;font-size:11px}
+.summary th:first-child,.summary td:first-child{min-width:108px;white-space:nowrap}
+.summary .pdv-link{padding:3px 2px}
+.summary .drill-cell{padding:3px 2px;min-width:14px}
+.summary tfoot td:first-child{position:sticky;left:0;z-index:2;background:#eaf4ff}
+.summary th.critical-band-head,.coverage th.critical-band-head{background:#fbdada;color:#9f2424}
+.summary td:nth-child(15),.summary td:nth-child(16),.coverage td:nth-child(13),.coverage td:nth-child(14){background:#fff0f0}
+.summary td:nth-child(15) .drill-cell,.summary td:nth-child(16) .drill-cell,.coverage td:nth-child(13) .drill-cell,.coverage td:nth-child(14) .drill-cell{color:#a52a2a}
+.detail-date-field{grid-column:span 2;min-width:0}
+.detail-date-range{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.detail-date-range input{min-width:0}
+.field .detail-date-missing{display:flex;align-items:center;gap:6px;margin:7px 0 0;font-weight:600}
+.detail-date-missing input{width:auto;margin:0;accent-color:#1769d3}
+.detail-date-range input:disabled{background:#f0f4f9;color:#64748b}
+@media(max-width:650px){.shell{padding:10px}.panel{padding:12px}.detail-date-field{grid-column:auto}.summary th,.summary td{padding:7px 5px}}

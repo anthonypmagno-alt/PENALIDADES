@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Descarga PDV · Centro.xlsx | Cobertura y cumplimiento</title>
-<meta name="app-build" content="20261126-CENTRO-V1-9-1-ANCHO-MODERADO">
+<meta name="app-build" content="20261126-CENTRO-V1-10-CRUCE-PDV-TEMPORAL">
 <link rel="stylesheet" href="./descarga-pdv.css?v=20261126-191">
 <script src="./config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.min.js"></script>
@@ -12,18 +12,18 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script defer src="./centro-core.js?v=20261126-19"></script>
-<script defer src="./descarga-pdv.js?v=20261126-19"></script>
+<script defer src="./descarga-pdv.js?v=20261126-110"></script>
 </head>
 <body>
 <div class="shell">
 <header class="topbar">
-  <div class="brand"><div class="brand-icon">▦</div><div><div class="eyebrow">MÓDULO INDEPENDIENTE · V1.9.1</div><h1>Descarga PDV · Centro.xlsx</h1><div class="sub">Cobertura geográfica, umbrales, devoluciones y pago por guía</div></div></div>
+  <div class="brand"><div class="brand-icon">▦</div><div><div class="eyebrow">MÓDULO INDEPENDIENTE · V1.10</div><h1>Descarga PDV · Centro.xlsx</h1><div class="sub">Cobertura geográfica, umbrales, devoluciones y pago por guía</div></div></div>
   <div class="top-actions"><span id="sessionStatus" class="pill neutral">Validando acceso…</span><a href="./gestion-v2.html" class="btn outline">← Gestión V2</a></div>
 </header>
 <div id="authGate" class="gate hidden"><h2>Acceso al módulo</h2><p id="authMessage">Inicia sesión en el portal y solicita el permiso Ver para Descarga PDV si no aparece el módulo.</p><a class="btn primary" href="./index.html">Abrir inicio de sesión</a></div>
 <main id="mainApp" class="hidden">
 <div id="readonlyNote" class="permission-readonly-banner hidden"></div>
-<section class="panel"><div class="panel-heading"><div><h2>Base compartida para usuarios autorizados</h2><p>El administrador puede publicar la base consolidada de Centro, las guías firmadas y los grupos. Los usuarios PDV y ENCARGADO consultan automáticamente la última base publicada en Supabase, limitada a sus PDV o áreas asignadas. Solo el administrador puede cargar y publicar.</p></div><span class="pill" id="sharedStatus">Sin consultar</span></div>
+<section class="panel"><div class="panel-heading"><div><h2>Base compartida para usuarios autorizados</h2><p>El administrador puede publicar la base consolidada de Centro, las guías firmadas y los grupos. Los usuarios PDV y ENCARGADO consultan automáticamente la última base publicada en Supabase, limitada a sus PDV o áreas asignadas. Solo el administrador puede cargar y publicar la base compartida. El PDV puede cruzar sus Exportaciones temporalmente, sin publicarlas.</p></div><span class="pill" id="sharedStatus">Sin consultar</span></div>
 <p class="shared-scope" id="scopeStatus" aria-live="polite">Verificando el alcance del usuario…</p>
 <div class="shared-actions"><button id="btnPublishShared" class="btn primary" type="button" hidden>☁ Publicar base para usuarios</button><button id="btnLoadShared" class="btn outline" type="button">↻ Consultar base compartida</button></div>
 </section>
@@ -33,14 +33,14 @@
   <div class="upload-options"><div class="radios"><label><input type="radio" name="importMode" value="replace" checked> Reemplazar base local</label><label><input type="radio" name="importMode" value="append"> Complementar con nuevas guías</label></div><button id="btnProcess" class="btn primary" type="button" disabled>Procesar Excel</button><button id="btnClear" class="btn danger-soft" type="button">Limpiar base local</button><small class="muted">Las guías repetidas con tiempos distintos quedarán pendientes de revisión. No se contabilizarán hasta que elijas qué versión utilizar.</small></div></div>
   <div class="status error hidden" id="legacyWarning"><strong>Actualiza el archivo Centro:</strong> esta base fue cargada con una versión anterior que no conservaba la columna <code>devolver</code>. Vuelve a importar Centro.xlsx eligiendo <b>Reemplazar base local</b> para reconocer y excluir correctamente las devoluciones del cálculo.</div>
   <div id="fileList" class="file-list muted">No hay archivos seleccionados.</div>
-  <div id="message" class="status" role="status" aria-live="polite"></div>
 </section>
 <section class="panel" id="signedSection" data-edit-only>
-  <div class="panel-heading"><div><h2>2. Cruzar Exportación · Retirar guías firmadas</h2><p>Importa uno o varios Excel «Exportación de guía de embarque». Solo se retiran del resumen de pendientes las guías coincidentes con estatus <b>Firmado</b> y evidencia de firma. Centro permanece intacto.</p></div><span id="signedStats" class="pill">Sin cruces</span></div>
+  <div class="panel-heading"><div><h2 id="signedSectionTitle">2. Cruzar Exportación · Retirar guías firmadas</h2><p id="signedSectionDesc">Importa uno o varios Excel «Exportación de guía de embarque». Solo se retiran del resumen de pendientes las guías coincidentes con estatus <b>Firmado</b> y evidencia de firma. Centro permanece intacto.</p></div><span id="signedStats" class="pill">Sin cruces</span></div>
   <div class="upload-grid"><label class="upload-zone upload-signed" for="exportInput"><span class="upload-icon">✓</span><strong>Seleccionar Exportaciones de guías</strong><small>Excel .xlsx/.xls · Selección múltiple · solo guías firmadas</small><input id="exportInput" type="file" multiple accept=".xlsx,.xls,.xlsm"/></label>
-    <div class="upload-options"><button id="btnExportProcess" class="btn primary" type="button" disabled>Aplicar cruce de firmadas</button><button id="btnRestoreSigned" class="btn danger-soft" type="button">Restaurar guías retiradas</button><label class="switch-line"><input id="excludeSigned" type="checkbox" checked> Excluir firmadas del resumen y ZIP</label><small class="muted">La exclusión es reversible. Se guarda el motivo, el archivo de Exportación y la fecha de firma en el navegador. Las filas de Centro y las fuentes de Supabase no se eliminan.</small></div>
+    <div class="upload-options"><button id="btnExportProcess" class="btn primary" type="button" disabled>Aplicar cruce de firmadas</button><button id="btnRestoreSigned" class="btn danger-soft" type="button">Restaurar guías retiradas</button><label class="switch-line"><input id="excludeSigned" type="checkbox" checked> Excluir firmadas del resumen y ZIP</label><small id="signedStorageNote" class="muted">La exclusión es reversible. Se guarda el motivo, el archivo de Exportación y la fecha de firma en el navegador. Las filas de Centro y las fuentes de Supabase no se eliminan.</small></div>
   </div><div class="file-list muted" id="exportFilesInfo">Sin Exportaciones seleccionadas.</div><div class="tiny muted" id="signedFilesStatus"></div>
 </section>
+<div id="message" class="status" role="status" aria-live="polite"></div>
 <section id="dashboard" class="hidden">
 <div class="kpis" id="kpiGrid"></div>
 <section class="panel" id="groupsPanel"><div class="panel-heading"><div><h2>3. Agrupaciones personalizadas de PDV</h2><p>Crea agrupaciones como «Áncash», «Junín» o «Región centro». Un grupo puede contener varios PDV; los resúmenes y Excel agrupan sus guías sin alterar el PDV original.</p></div><span id="groupStats" class="pill">0 grupos</span></div>
@@ -66,7 +66,7 @@
 <div class="table-scroll"><table><thead><tr><th>Guía</th><th>PDV Centro</th><th>Firma en Exportación</th><th>Punto de entrega</th><th>Archivo de evidencia</th><th>Estado</th></tr></thead><tbody id="signedAuditRows"></tbody></table></div><p class="tiny muted" id="signedAuditNote"></p></section>
 </section>
 </main>
-<footer>Descarga PDV · Centro.xlsx · Los indicadores son informativos y no alteran Gestión V2 ni Facturación · V1.9.1</footer>
+<footer>Descarga PDV · Centro.xlsx · Los indicadores son informativos y no alteran Gestión V2 ni Facturación · V1.10</footer>
 </div>
 <dialog id="guideQrDialog" class="guide-qr-dialog"><h2>QR de guía</h2><p id="guideQrNumber"></p><div id="guideQrImage"></div><p id="guideQrError" class="tiny"></p><button id="guideQrCopy" type="button" class="btn outline">Copiar guía</button> <button id="guideQrClose" type="button" class="btn primary">Cerrar</button></dialog>
 </body>

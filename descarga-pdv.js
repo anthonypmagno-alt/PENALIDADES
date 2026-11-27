@@ -142,7 +142,7 @@ async function publishSharedData(){
 }
 async function init(){
  if(!(await auth())){$('authGate').classList.remove('hidden');return}
- $('mainApp').classList.remove('hidden');$('sessionStatus').classList.remove('neutral');setup();setupExtra();setupDetailFilters();setupOps();applyReadOnly();sharedLoading=true;refreshSignedControls();
+ $('mainApp').classList.remove('hidden');$('sessionStatus').classList.remove('neutral');setup();setupExtra();setupDetailFilters();setupBulkQr();setupOps();applyReadOnly();sharedLoading=true;refreshSignedControls();
  if($('btnPublishShared')){$('btnPublishShared').hidden=!access.isAdmin;$('btnPublishShared').onclick=publishSharedData}
  if($('btnLoadShared'))$('btnLoadShared').onclick=async()=>{if(state.loading||sharedLoading||ops.busy)return;if((state.raw.length||personalSignedFiles.length)&&!confirm(isPersonalOperator()?'¿Consultar nuevamente la base compartida? Se quitará tu cruce temporal si la consulta se completa.':'¿Abrir la última base compartida y reemplazar la vista local actual?'))return;sharedLoading=true;refreshSignedControls();try{const ok=await loadSharedData();if(!ok)message('No hay publicación disponible. No se modificó la vista anterior.',true)}catch(e){message('No se pudo leer la base compartida: '+e.message,true)}finally{sharedLoading=false;refreshSignedControls();await loadOps()}};
  try{
@@ -390,6 +390,65 @@ async function copyGuides(mode){
  const ok=await putOnClipboard(ids.join('\n'));
  if(ok)message(`${fmt(ids.length)} guías copiadas al portapapeles (${mode==='selected'?'casillas seleccionadas':'todas las filtradas'}), una por línea.`);
  else message('El navegador bloqueó el portapapeles. Abre la página por HTTPS y concede permiso para copiar.',true);
+}
+
+/* V1.11.4: standalone local QR utility. No requests, persistent storage or changes to data. */
+function parseBulkQr(text){
+ const tokens=String(text||'').split(/[\s,;]+/).filter(Boolean);
+ const unique=new Set(), invalid=[];let duplicates=0;
+ for(const raw of tokens){
+  const guide=raw.replace(/^["']+|["']+$/g,'').trim();
+  if(!/^[A-Za-z0-9][A-Za-z0-9-]{5,39}$/.test(guide)||!/[0-9]/.test(guide)){invalid.push(raw);continue}
+  if(unique.has(guide)){duplicates++;continue}unique.add(guide);
+ }
+ return {guides:[...unique],invalid,duplicates};
+}
+function setupBulkQr(){
+ const dialog=$('bulkQrDialog'),input=$('bulkQrInput'),grid=$('bulkQrGrid'),status=$('bulkQrStatus'),print=$('bulkQrPrint'),generate=$('bulkQrGenerate'),printArea=$('bulkQrPrintArea');
+ let revision=0,results=[];
+ const say=(text,error=false)=>{status.textContent=text;status.classList.toggle('ops-error',error)};
+ const clearPrint=()=>{document.body.classList.remove('bulk-qr-printing');printArea.replaceChildren()};
+ const reset=(clearInput=false)=>{revision++;results=[];grid.replaceChildren();print.disabled=true;generate.disabled=false;clearPrint();if(clearInput)input.value='';say(input.value.trim()?'Pulsa Generar QR para actualizar los códigos.':'Pega tus guías para comenzar.')};
+ const open=()=>{if(!access.canView)return;reset(true);dialog.showModal();input.focus()};
+ $('btnBulkQr').onclick=open;$('btnBulkQrTop').onclick=open;$('bulkQrClose').onclick=()=>dialog.close();dialog.addEventListener('close',()=>reset(true));
+ input.addEventListener('input',()=>reset());$('bulkQrClear').onclick=()=>{reset(true);input.focus()};
+ const fill=rows=>{if(!access.canView)return;const ids=[...new Set(rows.map(r=>String(r.guia||'').trim()).filter(Boolean))];input.value=ids.join('\n');reset();say(ids.length?`${fmt(ids.length)} guías copiadas a la lista. Pulsa Generar QR.`:'No hay guías en esa selección.',!ids.length)};
+ $('bulkQrSelected').onclick=()=>fill([...getActiveRows(),...signedAugmented()].filter(r=>state.selectedGuides.has(r.guia)));
+ $('bulkQrFiltered').onclick=()=>fill(filteredDetailRows());
+ generate.onclick=async()=>{
+  if(!access.canView||!dialog.open)return;reset();const run=revision;
+  const {guides,invalid,duplicates}=parseBulkQr(input.value);
+  if(!guides.length)return say('No se encontraron números de guía válidos. Pega una guía por línea.',true);
+  if(guides.length>500)return say(`Hay ${fmt(guides.length)} guías únicas. Divide la lista en grupos de hasta 500. No se ha omitido ninguna guía automáticamente.`,true);
+  if(!window.QRCode)return say('No se pudo cargar la biblioteca QR. Revisa la conexión y recarga la página.',true);
+  generate.disabled=true;let failed=0;
+  for(let i=0;i<guides.length;i++){
+   if(run!==revision||!dialog.open)return;
+   const guide=guides[i];const card=document.createElement('article');card.className='bulk-qr-card';
+   const host=document.createElement('div');host.className='bulk-qr-code';const label=document.createElement('div');label.className='bulk-qr-label';label.textContent=guide;card.append(host,label);grid.append(card);
+   try{
+    new window.QRCode(host,{text:guide,width:160,height:160,correctLevel:window.QRCode.CorrectLevel.M});
+    const canvas=host.querySelector('canvas');if(!canvas)throw Error('No se generó el código.');
+    results.push({guide,src:canvas.toDataURL('image/png')});
+   }catch(e){failed++;host.textContent='QR no disponible';host.classList.add('ops-error')}
+   if(i%20===19){say(`Generando ${fmt(i+1)} de ${fmt(guides.length)} códigos…`);await new Promise(r=>setTimeout(r,0))}
+  }
+  if(run!==revision||!dialog.open)return;
+  generate.disabled=false;print.disabled=!results.length;
+  say(`${fmt(results.length)} QR generados · ${fmt(duplicates)} duplicados omitidos · ${fmt(invalid.length)} entradas no válidas${failed?` · ${fmt(failed)} errores QR`:''}.${invalid.length?' Entradas omitidas: '+invalid.slice(0,8).join(', ')+(invalid.length>8?'…':''):''}`,!!(failed||invalid.length));
+ };
+ print.onclick=async()=>{
+  if(!access.canView||!results.length||!dialog.open)return;
+  const run=revision;clearPrint();print.disabled=true;
+  try{
+   const images=[];for(let i=0;i<results.length;i+=3){const row=document.createElement('div');row.className='bulk-qr-print-row';for(const item of results.slice(i,i+3)){const card=document.createElement('article');card.className='bulk-qr-print-card';const img=document.createElement('img');img.alt='QR '+item.guide;img.src=item.src;const label=document.createElement('div');label.textContent=item.guide;card.append(img,label);row.append(card);images.push(img)}printArea.append(row)}
+   await Promise.all(images.map(img=>img.decode()));if(run!==revision||!dialog.open)return;
+   document.body.classList.add('bulk-qr-printing');window.print();
+  }catch(e){if(run===revision)say('No se pudo preparar la impresión. Inténtalo nuevamente.',true);clearPrint()}
+  finally{if(run===revision)print.disabled=!results.length}
+ };
+ window.addEventListener('afterprint',clearPrint);
+ window.addEventListener('pagehide',()=>reset(true));
 }
 
 function renderConflicts(){const list=state.conflicts.filter(c=>!state.excludeSigned||!state.signed[c.guia]);$('conflictBadge').textContent=`${fmt(list.length)} pendientes`;$('conflictList').innerHTML=list.slice(0,150).map(c=>`<div class="conflict-item"><div class="conflict-head"><strong>${safe(c.guia)}</strong><small class="muted">Selecciona la versión correcta</small></div><div class="conflict-options">${c.options.map((r,i)=>`<label class="conflict-option"><input type="radio" name="conflict-${safe(c.guia)}" data-resolve="${safe(c.guia)}" data-signature="${safe(r.signature)}"><span><b>Versión ${i+1}:</b> ${safe(r.pdv)} · ${num(r.horas,2)} h · ${safe(r.department)}/${safe(r.province)}/${safe(r.district)}<br><small>${safe(r.fuente)} · fila ${r.fila}</small></span></label>`).join('')}</div></div>`).join('')||'<div class="empty">Sin duplicados contradictorios pendientes.</div>';$('conflictList').querySelectorAll('input[data-resolve]').forEach(e=>e.onchange=async()=>{if(!canUse())return;state.decisions[e.dataset.resolve]=e.dataset.signature;rebuild();await persist();message(`Guía ${e.dataset.resolve} resuelta; ya forma parte de los indicadores.`)})}

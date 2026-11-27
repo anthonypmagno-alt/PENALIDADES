@@ -142,7 +142,7 @@ async function publishSharedData(){
 }
 async function init(){
  if(!(await auth())){$('authGate').classList.remove('hidden');return}
- $('mainApp').classList.remove('hidden');$('sessionStatus').classList.remove('neutral');setup();setupExtra();setupDetailFilters();setupBulkQr();setupOps();applyReadOnly();sharedLoading=true;refreshSignedControls();
+ $('mainApp').classList.remove('hidden');$('sessionStatus').classList.remove('neutral');setup();setupExtra();setupDetailFilters();setupBulkQr();setupOps();setupCaptureTools();applyReadOnly();sharedLoading=true;refreshSignedControls();
  if($('btnPublishShared')){$('btnPublishShared').hidden=!access.isAdmin;$('btnPublishShared').onclick=publishSharedData}
  if($('btnLoadShared'))$('btnLoadShared').onclick=async()=>{if(state.loading||sharedLoading||ops.busy)return;if((state.raw.length||personalSignedFiles.length)&&!confirm(isPersonalOperator()?'¿Consultar nuevamente la base compartida? Se quitará tu cruce temporal si la consulta se completa.':'¿Abrir la última base compartida y reemplazar la vista local actual?'))return;sharedLoading=true;refreshSignedControls();try{const ok=await loadSharedData();if(!ok)message('No hay publicación disponible. No se modificó la vista anterior.',true)}catch(e){message('No se pudo leer la base compartida: '+e.message,true)}finally{sharedLoading=false;refreshSignedControls();await loadOps()}};
  try{
@@ -639,6 +639,61 @@ async function saveGroup(){if(!canUse())return;const name=$('groupName').value.t
 function setupExtra(){const exp=$('exportInput');exp.addEventListener('change',()=>{const files=[...exp.files];$('exportFilesInfo').textContent=files.length?files.map(f=>f.name).join(' · '):'Sin archivos seleccionados.';refreshSignedControls()});$('btnExportProcess').onclick=loadSignedFiles;$('btnRestoreSigned').onclick=clearSigned;$('excludeSigned').onchange=async e=>{if(!canCrossSigned()){e.target.checked=state.excludeSigned;return}state.excludeSigned=e.target.checked;resetDrill();refreshAll();if(access.isAdmin)await persist()};$('groupPDVSearch').oninput=draftOptions;$('groupPDVOptions').onchange=e=>{if(!canUse())return;const p=e.target.dataset.groupPdv;if(!p)return;e.target.checked?state.groupDraft.add(p):state.groupDraft.delete(p);draftOptions()};$('btnGroupAll').onclick=()=>{const q=C.normKey($('groupPDVSearch').value);for(const p of allPDVs().filter(p=>!q||C.normKey(p).includes(q)))state.groupDraft.add(p);draftOptions()};$('btnGroupNone').onclick=()=>{state.groupDraft.clear();draftOptions()};$('btnSaveGroup').onclick=saveGroup;$('btnCancelEdit').onclick=cancelGroupEdit;$('pdvGroupFilter').onchange=()=>{resetDrill();refreshAll()};$('btnZipGroups').onclick=exportGroupZip;$('groupRows').addEventListener('change',e=>{if(state.loading)return;const id=e.target.dataset.pickGroup;if(!id)return;e.target.checked?state.selectedGroups.add(id):state.selectedGroups.delete(id);$('groupSelectedCount').textContent=`${state.selectedGroups.size} grupos seleccionados`});$('groupRows').addEventListener('click',async e=>{const generic=e.target.closest('tr[data-row-group]');if(generic&&!e.target.closest('button,input,a')){if(state.groups.some(g=>g.id===generic.dataset.rowGroup)){$('pdvGroupFilter').value=generic.dataset.rowGroup;resetDrill();refreshAll()}return}const drill=e.target.closest('[data-group-drill]');if(drill){const id=drill.dataset.groupDrill;if(!state.groups.some(g=>g.id===id))return;$('pdvGroupFilter').value=id;resetDrill();if(drill.dataset.groupMetric==='returns')state.drill.returns=true;else if(drill.dataset.groupMetric==='signed')state.drill.signed=true;refreshAll();return}const btn=e.target.closest('button');if(!btn)return;const id=btn.dataset.showGroup||btn.dataset.editGroup||btn.dataset.deleteGroup;if(!id)return;const group=state.groups.find(g=>g.id===id);if(!group)return;if(btn.dataset.showGroup){$('pdvGroupFilter').value=id;resetDrill();refreshAll();$('pdvGroupFilter').scrollIntoView({behavior:'smooth',block:'center'});return}if(btn.dataset.editGroup){if(!canUse())return;state.editingGroup=id;state.groupDraft=new Set(group.pdvs);$('groupName').value=group.name;$('btnSaveGroup').textContent='Actualizar grupo';$('btnCancelEdit').classList.remove('hidden');draftOptions();$('groupName').focus();return}if(btn.dataset.deleteGroup){if(!canUse())return;if(!confirm(`¿Eliminar la agrupación «${group.name}»? Ninguna guía de Centro se borrará.`))return;state.groups=state.groups.filter(g=>g.id!==id);state.selectedGroups.delete(id);if($('pdvGroupFilter').value===id)$('pdvGroupFilter').value='';cancelGroupEdit();refreshAll();await persist();message('Agrupación eliminada.')}})}
 function cleanFilename(name){return String(name||'grupo').replace(/[\\/:*?"<>|]/g,'_').trim().slice(0,65)||'grupo'}
 async function exportGroupZip(){if(state.loading||ops.busy)return;if(!await opsBeforeExport())return;if(!window.ExcelJS||!window.JSZip)return message('No se encuentran ExcelJS o JSZip. Revisa la conexión.',true);const groups=groupRows().filter(g=>state.selectedGroups.has(g.id)&&(g.total||g.firmados));if(!groups.length)return message('Selecciona grupos con guías para descargar.',true);if(groups.length>40)return message('Descarga hasta 40 grupos por vez.',true);setBusy(true);try{const zip=new JSZip(),folder=zip.folder('EXCEL_POR_GRUPO'),items=[];for(let i=0;i<groups.length;i++){const g=groups[i];message(`Preparando grupo ${i+1}/${groups.length}: ${g.name}…`);await new Promise(r=>setTimeout(r,8));folder.file(`${String(i+1).padStart(2,'0')}_${cleanFilename(g.name)}.xlsx`,await workbookPDV('GRUPO '+g.name,g.rows,signedFiltered({ignoreGroup:true}).filter(r=>g.pdvs.includes(r.pdv))).xlsx.writeBuffer());items.push({pdv:g.name,rows:g.rows,firmados:g.firmados,...C.stats(g.rows)})}const combined=[...new Map(groups.flatMap(g=>g.rows).map(r=>[r.guia,r])).values()];const signedUnion=[...new Map(groups.flatMap(g=>signedFiltered({ignoreGroup:true}).filter(r=>g.pdvs.includes(r.pdv))).map(r=>[r.guia,r])).values()];const ctrl=controlWorkbook(items,combined,state.conflicts,state.invalid,signedUnion);const grupoSheet=ctrl.addWorksheet('GRUPOS_Y_PDV');grupoSheet.addRow(['GRUPO','PDV INTEGRANTE']);headerStyle(grupoSheet.getRow(1));for(const g of groups)for(const p of g.pdvs)grupoSheet.addRow([excelText(g.name),excelText(p)]);grupoSheet.getColumn(1).width=35;grupoSheet.getColumn(2).width=18;zip.file('CONTROL_GENERAL.xlsx',await ctrl.xlsx.writeBuffer());const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:4}});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`COBERTURA_GRUPOS_${new Date().toISOString().slice(0,10)}.zip`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);message(`ZIP de grupos listo: ${groups.length} grupos, ${fmt(combined.length)} guías únicas en control general.`)}catch(e){console.error(e);message('Error al descargar grupos: '+e.message,true)}finally{setBusy(false)}}
+
+
+function setupCaptureTools(){
+ document.querySelectorAll('[data-capture-action][data-capture-target]').forEach(btn=>btn.addEventListener('click',onCaptureButton));
+}
+async function onCaptureButton(e){
+ const btn=e.currentTarget, target=btn.dataset.captureTarget, mode=btn.dataset.captureAction, base=btn.dataset.captureName||target||'captura';
+ if(btn.disabled) return;
+ setCaptureBusy(btn,true);
+ try{
+  const blob=await captureElementAsPng(target);
+  if(mode==='copy'){
+   await copyPngBlob(blob);
+   message('Imagen copiada al portapapeles. Puedes pegarla en Excel, WhatsApp o cualquier documento.');
+  }else{
+   downloadBlob(blob, `${base}_${new Date().toISOString().slice(0,10)}.png`);
+   message('Imagen generada y descargada correctamente.');
+  }
+ }catch(err){
+  console.error(err);
+  message('No se pudo '+(mode==='copy'?'copiar':'generar')+' la imagen: '+(err&&err.message?err.message:err),true);
+ }finally{ setCaptureBusy(btn,false); }
+}
+function setCaptureBusy(btn,busy){
+ btn.disabled=busy;
+ btn.classList.toggle('busy',busy);
+ if(busy){btn.dataset.oldText=btn.innerHTML;btn.innerHTML='<span class="spin">⟳</span> Procesando';}
+ else if(btn.dataset.oldText){btn.innerHTML=btn.dataset.oldText;delete btn.dataset.oldText;}
+}
+async function captureElementAsPng(targetId){
+ if(!window.html2canvas) throw Error('No se pudo cargar el generador de imágenes. Revisa tu conexión y vuelve a abrir el módulo.');
+ const node=$(targetId);
+ if(!node) throw Error('No se encontró la sección solicitada.');
+ await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+ const canvas=await window.html2canvas(node,{backgroundColor:'#ffffff',scale:Math.max(1.5,Math.min(2,window.devicePixelRatio||1)),useCORS:true,logging:false,ignoreElements:el=>el?.dataset?.noCapture==='true',onclone:(doc)=>{
+   const clone=doc.getElementById(targetId);
+   if(!clone) return;
+   clone.querySelectorAll('[data-no-capture="true"]').forEach(el=>el.remove());
+   clone.querySelectorAll('.table-scroll').forEach(box=>{box.style.overflow='visible';box.style.maxWidth='none';box.style.maxHeight='none';});
+   clone.querySelectorAll('table').forEach(table=>{table.style.minWidth='0';table.style.width='100%';});
+   clone.style.maxWidth='none';
+   clone.style.width=Math.max(node.scrollWidth,node.clientWidth)+'px';
+ }});
+ const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('El navegador no devolvió la imagen PNG.')),'image/png'));
+ return blob;
+}
+async function copyPngBlob(blob){
+ if(!navigator.clipboard || !window.ClipboardItem) throw Error('Tu navegador no permite copiar imágenes directamente. Usa el botón Imagen para descargarla.');
+ await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+}
+function downloadBlob(blob,filename){
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
 
 init().catch(e=>{console.error(e);$('authGate').classList.remove('hidden');$('authMessage').textContent='Error al iniciar módulo: '+e.message});
 })();

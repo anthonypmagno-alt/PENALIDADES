@@ -94,3 +94,37 @@
 
 /* V1.11 - gestión de entrega, solo detalle */
 .ops-panel{border:1px solid #cbd9ea;background:#f7faff;border-radius:10px;padding:12px;margin:12px 0}.ops-heading,.ops-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ops-heading{margin-bottom:8px}.ops-heading span{flex:1;font-size:12px;color:#34577c}.ops-tools textarea{flex:1;min-width:220px;resize:vertical;padding:7px;border:1px solid #afc1d5;border-radius:6px;font:inherit}.ops-tools select{padding:7px;border:1px solid #afc1d5;border-radius:6px}.ops-panel small{display:block;margin-top:8px;color:#52677e}.ops-check{min-width:38px;text-align:center}.ops-comment{min-width:245px;white-space:normal!important}.ops-comment textarea{display:block;width:100%;min-width:200px;box-sizing:border-box;resize:vertical;font:inherit;padding:5px;border:1px solid #c2d0df;border-radius:5px}.ops-comment .btn{margin-top:4px}.ops-three .ops-check{background:#ffe0e0!important;color:#a42020}.ops-comment small{display:block;font-size:10px;color:#a42020}.ops-panel [disabled],.ops-comment [disabled]{opacity:.55}.ops-error{color:#b42318!important}
+
+
+/* V1.11.1 — las 20 columnas del detalle, sin ampliar el resto del módulo. */
+.shell{--panel-inline:12px}
+.panel{padding-inline:var(--panel-inline)}
+#detailSection .table-scroll{max-width:100%}
+#detailSection .detail{table-layout:fixed;width:100%;min-width:1030px;font-size:11px;line-height:1.25}
+#detailSection .detail th,#detailSection .detail td{padding:6px 3px;white-space:normal;overflow-wrap:anywhere;vertical-align:middle}
+#detailSection .detail th{font-size:10.5px;line-height:1.2;text-align:center}
+#detailSection .detail td{text-align:center}
+#detailSection .detail td:nth-child(2),#detailSection .detail td:nth-child(4),#detailSection .detail td:nth-child(8),#detailSection .detail td:nth-child(9){font-variant-numeric:tabular-nums}
+#detailSection .detail td:nth-child(5),#detailSection .detail td:nth-child(6),#detailSection .detail td:nth-child(7),#detailSection .detail td:nth-child(14),#detailSection .detail td:nth-child(16),#detailSection .detail td:nth-child(20){text-align:left}
+#detailSection .detail .guide-selection-cell,#detailSection .detail .guide-check-header,#detailSection .detail .ops-check{width:auto;min-width:0;max-width:none;padding-inline:2px;text-align:center!important}
+#detailSection .detail input[type=checkbox]{width:14px;height:14px;margin:0;vertical-align:middle;accent-color:#1769d3}
+#detailSection .detail .guide-qr-btn{padding:3px 4px;font-size:10px;gap:0;max-width:100%}
+#detailSection .detail .ops-comment{min-width:0;padding:4px 3px}
+#detailSection .detail .ops-comment textarea{min-width:0;max-width:100%;width:100%;min-height:32px;resize:vertical;font-size:11px;padding:3px 4px}
+#detailSection .detail .ops-comment .btn{padding:3px 6px;font-size:10px;margin-top:3px}
+#detailSection .detail .ops-comment small{font-size:10px;line-height:1.15}
+@media(min-width:1250px){#detailSection .detail{font-size:12px}#detailSection .detail th{font-size:11px}#detailSection .detail th,#detailSection .detail td{padding-inline:4px}}
+@media(max-width:650px){.shell{--panel-inline:10px}}
+
+/* V1.11.2 — ancho útil uniforme del apartado 8 para todos los paneles. */
+.panel{width:100%;max-width:100%}
+.panel .table-scroll{max-width:100%}
+.coverage{width:100%;min-width:0;line-height:1.25}
+.coverage th,.coverage td{padding:6px 4px;white-space:normal;overflow-wrap:anywhere;vertical-align:middle}
+.coverage th{font-size:10.5px;line-height:1.2}
+.coverage .drill-cell{padding:3px 2px;min-width:14px}
+.coverage .drill-geo{white-space:normal;overflow-wrap:anywhere;max-width:100%}
+.coverage td:nth-child(-n+3),.coverage th:nth-child(-n+3){text-align:left}
+@media(min-width:1250px){.coverage th{font-size:11px}}
+@media(max-width:1100px){.coverage,.summary{font-size:11px}.summary th,.summary td{padding-inline:3px}.summary th:first-child,.summary td:first-child{min-width:80px}}
+@media(max-width:850px){.coverage{min-width:900px}.summary{min-width:900px}}

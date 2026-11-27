@@ -231,8 +231,8 @@ EOD`}return{to_workbook:a,to_sheet:r,from_sheet:s}})(),i1=(function(){function e
     const source=permissions||fullPermissions();
     container.innerHTML=moduleDefinitions.map(([key,label])=>{
       const permission=source[key]||{ver:key!=="descarga_pdv",ejecutar:key!=="descarga_pdv"};
-      const view=permission.ver!==false,execute=key==="descarga_pdv"?false:(permission.ejecutar!==false&&view);
-      return `<div class="v16-module-permission-row" data-module="${key}"><span>${label}</span><label><input type="checkbox" data-permission="ver" ${view?"checked":""}> Ver</label><label><input type="checkbox" data-permission="ejecutar" ${execute?"checked":""} ${key==="descarga_pdv"?"disabled title=\"Solo el administrador publica y modifica la base compartida\"":(view?"":"disabled")}> Ejecutar</label></div>`;
+      const view=key==="descarga_pdv"?permission.ver===true:permission.ver!==false,execute=view&&(key==="descarga_pdv"?permission.ejecutar===true:permission.ejecutar!==false);
+      return `<div class="v16-module-permission-row" data-module="${key}"><span>${label}</span><label><input type="checkbox" data-permission="ver" ${view?"checked":""}> Ver</label><label><input type="checkbox" data-permission="ejecutar" ${execute?"checked":""} ${view?"":"disabled"} ${key==="descarga_pdv"?'title="Gestiones y cruce temporal; publicar Centro sigue reservado al administrador"':""}> Ejecutar</label></div>`;
     }).join("");
   }
   function readPermissionMatrix(containerId){
@@ -240,7 +240,7 @@ EOD`}return{to_workbook:a,to_sheet:r,from_sheet:s}})(),i1=(function(){function e
     const container=byId(containerId);
     if(!container)return fullPermissions();
     container.querySelectorAll(".v16-module-permission-row").forEach(row=>{
-      const key=row.dataset.module,view=Boolean(row.querySelector('[data-permission="ver"]')?.checked),execute=key==="descarga_pdv"?false:(Boolean(row.querySelector('[data-permission="ejecutar"]')?.checked)&&view);
+      const key=row.dataset.module,view=Boolean(row.querySelector('[data-permission="ver"]')?.checked),execute=Boolean(row.querySelector('[data-permission="ejecutar"]')?.checked)&&view;
       result[key]={ver:view,ejecutar:execute};
     });
     return result;
@@ -251,7 +251,7 @@ EOD`}return{to_workbook:a,to_sheet:r,from_sheet:s}})(),i1=(function(){function e
     container.addEventListener("change",event=>{
       const row=event.target.closest(".v16-module-permission-row");if(!row)return;
       const view=row.querySelector('[data-permission="ver"]'),execute=row.querySelector('[data-permission="ejecutar"]');
-      if(event.target===view&&!view.checked){execute.checked=false;execute.disabled=true;}else if(event.target===view&&view.checked)execute.disabled=row.dataset.module==="descarga_pdv";
+      if(event.target===view&&!view.checked){execute.checked=false;execute.disabled=true;}else if(event.target===view&&view.checked)execute.disabled=false;
     });
   }
   function closeModal(){
@@ -353,8 +353,14 @@ EOD`}return{to_workbook:a,to_sheet:r,from_sheet:s}})(),i1=(function(){function e
     if(!isAdmin()||!targetUsername||busy)return;
     busy=true;byId("v16SaveModulePerms").disabled=true;setStatus("Guardando permisos de "+targetUsername+"…");
     try{
-      const {data,error}=await client.rpc("v16_gestion_modulos_usuario",{p_accion:"guardar_usuario",p_payload:{usuario:targetUsername,permisos:readPermissionMatrix("v16ModulePermissionsEditor")}});
+      const requested=readPermissionMatrix("v16ModulePermissionsEditor");
+      const {data,error}=await client.rpc("v16_gestion_modulos_usuario",{p_accion:"guardar_usuario",p_payload:{usuario:targetUsername,permisos:requested}});
       if(error)throw error;
+      const check=await client.rpc("v16_gestion_modulos_usuario",{p_accion:"obtener_usuario",p_payload:{usuario:targetUsername}});
+      if(check.error)throw check.error;
+      const actual=check.data?.permisos?.descarga_pdv||{};
+      renderPermissionMatrix("v16ModulePermissionsEditor",check.data?.permisos||fullPermissions());
+      if((actual.ver===true)!==requested.descarga_pdv.ver||(actual.ejecutar===true)!==requested.descarga_pdv.ejecutar)throw new Error("Supabase no conservó el permiso de Cobertura PDV. Revisa la función de permisos en SQL.");
       setStatus("Permisos de "+targetUsername+" guardados.");
       await listUsers();
     }catch(error){setStatus("No se pudieron guardar los permisos. Detalle: "+(error?.message||String(error)));}
@@ -469,6 +475,7 @@ function v16FullModulePermissions(){const result={};V16_MODULES.forEach(([key])=
 function v16CanModule(module,action="ver"){
   if(String(Ut?.perfil?.rol||"").toUpperCase()==="ADMINISTRADOR")return true;
   const permission=v16ModulePermissionsCache?.[module]||{ver:module!=="descarga_pdv",ejecutar:module!=="descarga_pdv"};
+  if(module==="descarga_pdv")return permission.ver===true&&(action!=="ejecutar"||permission.ejecutar===true);
   return action==="ejecutar"?permission.ver!==false&&permission.ejecutar!==false:permission.ver!==false;
 }
 function v16AssertModule(module,action="ver"){

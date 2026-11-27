@@ -986,7 +986,7 @@ JPE000033816809"></textarea><div><button type="button" onclick="aplicarListaGuia
 </main>
   </div>
 
-  <div id="loading" class="loading"><div id="loadingText">Procesando...</div></div>
+  <aside id="sourceBackgroundProgress" hidden role="status" aria-live="polite" style="position:fixed;right:18px;bottom:22px;z-index:999;width:min(370px,calc(100vw - 36px));padding:12px 15px;border:1px solid #b7cbe3;border-radius:12px;background:#fff;color:#183858;box-shadow:0 4px 20px #1233;pointer-events:none"><b>Carga de fuentes · en segundo plano</b><div id="sourceBackgroundText" style="margin:6px 0"></div><progress id="sourceBackgroundBar" style="width:100%" max="1"></progress><small>Se conserva el resumen vigente hasta confirmar. Mantén esta pestaña abierta.</small></aside><div id="loading" class="loading"><div id="loadingText">Procesando...</div></div>
   <div id="toast" class="toast"></div>
   <div id="qrModal" class="modal" onclick="if(event.target===this)cerrarQR()"><div class="modal-card"><h3>CÓDIGO QR</h3><div id="qr"></div><div id="qrNumero" class="guide" style="margin-top:12px"></div><p id="qrDistrito" class="qr-district-label" hidden=""></p><button class="secondary" onclick="cerrarQR()">Cerrar</button></div></div>
   <div id="commentModal" class="modal" onclick="if(event.target===this)cerrarComentario()"><div class="modal-card modal-comment"><div class="comment-modal-heading"><h3 id="commentTitle">COMENTARIO DEL CASO</h3></div><section id="commentCriticalSummary" class="comment-critical-modal-summary" aria-live="polite"><div id="commentCriticalModalTitle" class="comment-critical-modal-title">Clasificación de paquetes críticos</div><div id="commentCriticalSummaryBody" class="comment-critical-modal-body"></div></section><label id="commentPdvLabel" for="commentText">Comentario del PDV</label><textarea id="commentText" maxlength="2000" placeholder="Escriba un comentario sobre los casos del PDV..."></textarea><div id="commentMeta" class="comment-meta"></div><div class="modal-actions"><button id="btnCancelComment" class="secondary" onclick="cerrarComentario()">Cancelar</button><button id="btnSaveComment" class="small" onclick="guardarComentario()">Guardar comentario</button></div></div></div><div id="resumenImagenModal" class="modal" onclick="if(event.target===this)cerrarImagenesResumen()"><div class="modal-card resumen-imagen-modal"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div><h3 id="resumenImagenTitulo">IMÁGENES DEL PDV</h3><p class="resumen-imagen-help">Adjunta PNG, JPG o WebP de hasta 8 MB. Haz clic en una imagen para verla ampliada.</p></div><button type="button" class="secondary" onclick="cerrarImagenesResumen()">Cerrar</button></div><div class="resumen-imagen-upload"><label for="archivoImagenResumen" style="margin:0">Seleccionar imagen</label><input id="archivoImagenResumen" type="file" accept="image/png,image/jpeg,image/webp"><button type="button" id="btnSubirImagenResumen" class="small" onclick="subirImagenResumen()">Cargar imagen</button></div><div id="resumenImagenEstado" class="resumen-imagen-status" role="status" aria-live="polite"></div><div id="resumenImagenGrid" class="resumen-imagen-grid"></div></div></div><div id="imagenResumenLightbox" class="imagen-lightbox" onclick="if(event.target===this)cerrarImagenResumenAmpliada()"><button type="button" class="secondary" onclick="cerrarImagenResumenAmpliada()">Cerrar</button><img id="imagenResumenAmpliada" alt="Imagen del resumen"></div>
@@ -1271,30 +1271,30 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     const estado=document.getElementById('sourceEnvioComplementoMeta');
     guardadoFuentesEnCurso=true;if(boton)boton.disabled=true;if(guardar)guardar.disabled=true;
     try{
-      mostrarLoading(true,'Validando archivos complementarios…');
-      const union=await consolidarExportacionesGuias(lista,{onProgreso:(n,total,nombre)=>mostrarLoading(true,'Complemento '+n+'/'+total+': '+nombre)});
+      mostrarProgresoFuentes(true,'Validando archivos complementarios…');
+      const union=await consolidarExportacionesGuias(lista,{onProgreso:(n,total,nombre)=>mostrarProgresoFuentes(true,'Complemento '+n+'/'+total+': '+nombre)});
       const filasOptimizadas=optimizarMatrizFuenteV1816('EXPORTACION GUIAS',union.filas);
       estado.textContent=union.guiasUnicas+' guías distintas en los archivos; consultando la fuente publicada…';
-      mostrarLoading(true,'Leyendo y conciliando con la Exportación vigente de Supabase…');
+      mostrarProgresoFuentes(true,'Leyendo y conciliando con la Exportación vigente de Supabase…');
       const preparado=await rpcFuentesGuardar('cargarFuenteOperativa',token,{tipo:'EXPORTACION GUIAS',nombreArchivo:'Complemento ('+lista.length+' Excel): '+lista.map(f=>f.name).join('; ').slice(0,170),filas:filasOptimizadas,modo:'COMPLEMENTAR',actualizarMasReciente:cambiarRepetidas,diferirProcesamiento:true});
       const c=preparado?.complemento;
       if(!c)throw new Error('El servidor no confirmó los conteos de complementación.');
       const resumen='Publicadas: '+num(c.existentes)+' · Nuevas: '+num(c.agregadas)+' · Repetidas conservadas: '+num(c.conservadas)+' · Actualizadas: '+num(c.actualizadas)+' · Total: '+num(c.total);
       estado.textContent=resumen;
-      if(c.sinCambios){mostrarLoading(false);toast('Sin cambios por publicar. '+resumen,true);return;}
-      mostrarLoading(true,'Publicando Exportación complementada · '+num(c.total)+' guías (conservando las anteriores)…');
+      if(c.sinCambios){mostrarProgresoFuentes(false);toast('Sin cambios por publicar. '+resumen,true);return;}
+      mostrarProgresoFuentes(true,'Publicando Exportación complementada · '+num(c.total)+' guías (conservando las anteriores)…');
       const resultado=await rpcFuentesGuardar('confirmarGuardadoFuentes',token);
       if(!resultado?.ok)throw new Error('Supabase no confirmó la publicación complementaria.');
       if(resultado.advertencia){estado.textContent=resumen+' · '+resultado.advertencia;toast(resultado.advertencia,false);}
       else{input.value='';actualizarSeleccionEnvioComplemento();estado.textContent='PUBLICADO · '+resumen;toast('Exportación complementada. '+resumen,true);}
       // No usar solo el archivo delta para la tabla de guías fuera del resumen.
       fueraResumenMatrizTrasGuardar=null;
-      cargarDatos();
+      cargarDatos(undefined,undefined,true);
     }catch(error){
       const msg='No se confirmó el complemento: '+errorTexto(error);
       estado.textContent=msg;toast(msg,false);
       // Conservar la selección local; si hubo timeout, usar Verificar/Reintentar publicación.
-    }finally{mostrarLoading(false);guardadoFuentesEnCurso=false;if(boton)boton.disabled=false;if(guardar)guardar.disabled=false;actualizarBotonesPublicacionV9();}
+    }finally{mostrarProgresoFuentes(false);guardadoFuentesEnCurso=false;if(boton)boton.disabled=false;if(guardar)guardar.disabled=false;actualizarBotonesPublicacionV9();}
   }
 
   // V18.16: reducir la carga transmitida, NO modificar el Excel de origen.
@@ -1350,20 +1350,26 @@ function mostrarGuiasSeleccionadasQr(registros,campoEmpleado,origen){
     if(archivos.some(f=>!/\.(xlsx|xls)$/i.test(f.name)||!f.size||f.size>EXCEL_MAX_BYTES)){toast("Seleccione Excel XLSX/XLS válidos, de hasta 30 MB cada uno.",false);return;}
     if(typeof XLSX==="undefined"){toast("No se pudo cargar el lector de Excel.",false);return;}
     if(!["TRACK BREAK","COLA LARGA"].includes(tipo)&&!window.confirm("Se reemplazará únicamente la fuente "+tipo+" con "+(tipo==="EXPORTACION GUIAS"?archivos.length+" Excel consolidados":archivo.name)+". Los comentarios y cierres se conservarán. ¿Continuar?"))return;
-    mostrarLoading(true,"Validando y cargando "+tipo+"...");
+    if(window.V16PublicacionV9?.hayPendiente?.())return toast('Primero verifica o elimina la publicación pendiente.',false);
+    guardadoFuentesEnCurso=true;input.disabled=true;versionCargaPortal++;
+    mostrarProgresoFuentes(true,'Validando y cargando '+tipo+'…');
     try{
-      const union=tipo==="EXPORTACION GUIAS"?await consolidarExportacionesGuias(archivos,{onProgreso:(n,total,nombre)=>mostrarLoading(true,"Leyendo Excel "+n+"/"+total+": "+nombre)}):null;
-      const filasLeidas=union?union.filas:await leerFilasArchivoExcel(archivo,true,tipo);
-      const filas=optimizarMatrizFuenteV1816(tipo,filasLeidas);
+      const union=tipo==='EXPORTACION GUIAS'?await consolidarExportacionesGuias(archivos,{onProgreso:(n,total,nombre)=>mostrarProgresoFuentes(true,'Leyendo Excel '+n+'/'+total+': '+nombre)}):null;
+      const filas=optimizarMatrizFuenteV1816(tipo,union?union.filas:await leerFilasArchivoExcel(archivo,true,tipo));
       const nombreArchivo=union?union.nombreArchivo:archivo.name;
-      if(['TRACK BREAK','COLA LARGA'].includes(tipo)){prepararRegionesFuente(tipo,archivo.name,filas,input);return;}
-      google.script.run.withSuccessHandler(r=>{
-        mostrarLoading(false);input.value="";mostrarSeleccionExportacionMultiple(input);renderEstadoFuentes(r&&r.estadoFuentes?r.estadoFuentes:null);
-        if(tipo==="DESPACHOS AYER"){const resumenDespachos=resumirConteoDespachos(filas);toast("Despachos ayer actualizado: "+num(resumenDespachos.guias)+" guías únicas resumidas en "+num(resumenDespachos.pdvs)+" PDV. Se almacenó solo el conteo por PDV.",true);}else toast(tipo+" actualizado: "+num(r.guiasUnicas)+" guías únicas. "+num(r.guiasActivas)+" guías activas en total."+(union?" "+union.archivos+" Excel unidos, "+num(union.duplicadas)+" duplicados resueltos.":""),true);
-        if(tipo==='EXPORTACION GUIAS')fueraResumenMatrizTrasGuardar={filas,archivo:nombreArchivo};
-        cargarDatos();
-      }).withFailureHandler(manejarError).cargarFuenteOperativa(token,{tipo:tipo,nombreArchivo,filas:filas});
-    }catch(error){mostrarLoading(false);toast("No se pudo preparar el archivo: "+errorTexto(error),false);}
+      let entrada={tipo,nombreArchivo,filas,diferirProcesamiento:true},regiones;
+      if(['TRACK BREAK','COLA LARGA'].includes(tipo)){const seleccion=await elegirRegionesGuardado(tipo,filas);Object.assign(entrada,seleccion);regiones=seleccion.regiones;}
+      mostrarProgresoFuentes(true,'Preparando '+tipo+'…');
+      const r=await rpcFuentesGuardar('cargarFuenteOperativa',token,entrada);if(!r?.ok)throw Error('No se confirmó la preparación.');
+      mostrarProgresoFuentes(true,'Publicando fuentes…');
+      const done=await rpcFuentesGuardar('confirmarGuardadoFuentes',token);if(!done?.ok)throw Error('No se confirmó la publicación.');
+      input.value='';if(tipo==='EXPORTACION GUIAS'){mostrarSeleccionExportacionMultiple(input);fueraResumenMatrizTrasGuardar={filas,archivo:nombreArchivo};}
+      renderEstadoFuentes(done.estadoFuentes);mostrarGuardadoFuentes(done.ultimoGuardado);
+      if(regiones)guardarRegionesGestion(regiones);
+      if(done.advertencia)toast(done.advertencia,false);else toast(tipo+' publicado correctamente.',true);
+      cargarDatos(regiones,undefined,true);
+    }catch(e){toast('No se confirmó '+tipo+': '+errorTexto(e),false);}
+    finally{guardadoFuentesEnCurso=false;input.disabled=false;mostrarProgresoFuentes(false);actualizarBotonesPublicacionV9();}
   }
 
 let fuenteRegionalPendiente=null,versionFuenteRegional=0;
@@ -1397,12 +1403,14 @@ function importarRegionesFuente(){
 
 
 let guardadoFuentesEnCurso=false,seleccionRegionesGuardado=null;
+function mostrarProgresoFuentes(si,texto,hechos,total){const panel=document.getElementById('sourceBackgroundProgress'),bar=document.getElementById('sourceBackgroundBar');panel.hidden=!si;if(!si)return;document.getElementById('sourceBackgroundText').textContent=texto||'Procesando…';if(total>0){bar.max=total;bar.value=Math.min(total,hechos||0);}else{bar.removeAttribute('value');}}
+window.addEventListener('beforeunload',e=>{if(guardadoFuentesEnCurso){e.preventDefault();e.returnValue='';}});
+
 window.addEventListener('v16-carga-progreso',evento=>{
  const p=evento.detail||{},texto=String(p.etapa||'Guardando en Supabase')+(p.total?' · '+p.hechos+'/'+p.total+' bloques':'');
  const estado=document.getElementById('guardadoFuentesEstado');
  if(guardadoFuentesEnCurso&&estado)estado.textContent=texto;
- const loading=document.getElementById('loading');
- if(loading&&loading.style.display==='flex')mostrarLoading(true,texto);
+ if(guardadoFuentesEnCurso)mostrarProgresoFuentes(true,texto,p.hechos,p.total);
 });
 function mostrarGuardadoFuentes(dato){const el=document.getElementById('guardadoFuentesEstado');if(!el)return;el.textContent=dato?'Último guardado confirmado: '+dato.fecha+' · '+dato.usuario:'Sin confirmación de guardado en esta versión';}
 function rpcFuentesGuardar(nombre,...args){return new Promise((resolve,reject)=>{google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[nombre](...args);});}
@@ -1411,7 +1419,7 @@ async function elegirRegionesGuardado(tipo,filas){
  const counts=new Map();datos.forEach(x=>counts.set(x.region,(counts.get(x.region)||0)+1));
  const cont=document.getElementById('sourceRegionOptions');cont.replaceChildren();
  [...counts].sort().forEach(([region,count])=>{const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.value=region;check.checked=true;label.style.cssText='display:inline-flex;gap:8px;margin:8px 16px';label.append(check,document.createTextNode(region+' · '+count+' filas'));cont.append(label);});
- document.getElementById('sourceRegionTitle').textContent='Guardar '+tipo+' — seleccione regiones';document.getElementById('sourceRegionPanel').classList.remove('hidden');mostrarLoading(false);
+ document.getElementById('sourceRegionTitle').textContent='Guardar '+tipo+' — seleccione regiones';document.getElementById('sourceRegionPanel').classList.remove('hidden');mostrarProgresoFuentes(true,'Pendiente: vuelve a Gestión V2 → Carga de información y selecciona las regiones de '+tipo+'.');toast('Selecciona las regiones para continuar con '+tipo+'.',true);
  const regiones=await new Promise((resolve,reject)=>{seleccionRegionesGuardado={resolve,reject};});
  return {regiones,filas:[filas[0],...datos.filter(x=>regiones.includes(x.region)).map(x=>filas[x.indice])]};
 }
@@ -1445,12 +1453,12 @@ async function reintentarPublicacionV9(){
  const g=document.getElementById('guardarFuentesBtn');if(g)g.disabled=true;
  const estado=document.getElementById('guardadoFuentesEstado');
  try{
-   mostrarLoading(true,'Verificando y reintentando solo la publicación...');
+   mostrarProgresoFuentes(true,'Verificando y reintentando solo la publicación...');
    const r=await window.V16PublicacionV9.reintentar();
    estado.textContent=r.mensaje;toast(r.mensaje,r.estado==='publicada');
-   if(r.estado==='publicada'){const inputs=document.querySelectorAll('#sourceEnvioFile,#sourcePdvFile,#sourceDespachosFile,#sourceBrechaFile');inputs.forEach(x=>{x.value='';});cargarDatos();}
+   if(r.estado==='publicada'){const inputs=document.querySelectorAll('#sourceEnvioFile,#sourcePdvFile,#sourceDespachosFile,#sourceBrechaFile');inputs.forEach(x=>{x.value='';});cargarDatos(undefined,undefined,true);}
  }catch(e){estado.textContent=errorTexto(e);toast(estado.textContent,false);}
- finally{mostrarLoading(false);guardadoFuentesEnCurso=false;if(b)b.disabled=false;if(g)g.disabled=false;actualizarBotonesPublicacionV9();}
+ finally{mostrarProgresoFuentes(false);guardadoFuentesEnCurso=false;if(b)b.disabled=false;if(g)g.disabled=false;actualizarBotonesPublicacionV9();}
 }
 // V18.12.1: la eliminación remota solo afecta cargas temporales del administrador,
 // verificadas por la función SQL v16_descartar_publicacion_pendiente.
@@ -1464,7 +1472,7 @@ async function descartarPublicacionPendienteV19(){
  const b=document.getElementById('v16DescartarPublicacionBtn'),g=document.getElementById('guardarFuentesBtn');
  guardadoFuentesEnCurso=true;if(b)b.disabled=true;if(g)g.disabled=true;
  try{
-   mostrarLoading(true,'Comprobando estado y eliminando lotes temporales...');
+   mostrarProgresoFuentes(true,'Comprobando estado y eliminando lotes temporales...');
    const resultado=await window.V16PublicacionV9.descartar();
    if(resultado.estado==='descartada'){
      for(const id of ['sourceEnvioFile','sourcePdvFile','sourceDespachosFile','sourceBrechaFile']){
@@ -1480,13 +1488,14 @@ async function descartarPublicacionPendienteV19(){
    estado.textContent='No se eliminó la carga pendiente: '+msg;
    toast(estado.textContent,false);
  }finally{
-   mostrarLoading(false);guardadoFuentesEnCurso=false;
+   mostrarProgresoFuentes(false);guardadoFuentesEnCurso=false;
    if(b)b.disabled=false;if(g)g.disabled=false;
    actualizarBotonesPublicacionV9();
  }
 }
 async function guardarInformacionCargada(){
  if(guardadoFuentesEnCurso)return;if(!sesion||sesion.rol!=='ADMINISTRADOR'){toast('Solo el administrador puede guardar las fuentes.',false);return;}
+ if(window.V16PublicacionV9?.hayPendiente?.())return toast('Verifica o elimina la publicación pendiente antes de cargar.',false);
  cancelarRegionesFuente();guardadoFuentesEnCurso=true;versionCargaPortal++;
  const btn=document.getElementById('guardarFuentesBtn'),estado=document.getElementById('guardadoFuentesEstado');btn.disabled=true;
  const catalogo=[['PDV LISTA','Pdv'],['EXPORTACION GUIAS','Envio'],['DESPACHOS AYER','Despachos'],['TRACK BREAK','Brecha']];
@@ -1498,18 +1507,18 @@ async function guardarInformacionCargada(){
   // Validate all local files before sending the first source to the server.
   for(const x of archivos){actual=x.tipo;
    for(const f of x.archivos)if(!/\.(xlsx|xls)$/i.test(f.name)||!f.size||f.size>EXCEL_MAX_BYTES)throw new Error('Excel inválido o mayor de 30 MB: '+f.name);
-   mostrarLoading(true,'Leyendo '+x.tipo+'…');
-   const union=x.tipo==='EXPORTACION GUIAS'?await consolidarExportacionesGuias(x.archivos,{onProgreso:(n,total,nombre)=>mostrarLoading(true,'Exportación '+n+'/'+total+': '+nombre)}):null;
+   mostrarProgresoFuentes(true,'Leyendo '+x.tipo+'…');
+   const union=x.tipo==='EXPORTACION GUIAS'?await consolidarExportacionesGuias(x.archivos,{onProgreso:(n,total,nombre)=>mostrarProgresoFuentes(true,'Exportación '+n+'/'+total+': '+nombre)}):null;
    const filasLeidas=union?union.filas:await leerFilasArchivoExcel(x.archivos[0],true,x.tipo);
    const filas=optimizarMatrizFuenteV1816(x.tipo,filasLeidas);
    lecturas.push({...x,filas,nombreArchivo:union?union.nombreArchivo:x.archivos[0].name,estadisticas:union});
   }
   for(const x of lecturas){actual=x.tipo;estado.textContent='Guardando '+x.tipo+'…';let entrada={tipo:x.tipo,nombreArchivo:x.nombreArchivo,filas:x.filas,diferirProcesamiento:true};
    if(['TRACK BREAK','COLA LARGA'].includes(x.tipo)){const elegidas=await elegirRegionesGuardado(x.tipo,x.filas);Object.assign(entrada,elegidas);elegidas.regiones.forEach(r=>regionesGuardadas.add(r));}
-   mostrarLoading(true,'Guardando '+x.tipo+' en Google Sheets…');const r=await rpcFuentesGuardar('cargarFuenteOperativa',token,entrada);if(!r||!r.ok)throw new Error('El servidor no confirmó el guardado.');
+   mostrarProgresoFuentes(true,'Preparando '+x.tipo+' para Supabase…');const r=await rpcFuentesGuardar('cargarFuenteOperativa',token,entrada);if(!r||!r.ok)throw new Error('El servidor no confirmó el guardado.');
    guardadas.push(x.tipo);renderEstadoFuentes(r.estadoFuentes);
   }
-  actual='confirmación';mostrarLoading(true,'Publicando todas las fuentes de forma atómica…');const r=await rpcFuentesGuardar('confirmarGuardadoFuentes',token);if(!r||!r.ok)throw new Error('No se recibió confirmación.');if(r.advertencia){estado.textContent=r.advertencia;}else{mostrarGuardadoFuentes(r.ultimoGuardado);}renderEstadoFuentes(r.estadoFuentes);
+  actual='confirmación';mostrarProgresoFuentes(true,'Publicando todas las fuentes de forma atómica…');const r=await rpcFuentesGuardar('confirmarGuardadoFuentes',token);if(!r||!r.ok)throw new Error('No se recibió confirmación.');if(r.advertencia){estado.textContent=r.advertencia;}else{mostrarGuardadoFuentes(r.ultimoGuardado);}renderEstadoFuentes(r.estadoFuentes);
   // Borrar el selector SOLO cuando Supabase confirmó toda la publicación.
   for(const x of lecturas){x.input.value='';if(x.tipo==='EXPORTACION GUIAS')mostrarSeleccionExportacionMultiple(x.input);}
   const fuenteDespachos=lecturas.find(x=>x.tipo==='DESPACHOS AYER'),resumenDespachos=fuenteDespachos?resumirConteoDespachos(fuenteDespachos.filas):null;
@@ -1517,9 +1526,9 @@ async function guardarInformacionCargada(){
   if(nuevaExportacionFuera&&!r.advertencia)fueraResumenMatrizTrasGuardar={filas:nuevaExportacionFuera.filas,archivo:nuevaExportacionFuera.nombreArchivo};
   const fuenteExportacion=nuevaExportacionFuera?.estadisticas;
   toast(guardadas.length?'Información guardada y confirmada.'+(fuenteExportacion?' Exportación: '+fuenteExportacion.archivos+' Excel, '+num(fuenteExportacion.guiasUnicas)+' guías únicas; '+num(fuenteExportacion.duplicadas)+' repetidas consolidadas.':'')+(resumenDespachos?' Despachos ayer: '+num(resumenDespachos.guias)+' guías únicas en '+num(resumenDespachos.pdvs)+' PDV.':''):'Se verificó la información que ya estaba guardada. No había nuevos archivos seleccionados.',true);
-  if(r.advertencia){toast(r.advertencia,false);}else if(regionesGuardadas.size){const regiones=[...regionesGuardadas];guardarRegionesGestion(regiones);cargarDatos(regiones);}else cargarDatos();
- }catch(e){actualizarBotonesPublicacionV9();mostrarLoading(false);const texto=(guardadas.length?'Preparadas, todavía sin publicar: '+guardadas.join(', ')+'. ':'No se confirmó ningún archivo nuevo. ')+'No terminó '+actual+': '+errorTexto(e)+'. Los archivos pendientes siguen seleccionados para reintentar.';estado.textContent=texto;toast(texto,false);
- }finally{guardadoFuentesEnCurso=false;btn.disabled=false;inputs.forEach(x=>{if(x)x.disabled=false;});}
+  if(r.advertencia){toast(r.advertencia,false);}else if(regionesGuardadas.size){const regiones=[...regionesGuardadas];guardarRegionesGestion(regiones);cargarDatos(regiones,undefined,true);}else cargarDatos(undefined,undefined,true);
+ }catch(e){actualizarBotonesPublicacionV9();mostrarProgresoFuentes(false);const texto=(guardadas.length?'Preparadas, todavía sin publicar: '+guardadas.join(', ')+'. ':'No se confirmó ningún archivo nuevo. ')+'No terminó '+actual+': '+errorTexto(e)+'. Los archivos pendientes siguen seleccionados para reintentar.';estado.textContent=texto;toast(texto,false);
+ }finally{mostrarProgresoFuentes(false);guardadoFuentesEnCurso=false;btn.disabled=false;inputs.forEach(x=>{if(x)x.disabled=false;});}
 }
   function renderEstadoFuentes(fuentes){
     if(!fuentes)return;
@@ -1841,6 +1850,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
 
 
   async function reintentarPublicacionDescargaPdv(){
+    if(guardadoFuentesEnCurso)return toast('Ya hay una publicación operativa en curso.',false);
     const pendiente=descargaPdvPublicacionPendiente,btn=document.getElementById('sourceDescargaRetryBtn');
     if(!pendiente||sesion?.rol!=='ADMINISTRADOR')return toast('No hay publicación de Descarga PDV pendiente en esta pestaña.',false);
     if(!confirm('¿Reintentar únicamente la publicación de '+pendiente.esperado+' fechas ya enviadas?'))return;
@@ -1962,6 +1972,7 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   }
 
   async function subirDescargaPdvCentro(){
+    if(guardadoFuentesEnCurso)return toast('Ya hay una publicación operativa en curso.',false);
     if(sesion?.rol!=='ADMINISTRADOR')return toast('Solo el administrador puede cargar Descarga PDV.',false);
     const input=document.getElementById('sourceDescargaFile'),files=Array.from(input?.files||[]),btn=document.getElementById('sourceDescargaBtn');
     if(!files.length)return toast('Selecciona al menos un archivo Centro.xlsx.',false);
@@ -2414,9 +2425,10 @@ function registrarBorradorRevision(fila,campo,valor){fila=Number(fila);const reg
   function descargarGuiasSeleccionFueraResumen(){try{if(!fueraResumenGuiasDetalle.length)throw new Error('Selecciona primero un conteo.');exportarLibroFueraResumen(true);}catch(e){toast(errorTexto(e),false);}}
 
   let versionCargaPortal=0;
-  function cargarDatos(regionesImportadas,forzar){
+  function cargarDatos(regionesImportadas,forzar,trasPublicar=false){
+    if(guardadoFuentesEnCurso&&!trasPublicar)return toast("La publicación está en curso; se conserva el resumen vigente.",false);
     const version=++versionCargaPortal,actualToken=token;
-    mostrarLoading(true,"Cargando información...");
+    if(trasPublicar)mostrarProgresoFuentes(true,"Actualizando resumen publicado…");else mostrarLoading(true,"Cargando información...");
     google.script.run.withSuccessHandler(r=>{
       if(version!==versionCargaPortal||actualToken!==token)return;
       mostrarLoading(false);mostrarEstadoV2(r.v2);sesion=r.sesion;comentarioGestionEncargadoDisponible=r.comentariosGestionEncargadoDisponible===true;cargarBorradoresRevisionUsuario();const guiasNuevas=Array.isArray(r.guias)?r.guias:[],estadoBorradores=reconciliarBorradoresRevision(guiasNuevas);guias=guiasNuevas;filtradasParaResumenComentario=[];filtroComentarioJerarquiaActivo=null;resumenBase=r.resumen||{filas:[],total:{}};actualizarEstadoComentarioGestion(r.errorComentariosGestionEncargado||"");cargarClasificacionesComentarios();seleccionadas.clear();renderEstadoFuentes(r.fuentes);mostrarGuardadoFuentes(r.ultimoGuardado);
@@ -3889,7 +3901,7 @@ function limpiarFiltros(){const filtroDescarga=document.getElementById("fDescarg
   function cerrarQR(){document.getElementById("qrModal").style.display="none";}
   function copiarGuia(guia){const texto=String(guia||"").trim();if(!texto){toast("No existe una guía para copiar.",false);return;}if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(texto).then(()=>toast("Guía "+texto+" copiada.",true)).catch(()=>copiarGuiaAlternativo(texto));return;}copiarGuiaAlternativo(texto);}
   function copiarGuiaAlternativo(texto){const campo=document.createElement("textarea");campo.value=texto;campo.setAttribute("readonly","");campo.style.position="fixed";campo.style.opacity="0";document.body.appendChild(campo);campo.select();campo.setSelectionRange(0,texto.length);let copiado=false;try{copiado=document.execCommand("copy");}catch(e){copiado=false;}document.body.removeChild(campo);toast(copiado?"Guía "+texto+" copiada.":"No se pudo copiar la guía.",copiado);}
-  function salir(){const enlaceCentro=document.getElementById("tabCoberturaCentro");if(enlaceCentro)enlaceCentro.hidden=true;const calendario=document.getElementById("calendarioFrame");if(calendario){calendario.src="about:blank";delete calendario.dataset.loaded;}const t=token,clave=claveBorradoresRevision();try{if(clave)sessionStorage.removeItem(clave);}catch(e){}borradoresRevision.clear();borradoresRevisionUsuario="";limpiarSesion();google.script.run.cerrarSesion(t);mostrarLogin();}
+  function salir(){if(guardadoFuentesEnCurso)return toast('Hay una publicación en curso. Finalízala antes de cerrar sesión.',false);const enlaceCentro=document.getElementById("tabCoberturaCentro");if(enlaceCentro)enlaceCentro.hidden=true;const calendario=document.getElementById("calendarioFrame");if(calendario){calendario.src="about:blank";delete calendario.dataset.loaded;}const t=token,clave=claveBorradoresRevision();try{if(clave)sessionStorage.removeItem(clave);}catch(e){}borradoresRevision.clear();borradoresRevisionUsuario="";limpiarSesion();google.script.run.cerrarSesion(t);mostrarLogin();}
   function limpiarSesion(){fueraResumenMatrizTrasGuardar=null;descargaPdvCargaSecuencia++;descargaPdvPorGuia=new Map();cancelarRegionesFuente();token="";sesion=null;reiniciarGuiasFueraResumen();sessionStorage.removeItem("tokenGuiasSupabaseReplica");limpiarArchivoExcel(true);}
   function mostrarLoading(si,texto){document.getElementById("loadingText").textContent=texto||"Procesando...";document.getElementById("loading").style.display=si?"flex":"none";}
   function manejarError(e){mostrarLoading(false);const t=errorTexto(e);toast(t,false);if(/sesión|sesion/i.test(t)){limpiarSesion();mostrarLogin();}}
